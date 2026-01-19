@@ -485,7 +485,9 @@ async function sendQuoteEmail(quote) {
         return;
     }
     
-    const shareLink = window.location.href.split('?')[0] + '?quote=' + quote.share_token;
+    // Update this URL to match your GitHub Pages URL
+    const baseUrl = window.location.href.split('?')[0].replace('index.html', '');
+    const shareLink = baseUrl + 'quote-viewer.html?quote=' + quote.share_token;
     
     const templateParams = {
         to_email: client.email,
