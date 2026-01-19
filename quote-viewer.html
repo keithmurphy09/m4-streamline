@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Quote - M4 Streamline</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; background: #f9fafb; }
+        .header { text-align: center; border-bottom: 3px solid #14b8a6; padding-bottom: 20px; margin-bottom: 30px; background: white; padding: 30px; border-radius: 10px; }
+        .logo { color: #14b8a6; font-size: 48px; font-weight: bold; }
+        .subtitle { color: #666; }
+        .content { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .section { margin: 20px 0; }
+        .label { font-weight: bold; color: #333; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th { background: #000; color: white; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #ddd; }
+        .total { font-size: 28px; color: #14b8a6; font-weight: bold; text-align: right; margin-top: 20px; padding: 20px; background: #f0fdfa; border-radius: 8px; }
+        .print-btn { background: #14b8a6; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin: 5px; }
+        .print-btn:hover { background: #0f9e8e; }
+        .accept-btn { background: #10b981; color: white; padding: 15px 40px; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; margin: 20px 5px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3); }
+        .accept-btn:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 6px 8px rgba(16, 185, 129, 0.4); }
+        .accept-btn:active { transform: translateY(0); }
+        .accepted-badge { background: #10b981; color: white; padding: 15px 30px; border-radius: 8px; font-weight: bold; display: inline-block; margin: 20px 0; font-size: 18px; }
+        .button-container { text-align: center; margin-top: 40px; }
+        .loading { text-align: center; padding: 50px; color: #666; }
+        .error { text-align: center; padding: 50px; color: #ef4444; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="loading">Loading quote...</div>
+    </div>
+
+    <script>
+        emailjs.init('cl17j5coPTDN-aVM8');
+        const supabaseClient = window.supabase.createClient('https://xviustrrsuhidzbcpgow.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aXVzdHJyc3VoaWR6YmNwZ293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3ODk1NDgsImV4cCI6MjA4NDM2NTU0OH0.CEcc50c1K2Qnh6rXt_1-_w30LzHvDniGLbqWhdOolRY');
+        
+        let currentQuote = null;
+        let currentClient = null;
+
+        async function loadQuote() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const shareToken = urlParams.get('quote');
+            
+            if (!shareToken) {
+                document.getElementById('app').innerHTML = '<div class="error">No quote specified</div>';
+                return;
+            }
+
+            try {
+                const { data: quote, error: quoteError } = await supabaseClient
+                    .from('quotes')
+                    .select('*')
+                    .eq('share_token', shareToken)
+                    .single();
+
+                if (quoteError || !quote) {
+                    document.getElementById('app').innerHTML = '<div class="error">Quote not found</div>';
+                    return;
+                }
+
+                currentQuote = quote;
+
+                const { data: client } = await supabaseClient
+                    .from('clients')
+                    .select('*')
+                    .eq('id', quote.client_id)
+                    .single();
+
+                currentClient = client;
+
+                renderQuote();
+            } catch (error) {
+                console.error('Error loading quote:', error);
+                document.getElementById('app').innerHTML = '<div class="error">Error loading quote</div>';
+            }
+        }
+
+        function renderQuote() {
+            const quote = currentQuote;
+            const client = currentClient;
+            const isAccepted = quote.accepted || quote.status === 'accepted';
+
+            const html = `
+                <div class="header">
+                    <div class="logo">M4</div>
+                    <div class="subtitle">Streamline</div>
+                </div>
+                
+                <div class="content">
+                    <h1 style="margin-bottom: 10px;">Quote: ${quote.title}</h1>
+                    
+                    ${isAccepted ? '<div class="accepted-badge">✓ QUOTE ACCEPTED</div>' : ''}
+                    
+                    <div class="section">
+                        <p><span class="label">Client:</span> ${client?.name || 'N/A'}</p>
+                        <p><span class="label">Email:</span> ${client?.email || 'N/A'}</p>
+                        <p><span class="label">Phone:</span> ${client?.phone || 'N/A'}</p>
+                        <p><span class="label">Date:</span> ${new Date(quote.date).toLocaleDateString()}</p>
+                    </div>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th>Quantity</th>
+                                <th>Price</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${quote.items.map(item => `
+                                <tr>
+                                    <td>${item.description}</td>
+                                    <td>${item.quantity}</td>
+                                    <td>$${parseFloat(item.price).toFixed(2)}</td>
+                                    <td>$${(item.quantity * item.price).toFixed(2)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    
+                    <div class="total">Total: $${parseFloat(quote.total).toFixed(2)}</div>
+                    
+                    ${quote.notes ? `<div class="section"><p class="label">Notes:</p><p>${quote.notes}</p></div>` : ''}
+                    
+                    <div class="button-container">
+                        ${!isAccepted ? '<button class="accept-btn" onclick="acceptQuote()">Accept Quote</button>' : ''}
+                        <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+                    </div>
+                    
+                    <div id="message" style="text-align: center; margin-top: 20px; font-size: 16px;"></div>
+                </div>
+            `;
+
+            document.getElementById('app').innerHTML = html;
+        }
+
+        async function acceptQuote() {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = '<p style="color: #14b8a6; font-weight: bold;">Processing...</p>';
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('quotes')
+                    .update({ accepted: true, status: 'accepted' })
+                    .eq('share_token', currentQuote.share_token);
+                
+                if (error) throw error;
+                
+                messageDiv.innerHTML = '<p style="color: #10b981; font-weight: bold; font-size: 18px;">✓ Quote Accepted! The tradesperson has been notified.</p>';
+                
+                // Reload quote data and re-render
+                setTimeout(() => {
+                    loadQuote();
+                }, 1500);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                messageDiv.innerHTML = '<p style="color: red;">Error accepting quote. Please try again.</p>';
+            }
+        }
+
+        // Load quote when page loads
+        window.addEventListener('load', loadQuote);
+    </script>
+</body>
+</html>
