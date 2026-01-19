@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M4 Streamline</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script>
+  emailjs.init('cl17j5coPTDN-aVM8');
+</script>
+</head>
+<body>
+    <div id="app"></div>
+    <script>
+        const supabaseClient = window.supabase.createClient('https://xviustrrsuhidzbcpgow.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aXVzdHJyc3VoaWR6YmNwZ293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3ODk1NDgsImV4cCI6MjA4NDM2NTU0OH0.CEcc50c1K2Qnh6rXt_1-_w30LzHvDniGLbqWhdOolRY');
+        let currentUser = null;
+        let activeTab = 'schedule';
+        let clients = [];
+        let jobs = [];
+        let quotes = [];
+        let invoices = [];
+        let showModal = false;
+        let modalType = '';
+        let editingItem = null;
+	let scheduleView = 'list';
+        
+        async function checkAuth() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const quoteToken = urlParams.get('quote');
+    
+    if (quoteToken) {
+        try {
+            const { data } = await supabaseClient.from('quotes').select('*').eq('share_token', quoteToken).single();
+            if (data) {
+                const { data: clientData } = await supabaseClient.from('clients').select('*').eq('id', data.client_id).single();
+                clients = clientData ? [clientData] : [];
+                quotes = [data];
+                viewSharedQuote(quoteToken);
+            }
+        } catch (error) {
+            console.error('Error loading shared quote:', error);
+        }
+        return;
+    }
+    
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session) {
+        currentUser = session.user;
+        await loadAllData();
+        renderApp();
+    } else {
+        renderAuth();
+    }
+}
+    
+        
+        function renderAuth() {
+            document.getElementById('app').innerHTML = `<div class="min-h-screen flex items-center justify-center bg-black"><div class="bg-white p-8 rounded-lg shadow-xl max-w-md w-full"><div class="text-center mb-8"><div class="text-teal-400 text-5xl font-bold mb-2">M4</div><h1 class="text-2xl font-bold text-black">Streamline</h1><p class="text-gray-600 mt-2">Business Management</p></div><div><input type="email" id="email" placeholder="Email" class="w-full px-4 py-3 border rounded-lg mb-3"><input type="password" id="password" placeholder="Password" class="w-full px-4 py-3 border rounded-lg mb-4"><button onclick="handleLogin()" class="w-full bg-black text-white px-4 py-3 rounded-lg hover:bg-gray-800 border-2 border-teal-400 mb-3">Sign In</button><button onclick="handleSignup()" class="w-full bg-white text-black px-4 py-3 rounded-lg hover:bg-gray-50 border-2 border-black">Create Account</button><div id="auth-error" class="mt-3 text-red-600 text-sm text-center"></div></div></div></div>`;
+        }
+        
+        async function handleLogin() {
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ 
+                email: document.getElementById('email').value, 
+                password: document.getElementById('password').value 
+            });
+            if (error) document.getElementById('auth-error').textContent = error.message;
+            else { currentUser = data.user; await loadAllData(); renderApp(); }
+        }
+        
+        async function handleSignup() {
+            const { data, error } = await supabaseClient.auth.signUp({ 
+                email: document.getElementById('email').value, 
+                password: document.getElementById('password').value 
+            });
+            const errorDiv = document.getElementById('auth-error');
+            if (error) errorDiv.textContent = error.message;
+            else { 
+                errorDiv.textContent = 'Account created! You can now sign in.'; 
+                errorDiv.className = 'mt-3 text-green-600 text-sm text-center'; 
+            }
+        }
+        
+        async function handleLogout() { 
+            await supabaseClient.auth.signOut(); 
+            currentUser = null; 
+            renderAuth(); 
+        }
+        
+        async function loadAllData() {
+            const [c, j, q, i] = await Promise.all([
+                supabaseClient.from('clients').select('*'), 
+                supabaseClient.from('jobs').select('*'), 
+                supabaseClient.from('quotes').select('*'), 
+                supabaseClient.from('invoices').select('*')
+            ]);
+            clients = c.data || []; 
+            jobs = j.data || []; 
+            quotes = q.data || []; 
+            invoices = i.data || [];
+        }
+        
+        async function addClient(client) { 
+            const { data } = await supabaseClient.from('clients').insert([{
+                ...client, 
+                user_id: currentUser.id
+            }]).select(); 
+            if (data) { 
+                clients.push(data[0]); 
+                closeModal(); 
+                renderApp(); 
+            } 
+        }
+        
+        async function deleteClient(id) { 
+            await supabaseClient.from('clients').delete().eq('id', id); 
+            clients = clients.filter(c => c.id !== id); 
+            renderApp(); 
+        }
+        
+        async function addJob(job) { 
+    const jobData = { ...job, user_id: currentUser.id, photos: [] };
+    const { data } = await supabaseClient.from('jobs').insert([jobData]).select(); 
+    if (data) { 
+        jobs.push(data[0]); 
+        closeModal(); 
+        renderApp(); 
+    } 
+}
+        
+        async function deleteJob(id) { 
+            await supabaseClient.from('jobs').delete().eq('id', id); 
+            jobs = jobs.filter(j => j.id !== id); 
+            renderApp(); 
+        }
+        
+        async function addQuote(quote) {
+    const shareToken = 'q_' + Math.random().toString(36).substring(2, 15);
+    const quoteData = { ...quote, user_id: currentUser.id, share_token: shareToken };
+    const { data } = await supabaseClient.from('quotes').insert([quoteData]).select();
+    if (data) {
+        quotes.push(data[0]);
+        closeModal();
+        renderApp();
+    }
+}
+        
+        async function deleteQuote(id) { 
+            await supabaseClient.from('quotes').delete().eq('id', id); 
+            quotes = quotes.filter(q => q.id !== id); 
+            renderApp(); 
+        }
+        
+        async function convertToInvoice(quote) {
+            const inv = {
+                client_id: quote.client_id,
+                title: quote.title,
+                items: quote.items,
+                notes: quote.notes || '',
+                total: quote.total,
+                invoice_number: 'INV-' + Date.now(),
+                status: 'unpaid',
+                issue_date: new Date().toISOString().split('T')[0],
+                user_id: currentUser.id
+            };
+            const { data, error } = await supabaseClient.from('invoices').insert([inv]).select();
+            if (error) {
+                console.error('Invoice error:', error);
+                alert('Error: ' + error.message);
+            } else if (data) {
+                await supabaseClient.from('quotes').update({ status: 'converted' }).eq('id', quote.id);
+                await loadAllData();
+                activeTab = 'invoices';
+                renderApp();
+            }
+        }
+        
+        async function updateInvoice(id, status) { 
+            await supabaseClient.from('invoices').update({ status }).eq('id', id); 
+            await loadAllData(); 
+            renderApp(); 
+        }
+        
+        async function deleteInvoice(id) { 
+            await supabaseClient.from('invoices').delete().eq('id', id); 
+            invoices = invoices.filter(i => i.id !== id); 
+            renderApp(); 
+        }
+        
+        function openModal(type, item = null) { 
+            modalType = type; 
+            editingItem = item; 
+            showModal = true; 
+            if (type === 'quote') quoteItems = item?.items || [{ description: '', quantity: 1, price: 0 }]; 
+            renderApp(); 
+            if (type === 'quote') setTimeout(renderQuoteItems, 100); 
+        }
+        
+        function closeModal() { 
+            showModal = false; 
+            editingItem = null; 
+            modalType = ''; 
+            renderApp(); 
+        }
+        
+        function generatePDF(type, item) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Add M4 logo from image
+const logoImg = new Image();
+logoImg.src = 'https://i.imgur.com/dF4xRDK.jpeg';
+doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
+            
+            doc.setFontSize(24);
+            doc.setTextColor(0, 0, 0);
+            doc.text('M4 Streamline', 35, 22);
+            doc.setFontSize(10);
+            doc.setTextColor(100, 100, 100);
+            doc.text('Business Management', 35, 28);
+            
+            doc.setFontSize(18);
+            doc.setTextColor(20, 184, 166);
+            const title = type === 'quote' ? 'QUOTE' : 'INVOICE';
+            doc.text(title, 20, 50);
+            
+            const client = clients.find(c => c.id === item.client_id);
+            doc.setFontSize(11);
+            doc.setTextColor(0, 0, 0);
+            doc.text('Client:', 20, 65);
+            doc.text(client?.name || 'Unknown', 45, 65);
+            doc.text(client?.email || '', 45, 71);
+            doc.text(client?.phone || '', 45, 77);
+            
+            if (type === 'invoice') {
+                doc.text('Invoice #:', 140, 65);
+                doc.text(item.invoice_number || '', 170, 65);
+                doc.text('Date:', 140, 71);
+                doc.text(item.issue_date || '', 170, 71);
+            } else {
+                doc.text('Date:', 140, 65);
+                doc.text(item.date || '', 170, 65);
+            }
+            
+            let y = 95;
+            doc.setFontSize(12);
+            doc.setTextColor(255, 255, 255);
+            doc.setFillColor(0, 0, 0);
+            doc.rect(20, y - 7, 170, 10, 'F');
+            doc.text('Description', 25, y);
+            doc.text('Qty', 120, y);
+            doc.text('Price', 145, y);
+            doc.text('Total', 170, y);
+            
+            y += 10;
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(10);
+            
+            if (item.items && Array.isArray(item.items)) {
+                item.items.forEach(lineItem => {
+                    doc.text(lineItem.description || '', 25, y);
+                    doc.text(String(lineItem.quantity || 0), 120, y);
+                    doc.text('$' + (lineItem.price || 0).toFixed(2), 145, y);
+                    doc.text('$' + ((lineItem.quantity * lineItem.price) || 0).toFixed(2), 170, y);
+                    y += 7;
+                });
+            }
+            
+            y += 10;
+            doc.setLineWidth(0.5);
+            doc.setDrawColor(20, 184, 166);
+            doc.line(20, y, 190, y);
+            y += 8;
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text('TOTAL:', 145, y);
+            doc.setTextColor(20, 184, 166);
+            doc.text('$' + (item.total || 0).toFixed(2), 170, y);
+            
+            if (item.notes) {
+                y += 15;
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+                doc.setFont(undefined, 'normal');
+                doc.text('Notes:', 20, y);
+                const splitNotes = doc.splitTextToSize(item.notes, 170);
+                doc.text(splitNotes, 20, y + 5);
+            }
+            
+            const filename = type === 'quote' ? `Quote-${item.title}.pdf` : `Invoice-${item.invoice_number}.pdf`;
+            doc.save(filename);
+        }
+        
+        function renderApp() {
+            document.getElementById('app').innerHTML = `<div class="min-h-screen bg-gray-50"><div class="bg-black text-white p-6 shadow-lg border-b-4 border-teal-400"><div class="max-w-7xl mx-auto flex justify-between items-center"><div><h1 class="text-3xl font-bold">M4 Streamline</h1><p class="text-gray-300 mt-1">Business Management</p></div><div class="flex items-center gap-4"><div class="text-teal-400 text-center"><div class="text-4xl font-bold">M4</div><div class="text-xs tracking-wider">PROJECTS</div></div><button onclick="handleLogout()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm border border-teal-400">Logout</button></div></div></div><div class="bg-white shadow"><div class="max-w-7xl mx-auto px-4"><div class="flex space-x-1">${['schedule', 'clients', 'quotes', 'invoices'].map(tab => `<button onclick="activeTab='${tab}'; renderApp();" class="px-6 py-4 font-medium border-b-2 ${activeTab === tab ? 'border-teal-400 text-black' : 'border-transparent text-gray-600'}">${tab.charAt(0).toUpperCase() + tab.slice(1)}</button>`).join('')}</div></div></div><div class="max-w-7xl mx-auto p-6">${renderContent()}</div>${showModal ? renderModal() : ''}</div>`;
+        }
+        
+        function renderContent() {
+            if (activeTab === 'schedule') return renderSchedule();
+            if (activeTab === 'clients') return renderClients();
+            if (activeTab === 'quotes') return renderQuotes();
+            if (activeTab === 'invoices') return renderInvoices();
+        }
+        
+        function renderSchedule() {
+    const viewToggle = `<div class="flex gap-2"><button onclick="scheduleView='list'; renderApp();" class="px-3 py-2 rounded ${scheduleView === 'list' ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'} border">List</button><button onclick="scheduleView='calendar'; renderApp();" class="px-3 py-2 rounded ${scheduleView === 'calendar' ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'} border">Calendar</button></div>`;
+    
+    if (scheduleView === 'calendar') {
+        setTimeout(() => renderCalendar(), 100);
+        return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Schedule</h2><div class="flex gap-4">${viewToggle}<button onclick="openModal('job')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Schedule Job</button></div></div><div id="calendar" class="bg-white p-4 rounded-lg shadow"></div></div>`;
+    }
+    
+    return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Schedule</h2><div class="flex gap-4">${viewToggle}<button onclick="openModal('job')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Schedule Job</button></div></div><div class="grid gap-4">${jobs.length === 0 ? '<div class="text-center py-12 text-gray-500">No jobs</div>' : jobs.map(job => { 
+        const client = clients.find(c => c.id === job.client_id); 
+        return `<div class="bg-white p-4 rounded-lg shadow border-l-4 border-teal-400"><div class="flex justify-between"><div class="flex-1"><h3 class="text-lg font-semibold">${job.title}</h3><p class="text-gray-600">${client?.name || 'Unknown'}</p><div class="text-sm text-gray-500 mt-2">${new Date(job.date).toLocaleDateString()} ${job.time}</div>${job.photos && job.photos.length > 0 ? `<div class="mt-3 flex gap-2 flex-wrap">${job.photos.map(photo => `<img src="${photo}" class="w-20 h-20 object-cover rounded border border-teal-400" />`).join('')}</div>` : ''}</div><div class="flex flex-col gap-2"><label class="cursor-pointer px-3 py-1 bg-teal-500 text-white rounded text-sm text-center"><input type="file" accept="image/*" onchange="uploadJobPhoto(this, '${job.id}')" class="hidden" />Add Photo</label><button onclick="deleteJob('${job.id}')" class="px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button></div></div></div>`; 
+    }).join('')}</div></div>`;
+}
+
+function renderCalendar() {
+    const calendarEl = document.getElementById('calendar');
+    if (!calendarEl) return;
+    
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek'
+        },
+        events: jobs.map(job => {
+            const client = clients.find(c => c.id === job.client_id);
+            return {
+                title: job.title + (client ? ' - ' + client.name : ''),
+                start: job.date + 'T' + job.time,
+                backgroundColor: '#14b8a6',
+                borderColor: '#14b8a6',
+                extendedProps: {
+                    jobId: job.id,
+                    client: client?.name
+                }
+            };
+        }),
+        eventClick: function(info) {
+            const job = jobs.find(j => j.id === info.event.extendedProps.jobId);
+            if (job) {
+                alert('Job: ' + job.title + '\nClient: ' + info.event.extendedProps.client + '\nDate: ' + new Date(job.date).toLocaleDateString() + '\nTime: ' + job.time);
+            }
+        }
+    });
+    
+    calendar.render();
+}
+        
+        function renderClients() {
+            return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Clients</h2><button onclick="openModal('client')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Add Client</button></div><div class="grid gap-4">${clients.length === 0 ? '<div class="text-center py-12 text-gray-500">No clients</div>' : clients.map(c => `<div class="bg-white p-4 rounded-lg shadow"><div class="flex justify-between"><div class="flex-1"><h3 class="text-lg font-semibold">${c.name}</h3><p class="text-sm text-gray-600">${c.email}</p><p class="text-sm text-gray-600">${c.phone}</p></div><button onclick="deleteClient('${c.id}')" class="text-red-600">Delete</button></div></div>`).join('')}</div></div>`;
+        }
+        
+        function renderQuotes() {
+    return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Quotes</h2><button onclick="openModal('quote')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Create Quote</button></div><div class="grid gap-4">${quotes.length === 0 ? '<div class="text-center py-12 text-gray-500">No quotes</div>' : quotes.map(q => { 
+        const client = clients.find(c => c.id === q.client_id);
+        return `<div class="bg-white p-4 rounded-lg shadow"><div class="flex justify-between mb-3"><div><h3 class="text-lg font-semibold">${q.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p></div><p class="text-2xl font-bold text-teal-500">$${q.total?.toFixed(2)}</p></div><div class="flex gap-2">${q.status === 'pending' ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm">Convert to Invoice</button>` : ''}<button onclick='generatePDF("quote", ${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Download PDF</button><button onclick='sendQuoteEmail(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-purple-600 text-white rounded text-sm">Send Email</button><button onclick="deleteQuote('${q.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div></div>`; 
+    }).join('')}</div></div>`;
+}
+        
+        function renderInvoices() {
+            return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Invoices</h2><div class="text-sm">Outstanding: $${invoices.filter(i => i.status === 'unpaid').reduce((s, i) => s + parseFloat(i.total || 0), 0).toFixed(2)}</div></div><div class="grid gap-4">${invoices.length === 0 ? '<div class="text-center py-12 text-gray-500">No invoices</div>' : invoices.map(inv => { 
+                const client = clients.find(c => c.id === inv.client_id); 
+                return `<div class="bg-white p-4 rounded-lg shadow"><div class="flex justify-between mb-3"><div><h3 class="text-lg font-semibold">${inv.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p><p class="text-xs">${inv.invoice_number}</p></div><p class="text-2xl font-bold text-teal-500">$${inv.total?.toFixed(2)}</p></div><div class="flex gap-2">${inv.status === 'unpaid' ? `<button onclick="updateInvoice('${inv.id}', 'paid')" class="px-3 py-1 bg-green-600 text-white rounded text-sm">Mark Paid</button>` : ''}<button onclick="generatePDF('invoice', ${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Download PDF</button><button onclick="deleteInvoice('${inv.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div></div>`; 
+            }).join('')}</div></div>`;
+        }
+        
+        function renderModal() {
+            let form = '';
+            if (modalType === 'client') form = `<input type="text" id="name" placeholder="Name" class="w-full px-4 py-2 border rounded mb-3"><input type="email" id="email" placeholder="Email" class="w-full px-4 py-2 border rounded mb-3"><input type="tel" id="phone" placeholder="Phone" class="w-full px-4 py-2 border rounded mb-3"><button onclick="addClient({name:document.getElementById('name').value,email:document.getElementById('email').value,phone:document.getElementById('phone').value})" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">Add Client</button>`;
+            if (modalType === 'job') form = `<select id="client_id" class="w-full px-4 py-2 border rounded mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}</select><input type="text" id="title" placeholder="Job Title" class="w-full px-4 py-2 border rounded mb-3"><input type="date" id="date" class="w-full px-4 py-2 border rounded mb-3"><input type="time" id="time" class="w-full px-4 py-2 border rounded mb-3"><button onclick="addJob({client_id:document.getElementById('client_id').value,title:document.getElementById('title').value,date:document.getElementById('date').value,time:document.getElementById('time').value})" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">Schedule Job</button>`;
+            if (modalType === 'quote') form = `<select id="client_id" class="w-full px-4 py-2 border rounded mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}</select><input type="text" id="title" placeholder="Quote Title" class="w-full px-4 py-2 border rounded mb-3"><div id="items-list"></div><button onclick="addQuoteItem()" class="text-teal-500 text-sm mb-3">+ Add Item</button><div id="quote-total" class="font-bold mb-3">Total: $0</div><button onclick="saveQuote()" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">Create Quote</button>`;
+            return `<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onclick="if(event.target===this)closeModal()"><div class="bg-white rounded-lg p-6 max-w-2xl w-full"><div class="flex justify-between mb-4"><h3 class="text-xl font-bold">${modalType}</h3><button onclick="closeModal()" class="text-2xl">×</button></div>${form}</div></div>`;
+        }
+        
+        let quoteItems = [];
+        function addQuoteItem() { quoteItems.push({ description: '', quantity: 1, price: 0 }); renderQuoteItems(); }
+        function renderQuoteItems() {
+            const c = document.getElementById('items-list');
+            if (!c) return;
+            c.innerHTML = quoteItems.map((item, i) => `<div class="grid grid-cols-12 gap-2 mb-2"><input type="text" value="${item.description}" onchange="quoteItems[${i}].description=this.value;renderQuoteItems()" placeholder="Description" class="col-span-6 px-3 py-2 border rounded"><input type="number" value="${item.quantity}" onchange="quoteItems[${i}].quantity=parseFloat(this.value);renderQuoteItems()" class="col-span-2 px-3 py-2 border rounded"><input type="number" value="${item.price}" onchange="quoteItems[${i}].price=parseFloat(this.value);renderQuoteItems()" class="col-span-3 px-3 py-2 border rounded"><button onclick="quoteItems.splice(${i},1);renderQuoteItems()" class="text-red-600">×</button></div>`).join('');
+            const total = quoteItems.reduce((s, i) => s + (i.quantity * i.price), 0);
+            const t = document.getElementById('quote-total');
+            if (t) t.textContent = `Total: $${total.toFixed(2)}`;
+        }
+        function saveQuote() {
+            const total = quoteItems.reduce((s, i) => s + (i.quantity * i.price), 0);
+            addQuote({client_id:document.getElementById('client_id').value,title:document.getElementById('title').value,items:quoteItems,total:total,date:new Date().toISOString().split('T')[0],status:'pending'});
+        }
+async function uploadJobPhoto(input, jobId) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${jobId}-${Date.now()}.${fileExt}`;
+    const filePath = `${fileName}`;
+    
+    const { data: uploadData, error: uploadError } = await supabaseClient.storage
+        .from('job-photos')
+        .upload(filePath, file);
+    
+    if (uploadError) {
+        alert('Error uploading photo: ' + uploadError.message);
+        return;
+    }
+    
+    const { data: urlData } = supabaseClient.storage
+        .from('job-photos')
+        .getPublicUrl(filePath);
+    
+    const job = jobs.find(j => j.id === jobId);
+    const photos = job.photos || [];
+    photos.push(urlData.publicUrl);
+    
+    const { error: updateError } = await supabaseClient
+        .from('jobs')
+        .update({ photos })
+        .eq('id', jobId);
+    
+    if (!updateError) {
+        await loadAllData();
+        renderApp();
+    }
+}        
+
+async function sendQuoteEmail(quote) {
+    const client = clients.find(c => c.id === quote.client_id);
+    if (!client || !client.email) {
+        alert('Client email not found!');
+        return;
+    }
+    
+    const shareLink = window.location.href.split('?')[0] + '?quote=' + quote.share_token;
+    
+    const templateParams = {
+        to_email: client.email,
+        from_name: currentUser.email.split('@')[0],
+        client_name: client.name,
+        quote_title: quote.title,
+        quote_total: quote.total.toFixed(2),
+        quote_link: shareLink,
+        message: 'Please click the link below to view and download your quote.',
+        reply_to: currentUser.email
+    };
+    
+    try {
+        await emailjs.send('service_og2tkc8', 'template_xvsfuhv', templateParams);
+        alert('Email sent successfully to ' + client.email + '!');
+    } catch (error) {
+        alert('Failed to send email: ' + error.text);
+    }
+}
+
+function viewSharedQuote(shareToken) {
+    const quote = quotes.find(q => q.share_token === shareToken);
+    if (!quote) {
+        alert('Quote not found');
+        return;
+    }
+    
+    const client = clients.find(c => c.id === quote.client_id);
+    
+    const viewerHTML = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Quote - ${quote.title}</title>
+            <style>
+                body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+                .header { text-align: center; border-bottom: 3px solid #14b8a6; padding-bottom: 20px; margin-bottom: 30px; }
+                .logo { color: #14b8a6; font-size: 48px; font-weight: bold; }
+                .subtitle { color: #666; }
+                .section { margin: 20px 0; }
+                .label { font-weight: bold; color: #333; }
+                table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                th { background: #000; color: white; padding: 10px; text-align: left; }
+                td { padding: 10px; border-bottom: 1px solid #ddd; }
+                .total { font-size: 24px; color: #14b8a6; font-weight: bold; text-align: right; margin-top: 20px; }
+                .print-btn { background: #14b8a6; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="logo">M4</div>
+                <div class="subtitle">Streamline</div>
+            </div>
+            
+            <h1>Quote: ${quote.title}</h1>
+            
+            <div class="section">
+                <p><span class="label">Client:</span> ${client?.name || 'N/A'}</p>
+                <p><span class="label">Date:</span> ${quote.date}</p>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${quote.items.map(item => `
+                        <tr>
+                            <td>${item.description}</td>
+                            <td>${item.quantity}</td>
+                            <td>$${item.price.toFixed(2)}</td>
+                            <td>$${(item.quantity * item.price).toFixed(2)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+            
+            <div class="total">Total: $${quote.total.toFixed(2)}</div>
+            
+            ${quote.notes ? `<div class="section"><p class="label">Notes:</p><p>${quote.notes}</p></div>` : ''}
+            
+            <div style="text-align: center; margin-top: 40px;">
+                <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+            </div>
+        </body>
+        </html>
+    `;
+    
+    const newWindow = window.open('', '_blank');
+    newWindow.document.write(viewerHTML);
+    newWindow.document.close();
+}
+
+window.addEventListener('load', checkAuth);
+    </script>
+</body>
+</html>
