@@ -18,7 +18,7 @@
     <script>
         const supabaseClient = window.supabase.createClient('https://xviustrrsuhidzbcpgow.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aXVzdHJyc3VoaWR6YmNwZ293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3ODk1NDgsImV4cCI6MjA4NDM2NTU0OH0.CEcc50c1K2Qnh6rXt_1-_w30LzHvDniGLbqWhdOolRY');
         let currentUser = null;
-        let activeTab = 'schedule';
+        let activeTab = 'dashboard';
         let clients = [];
         let jobs = [];
         let quotes = [];
@@ -137,6 +137,23 @@
         renderApp(); 
     } 
 }
+        
+        async function updateJob(id) {
+            const updatedJob = {
+                client_id: document.getElementById('client_id').value,
+                title: document.getElementById('title').value,
+                date: document.getElementById('date').value,
+                time: document.getElementById('time').value,
+                notes: document.getElementById('notes').value
+            };
+            const { data } = await supabaseClient.from('jobs').update(updatedJob).eq('id', id).select();
+            if (data) {
+                const index = jobs.findIndex(j => j.id === id);
+                if (index !== -1) jobs[index] = data[0];
+                closeModal();
+                renderApp();
+            }
+        }
         
         async function deleteJob(id) { 
             await supabaseClient.from('jobs').delete().eq('id', id); 
@@ -349,14 +366,102 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
         }
         
         function renderApp() {
-            document.getElementById('app').innerHTML = `<div class="min-h-screen bg-gray-50"><div class="bg-black text-white p-6 shadow-lg border-b-4 border-teal-400"><div class="max-w-7xl mx-auto flex justify-between items-center"><div><h1 class="text-3xl font-bold">M4 Streamline</h1><p class="text-gray-300 mt-1">Business Management</p></div><div class="flex items-center gap-4"><div class="text-teal-400 text-center"><div class="text-4xl font-bold">M4</div><div class="text-xs tracking-wider">PROJECTS</div></div><button onclick="handleLogout()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm border border-teal-400">Logout</button></div></div></div><div class="bg-white shadow"><div class="max-w-7xl mx-auto px-4"><div class="flex space-x-1">${['schedule', 'clients', 'quotes', 'invoices'].map(tab => `<button onclick="activeTab='${tab}'; renderApp();" class="px-6 py-4 font-medium border-b-2 ${activeTab === tab ? 'border-teal-400 text-black' : 'border-transparent text-gray-600'}">${tab.charAt(0).toUpperCase() + tab.slice(1)}</button>`).join('')}</div></div></div><div class="max-w-7xl mx-auto p-6">${renderContent()}</div>${showModal ? renderModal() : ''}</div>`;
+            document.getElementById('app').innerHTML = `<div class="min-h-screen bg-gray-50"><div class="bg-black text-white p-6 shadow-lg border-b-4 border-teal-400"><div class="max-w-7xl mx-auto flex justify-between items-center"><div><h1 class="text-3xl font-bold">M4 Streamline</h1><p class="text-gray-300 mt-1">Business Management</p></div><div class="flex items-center gap-4"><div class="text-teal-400 text-center"><div class="text-4xl font-bold">M4</div><div class="text-xs tracking-wider">PROJECTS</div></div><button onclick="handleLogout()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm border border-teal-400">Logout</button></div></div></div><div class="bg-white shadow"><div class="max-w-7xl mx-auto px-4"><div class="flex space-x-1">${['dashboard', 'schedule', 'clients', 'quotes', 'invoices'].map(tab => `<button onclick="activeTab='${tab}'; renderApp();" class="px-6 py-4 font-medium border-b-2 ${activeTab === tab ? 'border-teal-400 text-black' : 'border-transparent text-gray-600'}">${tab.charAt(0).toUpperCase() + tab.slice(1)}</button>`).join('')}</div></div></div><div class="max-w-7xl mx-auto p-6">${renderContent()}</div>${showModal ? renderModal() : ''}</div>`;
         }
         
         function renderContent() {
+            if (activeTab === 'dashboard') return renderDashboard();
             if (activeTab === 'schedule') return renderSchedule();
             if (activeTab === 'clients') return renderClients();
             if (activeTab === 'quotes') return renderQuotes();
             if (activeTab === 'invoices') return renderInvoices();
+        }
+        
+        function renderDashboard() {
+            const today = new Date().toISOString().split('T')[0];
+            const upcomingJobs = jobs.filter(j => j.date >= today).sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 5);
+            const pendingQuotes = quotes.filter(q => q.status === 'pending' && !q.accepted);
+            const acceptedQuotes = quotes.filter(q => q.accepted || q.status === 'accepted');
+            const unpaidInvoices = invoices.filter(i => i.status === 'unpaid');
+            const totalUnpaid = unpaidInvoices.reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
+            const totalRevenue = invoices.filter(i => i.status === 'paid').reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
+            
+            return `<div>
+                <h2 class="text-2xl font-bold mb-6">Dashboard</h2>
+                
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-teal-400">
+                        <div class="text-gray-600 text-sm">Total Clients</div>
+                        <div class="text-3xl font-bold mt-2">${clients.length}</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-blue-400">
+                        <div class="text-gray-600 text-sm">Upcoming Jobs</div>
+                        <div class="text-3xl font-bold mt-2">${upcomingJobs.length}</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-yellow-400">
+                        <div class="text-gray-600 text-sm">Pending Quotes</div>
+                        <div class="text-3xl font-bold mt-2">${pendingQuotes.length}</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-red-400">
+                        <div class="text-gray-600 text-sm">Unpaid Invoices</div>
+                        <div class="text-3xl font-bold mt-2">$${totalUnpaid.toFixed(2)}</div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Upcoming Jobs -->
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold">Upcoming Jobs</h3>
+                            <button onclick="activeTab='schedule'; renderApp();" class="text-teal-500 text-sm hover:underline">View All</button>
+                        </div>
+                        ${upcomingJobs.length === 0 ? '<p class="text-gray-500 text-center py-4">No upcoming jobs</p>' : upcomingJobs.map(job => {
+                            const client = clients.find(c => c.id === job.client_id);
+                            return `<div class="border-l-4 border-teal-400 pl-3 py-2 mb-3">
+                                <div class="font-semibold">${job.title}</div>
+                                <div class="text-sm text-gray-600">${client?.name || 'Unknown'}</div>
+                                <div class="text-sm text-gray-500">${new Date(job.date).toLocaleDateString()} at ${job.time}</div>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                    
+                    <!-- Recent Activity -->
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="text-lg font-bold mb-4">Recent Activity</h3>
+                        ${acceptedQuotes.length === 0 && unpaidInvoices.length === 0 ? '<p class="text-gray-500 text-center py-4">No recent activity</p>' : `
+                            ${acceptedQuotes.slice(0, 3).map(q => {
+                                const client = clients.find(c => c.id === q.client_id);
+                                return `<div class="py-2 mb-2 border-b">
+                                    <div class="flex justify-between">
+                                        <span class="text-sm">✓ Quote accepted: <strong>${q.title}</strong></span>
+                                    </div>
+                                    <div class="text-xs text-gray-500">${client?.name || 'Unknown'} - $${q.total.toFixed(2)}</div>
+                                </div>`;
+                            }).join('')}
+                            ${unpaidInvoices.slice(0, 3).map(inv => {
+                                const client = clients.find(c => c.id === inv.client_id);
+                                return `<div class="py-2 mb-2 border-b">
+                                    <div class="flex justify-between">
+                                        <span class="text-sm">⏳ Unpaid: <strong>${inv.title}</strong></span>
+                                    </div>
+                                    <div class="text-xs text-gray-500">${client?.name || 'Unknown'} - $${inv.total.toFixed(2)}</div>
+                                </div>`;
+                            }).join('')}
+                        `}
+                    </div>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="mt-6 bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-lg font-bold mb-4">Quick Actions</h3>
+                    <div class="flex flex-wrap gap-3">
+                        <button onclick="openModal('client')" class="px-4 py-2 bg-black text-white rounded-lg border border-teal-400 hover:bg-gray-800">+ Add Client</button>
+                        <button onclick="openModal('job')" class="px-4 py-2 bg-black text-white rounded-lg border border-teal-400 hover:bg-gray-800">+ Schedule Job</button>
+                        <button onclick="openModal('quote')" class="px-4 py-2 bg-black text-white rounded-lg border border-teal-400 hover:bg-gray-800">+ Create Quote</button>
+                    </div>
+                </div>
+            </div>`;
         }
         
         function renderSchedule() {
@@ -369,7 +474,7 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
     
     return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Schedule</h2><div class="flex gap-4">${viewToggle}<button onclick="openModal('job')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Schedule Job</button></div></div><div class="grid gap-4">${jobs.length === 0 ? '<div class="text-center py-12 text-gray-500">No jobs</div>' : jobs.map(job => { 
         const client = clients.find(c => c.id === job.client_id); 
-        return `<div class="bg-white p-4 rounded-lg shadow border-l-4 border-teal-400"><div class="flex justify-between"><div class="flex-1"><h3 class="text-lg font-semibold">${job.title}</h3><p class="text-gray-600">${client?.name || 'Unknown'}</p>${client?.address ? `<p class="text-sm text-gray-500">📍 ${client.address}</p>` : ''}<div class="text-sm text-gray-500 mt-2">${new Date(job.date).toLocaleDateString()} ${job.time}</div>${job.photos && job.photos.length > 0 ? `<div class="mt-3 flex gap-2 flex-wrap">${job.photos.map(photo => `<img src="${photo}" class="w-20 h-20 object-cover rounded border border-teal-400" />`).join('')}</div>` : ''}</div><div class="flex flex-col gap-2"><label class="cursor-pointer px-3 py-1 bg-teal-500 text-white rounded text-sm text-center"><input type="file" accept="image/*" onchange="uploadJobPhoto(this, '${job.id}')" class="hidden" />Add Photo</label><button onclick="deleteJob('${job.id}')" class="px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button></div></div></div>`; 
+        return `<div class="bg-white p-4 rounded-lg shadow border-l-4 border-teal-400"><div class="flex justify-between"><div class="flex-1"><h3 class="text-lg font-semibold">${job.title}</h3><p class="text-gray-600">${client?.name || 'Unknown'}</p>${client?.address ? `<p class="text-sm text-gray-500">📍 ${client.address}</p>` : ''}<div class="text-sm text-gray-500 mt-2">${new Date(job.date).toLocaleDateString()} ${job.time}</div>${job.notes ? `<p class="text-sm text-gray-700 mt-2 italic">${job.notes}</p>` : ''}${job.photos && job.photos.length > 0 ? `<div class="mt-3 flex gap-2 flex-wrap">${job.photos.map(photo => `<img src="${photo}" class="w-20 h-20 object-cover rounded border border-teal-400" />`).join('')}</div>` : ''}</div><div class="flex flex-col gap-2"><button onclick='openModal("job", ${JSON.stringify(job).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button><label class="cursor-pointer px-3 py-1 bg-teal-500 text-white rounded text-sm text-center"><input type="file" accept="image/*" onchange="uploadJobPhoto(this, '${job.id}')" class="hidden" />Add Photo</label><button onclick="deleteJob('${job.id}')" class="px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button></div></div></div>`; 
     }).join('')}</div></div>`;
 }
 
@@ -416,7 +521,7 @@ function renderCalendar() {
     return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Quotes</h2><button onclick="openModal('quote')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Create Quote</button></div><div class="grid gap-4">${quotes.length === 0 ? '<div class="text-center py-12 text-gray-500">No quotes</div>' : quotes.map(q => { 
         const client = clients.find(c => c.id === q.client_id);
         const isAccepted = q.accepted || q.status === 'accepted';
-        return `<div class="bg-white p-4 rounded-lg shadow ${isAccepted ? 'border-l-4 border-green-500' : ''}"><div class="flex justify-between mb-3"><div><h3 class="text-lg font-semibold">${q.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p>${isAccepted ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mt-1 inline-block">✓ ACCEPTED</span>' : ''}</div><p class="text-2xl font-bold text-teal-500">$${q.total?.toFixed(2)}</p></div><div class="flex gap-2">${!isAccepted && q.status === 'pending' ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm">Convert to Invoice</button>` : ''}${isAccepted ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm">Convert to Invoice</button>` : ''}<button onclick='generatePDF("quote", ${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Download PDF</button><button onclick='sendQuoteEmail(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-purple-600 text-white rounded text-sm">Send Email</button><button onclick="deleteQuote('${q.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div></div>`; 
+        return `<div class="bg-white p-4 rounded-lg shadow ${isAccepted ? 'border-l-4 border-green-500' : ''}"><div class="flex justify-between mb-3"><div><h3 class="text-lg font-semibold">${q.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p>${isAccepted ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mt-1 inline-block">✓ ACCEPTED</span>' : ''}</div><p class="text-2xl font-bold text-teal-500">$${q.total?.toFixed(2)}</p></div>${q.notes ? `<p class="text-sm text-gray-600 italic mb-3">${q.notes}</p>` : ''}<div class="flex gap-2">${!isAccepted ? `<button onclick='openModal("quote", ${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>` : ''}${!isAccepted && q.status === 'pending' ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm">Convert to Invoice</button>` : ''}${isAccepted ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm">Convert to Invoice</button>` : ''}<button onclick='generatePDF("quote", ${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Download PDF</button><button onclick='sendQuoteEmail(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-purple-600 text-white rounded text-sm">Send Email</button><button onclick="deleteQuote('${q.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div></div>`; 
     }).join('')}</div></div>`;
 }
         
@@ -438,9 +543,25 @@ function renderCalendar() {
                 const action = editingItem ? `updateClient('${editingItem.id}')` : `addClient({name:document.getElementById('name').value,email:document.getElementById('email').value,phone:document.getElementById('phone').value,address:document.getElementById('address').value})`;
                 form = `<input type="text" id="name" placeholder="Name" value="${name}" class="w-full px-4 py-2 border rounded mb-3"><input type="email" id="email" placeholder="Email" value="${email}" class="w-full px-4 py-2 border rounded mb-3"><input type="tel" id="phone" placeholder="Phone" value="${phone}" class="w-full px-4 py-2 border rounded mb-3"><input type="text" id="address" placeholder="Address" value="${address}" class="w-full px-4 py-2 border rounded mb-3"><button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
             }
-            if (modalType === 'job') form = `<select id="client_id" class="w-full px-4 py-2 border rounded mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}</select><input type="text" id="title" placeholder="Job Title" class="w-full px-4 py-2 border rounded mb-3"><input type="date" id="date" class="w-full px-4 py-2 border rounded mb-3"><input type="time" id="time" class="w-full px-4 py-2 border rounded mb-3"><button onclick="addJob({client_id:document.getElementById('client_id').value,title:document.getElementById('title').value,date:document.getElementById('date').value,time:document.getElementById('time').value})" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">Schedule Job</button>`;
-            if (modalType === 'quote') form = `<select id="client_id" class="w-full px-4 py-2 border rounded mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}</select><input type="text" id="title" placeholder="Quote Title" class="w-full px-4 py-2 border rounded mb-3"><div id="items-list"></div><button onclick="addQuoteItem()" class="text-teal-500 text-sm mb-3">+ Add Item</button><div id="quote-total" class="font-bold mb-3">Total: $0</div><button onclick="saveQuote()" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">Create Quote</button>`;
-            return `<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onclick="if(event.target===this)closeModal()"><div class="bg-white rounded-lg p-6 max-w-2xl w-full"><div class="flex justify-between mb-4"><h3 class="text-xl font-bold">${editingItem && modalType === 'client' ? 'Edit Client' : modalType}</h3><button onclick="closeModal()" class="text-2xl">×</button></div>${form}</div></div>`;
+            if (modalType === 'job') {
+                const clientId = editingItem?.client_id || '';
+                const title = editingItem?.title || '';
+                const date = editingItem?.date || '';
+                const time = editingItem?.time || '';
+                const notes = editingItem?.notes || '';
+                const buttonText = editingItem ? 'Update Job' : 'Schedule Job';
+                const action = editingItem ? `updateJob('${editingItem.id}')` : `addJob({client_id:document.getElementById('client_id').value,title:document.getElementById('title').value,date:document.getElementById('date').value,time:document.getElementById('time').value,notes:document.getElementById('notes').value})`;
+                form = `<select id="client_id" class="w-full px-4 py-2 border rounded mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}</select><input type="text" id="title" placeholder="Job Title" value="${title}" class="w-full px-4 py-2 border rounded mb-3"><input type="date" id="date" value="${date}" class="w-full px-4 py-2 border rounded mb-3"><input type="time" id="time" value="${time}" class="w-full px-4 py-2 border rounded mb-3"><textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${notes}</textarea><button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
+            }
+            if (modalType === 'quote') {
+                const clientId = editingItem?.client_id || '';
+                const title = editingItem?.title || '';
+                const notes = editingItem?.notes || '';
+                const buttonText = editingItem ? 'Update Quote' : 'Create Quote';
+                if (editingItem) quoteItems = editingItem.items || [];
+                form = `<select id="client_id" class="w-full px-4 py-2 border rounded mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}</select><input type="text" id="title" placeholder="Quote Title" value="${title}" class="w-full px-4 py-2 border rounded mb-3"><div id="items-list"></div><button onclick="addQuoteItem()" class="text-teal-500 text-sm mb-3">+ Add Item</button><div id="quote-total" class="font-bold mb-3">Total: $0</div><textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${notes}</textarea><button onclick="${editingItem ? `updateQuote('${editingItem.id}')` : 'saveQuote()'}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
+            }
+            return `<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onclick="if(event.target===this)closeModal()"><div class="bg-white rounded-lg p-6 max-w-2xl w-full"><div class="flex justify-between mb-4"><h3 class="text-xl font-bold">${editingItem ? 'Edit ' + modalType : modalType}</h3><button onclick="closeModal()" class="text-2xl">×</button></div>${form}</div></div>`;
         }
         
         let quoteItems = [];
@@ -455,7 +576,26 @@ function renderCalendar() {
         }
         function saveQuote() {
             const total = quoteItems.reduce((s, i) => s + (i.quantity * i.price), 0);
-            addQuote({client_id:document.getElementById('client_id').value,title:document.getElementById('title').value,items:quoteItems,total:total,date:new Date().toISOString().split('T')[0],status:'pending'});
+            const notes = document.getElementById('notes').value;
+            addQuote({client_id:document.getElementById('client_id').value,title:document.getElementById('title').value,items:quoteItems,total:total,notes:notes,date:new Date().toISOString().split('T')[0],status:'pending'});
+        }
+        
+        async function updateQuote(id) {
+            const total = quoteItems.reduce((s, i) => s + (i.quantity * i.price), 0);
+            const updatedQuote = {
+                client_id: document.getElementById('client_id').value,
+                title: document.getElementById('title').value,
+                items: quoteItems,
+                total: total,
+                notes: document.getElementById('notes').value
+            };
+            const { data } = await supabaseClient.from('quotes').update(updatedQuote).eq('id', id).select();
+            if (data) {
+                const index = quotes.findIndex(q => q.id === id);
+                if (index !== -1) quotes[index] = data[0];
+                closeModal();
+                renderApp();
+            }
         }
 async function uploadJobPhoto(input, jobId) {
     const file = input.files[0];
