@@ -144,12 +144,27 @@
             messageDiv.innerHTML = '<p style="color: #14b8a6; font-weight: bold;">Processing...</p>';
             
             try {
+                // Update quote status
                 const { error } = await supabaseClient
                     .from('quotes')
                     .update({ accepted: true, status: 'accepted' })
                     .eq('share_token', currentQuote.share_token);
                 
                 if (error) throw error;
+                
+                // Call the edge function to send notification email
+                const functionUrl = 'https://xviustrrsuhidzbcpgow.supabase.co/functions/v1/notify-quote-accepted';
+                
+                await fetch(functionUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        quote_id: currentQuote.id,
+                        share_token: currentQuote.share_token
+                    })
+                });
                 
                 messageDiv.innerHTML = '<p style="color: #10b981; font-weight: bold; font-size: 18px;">✓ Quote Accepted! The tradesperson has been notified.</p>';
                 
