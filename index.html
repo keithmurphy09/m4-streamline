@@ -26,6 +26,7 @@
         let companySettings = null;
         let subscription = null;
         let isAdmin = false;
+        let teamMembers = [];
         let showModal = false;
         let modalType = '';
         let editingItem = null;
@@ -154,14 +155,15 @@
         }
         
         async function loadAllData() {
-            const [c, j, q, i, s, sub, admin] = await Promise.all([
+            const [c, j, q, i, s, sub, admin, team] = await Promise.all([
                 supabaseClient.from('clients').select('*'), 
                 supabaseClient.from('jobs').select('*'), 
                 supabaseClient.from('quotes').select('*'), 
                 supabaseClient.from('invoices').select('*'),
                 supabaseClient.from('company_settings').select('*').eq('user_id', currentUser.id).single(),
                 supabaseClient.from('subscriptions').select('*').eq('user_id', currentUser.id).single(),
-                supabaseClient.from('admin_users').select('*').eq('user_id', currentUser.id).single()
+                supabaseClient.from('admin_users').select('*').eq('user_id', currentUser.id).single(),
+                supabaseClient.from('team_members').select('*').eq('account_owner_id', currentUser.id)
             ]);
             clients = c.data || []; 
             jobs = j.data || []; 
@@ -170,6 +172,7 @@
             companySettings = s.data || null;
             subscription = sub.data || null;
             isAdmin = admin.data?.is_admin || false;
+            teamMembers = team.data || [];
             
             console.log('Admin query result:', admin);
             console.log('isAdmin value:', isAdmin);
@@ -207,6 +210,18 @@
                     }]).select().single();
                     subscription = data;
                 }
+            }
+        }
+        
+        async function confirmUpgradeToBusiness() {
+            if (confirm('Upgrade to Business account for $49/month?\n\nYou will gain access to:\n• Team member management\n• Job assignments\n• Multi-user access\n\nYour trial time will carry over.')) {
+                await supabaseClient.from('subscriptions').update({
+                    account_type: 'business',
+                    monthly_rate: 49.00
+                }).eq('user_id', currentUser.id);
+                
+                alert('Upgraded to Business account! Refreshing...');
+                location.reload();
             }
         }
         
@@ -610,7 +625,7 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
             
             const content = await renderContent();
             
-            document.getElementById('app').innerHTML = `<div class="min-h-screen bg-gray-50">${trialBanner}<div class="bg-black text-white p-6 shadow-lg border-b-4 border-teal-400"><div class="max-w-7xl mx-auto flex items-center"><div class="flex items-center gap-4" style="width: 25%;"><img src="final_logo.png" alt="M4 Projects Logo" class="h-32 w-32 object-contain"><div class="text-sm"><div class="text-xs text-teal-400">Logged in as:</div><div class="font-medium text-teal-400">${currentUser.email}</div></div></div><div class="text-center" style="width: 50%;"><h1 class="text-3xl font-bold text-teal-400">M4 STREAMLINE</h1><p class="text-teal-400 mt-1 text-sm italic">"streamlining your business"</p></div><div class="flex items-center justify-end gap-4" style="width: 25%;">${isAdmin ? '<span class="bg-red-600 px-3 py-1 rounded text-xs font-bold">ADMIN</span>' : ''}<div class="relative"><button onclick="toggleSettingsMenu()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm border border-teal-400 flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></button><div id="settings-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50"><div class="py-1"><button onclick="handleLogout()" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>Logout</button><a href="mailto:m4projectsanddesigns@gmail.com?subject=M4 Streamline Support Request" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>Contact Support</a><button onclick="confirmDeleteAccount()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>Delete Account</button></div></div></div></div></div></div><div class="bg-white shadow"><div class="max-w-7xl mx-auto px-4"><div class="flex space-x-1">${['dashboard', 'schedule', 'clients', 'quotes', 'invoices', 'company'].map(tab => `<button onclick="switchTab('${tab}')" class="px-6 py-4 font-medium border-b-2 ${activeTab === tab ? 'border-teal-400 text-black' : 'border-transparent text-gray-600'}">${tab === 'company' ? 'Company Info' : tab.charAt(0).toUpperCase() + tab.slice(1)}</button>`).join('')}${isAdmin ? '<button onclick="switchTab(\'admin\')" class="px-6 py-4 font-medium border-b-2 ' + (activeTab === 'admin' ? 'border-teal-400 text-black' : 'border-transparent text-gray-600') + '">Admin</button>' : ''}</div></div></div><div class="max-w-7xl mx-auto p-6">${content}</div>${showModal ? renderModal() : ''}</div>`;
+            document.getElementById('app').innerHTML = `<div class="min-h-screen bg-gray-50">${trialBanner}<div class="bg-black text-white p-6 shadow-lg border-b-4 border-teal-400"><div class="max-w-7xl mx-auto flex items-center"><div class="flex items-center gap-4" style="width: 25%;"><img src="final_logo.png" alt="M4 Projects Logo" class="h-32 w-32 object-contain"><div class="text-sm"><div class="text-xs text-teal-400">Logged in as:</div><div class="font-medium text-teal-400">${currentUser.email}</div></div></div><div class="text-center" style="width: 50%;"><h1 class="text-3xl font-bold text-teal-400">M4 STREAMLINE</h1><p class="text-teal-400 mt-1 text-sm italic">"streamlining your business"</p></div><div class="flex items-center justify-end gap-4" style="width: 25%;">${isAdmin ? '<span class="bg-red-600 px-3 py-1 rounded text-xs font-bold">ADMIN</span>' : ''}<div class="relative"><button onclick="toggleSettingsMenu()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm border border-teal-400 flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></button><div id="settings-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50"><div class="py-1"><button onclick="handleLogout()" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>Logout</button><a href="mailto:m4projectsanddesigns@gmail.com?subject=M4 Streamline Support Request" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>Contact Support</a>${subscription?.account_type === 'sole_trader' && !isAdmin ? '<button onclick="confirmUpgradeToBusiness()" class="w-full text-left px-4 py-2 text-sm text-teal-600 hover:bg-teal-50 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>Upgrade to Business</button>' : ''}<button onclick="confirmDeleteAccount()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>Delete Account</button></div></div></div></div></div></div><div class="bg-white shadow"><div class="max-w-7xl mx-auto px-4"><div class="flex space-x-1">${['dashboard', 'schedule', 'clients', 'quotes', 'invoices', 'company'].map(tab => `<button onclick="switchTab('${tab}')" class="px-6 py-4 font-medium border-b-2 ${activeTab === tab ? 'border-teal-400 text-black' : 'border-transparent text-gray-600'}">${tab === 'company' ? 'Company Info' : tab.charAt(0).toUpperCase() + tab.slice(1)}</button>`).join('')}${subscription?.account_type === 'business' || isAdmin ? '<button onclick="switchTab(\'team\')" class="px-6 py-4 font-medium border-b-2 ' + (activeTab === 'team' ? 'border-teal-400 text-black' : 'border-transparent text-gray-600') + '">Team</button>' : ''}${isAdmin ? '<button onclick="switchTab(\'admin\')" class="px-6 py-4 font-medium border-b-2 ' + (activeTab === 'admin' ? 'border-teal-400 text-black' : 'border-transparent text-gray-600') + '">Admin</button>' : ''}</div></div></div><div class="max-w-7xl mx-auto p-6">${content}</div>${showModal ? renderModal() : ''}</div>`;
         }
         
         function toggleSettingsMenu() {
@@ -770,7 +785,77 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
             if (activeTab === 'quotes') return renderQuotes();
             if (activeTab === 'invoices') return renderInvoices();
             if (activeTab === 'company') return renderSettings();
+            if (activeTab === 'team') return renderTeam();
             if (activeTab === 'admin' && isAdmin) return await renderAdmin();
+        }
+        
+        function renderTeam() {
+            return `<div>
+                <div class="flex justify-between mb-6">
+                    <h2 class="text-2xl font-bold">Team Members</h2>
+                    <button onclick="openModal('team_member')" class="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 border border-teal-400">+ Add Team Member</button>
+                </div>
+                <div class="grid gap-4">
+                    ${teamMembers.length === 0 ? '<div class="text-center py-12 text-gray-500">No team members yet. Add your first worker!</div>' : teamMembers.map(member => `
+                        <div class="bg-white p-4 rounded-lg shadow">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h3 class="text-lg font-semibold">${member.name}</h3>
+                                    <p class="text-sm text-gray-600">${member.email || 'No email'}</p>
+                                    <p class="text-sm text-gray-600">${member.phone || 'No phone'}</p>
+                                    <span class="text-xs bg-teal-100 text-teal-800 px-2 py-1 rounded mt-2 inline-block">${member.role || 'Worker'}</span>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="editTeamMember('${member.id}')" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
+                                    <button onclick="deleteTeamMember('${member.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+        }
+        
+        async function addTeamMember(member) {
+            const { data } = await supabaseClient.from('team_members').insert([{
+                ...member,
+                account_owner_id: currentUser.id
+            }]).select();
+            if (data) teamMembers.push(data[0]);
+            closeModal();
+            renderApp();
+        }
+        
+        async function editTeamMember(id) {
+            const member = teamMembers.find(m => m.id === id);
+            editingItem = member;
+            modalType = 'team_member';
+            showModal = true;
+            renderApp();
+        }
+        
+        async function updateTeamMember(id) {
+            const updatedMember = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                role: document.getElementById('role').value
+            };
+            const { data } = await supabaseClient.from('team_members').update(updatedMember).eq('id', id).select();
+            if (data) {
+                const index = teamMembers.findIndex(m => m.id === id);
+                if (index !== -1) teamMembers[index] = data[0];
+                closeModal();
+                renderApp();
+            }
+        }
+        
+        async function deleteTeamMember(id) {
+            if (confirm('Delete this team member?')) {
+                await supabaseClient.from('team_members').delete().eq('id', id);
+                teamMembers = teamMembers.filter(m => m.id !== id);
+                renderApp();
+            }
         }
         
         function renderPaywall() {
@@ -1310,6 +1395,15 @@ function renderCalendar() {
         
         function renderModal() {
             let form = '';
+            if (modalType === 'team_member') {
+                const name = editingItem?.name || '';
+                const email = editingItem?.email || '';
+                const phone = editingItem?.phone || '';
+                const role = editingItem?.role || 'worker';
+                const buttonText = editingItem ? 'Update Team Member' : 'Add Team Member';
+                const action = editingItem ? `updateTeamMember('${editingItem.id}')` : `addTeamMember({name:document.getElementById('name').value,email:document.getElementById('email').value,phone:document.getElementById('phone').value,role:document.getElementById('role').value})`;
+                form = `<input type="text" id="name" placeholder="Name" value="${name}" class="w-full px-4 py-2 border rounded mb-3" required><input type="email" id="email" placeholder="Email (optional)" value="${email}" class="w-full px-4 py-2 border rounded mb-3"><input type="tel" id="phone" placeholder="Phone (optional)" value="${phone}" class="w-full px-4 py-2 border rounded mb-3"><input type="text" id="role" placeholder="Role (e.g., Painter, Electrician)" value="${role}" class="w-full px-4 py-2 border rounded mb-3"><button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
+            }
             if (modalType === 'client') {
                 const name = editingItem?.name || '';
                 const email = editingItem?.email || '';
