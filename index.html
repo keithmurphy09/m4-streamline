@@ -490,12 +490,33 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
             
             y += 10;
             doc.setLineWidth(0.5);
-            doc.setDrawColor(20, 184, 166);
-            doc.line(20, y, 190, y);
+            doc.setDrawColor(200, 200, 200);
+            doc.line(120, y, 190, y);
+            
+            // Show GST breakdown if applicable
+            if (item.include_gst) {
+                y += 8;
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'normal');
+                doc.setTextColor(100, 100, 100);
+                doc.text('Subtotal:', 145, y);
+                doc.text('$' + (item.subtotal || 0).toFixed(2), 170, y);
+                
+                y += 6;
+                doc.text('GST (10%):', 145, y);
+                doc.text('$' + (item.gst || 0).toFixed(2), 170, y);
+                
+                y += 8;
+                doc.setLineWidth(0.5);
+                doc.setDrawColor(20, 184, 166);
+                doc.line(120, y, 190, y);
+            }
+            
             y += 8;
             doc.setFontSize(14);
             doc.setFont(undefined, 'bold');
-            doc.text('TOTAL:', 145, y);
+            doc.setTextColor(0, 0, 0);
+            doc.text(item.include_gst ? 'TOTAL (inc GST):' : 'TOTAL:', 125, y);
             doc.setTextColor(20, 184, 166);
             doc.text('$' + (item.total || 0).toFixed(2), 170, y);
             
