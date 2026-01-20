@@ -23,6 +23,7 @@
         let jobs = [];
         let quotes = [];
         let invoices = [];
+        let companySettings = null;
         let showModal = false;
         let modalType = '';
         let editingItem = null;
@@ -130,16 +131,18 @@
         }
         
         async function loadAllData() {
-            const [c, j, q, i] = await Promise.all([
+            const [c, j, q, i, s] = await Promise.all([
                 supabaseClient.from('clients').select('*'), 
                 supabaseClient.from('jobs').select('*'), 
                 supabaseClient.from('quotes').select('*'), 
-                supabaseClient.from('invoices').select('*')
+                supabaseClient.from('invoices').select('*'),
+                supabaseClient.from('company_settings').select('*').eq('user_id', currentUser.id).single()
             ]);
             clients = c.data || []; 
             jobs = j.data || []; 
             quotes = q.data || []; 
             invoices = i.data || [];
+            companySettings = s.data || null;
         }
         
         async function addClient(client) { 
@@ -223,12 +226,17 @@
     const shareToken = 'q_' + Math.random().toString(36).substring(2, 15);
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + 30);
+    
+    // Generate sequential quote number
+    const quoteNumber = `QT-${String(quotes.length + 1).padStart(3, '0')}`;
+    
     const quoteData = { 
         ...quote, 
         user_id: currentUser.id, 
         share_token: shareToken, 
         accepted: false,
-        expiry_date: expiryDate.toISOString().split('T')[0]
+        expiry_date: expiryDate.toISOString().split('T')[0],
+        quote_number: quoteNumber
     };
     const { data } = await supabaseClient.from('quotes').insert([quoteData]).select();
     if (data) {
@@ -298,13 +306,16 @@ async function acceptQuote(quoteId, shareToken) {
         async function convertToInvoice(quote) {
             const issueDate = new Date();
             
+            // Generate sequential invoice number
+            const invoiceNumber = `INV-${String(invoices.length + 1).padStart(3, '0')}`;
+            
             const inv = {
                 client_id: quote.client_id,
                 title: quote.title,
                 items: quote.items,
                 notes: quote.notes || '',
                 total: quote.total,
-                invoice_number: 'INV-' + Date.now(),
+                invoice_number: invoiceNumber,
                 status: 'unpaid',
                 issue_date: issueDate.toISOString().split('T')[0],
                 due_date: issueDate.toISOString().split('T')[0], // Due on completion (same day)
@@ -466,12 +477,47 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
         }
         
         function renderApp() {
-            document.getElementById('app').innerHTML = `<div class="min-h-screen bg-gray-50"><div class="bg-black text-white p-6 shadow-lg border-b-4 border-teal-400"><div class="max-w-7xl mx-auto flex justify-between items-center"><div><h1 class="text-3xl font-bold text-teal-400">M4 Streamline</h1><p class="text-teal-400 mt-1">Business Management</p></div><div class="flex items-center gap-4"><img src="final_logo.png" alt="M4 Projects Logo" class="h-20 w-20 object-contain"><button onclick="handleLogout()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm border border-teal-400">Logout</button></div></div></div><div class="bg-white shadow"><div class="max-w-7xl mx-auto px-4"><div class="flex space-x-1">${['dashboard', 'schedule', 'clients', 'quotes', 'invoices'].map(tab => `<button onclick="switchTab('${tab}')" class="px-6 py-4 font-medium border-b-2 ${activeTab === tab ? 'border-teal-400 text-black' : 'border-transparent text-gray-600'}">${tab.charAt(0).toUpperCase() + tab.slice(1)}</button>`).join('')}</div></div></div><div class="max-w-7xl mx-auto p-6">${renderContent()}</div>${showModal ? renderModal() : ''}</div>`;
+            document.getElementById('app').innerHTML = `<div class="min-h-screen bg-gray-50"><div class="bg-black text-white p-6 shadow-lg border-b-4 border-teal-400"><div class="max-w-7xl mx-auto flex justify-between items-center"><div><h1 class="text-3xl font-bold text-teal-400">M4 Streamline</h1><p class="text-teal-400 mt-1">Business Management</p></div><div class="flex items-center gap-4"><img src="final_logo.png" alt="M4 Projects Logo" class="h-20 w-20 object-contain"><button onclick="handleLogout()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm border border-teal-400">Logout</button></div></div></div><div class="bg-white shadow"><div class="max-w-7xl mx-auto px-4"><div class="flex space-x-1">${['dashboard', 'schedule', 'clients', 'quotes', 'invoices', 'settings'].map(tab => `<button onclick="switchTab('${tab}')" class="px-6 py-4 font-medium border-b-2 ${activeTab === tab ? 'border-teal-400 text-black' : 'border-transparent text-gray-600'}">${tab.charAt(0).toUpperCase() + tab.slice(1)}</button>`).join('')}</div></div></div><div class="max-w-7xl mx-auto p-6">${renderContent()}</div>${showModal ? renderModal() : ''}</div>`;
         }
         
         async function switchTab(tab) {
             activeTab = tab;
             await loadAllData();
+            renderApp();
+        }
+        
+        async function saveCompanySettings() {
+            const settings = {
+                user_id: currentUser.id,
+                business_name: document.getElementById('business_name').value,
+                abn: document.getElementById('abn').value,
+                phone: document.getElementById('settings_phone').value,
+                email: document.getElementById('settings_email').value,
+                address: document.getElementById('settings_address').value,
+                bank_name: document.getElementById('bank_name').value,
+                bsb: document.getElementById('bsb').value,
+                account_number: document.getElementById('account_number').value,
+                account_name: document.getElementById('account_name').value
+            };
+            
+            if (companySettings) {
+                // Update existing settings
+                const { data, error } = await supabaseClient
+                    .from('company_settings')
+                    .update(settings)
+                    .eq('user_id', currentUser.id)
+                    .select();
+                if (data) companySettings = data[0];
+            } else {
+                // Create new settings
+                const { data, error } = await supabaseClient
+                    .from('company_settings')
+                    .insert([settings])
+                    .select();
+                if (data) companySettings = data[0];
+            }
+            
+            alert('Settings saved successfully!');
             renderApp();
         }
         
@@ -529,6 +575,69 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
             if (activeTab === 'clients') return renderClients();
             if (activeTab === 'quotes') return renderQuotes();
             if (activeTab === 'invoices') return renderInvoices();
+            if (activeTab === 'settings') return renderSettings();
+        }
+        
+        function renderSettings() {
+            const settings = companySettings || {};
+            return `<div>
+                <h2 class="text-2xl font-bold mb-6">Company Settings</h2>
+                <div class="bg-white p-6 rounded-lg shadow max-w-2xl">
+                    <p class="text-gray-600 mb-6">Your business information will automatically appear on all quotes and invoices.</p>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Business Name</label>
+                            <input type="text" id="business_name" value="${settings.business_name || ''}" class="w-full px-4 py-2 border rounded">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">ABN</label>
+                            <input type="text" id="abn" value="${settings.abn || ''}" class="w-full px-4 py-2 border rounded">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Phone</label>
+                            <input type="tel" id="settings_phone" value="${settings.phone || ''}" class="w-full px-4 py-2 border rounded">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Email</label>
+                            <input type="email" id="settings_email" value="${settings.email || ''}" class="w-full px-4 py-2 border rounded">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Address</label>
+                            <textarea id="settings_address" class="w-full px-4 py-2 border rounded" rows="2">${settings.address || ''}</textarea>
+                        </div>
+                        
+                        <h3 class="text-lg font-bold mt-6 mb-4">Bank Details (for invoices)</h3>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Bank Name</label>
+                            <input type="text" id="bank_name" value="${settings.bank_name || ''}" class="w-full px-4 py-2 border rounded">
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">BSB</label>
+                                <input type="text" id="bsb" value="${settings.bsb || ''}" class="w-full px-4 py-2 border rounded">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Account Number</label>
+                                <input type="text" id="account_number" value="${settings.account_number || ''}" class="w-full px-4 py-2 border rounded">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Account Name</label>
+                            <input type="text" id="account_name" value="${settings.account_name || ''}" class="w-full px-4 py-2 border rounded">
+                        </div>
+                        
+                        <button onclick="saveCompanySettings()" class="w-full bg-black text-white px-4 py-3 rounded-lg border border-teal-400 hover:bg-gray-800 mt-6">Save Settings</button>
+                    </div>
+                </div>
+            </div>`;
         }
         
         function renderDashboard() {
@@ -740,7 +849,7 @@ function renderCalendar() {
     return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Quotes</h2><div class="flex gap-2"><button onclick="exportToCSV('quotes')" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">Export CSV</button><button onclick="openModal('quote')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Create Quote</button></div></div><div class="grid gap-4">${quotes.length === 0 ? '<div class="text-center py-12 text-gray-500">No quotes</div>' : quotes.map(q => { 
         const client = clients.find(c => c.id === q.client_id);
         const isAccepted = q.accepted || q.status === 'accepted';
-        return `<div class="bg-white p-4 rounded-lg shadow ${isAccepted ? 'border-l-4 border-green-500' : ''}"><div class="flex justify-between mb-3"><div><h3 class="text-lg font-semibold">${q.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p>${isAccepted ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mt-1 inline-block">✓ ACCEPTED</span>' : ''}</div><p class="text-2xl font-bold text-teal-500">$${q.total?.toFixed(2)}</p></div>${q.notes ? `<p class="text-sm text-gray-600 italic mb-3">${q.notes}</p>` : ''}<div class="flex gap-2 flex-wrap">${isAccepted ? `<button onclick='openJobFromQuote(${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-teal-600 text-white rounded text-sm">📅 Schedule Job</button>` : ''}${!isAccepted ? `<button onclick='openModal("quote", ${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>` : ''}${!isAccepted && q.status === 'pending' ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm">Convert to Invoice</button>` : ''}${isAccepted ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm">Convert to Invoice</button>` : ''}<button onclick='generatePDF("quote", ${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Download PDF</button><button onclick='sendQuoteEmail(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-purple-600 text-white rounded text-sm">Send Email</button><button onclick="deleteQuote('${q.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div></div>`; 
+        return `<div class="bg-white p-4 rounded-lg shadow ${isAccepted ? 'border-l-4 border-green-500' : ''}"><div class="flex justify-between mb-3"><div><h3 class="text-lg font-semibold">${q.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p>${q.quote_number ? `<p class="text-xs text-gray-500">${q.quote_number}</p>` : ''}${isAccepted ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mt-1 inline-block">✓ ACCEPTED</span>' : ''}</div><p class="text-2xl font-bold text-teal-500">$${q.total?.toFixed(2)}</p></div>${q.notes ? `<p class="text-sm text-gray-600 italic mb-3">${q.notes}</p>` : ''}<div class="flex gap-2 flex-wrap">${isAccepted ? `<button onclick='openJobFromQuote(${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-teal-600 text-white rounded text-sm">📅 Schedule Job</button>` : ''}${!isAccepted ? `<button onclick='openModal("quote", ${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>` : ''}${!isAccepted && q.status === 'pending' ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm">Convert to Invoice</button>` : ''}${isAccepted ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm">Convert to Invoice</button>` : ''}<button onclick='generatePDF("quote", ${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Download PDF</button><button onclick='sendQuoteEmail(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-purple-600 text-white rounded text-sm">Send Email</button><button onclick="deleteQuote('${q.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div></div>`; 
     }).join('')}</div></div>`;
 }
         
