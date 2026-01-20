@@ -27,6 +27,8 @@
         let modalType = '';
         let editingItem = null;
 	let scheduleView = 'list';
+        let clientSearch = '';
+        let invoiceFilter = 'unpaid';
         
         async function checkAuth() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -514,7 +516,14 @@ function renderCalendar() {
 }
         
         function renderClients() {
-            return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Clients</h2><button onclick="openModal('client')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Add Client</button></div><div class="grid gap-4">${clients.length === 0 ? '<div class="text-center py-12 text-gray-500">No clients</div>' : clients.map(c => `<div class="bg-white p-4 rounded-lg shadow"><div class="flex justify-between"><div class="flex-1"><h3 class="text-lg font-semibold">${c.name}</h3><p class="text-sm text-gray-600">${c.email}</p><p class="text-sm text-gray-600">${c.phone}</p>${c.address ? `<p class="text-sm text-gray-600 mt-1">📍 ${c.address}</p>` : ''}</div><div class="flex gap-2"><button onclick='openModal("client", ${JSON.stringify(c).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button><button onclick="deleteClient('${c.id}')" class="px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button></div></div></div>`).join('')}</div></div>`;
+            const filteredClients = clients.filter(c => 
+                c.name.toLowerCase().includes(clientSearch.toLowerCase()) ||
+                c.email.toLowerCase().includes(clientSearch.toLowerCase()) ||
+                c.phone.includes(clientSearch) ||
+                (c.address && c.address.toLowerCase().includes(clientSearch.toLowerCase()))
+            );
+            
+            return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Clients</h2><button onclick="openModal('client')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Add Client</button></div><div class="mb-4"><input type="text" placeholder="Search clients by name, email, phone, or address..." value="${clientSearch}" oninput="clientSearch=this.value; renderApp();" class="w-full px-4 py-2 border rounded-lg" /></div><div class="grid gap-4">${filteredClients.length === 0 ? '<div class="text-center py-12 text-gray-500">No clients found</div>' : filteredClients.map(c => `<div class="bg-white p-4 rounded-lg shadow"><div class="flex justify-between"><div class="flex-1"><h3 class="text-lg font-semibold">${c.name}</h3><p class="text-sm text-gray-600">${c.email}</p><p class="text-sm text-gray-600">${c.phone}</p>${c.address ? `<p class="text-sm text-gray-600 mt-1">📍 ${c.address}</p>` : ''}</div><div class="flex gap-2"><button onclick='openModal("client", ${JSON.stringify(c).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button><button onclick="deleteClient('${c.id}')" class="px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button></div></div></div>`).join('')}</div></div>`;
         }
         
         function renderQuotes() {
@@ -526,9 +535,18 @@ function renderCalendar() {
 }
         
         function renderInvoices() {
-            return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Invoices</h2><div class="text-sm">Outstanding: $${invoices.filter(i => i.status === 'unpaid').reduce((s, i) => s + parseFloat(i.total || 0), 0).toFixed(2)}</div></div><div class="grid gap-4">${invoices.length === 0 ? '<div class="text-center py-12 text-gray-500">No invoices</div>' : invoices.map(inv => { 
+            const filteredInvoices = invoiceFilter === 'unpaid' 
+                ? invoices.filter(i => i.status === 'unpaid')
+                : invoices.filter(i => i.status === 'paid');
+            
+            const unpaidTotal = invoices.filter(i => i.status === 'unpaid').reduce((s, i) => s + parseFloat(i.total || 0), 0);
+            const paidTotal = invoices.filter(i => i.status === 'paid').reduce((s, i) => s + parseFloat(i.total || 0), 0);
+            
+            const filterTabs = `<div class="flex gap-2 mb-4"><button onclick="invoiceFilter='unpaid'; renderApp();" class="px-4 py-2 rounded ${invoiceFilter === 'unpaid' ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'} border">Unpaid (${invoices.filter(i => i.status === 'unpaid').length})</button><button onclick="invoiceFilter='paid'; renderApp();" class="px-4 py-2 rounded ${invoiceFilter === 'paid' ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'} border">Paid (${invoices.filter(i => i.status === 'paid').length})</button></div>`;
+            
+            return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Invoices</h2><div class="text-sm"><div>Outstanding: <span class="font-bold text-red-600">$${unpaidTotal.toFixed(2)}</span></div><div>Paid: <span class="font-bold text-green-600">$${paidTotal.toFixed(2)}</span></div></div></div>${filterTabs}<div class="grid gap-4">${filteredInvoices.length === 0 ? `<div class="text-center py-12 text-gray-500">No ${invoiceFilter} invoices</div>` : filteredInvoices.map(inv => { 
                 const client = clients.find(c => c.id === inv.client_id); 
-                return `<div class="bg-white p-4 rounded-lg shadow"><div class="flex justify-between mb-3"><div><h3 class="text-lg font-semibold">${inv.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p><p class="text-xs">${inv.invoice_number}</p></div><p class="text-2xl font-bold text-teal-500">$${inv.total?.toFixed(2)}</p></div><div class="flex gap-2">${inv.status === 'unpaid' ? `<button onclick="updateInvoice('${inv.id}', 'paid')" class="px-3 py-1 bg-green-600 text-white rounded text-sm">Mark Paid</button>` : ''}<button onclick="generatePDF('invoice', ${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Download PDF</button><button onclick="deleteInvoice('${inv.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div></div>`; 
+                return `<div class="bg-white p-4 rounded-lg shadow ${inv.status === 'paid' ? 'border-l-4 border-green-500' : ''}"><div class="flex justify-between mb-3"><div><h3 class="text-lg font-semibold">${inv.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p><p class="text-xs">${inv.invoice_number}</p><p class="text-xs text-gray-500">${inv.issue_date}</p>${inv.status === 'paid' ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mt-1 inline-block">✓ PAID</span>' : ''}</div><p class="text-2xl font-bold text-teal-500">$${inv.total?.toFixed(2)}</p></div><div class="flex gap-2">${inv.status === 'unpaid' ? `<button onclick="updateInvoice('${inv.id}', 'paid')" class="px-3 py-1 bg-green-600 text-white rounded text-sm">Mark Paid</button>` : ''}<button onclick="generatePDF('invoice', ${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Download PDF</button><button onclick="deleteInvoice('${inv.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div></div>`; 
             }).join('')}</div></div>`;
         }
         
