@@ -812,11 +812,13 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
         }
         
         async function renderAdmin() {
-            // Load all users and their subscriptions
-            const { data: allSubs } = await supabaseClient.from('subscriptions').select(`
-                *,
-                user:user_id (email)
-            `);
+            // Load all users and their subscriptions using the view
+            const { data: allSubs, error } = await supabaseClient.from('subscription_users').select('*');
+            
+            if (error) {
+                console.error('Error loading subscriptions:', error);
+                return `<div><h2 class="text-2xl font-bold mb-6">Admin - Subscription Management</h2><p class="text-red-600">Error loading subscriptions. Check console.</p></div>`;
+            }
             
             const users = allSubs || [];
             
@@ -839,7 +841,7 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
                                 const statusColor = u.subscription_status === 'active' ? 'text-green-600' : u.subscription_status === 'trial' ? 'text-yellow-600' : 'text-red-600';
                                 
                                 return `<tr>
-                                    <td class="px-6 py-4 text-sm">${u.user?.email || 'Unknown'}</td>
+                                    <td class="px-6 py-4 text-sm">${u.email || 'Unknown'}</td>
                                     <td class="px-6 py-4 text-sm ${statusColor} font-medium">${u.subscription_status.toUpperCase()}</td>
                                     <td class="px-6 py-4 text-sm">${trialEnds.toLocaleDateString()} (${daysLeft} days)</td>
                                     <td class="px-6 py-4 text-sm">
