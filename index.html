@@ -288,6 +288,18 @@ async function acceptQuote(quoteId, shareToken) {
             if (type === 'quote') setTimeout(renderQuoteItems, 100); 
         }
         
+        function openJobFromQuote(quote) {
+            const client = clients.find(c => c.id === quote.client_id);
+            editingItem = {
+                client_id: quote.client_id,
+                title: quote.title,
+                notes: `Quote: ${quote.title} - Total: $${quote.total.toFixed(2)}\n\n${quote.notes || ''}`
+            };
+            modalType = 'job';
+            showModal = true;
+            renderApp();
+        }
+        
         function closeModal() { 
             showModal = false; 
             editingItem = null; 
@@ -566,7 +578,7 @@ function renderCalendar() {
     return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Quotes</h2><button onclick="openModal('quote')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Create Quote</button></div><div class="grid gap-4">${quotes.length === 0 ? '<div class="text-center py-12 text-gray-500">No quotes</div>' : quotes.map(q => { 
         const client = clients.find(c => c.id === q.client_id);
         const isAccepted = q.accepted || q.status === 'accepted';
-        return `<div class="bg-white p-4 rounded-lg shadow ${isAccepted ? 'border-l-4 border-green-500' : ''}"><div class="flex justify-between mb-3"><div><h3 class="text-lg font-semibold">${q.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p>${isAccepted ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mt-1 inline-block">✓ ACCEPTED</span>' : ''}</div><p class="text-2xl font-bold text-teal-500">$${q.total?.toFixed(2)}</p></div>${q.notes ? `<p class="text-sm text-gray-600 italic mb-3">${q.notes}</p>` : ''}<div class="flex gap-2">${!isAccepted ? `<button onclick='openModal("quote", ${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>` : ''}${!isAccepted && q.status === 'pending' ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm">Convert to Invoice</button>` : ''}${isAccepted ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm">Convert to Invoice</button>` : ''}<button onclick='generatePDF("quote", ${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Download PDF</button><button onclick='sendQuoteEmail(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-purple-600 text-white rounded text-sm">Send Email</button><button onclick="deleteQuote('${q.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div></div>`; 
+        return `<div class="bg-white p-4 rounded-lg shadow ${isAccepted ? 'border-l-4 border-green-500' : ''}"><div class="flex justify-between mb-3"><div><h3 class="text-lg font-semibold">${q.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p>${isAccepted ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mt-1 inline-block">✓ ACCEPTED</span>' : ''}</div><p class="text-2xl font-bold text-teal-500">$${q.total?.toFixed(2)}</p></div>${q.notes ? `<p class="text-sm text-gray-600 italic mb-3">${q.notes}</p>` : ''}<div class="flex gap-2 flex-wrap">${isAccepted ? `<button onclick='openJobFromQuote(${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-teal-600 text-white rounded text-sm">📅 Schedule Job</button>` : ''}${!isAccepted ? `<button onclick='openModal("quote", ${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>` : ''}${!isAccepted && q.status === 'pending' ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm">Convert to Invoice</button>` : ''}${isAccepted ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm">Convert to Invoice</button>` : ''}<button onclick='generatePDF("quote", ${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Download PDF</button><button onclick='sendQuoteEmail(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-purple-600 text-white rounded text-sm">Send Email</button><button onclick="deleteQuote('${q.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div></div>`; 
     }).join('')}</div></div>`;
 }
         
@@ -603,8 +615,8 @@ function renderCalendar() {
                 const date = editingItem?.date || '';
                 const time = editingItem?.time || '';
                 const notes = editingItem?.notes || '';
-                const buttonText = editingItem ? 'Update Job' : 'Schedule Job';
-                const action = editingItem ? `updateJob('${editingItem.id}')` : `addJob({client_id:document.getElementById('client_id').value,title:document.getElementById('title').value,date:document.getElementById('date').value,time:document.getElementById('time').value,notes:document.getElementById('notes').value})`;
+                const buttonText = (editingItem && editingItem.id) ? 'Update Job' : 'Schedule Job';
+                const action = (editingItem && editingItem.id) ? `updateJob('${editingItem.id}')` : `addJob({client_id:document.getElementById('client_id').value,title:document.getElementById('title').value,date:document.getElementById('date').value,time:document.getElementById('time').value,notes:document.getElementById('notes').value})`;
                 form = `<select id="client_id" class="w-full px-4 py-2 border rounded mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}</select><input type="text" id="title" placeholder="Job Title" value="${title}" class="w-full px-4 py-2 border rounded mb-3"><input type="date" id="date" value="${date}" class="w-full px-4 py-2 border rounded mb-3"><input type="time" id="time" value="${time}" class="w-full px-4 py-2 border rounded mb-3"><textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${notes}</textarea><button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
             }
             if (modalType === 'quote') {
