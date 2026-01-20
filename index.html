@@ -46,11 +46,14 @@
             }
         }
         
-        // Reset timeout on user activity
-        document.addEventListener('mousemove', resetSessionTimeout);
-        document.addEventListener('keypress', resetSessionTimeout);
-        document.addEventListener('click', resetSessionTimeout);
-        document.addEventListener('scroll', resetSessionTimeout);
+        function setupSessionTimeout() {
+            // Setup activity listeners once when user logs in
+            let activityEvents = ['mousemove', 'keypress', 'click', 'scroll', 'touchstart'];
+            activityEvents.forEach(event => {
+                document.addEventListener(event, resetSessionTimeout, { passive: true });
+            });
+            resetSessionTimeout(); // Start the timer
+        }
         
         async function checkAuth() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -66,7 +69,7 @@
     if (session) {
         currentUser = session.user;
         await loadAllData();
-        resetSessionTimeout(); // Start session timeout
+        setupSessionTimeout(); // Start session timeout
         renderApp();
     } else {
         renderAuth();
