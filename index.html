@@ -346,6 +346,17 @@ async function acceptQuote(quoteId, shareToken) {
             renderApp();
         }
         
+        function openQuoteForClient(client) {
+            editingItem = {
+                client_id: client.id
+            };
+            modalType = 'quote';
+            quoteItems = [{ description: '', quantity: 1, price: 0 }];
+            showModal = true;
+            renderApp();
+            setTimeout(renderQuoteItems, 100);
+        }
+        
         function closeModal() { 
             showModal = false; 
             editingItem = null; 
@@ -603,7 +614,7 @@ function renderCalendar() {
                 (c.address && c.address.toLowerCase().includes(clientSearch.toLowerCase()))
             );
             
-            return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Clients</h2><button onclick="openModal('client')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Add Client</button></div><div class="mb-4"><input type="text" id="clientSearchInput" placeholder="Search clients by name, email, phone, or address..." value="${clientSearch}" oninput="clientSearch=this.value; renderClientsOnly();" class="w-full px-4 py-2 border rounded-lg" /></div><div id="clientsList" class="grid gap-4">${filteredClients.length === 0 ? '<div class="text-center py-12 text-gray-500">No clients found</div>' : filteredClients.map(c => `<div class="bg-white p-4 rounded-lg shadow"><div class="flex justify-between"><div class="flex-1"><h3 class="text-lg font-semibold">${c.name}</h3><p class="text-sm text-gray-600">${c.email}</p><p class="text-sm text-gray-600">${c.phone}</p>${c.address ? `<p class="text-sm text-gray-600 mt-1">📍 ${c.address}</p>` : ''}</div><div class="flex gap-2"><button onclick='openModal("client", ${JSON.stringify(c).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button><button onclick="deleteClient('${c.id}')" class="px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button></div></div></div>`).join('')}</div></div>`;
+            return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Clients</h2><button onclick="openModal('client')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Add Client</button></div><div class="mb-4"><input type="text" id="clientSearchInput" placeholder="Search clients by name, email, phone, or address..." value="${clientSearch}" oninput="clientSearch=this.value; renderClientsOnly();" class="w-full px-4 py-2 border rounded-lg" /></div><div id="clientsList" class="grid gap-4">${filteredClients.length === 0 ? '<div class="text-center py-12 text-gray-500">No clients found</div>' : filteredClients.map(c => `<div class="bg-white p-4 rounded-lg shadow"><div class="flex justify-between"><div class="flex-1"><h3 class="text-lg font-semibold">${c.name}</h3><p class="text-sm text-gray-600">${c.email}</p><p class="text-sm text-gray-600">${c.phone}</p>${c.address ? `<p class="text-sm text-gray-600 mt-1">📍 ${c.address}</p>` : ''}</div><div class="flex gap-2"><button onclick='openQuoteForClient(${JSON.stringify(c).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-teal-600 text-white rounded text-sm">New Quote</button><button onclick='openModal("client", ${JSON.stringify(c).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button><button onclick="deleteClient('${c.id}')" class="px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button></div></div></div>`).join('')}</div></div>`;
         }
         
         function renderClientsOnly() {
@@ -614,7 +625,7 @@ function renderCalendar() {
                 (c.address && c.address.toLowerCase().includes(clientSearch.toLowerCase()))
             );
             
-            const listHtml = filteredClients.length === 0 ? '<div class="text-center py-12 text-gray-500">No clients found</div>' : filteredClients.map(c => `<div class="bg-white p-4 rounded-lg shadow"><div class="flex justify-between"><div class="flex-1"><h3 class="text-lg font-semibold">${c.name}</h3><p class="text-sm text-gray-600">${c.email}</p><p class="text-sm text-gray-600">${c.phone}</p>${c.address ? `<p class="text-sm text-gray-600 mt-1">📍 ${c.address}</p>` : ''}</div><div class="flex gap-2"><button onclick='openModal("client", ${JSON.stringify(c).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button><button onclick="deleteClient('${c.id}')" class="px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button></div></div></div>`).join('');
+            const listHtml = filteredClients.length === 0 ? '<div class="text-center py-12 text-gray-500">No clients found</div>' : filteredClients.map(c => `<div class="bg-white p-4 rounded-lg shadow"><div class="flex justify-between"><div class="flex-1"><h3 class="text-lg font-semibold">${c.name}</h3><p class="text-sm text-gray-600">${c.email}</p><p class="text-sm text-gray-600">${c.phone}</p>${c.address ? `<p class="text-sm text-gray-600 mt-1">📍 ${c.address}</p>` : ''}</div><div class="flex gap-2"><button onclick='openQuoteForClient(${JSON.stringify(c).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-teal-600 text-white rounded text-sm">New Quote</button><button onclick='openModal("client", ${JSON.stringify(c).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button><button onclick="deleteClient('${c.id}')" class="px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button></div></div></div>`).join('');
             
             const listElement = document.getElementById('clientsList');
             if (listElement) listElement.innerHTML = listHtml;
