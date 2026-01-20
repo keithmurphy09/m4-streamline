@@ -233,7 +233,8 @@
         share_token: shareToken, 
         accepted: false,
         expiry_date: expiryDate.toISOString().split('T')[0],
-        quote_number: quote.title  // Store quote number in quote_number field (same as title)
+        quote_number: quote.title,  // Store quote number in quote_number field (same as title)
+        company_info: companySettings  // Store company details with quote
     };
     const { data } = await supabaseClient.from('quotes').insert([quoteData]).select();
     if (data) {
@@ -316,7 +317,8 @@ async function acceptQuote(quoteId, shareToken) {
                 status: 'unpaid',
                 issue_date: issueDate.toISOString().split('T')[0],
                 due_date: issueDate.toISOString().split('T')[0], // Due on completion (same day)
-                user_id: currentUser.id
+                user_id: currentUser.id,
+                company_info: companySettings  // Store company details with invoice
             };
             const { data, error } = await supabaseClient.from('invoices').insert([inv]).select();
             if (error) {
@@ -388,6 +390,7 @@ async function acceptQuote(quoteId, shareToken) {
         function generatePDF(type, item) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
+            const company = item.company_info || companySettings || {};
             
             // Add M4 logo from image
 const logoImg = new Image();
@@ -396,10 +399,12 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
             
             doc.setFontSize(24);
             doc.setTextColor(0, 0, 0);
-            doc.text('M4 Streamline', 35, 22);
+            doc.text(company.business_name || 'M4 Streamline', 35, 22);
             doc.setFontSize(10);
             doc.setTextColor(100, 100, 100);
-            doc.text('Business Management', 35, 28);
+            if (company.abn) doc.text('ABN: ' + company.abn, 35, 28);
+            if (company.phone) doc.text(company.phone, 35, 33);
+            if (company.email) doc.text(company.email, 35, 38);
             
             doc.setFontSize(18);
             doc.setTextColor(20, 184, 166);
@@ -481,7 +486,7 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
         }
         
         function renderApp() {
-            document.getElementById('app').innerHTML = `<div class="min-h-screen bg-gray-50"><div class="bg-black text-white p-6 shadow-lg border-b-4 border-teal-400"><div class="max-w-7xl mx-auto flex justify-between items-center"><div><h1 class="text-3xl font-bold text-teal-400">M4 Streamline</h1><p class="text-teal-400 mt-1">Business Management</p></div><div class="flex items-center gap-4"><img src="final_logo.png" alt="M4 Projects Logo" class="h-20 w-20 object-contain"><button onclick="handleLogout()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm border border-teal-400">Logout</button></div></div></div><div class="bg-white shadow"><div class="max-w-7xl mx-auto px-4"><div class="flex space-x-1">${['dashboard', 'schedule', 'clients', 'quotes', 'invoices', 'settings'].map(tab => `<button onclick="switchTab('${tab}')" class="px-6 py-4 font-medium border-b-2 ${activeTab === tab ? 'border-teal-400 text-black' : 'border-transparent text-gray-600'}">${tab.charAt(0).toUpperCase() + tab.slice(1)}</button>`).join('')}</div></div></div><div class="max-w-7xl mx-auto p-6">${renderContent()}</div>${showModal ? renderModal() : ''}</div>`;
+            document.getElementById('app').innerHTML = `<div class="min-h-screen bg-gray-50"><div class="bg-black text-white p-6 shadow-lg border-b-4 border-teal-400"><div class="max-w-7xl mx-auto flex justify-between items-center"><div><h1 class="text-3xl font-bold text-teal-400">M4 Streamline</h1><p class="text-teal-400 mt-1">Business Management</p></div><div class="flex items-center gap-4"><img src="final_logo.png" alt="M4 Projects Logo" class="h-20 w-20 object-contain"><button onclick="handleLogout()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm border border-teal-400">Logout</button></div></div></div><div class="bg-white shadow"><div class="max-w-7xl mx-auto px-4"><div class="flex space-x-1">${['dashboard', 'schedule', 'clients', 'quotes', 'invoices', 'company'].map(tab => `<button onclick="switchTab('${tab}')" class="px-6 py-4 font-medium border-b-2 ${activeTab === tab ? 'border-teal-400 text-black' : 'border-transparent text-gray-600'}">${tab === 'company' ? 'Company Info' : tab.charAt(0).toUpperCase() + tab.slice(1)}</button>`).join('')}</div></div></div><div class="max-w-7xl mx-auto p-6">${renderContent()}</div>${showModal ? renderModal() : ''}</div>`;
         }
         
         async function switchTab(tab) {
@@ -579,7 +584,7 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
             if (activeTab === 'clients') return renderClients();
             if (activeTab === 'quotes') return renderQuotes();
             if (activeTab === 'invoices') return renderInvoices();
-            if (activeTab === 'settings') return renderSettings();
+            if (activeTab === 'company') return renderSettings();
         }
         
         function renderSettings() {
