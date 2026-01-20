@@ -3,274 +3,1338 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>View Quote - M4 Streamline</title>
+    <title>M4 Streamline</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; background: #f9fafb; }
-        .header { text-align: center; border-bottom: 3px solid #14b8a6; padding-bottom: 20px; margin-bottom: 30px; background: white; padding: 30px; border-radius: 10px; }
-        .logo { color: #14b8a6; font-size: 48px; font-weight: bold; }
-        .subtitle { color: #666; }
-        .content { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .section { margin: 20px 0; }
-        .label { font-weight: bold; color: #333; }
-        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        th { background: #000; color: white; padding: 12px; text-align: left; }
-        td { padding: 12px; border-bottom: 1px solid #ddd; }
-        .total { font-size: 28px; color: #14b8a6; font-weight: bold; text-align: right; margin-top: 20px; padding: 20px; background: #f0fdfa; border-radius: 8px; }
-        .print-btn { background: #14b8a6; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin: 5px; }
-        .print-btn:hover { background: #0f9e8e; }
-        .accept-btn { background: #10b981; color: white; padding: 15px 40px; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; margin: 20px 5px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3); }
-        .accept-btn:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 6px 8px rgba(16, 185, 129, 0.4); }
-        .accept-btn:active { transform: translateY(0); }
-        .accepted-badge { background: #10b981; color: white; padding: 15px 30px; border-radius: 8px; font-weight: bold; display: inline-block; margin: 20px 0; font-size: 18px; }
-        .button-container { text-align: center; margin-top: 40px; }
-        .loading { text-align: center; padding: 50px; color: #666; }
-        .error { text-align: center; padding: 50px; color: #ef4444; }
-        
-        /* Print styles */
-        @media print {
-            body { background: white; margin: 0; padding: 0; max-width: none; }
-            .no-print { display: none !important; }
-            .page-break { page-break-before: always; }
-            .header, .content { box-shadow: none; margin: 0; padding: 20px; }
-            #termsPage { display: block !important; }
-        }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script>
+  emailjs.init('cl17j5coPTDN-aVM8');
+</script>
 </head>
 <body>
-    <div id="app">
-        <div class="loading">Loading quote...</div>
-    </div>
-
+    <div id="app"></div>
     <script>
-        emailjs.init('cl17j5coPTDN-aVM8');
         const supabaseClient = window.supabase.createClient('https://xviustrrsuhidzbcpgow.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aXVzdHJyc3VoaWR6YmNwZ293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3ODk1NDgsImV4cCI6MjA4NDM2NTU0OH0.CEcc50c1K2Qnh6rXt_1-_w30LzHvDniGLbqWhdOolRY');
+        let currentUser = null;
+        let activeTab = 'dashboard';
+        let clients = [];
+        let jobs = [];
+        let quotes = [];
+        let invoices = [];
+        let companySettings = null;
+        let subscription = null;
+        let isAdmin = false;
+        let showModal = false;
+        let modalType = '';
+        let editingItem = null;
+	let scheduleView = 'list';
+        let clientSearch = '';
+        let invoiceFilter = 'unpaid';
+        let lastCreatedQuote = null;  // Track last created quote
         
-        let currentQuote = null;
-        let currentClient = null;
-
-        async function loadQuote() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const shareToken = urlParams.get('quote');
-            
-            if (!shareToken) {
-                document.getElementById('app').innerHTML = '<div class="error">No quote specified</div>';
-                return;
-            }
-
-            try {
-                const { data: quote, error: quoteError } = await supabaseClient
-                    .from('quotes')
-                    .select('*')
-                    .eq('share_token', shareToken)
-                    .single();
-
-                if (quoteError || !quote) {
-                    document.getElementById('app').innerHTML = '<div class="error">Quote not found</div>';
-                    return;
-                }
-
-                currentQuote = quote;
-
-                const { data: client } = await supabaseClient
-                    .from('clients')
-                    .select('*')
-                    .eq('id', quote.client_id)
-                    .single();
-
-                currentClient = client;
-
-                renderQuote();
-            } catch (error) {
-                console.error('Error loading quote:', error);
-                document.getElementById('app').innerHTML = '<div class="error">Error loading quote</div>';
+        // Session timeout (30 minutes of inactivity)
+        let sessionTimeout;
+        const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+        
+        function resetSessionTimeout() {
+            clearTimeout(sessionTimeout);
+            if (currentUser) {
+                sessionTimeout = setTimeout(() => {
+                    alert('Your session has expired due to inactivity. Please log in again.');
+                    handleLogout();
+                }, SESSION_TIMEOUT_MS);
             }
         }
+        
+        function setupSessionTimeout() {
+            // Setup activity listeners once when user logs in
+            let activityEvents = ['mousemove', 'keypress', 'click', 'scroll', 'touchstart'];
+            activityEvents.forEach(event => {
+                document.addEventListener(event, resetSessionTimeout, { passive: true });
+            });
+            resetSessionTimeout(); // Start the timer
+        }
+        
+        async function checkAuth() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const quoteToken = urlParams.get('quote');
+    
+    if (quoteToken) {
+        // Redirect to the separate quote viewer page
+        window.location.href = 'quote-viewer.html?quote=' + quoteToken;
+        return;
+    }
+    
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session) {
+        currentUser = session.user;
+        await loadAllData();
+        setupSessionTimeout(); // Start session timeout
+        renderApp();
+    } else {
+        renderAuth();
+    }
+}
+    
+        
+        function renderAuth() {
+            document.getElementById('app').innerHTML = `<div class="min-h-screen flex items-center justify-center bg-black"><div class="bg-white p-8 rounded-lg shadow-xl max-w-md w-full"><div class="text-center mb-8"><div class="text-teal-400 text-5xl font-bold mb-2">M4</div><h1 class="text-2xl font-bold text-black">Streamline</h1><p class="text-gray-600 mt-2">Business Management</p></div><div><input type="email" id="email" placeholder="Email" class="w-full px-4 py-3 border rounded-lg mb-3"><input type="password" id="password" placeholder="Password" class="w-full px-4 py-3 border rounded-lg mb-2"><div class="text-xs text-gray-500 mb-4 pl-1">Password must be 8+ characters with uppercase, lowercase, and number</div><button onclick="handleLogin()" class="w-full bg-black text-white px-4 py-3 rounded-lg hover:bg-gray-800 border-2 border-teal-400 mb-3">Sign In</button><button onclick="handleSignup()" class="w-full bg-white text-black px-4 py-3 rounded-lg hover:bg-gray-50 border-2 border-black">Create Account</button><div id="auth-error" class="mt-3 text-red-600 text-sm text-center"></div></div></div></div>`;
+        }
+        
+        async function handleLogin() {
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ 
+                email: document.getElementById('email').value, 
+                password: document.getElementById('password').value 
+            });
+            if (error) document.getElementById('auth-error').textContent = error.message;
+            else { currentUser = data.user; await loadAllData(); renderApp(); }
+        }
+        
+        async function handleSignup() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('auth-error');
+            
+            // Password strength validation
+            if (password.length < 8) {
+                errorDiv.textContent = 'Password must be at least 8 characters long';
+                errorDiv.className = 'mt-3 text-red-600 text-sm text-center';
+                return;
+            }
+            if (!/[A-Z]/.test(password)) {
+                errorDiv.textContent = 'Password must contain at least one uppercase letter';
+                errorDiv.className = 'mt-3 text-red-600 text-sm text-center';
+                return;
+            }
+            if (!/[a-z]/.test(password)) {
+                errorDiv.textContent = 'Password must contain at least one lowercase letter';
+                errorDiv.className = 'mt-3 text-red-600 text-sm text-center';
+                return;
+            }
+            if (!/[0-9]/.test(password)) {
+                errorDiv.textContent = 'Password must contain at least one number';
+                errorDiv.className = 'mt-3 text-red-600 text-sm text-center';
+                return;
+            }
+            
+            const { data, error } = await supabaseClient.auth.signUp({ email, password });
+            if (error) {
+                errorDiv.textContent = error.message;
+                errorDiv.className = 'mt-3 text-red-600 text-sm text-center';
+            } else { 
+                errorDiv.textContent = 'Success! Please check your email to verify your account before logging in.'; 
+                errorDiv.className = 'mt-3 text-green-600 text-sm text-center'; 
+            }
+        }
+        
+        async function handleLogout() { 
+            clearTimeout(sessionTimeout); // Clear timeout on logout
+            await supabaseClient.auth.signOut(); 
+            currentUser = null; 
+            renderAuth(); 
+        }
+        
+        async function loadAllData() {
+            const [c, j, q, i, s, sub, admin] = await Promise.all([
+                supabaseClient.from('clients').select('*'), 
+                supabaseClient.from('jobs').select('*'), 
+                supabaseClient.from('quotes').select('*'), 
+                supabaseClient.from('invoices').select('*'),
+                supabaseClient.from('company_settings').select('*').eq('user_id', currentUser.id).single(),
+                supabaseClient.from('subscriptions').select('*').eq('user_id', currentUser.id).single(),
+                supabaseClient.from('admin_users').select('*').eq('user_id', currentUser.id).single()
+            ]);
+            clients = c.data || []; 
+            jobs = j.data || []; 
+            quotes = q.data || []; 
+            invoices = i.data || [];
+            companySettings = s.data || null;
+            subscription = sub.data || null;
+            isAdmin = admin.data?.is_admin || false;
+            
+            console.log('Admin query result:', admin);
+            console.log('isAdmin value:', isAdmin);
+            
+            // Create subscription if doesn't exist
+            if (!subscription) {
+                const { data } = await supabaseClient.from('subscriptions').insert([{
+                    user_id: currentUser.id,
+                    trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+                    subscription_status: 'trial'
+                }]).select().single();
+                subscription = data;
+            }
+        }
+        
+        async function addClient(client) { 
+            const { data } = await supabaseClient.from('clients').insert([{
+                ...client, 
+                user_id: currentUser.id
+            }]).select(); 
+            if (data) { 
+                clients.push(data[0]); 
+                closeModal(); 
+                renderApp(); 
+            } 
+        }
+        
+        async function updateClient(id) {
+            const updatedClient = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                address: document.getElementById('address').value,
+                notes: document.getElementById('clientNotes').value
+            };
+            const { data } = await supabaseClient.from('clients').update(updatedClient).eq('id', id).select();
+            if (data) {
+                const index = clients.findIndex(c => c.id === id);
+                if (index !== -1) clients[index] = data[0];
+                closeModal();
+                renderApp();
+            }
+        }
+        
+        async function deleteClient(id) {
+            const client = clients.find(c => c.id === id);
+            if (!confirm(`Are you sure you want to delete ${client?.name || 'this client'}? This action cannot be undone.`)) {
+                return;
+            }
+            await supabaseClient.from('clients').delete().eq('id', id); 
+            clients = clients.filter(c => c.id !== id); 
+            renderApp(); 
+        }
+        
+        async function addJob(job) { 
+    const jobData = { ...job, user_id: currentUser.id, photos: [] };
+    const { data } = await supabaseClient.from('jobs').insert([jobData]).select(); 
+    if (data) { 
+        jobs.push(data[0]); 
+        closeModal(); 
+        renderApp(); 
+    } 
+}
+        
+        async function updateJob(id) {
+            const updatedJob = {
+                client_id: document.getElementById('client_id').value,
+                title: document.getElementById('title').value,
+                date: document.getElementById('date').value,
+                time: document.getElementById('time').value,
+                notes: document.getElementById('notes').value,
+                status: document.getElementById('jobStatus').value
+            };
+            const { data } = await supabaseClient.from('jobs').update(updatedJob).eq('id', id).select();
+            if (data) {
+                const index = jobs.findIndex(j => j.id === id);
+                if (index !== -1) jobs[index] = data[0];
+                closeModal();
+                renderApp();
+            }
+        }
+        
+        async function deleteJob(id) {
+            const job = jobs.find(j => j.id === id);
+            if (!confirm(`Are you sure you want to delete the job "${job?.title || 'this job'}"? This action cannot be undone.`)) {
+                return;
+            }
+            await supabaseClient.from('jobs').delete().eq('id', id); 
+            jobs = jobs.filter(j => j.id !== id); 
+            renderApp(); 
+        }
+        
+        async function addQuote(quote) {
+    const shareToken = 'q_' + Math.random().toString(36).substring(2, 15);
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + 30);
+    
+    const quoteData = { 
+        ...quote, 
+        user_id: currentUser.id, 
+        share_token: shareToken, 
+        accepted: false,
+        expiry_date: expiryDate.toISOString().split('T')[0],
+        quote_number: quote.title,  // Store quote number in quote_number field (same as title)
+        company_info: companySettings  // Store company details with quote
+    };
+    const { data } = await supabaseClient.from('quotes').insert([quoteData]).select();
+    if (data) {
+        quotes.push(data[0]);
+        lastCreatedQuote = data[0];  // Track the created quote
+        closeModal();
+        activeTab = 'quotes';  // Switch to quotes tab
+        renderApp();
+    }
+}
 
-        function renderQuote() {
-            const quote = currentQuote;
-            const client = currentClient;
-            const isAccepted = quote.accepted || quote.status === 'accepted';
-            const company = quote.company_info || {};
-
-            const html = `
-                <div class="header">
-                    <div class="logo">M4</div>
-                    <div class="subtitle">Streamline</div>
-                </div>
+async function acceptQuote(quoteId, shareToken) {
+    try {
+        // Update quote status to accepted
+        const { error } = await supabaseClient
+            .from('quotes')
+            .update({ accepted: true, status: 'accepted' })
+            .eq('share_token', shareToken);
+        
+        if (error) throw error;
+        
+        // Get quote and client details for notification email
+        const { data: quote } = await supabaseClient
+            .from('quotes')
+            .select('*, user_id')
+            .eq('share_token', shareToken)
+            .single();
+        
+        if (quote) {
+            const { data: client } = await supabaseClient
+                .from('clients')
+                .select('*')
+                .eq('id', quote.client_id)
+                .single();
+            
+            // Get the tradesperson's email from auth.users
+            const { data: { user } } = await supabaseClient.auth.admin.getUserById(quote.user_id);
+            
+            // Send notification email to tradesperson
+            const templateParams = {
+                to_email: user?.email || 'your-email@example.com', // Fallback if user email not found
+                client_name: client?.name || 'Client',
+                quote_title: quote.title,
+                quote_total: quote.total.toFixed(2),
+                message: `${client?.name || 'A client'} has ACCEPTED your quote for "${quote.title}"! Total: $${quote.total.toFixed(2)}`,
+                from_name: 'M4 Streamline'
+            };
+            
+            await emailjs.send('service_og2tkc8', 'template_xvsfuhv', templateParams);
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('Error accepting quote:', error);
+        return false;
+    }
+}
+        
+        async function deleteQuote(id) {
+            const quote = quotes.find(q => q.id === id);
+            if (!confirm(`Are you sure you want to delete the quote "${quote?.title || 'this quote'}"? This action cannot be undone.`)) {
+                return;
+            }
+            await supabaseClient.from('quotes').delete().eq('id', id); 
+            quotes = quotes.filter(q => q.id !== id); 
+            renderApp(); 
+        }
+        
+        async function convertToInvoice(quote) {
+            const issueDate = new Date();
+            
+            // Generate sequential invoice number
+            const invoiceNumber = `INV-${String(invoices.length + 1).padStart(3, '0')}`;
+            
+            const inv = {
+                client_id: quote.client_id,
+                title: quote.title,
+                items: quote.items,
+                notes: quote.notes || '',
+                subtotal: quote.subtotal || quote.total,
+                gst: quote.gst || 0,
+                total: quote.total,
+                include_gst: quote.include_gst || false,
+                invoice_number: invoiceNumber,
+                status: 'unpaid',
+                issue_date: issueDate.toISOString().split('T')[0],
+                due_date: issueDate.toISOString().split('T')[0], // Due on completion (same day)
+                user_id: currentUser.id,
+                company_info: companySettings  // Store company details with invoice
+            };
+            const { data, error } = await supabaseClient.from('invoices').insert([inv]).select();
+            if (error) {
+                console.error('Invoice error:', error);
+                alert('Error: ' + error.message);
+            } else if (data) {
+                await supabaseClient.from('quotes').update({ status: 'converted' }).eq('id', quote.id);
+                await loadAllData();
+                activeTab = 'invoices';
+                renderApp();
+            }
+        }
+        
+        async function updateInvoice(id, status) { 
+            await supabaseClient.from('invoices').update({ status }).eq('id', id); 
+            await loadAllData(); 
+            renderApp(); 
+        }
+        
+        async function deleteInvoice(id) {
+            const invoice = invoices.find(i => i.id === id);
+            if (!confirm(`Are you sure you want to delete invoice "${invoice?.invoice_number || 'this invoice'}"? This action cannot be undone.`)) {
+                return;
+            }
+            await supabaseClient.from('invoices').delete().eq('id', id); 
+            invoices = invoices.filter(i => i.id !== id); 
+            renderApp(); 
+        }
+        
+        function openModal(type, item = null) { 
+            modalType = type; 
+            editingItem = item; 
+            showModal = true; 
+            if (type === 'quote') quoteItems = item?.items || [{ description: '', quantity: 1, price: 0 }]; 
+            renderApp(); 
+            if (type === 'quote') setTimeout(renderQuoteItems, 100); 
+        }
+        
+        function openJobFromQuote(quote) {
+            const client = clients.find(c => c.id === quote.client_id);
+            editingItem = {
+                client_id: quote.client_id,
+                title: quote.title,
+                notes: `Quote: ${quote.title} - Total: $${quote.total.toFixed(2)}\n\n${quote.notes || ''}`
+            };
+            modalType = 'job';
+            showModal = true;
+            renderApp();
+        }
+        
+        function openQuoteForClient(client) {
+            editingItem = {
+                client_id: client.id
+            };
+            modalType = 'quote';
+            quoteItems = [{ description: '', quantity: 1, price: 0 }];
+            showModal = true;
+            renderApp();
+            setTimeout(renderQuoteItems, 100);
+        }
+        
+        function closeModal() { 
+            showModal = false; 
+            editingItem = null; 
+            modalType = ''; 
+            renderApp(); 
+        }
+        
+        function generatePDF(type, item) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const company = item.company_info || companySettings || {};
+            
+            // Add M4 logo from image
+const logoImg = new Image();
+logoImg.src = 'https://i.imgur.com/dF4xRDK.jpeg';
+doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
+            
+            doc.setFontSize(24);
+            doc.setTextColor(0, 0, 0);
+            doc.text(company.business_name || 'M4 Streamline', 35, 22);
+            doc.setFontSize(10);
+            doc.setTextColor(100, 100, 100);
+            if (company.abn) doc.text('ABN: ' + company.abn, 35, 28);
+            if (company.phone) doc.text(company.phone, 35, 33);
+            if (company.email) doc.text(company.email, 35, 38);
+            
+            doc.setFontSize(18);
+            doc.setTextColor(20, 184, 166);
+            const title = type === 'quote' ? 'QUOTE' : 'INVOICE';
+            doc.text(title, 20, 50);
+            
+            const client = clients.find(c => c.id === item.client_id);
+            doc.setFontSize(11);
+            doc.setTextColor(0, 0, 0);
+            doc.text('Client:', 20, 65);
+            doc.text(client?.name || 'Unknown', 45, 65);
+            doc.text(client?.email || '', 45, 71);
+            doc.text(client?.phone || '', 45, 77);
+            
+            if (type === 'invoice') {
+                doc.text('Invoice #:', 140, 65);
+                doc.text(item.invoice_number || '', 170, 65);
+                doc.text('Date:', 140, 71);
+                doc.text(item.issue_date || '', 170, 71);
+            } else {
+                if (item.quote_number) {
+                    doc.text('Quote #:', 140, 65);
+                    doc.text(item.quote_number, 170, 65);
+                    doc.text('Date:', 140, 71);
+                    doc.text(item.date || '', 170, 71);
+                } else {
+                    doc.text('Date:', 140, 65);
+                    doc.text(item.date || '', 170, 65);
+                }
+            }
+            
+            let y = 95;
+            doc.setFontSize(12);
+            doc.setTextColor(255, 255, 255);
+            doc.setFillColor(0, 0, 0);
+            doc.rect(20, y - 7, 170, 10, 'F');
+            doc.text('Description', 25, y);
+            doc.text('Qty', 120, y);
+            doc.text('Price', 145, y);
+            doc.text('Total', 170, y);
+            
+            y += 10;
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(10);
+            
+            if (item.items && Array.isArray(item.items)) {
+                item.items.forEach(lineItem => {
+                    doc.text(lineItem.description || '', 25, y);
+                    doc.text(String(lineItem.quantity || 0), 120, y);
+                    doc.text('$' + (lineItem.price || 0).toFixed(2), 145, y);
+                    doc.text('$' + ((lineItem.quantity * lineItem.price) || 0).toFixed(2), 170, y);
+                    y += 7;
+                });
+            }
+            
+            y += 10;
+            doc.setLineWidth(0.5);
+            doc.setDrawColor(200, 200, 200);
+            doc.line(120, y, 190, y);
+            
+            // Show GST breakdown if applicable
+            if (item.include_gst) {
+                y += 8;
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'normal');
+                doc.setTextColor(100, 100, 100);
+                doc.text('Subtotal:', 145, y);
+                doc.text('$' + (item.subtotal || 0).toFixed(2), 170, y);
                 
-                <div class="content">
-                    ${company.business_name ? `<div style="text-align: center; margin-bottom: 20px; padding: 15px; background: #f0fdfa; border-radius: 8px;">
-                        <h2 style="margin: 0; color: #14b8a6;">${company.business_name}</h2>
-                        ${company.abn ? `<p style="margin: 5px 0; font-size: 12px; color: #666;">ABN: ${company.abn}</p>` : ''}
-                        ${company.phone ? `<p style="margin: 5px 0; font-size: 12px; color: #666;">📞 ${company.phone}</p>` : ''}
-                        ${company.email ? `<p style="margin: 5px 0; font-size: 12px; color: #666;">✉️ ${company.email}</p>` : ''}
-                        ${company.address ? `<p style="margin: 5px 0; font-size: 12px; color: #666;">📍 ${company.address}</p>` : ''}
-                    </div>` : ''}
-                    
-                    <h1 style="margin-bottom: 10px;">Quote: ${quote.title}</h1>
-                    
-                    ${isAccepted ? '<div class="accepted-badge">✓ QUOTE ACCEPTED</div>' : ''}
-                    
-                    <div class="section">
-                        <p><span class="label">Client:</span> ${client?.name || 'N/A'}</p>
-                        <p><span class="label">Email:</span> ${client?.email || 'N/A'}</p>
-                        <p><span class="label">Phone:</span> ${client?.phone || 'N/A'}</p>
-                        <p><span class="label">Date:</span> ${new Date(quote.date).toLocaleDateString()}</p>
-                    </div>
-                    
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Description</th>
-                                <th>Quantity</th>
-                                <th>Price</th>
-                                <th>Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${quote.items.map(item => `
-                                <tr>
-                                    <td>${item.description}</td>
-                                    <td>${item.quantity}</td>
-                                    <td>$${parseFloat(item.price).toFixed(2)}</td>
-                                    <td>$${(item.quantity * item.price).toFixed(2)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                    
-                    ${quote.include_gst ? `
-                        <div style="text-align: right; margin-top: 20px; padding: 15px; background: #f9fafb; border-radius: 8px;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                <span style="color: #666;">Subtotal:</span>
-                                <span style="font-weight: 500;">$${parseFloat(quote.subtotal || quote.total).toFixed(2)}</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #e5e7eb;">
-                                <span style="color: #666;">GST (10%):</span>
-                                <span style="font-weight: 500;">$${parseFloat(quote.gst || 0).toFixed(2)}</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between;">
-                                <span style="font-size: 18px; font-weight: bold;">Total (inc GST):</span>
-                                <span style="font-size: 18px; font-weight: bold; color: #14b8a6;">$${parseFloat(quote.total).toFixed(2)}</span>
+                y += 6;
+                doc.text('GST (10%):', 145, y);
+                doc.text('$' + (item.gst || 0).toFixed(2), 170, y);
+                
+                y += 8;
+                doc.setLineWidth(0.5);
+                doc.setDrawColor(20, 184, 166);
+                doc.line(120, y, 190, y);
+            }
+            
+            y += 8;
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(0, 0, 0);
+            doc.text(item.include_gst ? 'TOTAL (inc GST):' : 'TOTAL:', 125, y);
+            doc.setTextColor(20, 184, 166);
+            doc.text('$' + (item.total || 0).toFixed(2), 170, y);
+            
+            if (item.notes) {
+                y += 15;
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+                doc.setFont(undefined, 'normal');
+                doc.text('Notes:', 20, y);
+                const splitNotes = doc.splitTextToSize(item.notes, 170);
+                doc.text(splitNotes, 20, y + 5);
+            }
+            
+            const filename = type === 'quote' ? `Quote-${item.title}.pdf` : `Invoice-${item.invoice_number}.pdf`;
+            doc.save(filename);
+        }
+        
+        async function renderApp() {
+            // Check if subscription is active
+            if (subscription && !isAdmin) {
+                const trialEnds = new Date(subscription.trial_ends_at);
+                const now = new Date();
+                const daysLeft = Math.ceil((trialEnds - now) / (1000 * 60 * 60 * 24));
+                
+                if (subscription.subscription_status === 'trial' && daysLeft <= 0) {
+                    // Trial expired, show paywall
+                    renderPaywall();
+                    return;
+                }
+            }
+            
+            // Calculate trial days for header
+            let trialBanner = '';
+            if (subscription && subscription.subscription_status === 'trial' && !isAdmin) {
+                const trialEnds = new Date(subscription.trial_ends_at);
+                const now = new Date();
+                const daysLeft = Math.ceil((trialEnds - now) / (1000 * 60 * 60 * 24));
+                if (daysLeft > 0) {
+                    trialBanner = `<div class="bg-yellow-500 text-black text-center py-2 text-sm font-medium">⏰ Trial: ${daysLeft} day${daysLeft === 1 ? '' : 's'} remaining</div>`;
+                }
+            }
+            
+            const content = await renderContent();
+            
+            document.getElementById('app').innerHTML = `<div class="min-h-screen bg-gray-50">${trialBanner}<div class="bg-black text-white p-6 shadow-lg border-b-4 border-teal-400"><div class="max-w-7xl mx-auto flex justify-between items-center"><div><h1 class="text-3xl font-bold text-teal-400">M4 Streamline</h1><p class="text-teal-400 mt-1">Business Management</p></div><div class="flex items-center gap-4">${isAdmin ? '<span class="bg-red-600 px-3 py-1 rounded text-xs font-bold">ADMIN</span>' : ''}<img src="final_logo.png" alt="M4 Projects Logo" class="h-20 w-20 object-contain"><div class="relative"><button onclick="toggleSettingsMenu()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm border border-teal-400 flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></button><div id="settings-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50"><div class="py-1"><button onclick="handleLogout()" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>Logout</button><button onclick="confirmDeleteAccount()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>Delete Account</button></div></div></div></div></div></div><div class="bg-white shadow"><div class="max-w-7xl mx-auto px-4"><div class="flex space-x-1">${['dashboard', 'schedule', 'clients', 'quotes', 'invoices', 'company'].map(tab => `<button onclick="switchTab('${tab}')" class="px-6 py-4 font-medium border-b-2 ${activeTab === tab ? 'border-teal-400 text-black' : 'border-transparent text-gray-600'}">${tab === 'company' ? 'Company Info' : tab.charAt(0).toUpperCase() + tab.slice(1)}</button>`).join('')}${isAdmin ? '<button onclick="switchTab(\'admin\')" class="px-6 py-4 font-medium border-b-2 ' + (activeTab === 'admin' ? 'border-teal-400 text-black' : 'border-transparent text-gray-600') + '">Admin</button>' : ''}</div></div></div><div class="max-w-7xl mx-auto p-6">${content}</div>${showModal ? renderModal() : ''}</div>`;
+        }
+        
+        function toggleSettingsMenu() {
+            const menu = document.getElementById('settings-menu');
+            if (menu) {
+                menu.classList.toggle('hidden');
+            }
+        }
+        
+        // Close settings menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('settings-menu');
+            const button = event.target.closest('button[onclick="toggleSettingsMenu()"]');
+            if (menu && !menu.contains(event.target) && !button) {
+                menu.classList.add('hidden');
+            }
+        });
+        
+        async function confirmDeleteAccount() {
+            if (confirm('Are you sure you want to delete your account? This action cannot be undone and will delete all your clients, jobs, quotes, and invoices.')) {
+                if (confirm('This is your final warning. All data will be permanently deleted. Are you absolutely sure?')) {
+                    await deleteAccount();
+                }
+            }
+        }
+        
+        async function deleteAccount() {
+            try {
+                // Delete all user data
+                await Promise.all([
+                    supabaseClient.from('clients').delete().eq('user_id', currentUser.id),
+                    supabaseClient.from('jobs').delete().eq('user_id', currentUser.id),
+                    supabaseClient.from('quotes').delete().eq('user_id', currentUser.id),
+                    supabaseClient.from('invoices').delete().eq('user_id', currentUser.id),
+                    supabaseClient.from('company_settings').delete().eq('user_id', currentUser.id),
+                    supabaseClient.from('subscriptions').delete().eq('user_id', currentUser.id)
+                ]);
+                
+                // Delete auth user
+                const { error } = await supabaseClient.auth.admin.deleteUser(currentUser.id);
+                
+                if (error) {
+                    alert('Error deleting account. Please contact support.');
+                } else {
+                    alert('Account deleted successfully.');
+                    await supabaseClient.auth.signOut();
+                    currentUser = null;
+                    renderAuth();
+                }
+            } catch (error) {
+                alert('Error deleting account: ' + error.message);
+            }
+        }
+        
+        async function switchTab(tab) {
+            activeTab = tab;
+            await loadAllData();
+            renderApp();
+        }
+        
+        async function saveCompanySettings() {
+            const settings = {
+                user_id: currentUser.id,
+                business_name: document.getElementById('business_name').value,
+                abn: document.getElementById('abn').value,
+                phone: document.getElementById('settings_phone').value,
+                email: document.getElementById('settings_email').value,
+                address: document.getElementById('settings_address').value,
+                bank_name: document.getElementById('bank_name').value,
+                bsb: document.getElementById('bsb').value,
+                account_number: document.getElementById('account_number').value,
+                account_name: document.getElementById('account_name').value
+            };
+            
+            if (companySettings) {
+                // Update existing settings
+                const { data, error } = await supabaseClient
+                    .from('company_settings')
+                    .update(settings)
+                    .eq('user_id', currentUser.id)
+                    .select();
+                if (data) companySettings = data[0];
+            } else {
+                // Create new settings
+                const { data, error } = await supabaseClient
+                    .from('company_settings')
+                    .insert([settings])
+                    .select();
+                if (data) companySettings = data[0];
+            }
+            
+            alert('Settings saved successfully!');
+            renderApp();
+        }
+        
+        function exportToCSV(type) {
+            let data = [];
+            let filename = '';
+            let headers = [];
+            
+            if (type === 'clients') {
+                headers = ['Name', 'Email', 'Phone', 'Address', 'Notes'];
+                data = clients.map(c => [c.name, c.email, c.phone, c.address || '', c.notes || '']);
+                filename = 'clients.csv';
+            } else if (type === 'jobs') {
+                headers = ['Client', 'Title', 'Date', 'Time', 'Status', 'Notes'];
+                data = jobs.map(j => {
+                    const client = clients.find(c => c.id === j.client_id);
+                    return [client?.name || 'Unknown', j.title, j.date, j.time, j.status || 'scheduled', j.notes || ''];
+                });
+                filename = 'jobs.csv';
+            } else if (type === 'quotes') {
+                headers = ['Client', 'Title', 'Date', 'Total', 'Status', 'Accepted'];
+                data = quotes.map(q => {
+                    const client = clients.find(c => c.id === q.client_id);
+                    return [client?.name || 'Unknown', q.title, q.date, q.total, q.status, q.accepted ? 'Yes' : 'No'];
+                });
+                filename = 'quotes.csv';
+            } else if (type === 'invoices') {
+                headers = ['Client', 'Invoice #', 'Title', 'Issue Date', 'Due Date', 'Total', 'Status'];
+                data = invoices.map(i => {
+                    const client = clients.find(c => c.id === i.client_id);
+                    return [client?.name || 'Unknown', i.invoice_number, i.title, i.issue_date, i.due_date || '', i.total, i.status];
+                });
+                filename = 'invoices.csv';
+            }
+            
+            // Create CSV content
+            let csvContent = headers.join(',') + '\n';
+            data.forEach(row => {
+                csvContent += row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',') + '\n';
+            });
+            
+            // Download CSV
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+        
+        async function renderContent() {
+            if (activeTab === 'dashboard') return renderDashboard();
+            if (activeTab === 'schedule') return renderSchedule();
+            if (activeTab === 'clients') return renderClients();
+            if (activeTab === 'quotes') return renderQuotes();
+            if (activeTab === 'invoices') return renderInvoices();
+            if (activeTab === 'company') return renderSettings();
+            if (activeTab === 'admin' && isAdmin) return await renderAdmin();
+        }
+        
+        function renderPaywall() {
+            document.getElementById('app').innerHTML = `
+                <div class="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+                    <div class="bg-white p-8 rounded-lg shadow-xl max-w-2xl w-full">
+                        <div class="text-center mb-8">
+                            <div class="text-teal-400 text-5xl font-bold mb-2">M4</div>
+                            <h1 class="text-2xl font-bold text-black">Streamline</h1>
+                            <p class="text-gray-600 mt-2">Business Management</p>
+                        </div>
+                        
+                        <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6">
+                            <p class="text-yellow-700 font-medium">⏰ Your 14-day free trial has ended</p>
+                        </div>
+                        
+                        <h2 class="text-2xl font-bold mb-4">Continue with M4 Streamline</h2>
+                        <p class="text-gray-600 mb-6">To continue using M4 Streamline, please subscribe for just <strong>$22.95/month</strong>.</p>
+                        
+                        <div class="bg-gray-50 p-6 rounded-lg mb-6">
+                            <h3 class="font-bold mb-3">Payment Instructions:</h3>
+                            <ol class="list-decimal list-inside space-y-2 text-sm">
+                                <li>Transfer $22.95 to the account details below</li>
+                                <li>Include your email (<strong>${currentUser.email}</strong>) in the payment reference</li>
+                                <li>Email m4projectsanddesigns@gmail.com to confirm payment</li>
+                                <li>Your account will be activated within 24 hours</li>
+                            </ol>
+                        </div>
+                        
+                        <div class="bg-teal-50 p-6 rounded-lg border border-teal-200">
+                            <h3 class="font-bold mb-3 text-teal-900">Bank Details:</h3>
+                            <div class="space-y-2 text-sm">
+                                <div><span class="font-medium">Account Name:</span> Keith Murphy</div>
+                                <div><span class="font-medium">BSB:</span> 063-225</div>
+                                <div><span class="font-medium">Account Number:</span> 10412509</div>
+                                <div><span class="font-medium">Amount:</span> $22.95</div>
+                                <div><span class="font-medium">Reference:</span> ${currentUser.email}</div>
                             </div>
                         </div>
-                    ` : `<div class="total">Total: $${parseFloat(quote.total).toFixed(2)}</div>`}
-                    
-                    ${quote.notes ? `<div class="section"><p class="label">Notes:</p><p>${quote.notes}</p></div>` : ''}
-                    
-                    <div style="margin-top: 30px; padding: 15px; background: #f9fafb; border-left: 3px solid #14b8a6; font-size: 12px; color: #666;">
-                        <strong>Important:</strong> By accepting this quote, you are agreeing to the Terms and Conditions outlined on the next page.
-                    </div>
-                    
-                    <div class="button-container no-print">
-                        ${!isAccepted ? '<button class="accept-btn" onclick="acceptQuote()">Accept Quote</button>' : ''}
-                        <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
-                        <button class="print-btn" onclick="showTerms()">View Terms & Conditions</button>
-                    </div>
-                    
-                    <div id="message" style="text-align: center; margin-top: 20px; font-size: 16px;"></div>
-                </div>
-                
-                <!-- Terms and Conditions Page (Hidden by default, shown when clicked or printed) -->
-                <div id="termsPage" style="display: none;" class="page-break">
-                    <div class="header">
-                        <div class="logo">M4</div>
-                        <div class="subtitle">Streamline</div>
-                    </div>
-                    
-                    <div class="content">
-                        <h1 style="margin-bottom: 20px;">Terms and Conditions</h1>
                         
-                        <div style="font-size: 14px; line-height: 1.6;">
-                            <h3 style="margin-top: 20px; color: #14b8a6;">1. Quote Acceptance</h3>
-                            <p>This quote is valid for 30 days from the date of issue. Acceptance of this quote constitutes agreement to these terms and conditions.</p>
-                            
-                            <h3 style="margin-top: 20px; color: #14b8a6;">2. Payment Terms</h3>
-                            <p>Payment is due upon completion of work unless otherwise agreed in writing. Late payments may incur additional fees and are subject to legal action for debt recovery. All costs associated with debt recovery will be charged to the client.</p>
-                            
-                            <h3 style="margin-top: 20px; color: #14b8a6;">3. Scope of Work</h3>
-                            <p>The work to be completed is as described in the quote. Any additional work requested will be quoted separately and requires written approval before commencement.</p>
-                            
-                            <h3 style="margin-top: 20px; color: #14b8a6;">4. Variations</h3>
-                            <p>Any variations to the quoted work must be agreed in writing. Variations may result in additional charges and extended completion times.</p>
-                            
-                            <h3 style="margin-top: 20px; color: #14b8a6;">5. Warranty</h3>
-                            <p>All work is guaranteed for a period of 12 months from completion date, subject to normal wear and tear.</p>
-                            
-                            <h3 style="margin-top: 20px; color: #14b8a6;">6. Liability</h3>
-                            <p>Our liability is limited to the cost of rectifying any defects in our workmanship. We are not liable for consequential losses or damages.</p>
-                            
-                            <h3 style="margin-top: 20px; color: #14b8a6;">7. Access and Site Conditions</h3>
-                            <p>Client must provide reasonable access to the work site and ensure utilities are available. Additional charges may apply if site conditions differ from those described.</p>
-                            
-                            <h3 style="margin-top: 20px; color: #14b8a6;">8. Cancellation</h3>
-                            <p>Cancellation must be made in writing. Cancellation fees may apply for work already commenced or materials ordered.</p>
-                        </div>
-                        
-                        <div class="button-container no-print" style="margin-top: 40px;">
-                            <button class="print-btn" onclick="hideTerms()">Back to Quote</button>
+                        <div class="mt-6 text-center">
+                            <button onclick="handleLogout()" class="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">Logout</button>
                         </div>
                     </div>
                 </div>
             `;
-
-            document.getElementById('app').innerHTML = html;
         }
-
-        async function acceptQuote() {
-            const messageDiv = document.getElementById('message');
-            messageDiv.innerHTML = '<p style="color: #14b8a6; font-weight: bold;">Processing...</p>';
+        
+        async function renderAdmin() {
+            // Load all users and their subscriptions
+            const { data: allSubs } = await supabaseClient.from('subscriptions').select(`
+                *,
+                user:user_id (email)
+            `);
             
-            try {
-                // Update quote status
-                const { error } = await supabaseClient
-                    .from('quotes')
-                    .update({ accepted: true, status: 'accepted' })
-                    .eq('share_token', currentQuote.share_token);
-                
-                if (error) throw error;
-                
-                // Call the edge function to send notification email
-                const functionUrl = 'https://xviustrrsuhidzbcpgow.supabase.co/functions/v1/notify-quote-accepted';
-                
-                await fetch(functionUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        quote_id: currentQuote.id,
-                        share_token: currentQuote.share_token
-                    })
-                });
-                
-                messageDiv.innerHTML = '<p style="color: #10b981; font-weight: bold; font-size: 18px;">✓ Quote Accepted! The tradesperson has been notified.</p>';
-                
-                // Reload quote data and re-render
-                setTimeout(() => {
-                    loadQuote();
-                }, 1500);
-                
-            } catch (error) {
-                console.error('Error:', error);
-                messageDiv.innerHTML = '<p style="color: red;">Error accepting quote. Please try again.</p>';
+            const users = allSubs || [];
+            
+            return `<div>
+                <h2 class="text-2xl font-bold mb-6">Admin - Subscription Management</h2>
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trial Ends</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            ${users.map(u => {
+                                const trialEnds = new Date(u.trial_ends_at);
+                                const daysLeft = Math.ceil((trialEnds - new Date()) / (1000 * 60 * 60 * 24));
+                                const statusColor = u.subscription_status === 'active' ? 'text-green-600' : u.subscription_status === 'trial' ? 'text-yellow-600' : 'text-red-600';
+                                
+                                return `<tr>
+                                    <td class="px-6 py-4 text-sm">${u.user?.email || 'Unknown'}</td>
+                                    <td class="px-6 py-4 text-sm ${statusColor} font-medium">${u.subscription_status.toUpperCase()}</td>
+                                    <td class="px-6 py-4 text-sm">${trialEnds.toLocaleDateString()} (${daysLeft} days)</td>
+                                    <td class="px-6 py-4 text-sm">
+                                        ${u.subscription_status !== 'active' ? 
+                                            `<button onclick="activateSubscription('${u.user_id}')" class="px-3 py-1 bg-green-600 text-white rounded text-xs mr-2">Activate</button>` : 
+                                            `<button onclick="deactivateSubscription('${u.user_id}')" class="px-3 py-1 bg-red-600 text-white rounded text-xs mr-2">Deactivate</button>`
+                                        }
+                                        <button onclick="extendTrial('${u.user_id}')" class="px-3 py-1 bg-blue-600 text-white rounded text-xs">Extend Trial</button>
+                                    </td>
+                                </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>`;
+        }
+        
+        async function activateSubscription(userId) {
+            await supabaseClient.from('subscriptions').update({
+                subscription_status: 'active',
+                subscription_activated_at: new Date().toISOString()
+            }).eq('user_id', userId);
+            alert('Subscription activated!');
+            renderApp();
+        }
+        
+        async function deactivateSubscription(userId) {
+            if (confirm('Are you sure you want to deactivate this subscription?')) {
+                await supabaseClient.from('subscriptions').update({
+                    subscription_status: 'expired'
+                }).eq('user_id', userId);
+                alert('Subscription deactivated!');
+                renderApp();
             }
         }
+        
+        async function extendTrial(userId) {
+            const days = prompt('How many days to extend trial?', '14');
+            if (days) {
+                const { data } = await supabaseClient.from('subscriptions').select('trial_ends_at').eq('user_id', userId).single();
+                const currentEnd = new Date(data.trial_ends_at);
+                const newEnd = new Date(currentEnd.getTime() + parseInt(days) * 24 * 60 * 60 * 1000);
+                
+                await supabaseClient.from('subscriptions').update({
+                    trial_ends_at: newEnd.toISOString()
+                }).eq('user_id', userId);
+                
+                alert(`Trial extended by ${days} days!`);
+                renderApp();
+            }
+        }
+        
+        function renderSettings() {
+            const settings = companySettings || {};
+            return `<div>
+                <h2 class="text-2xl font-bold mb-6">Company Settings</h2>
+                <div class="bg-white p-6 rounded-lg shadow max-w-2xl">
+                    <p class="text-gray-600 mb-6">Your business information will automatically appear on all quotes and invoices.</p>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Business Name</label>
+                            <input type="text" id="business_name" value="${settings.business_name || ''}" class="w-full px-4 py-2 border rounded">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">ABN</label>
+                            <input type="text" id="abn" value="${settings.abn || ''}" class="w-full px-4 py-2 border rounded">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Phone</label>
+                            <input type="tel" id="settings_phone" value="${settings.phone || ''}" class="w-full px-4 py-2 border rounded">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Email</label>
+                            <input type="email" id="settings_email" value="${settings.email || ''}" class="w-full px-4 py-2 border rounded">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Address</label>
+                            <textarea id="settings_address" class="w-full px-4 py-2 border rounded" rows="2">${settings.address || ''}</textarea>
+                        </div>
+                        
+                        <h3 class="text-lg font-bold mt-6 mb-4">Bank Details (for invoices)</h3>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Bank Name</label>
+                            <input type="text" id="bank_name" value="${settings.bank_name || ''}" class="w-full px-4 py-2 border rounded">
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">BSB</label>
+                                <input type="text" id="bsb" value="${settings.bsb || ''}" class="w-full px-4 py-2 border rounded">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Account Number</label>
+                                <input type="text" id="account_number" value="${settings.account_number || ''}" class="w-full px-4 py-2 border rounded">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Account Name</label>
+                            <input type="text" id="account_name" value="${settings.account_name || ''}" class="w-full px-4 py-2 border rounded">
+                        </div>
+                        
+                        <button onclick="saveCompanySettings()" class="w-full bg-black text-white px-4 py-3 rounded-lg border border-teal-400 hover:bg-gray-800 mt-6">Save Settings</button>
+                    </div>
+                </div>
+            </div>`;
+        }
+        
+        function renderDashboard() {
+            const today = new Date().toISOString().split('T')[0];
+            const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+            const upcomingJobs = jobs.filter(j => j.date >= today).sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 5);
+            const tomorrowJobs = jobs.filter(j => j.date === tomorrow);
+            const pendingQuotes = quotes.filter(q => q.status === 'pending' && !q.accepted);
+            const acceptedQuotes = quotes.filter(q => q.accepted || q.status === 'accepted');
+            const unpaidInvoices = invoices.filter(i => i.status === 'unpaid');
+            
+            // Quote expiry warnings (48 hours before 30 days)
+            const expiringQuotes = quotes.filter(q => {
+                if (q.accepted || q.status !== 'pending') return false;
+                const createdDate = new Date(q.created_at);
+                const expiryDate = new Date(createdDate);
+                expiryDate.setDate(expiryDate.getDate() + 30);
+                const warningDate = new Date(expiryDate);
+                warningDate.setHours(warningDate.getHours() - 48);
+                const now = new Date();
+                return now >= warningDate && now < expiryDate;
+            });
+            
+            // Overdue invoices
+            const todayDate = new Date();
+            todayDate.setHours(0,0,0,0);
+            const overdueInvoices = unpaidInvoices.filter(i => {
+                if (!i.due_date) return false;
+                const dueDate = new Date(i.due_date);
+                dueDate.setHours(0,0,0,0);
+                return dueDate < todayDate;
+            });
+            
+            const totalUnpaid = unpaidInvoices.reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
+            const totalRevenue = invoices.filter(i => i.status === 'paid').reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
+            
+            return `<div>
+                <h2 class="text-2xl font-bold mb-6">Dashboard</h2>
+                
+                <!-- Alerts -->
+                ${tomorrowJobs.length > 0 ? `<div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4 cursor-pointer hover:bg-blue-100" onclick="switchTab('schedule')"><div class="flex"><div class="flex-shrink-0">⏰</div><div class="ml-3"><p class="text-sm text-blue-700"><strong>Tomorrow's Jobs (${tomorrowJobs.length}):</strong> ${tomorrowJobs.map(j => j.title).join(', ')}</p></div></div></div>` : ''}
+                ${expiringQuotes.length > 0 ? `<div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-4 cursor-pointer hover:bg-yellow-100" onclick="switchTab('quotes')"><div class="flex"><div class="flex-shrink-0">⚠️</div><div class="ml-3"><p class="text-sm text-yellow-700"><strong>Quotes Expiring Soon (${expiringQuotes.length}):</strong> These quotes will expire in less than 48 hours</p></div></div></div>` : ''}
+                ${overdueInvoices.length > 0 ? `<div class="bg-red-50 border-l-4 border-red-500 p-4 mb-4 cursor-pointer hover:bg-red-100" onclick="switchTab('invoices')"><div class="flex"><div class="flex-shrink-0">🚨</div><div class="ml-3"><p class="text-sm text-red-700"><strong>Overdue Invoices (${overdueInvoices.length}):</strong> $${overdueInvoices.reduce((s,i) => s + parseFloat(i.total || 0), 0).toFixed(2)} overdue</p></div></div></div>` : ''}
+                
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-teal-400 cursor-pointer hover:bg-gray-50" onclick="switchTab('clients')">
+                        <div class="text-gray-600 text-sm">Total Clients</div>
+                        <div class="text-3xl font-bold mt-2">${clients.length}</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-blue-400 cursor-pointer hover:bg-gray-50" onclick="switchTab('schedule')">
+                        <div class="text-gray-600 text-sm">Upcoming Jobs</div>
+                        <div class="text-3xl font-bold mt-2">${upcomingJobs.length}</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-yellow-400 cursor-pointer hover:bg-gray-50" onclick="switchTab('quotes')">
+                        <div class="text-gray-600 text-sm">Pending Quotes</div>
+                        <div class="text-3xl font-bold mt-2">${pendingQuotes.length}</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-red-400 cursor-pointer hover:bg-gray-50" onclick="switchTab('invoices')">
+                        <div class="text-gray-600 text-sm">Unpaid Invoices</div>
+                        <div class="text-3xl font-bold mt-2">$${totalUnpaid.toFixed(2)}</div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Upcoming Jobs -->
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold">Upcoming Jobs</h3>
+                            <button onclick="switchTab('schedule')" class="text-teal-500 text-sm hover:underline">View All</button>
+                        </div>
+                        ${upcomingJobs.length === 0 ? '<p class="text-gray-500 text-center py-4">No upcoming jobs</p>' : upcomingJobs.map(job => {
+                            const client = clients.find(c => c.id === job.client_id);
+                            const isTomorrow = job.date === tomorrow;
+                            return `<div class="border-l-4 ${isTomorrow ? 'border-blue-400 bg-blue-50' : 'border-teal-400'} pl-3 py-2 mb-3 cursor-pointer hover:bg-gray-50" onclick="switchTab('schedule')">
+                                <div class="font-semibold">${job.title} ${isTomorrow ? '⏰' : ''}</div>
+                                <div class="text-sm text-gray-600">${client?.name || 'Unknown'}</div>
+                                <div class="text-sm text-gray-500">${new Date(job.date).toLocaleDateString()} at ${job.time}</div>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                    
+                    <!-- Recent Activity -->
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="text-lg font-bold mb-4">Recent Activity</h3>
+                        ${acceptedQuotes.length === 0 && unpaidInvoices.length === 0 ? '<p class="text-gray-500 text-center py-4">No recent activity</p>' : `
+                            ${acceptedQuotes.slice(0, 3).map(q => {
+                                const client = clients.find(c => c.id === q.client_id);
+                                return `<div class="py-2 mb-2 border-b cursor-pointer hover:bg-gray-50" onclick="switchTab('quotes')">
+                                    <div class="flex justify-between">
+                                        <span class="text-sm">✓ Quote accepted: <strong>${q.title}</strong></span>
+                                    </div>
+                                    <div class="text-xs text-gray-500">${client?.name || 'Unknown'} - $${q.total.toFixed(2)}</div>
+                                </div>`;
+                            }).join('')}
+                            ${unpaidInvoices.slice(0, 3).map(inv => {
+                                const client = clients.find(c => c.id === inv.client_id);
+                                const isOverdue = inv.due_date && new Date(inv.due_date) < todayDate;
+                                return `<div class="py-2 mb-2 border-b cursor-pointer hover:bg-gray-50" onclick="switchTab('invoices')">
+                                    <div class="flex justify-between">
+                                        <span class="text-sm">${isOverdue ? '🚨' : '⏳'} ${isOverdue ? 'Overdue' : 'Unpaid'}: <strong>${inv.title}</strong></span>
+                                    </div>
+                                    <div class="text-xs text-gray-500">${client?.name || 'Unknown'} - $${inv.total.toFixed(2)}</div>
+                                </div>`;
+                            }).join('')}
+                        `}
+                    </div>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="mt-6 bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-lg font-bold mb-4">Quick Actions</h3>
+                    <div class="flex flex-wrap gap-3">
+                        <button onclick="openModal('client')" class="px-4 py-2 bg-black text-white rounded-lg border border-teal-400 hover:bg-gray-800">+ Add Client</button>
+                        <button onclick="openModal('job')" class="px-4 py-2 bg-black text-white rounded-lg border border-teal-400 hover:bg-gray-800">+ Schedule Job</button>
+                        <button onclick="openModal('quote')" class="px-4 py-2 bg-black text-white rounded-lg border border-teal-400 hover:bg-gray-800">+ Create Quote</button>
+                    </div>
+                </div>
+            </div>`;
+        }
+        
+        function renderSchedule() {
+    const viewToggle = `<div class="flex gap-2"><button onclick="scheduleView='list'; renderApp();" class="px-3 py-2 rounded ${scheduleView === 'list' ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'} border">List</button><button onclick="scheduleView='calendar'; renderApp();" class="px-3 py-2 rounded ${scheduleView === 'calendar' ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'} border">Calendar</button></div>`;
+    
+    if (scheduleView === 'calendar') {
+        setTimeout(() => renderCalendar(), 100);
+        return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Schedule</h2><div class="flex gap-4">${viewToggle}<button onclick="openModal('job')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Schedule Job</button></div></div><div id="calendar" class="bg-white p-4 rounded-lg shadow"></div></div>`;
+    }
+    
+    return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Schedule</h2><div class="flex gap-4">${viewToggle}<button onclick="exportToCSV('jobs')" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">Export CSV</button><button onclick="openModal('job')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Schedule Job</button></div></div><div class="grid gap-4">${jobs.length === 0 ? '<div class="text-center py-12 text-gray-500">No jobs</div>' : jobs.map(job => { 
+        const client = clients.find(c => c.id === job.client_id);
+        const statusColors = {
+            scheduled: 'bg-blue-100 text-blue-800',
+            in_progress: 'bg-yellow-100 text-yellow-800',
+            completed: 'bg-green-100 text-green-800'
+        };
+        const statusLabels = {
+            scheduled: 'Scheduled',
+            in_progress: 'In Progress',
+            completed: 'Completed'
+        };
+        const statusColor = statusColors[job.status] || statusColors.scheduled;
+        const statusLabel = statusLabels[job.status] || statusLabels.scheduled;
+        return `<div class="bg-white p-4 rounded-lg shadow border-l-4 border-teal-400"><div class="flex justify-between"><div class="flex-1"><h3 class="text-lg font-semibold">${job.title}</h3><span class="text-xs ${statusColor} px-2 py-1 rounded inline-block mt-1">${statusLabel}</span><p class="text-gray-600 mt-1">${client?.name || 'Unknown'}</p>${client?.address ? `<p class="text-sm text-gray-500">📍 ${client.address}</p>` : ''}<div class="text-sm text-gray-500 mt-2">${new Date(job.date).toLocaleDateString()} ${job.time}</div>${job.notes ? `<p class="text-sm text-gray-700 mt-2 italic">${job.notes}</p>` : ''}${job.photos && job.photos.length > 0 ? `<div class="mt-3 flex gap-2 flex-wrap">${job.photos.map(photo => `<img src="${photo}" class="w-20 h-20 object-cover rounded border border-teal-400" />`).join('')}</div>` : ''}</div><div class="flex flex-col gap-2"><button onclick='openModal("job", ${JSON.stringify(job).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button><label class="cursor-pointer px-3 py-1 bg-teal-500 text-white rounded text-sm text-center"><input type="file" accept="image/*" onchange="uploadJobPhoto(this, '${job.id}')" class="hidden" />Add Photo</label><button onclick="deleteJob('${job.id}')" class="px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button></div></div></div>`; 
+    }).join('')}</div></div>`;
+}
 
-        // Load quote when page loads
-        window.addEventListener('load', loadQuote);
+function renderCalendar() {
+    const calendarEl = document.getElementById('calendar');
+    if (!calendarEl) return;
+    
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek'
+        },
+        events: jobs.map(job => {
+            const client = clients.find(c => c.id === job.client_id);
+            return {
+                title: job.title + (client ? ' - ' + client.name : ''),
+                start: job.date + 'T' + job.time,
+                backgroundColor: '#14b8a6',
+                borderColor: '#14b8a6',
+                extendedProps: {
+                    jobId: job.id,
+                    client: client?.name
+                }
+            };
+        }),
+        eventClick: function(info) {
+            const job = jobs.find(j => j.id === info.event.extendedProps.jobId);
+            if (job) {
+                alert('Job: ' + job.title + '\nClient: ' + info.event.extendedProps.client + '\nDate: ' + new Date(job.date).toLocaleDateString() + '\nTime: ' + job.time);
+            }
+        }
+    });
+    
+    calendar.render();
+}
         
-        function showTerms() {
-            document.getElementById('termsPage').style.display = 'block';
-            window.scrollTo(0, document.getElementById('termsPage').offsetTop - 50);
+        function renderClients() {
+            const filteredClients = clients.filter(c => 
+                c.name.toLowerCase().includes(clientSearch.toLowerCase()) ||
+                c.email.toLowerCase().includes(clientSearch.toLowerCase()) ||
+                c.phone.includes(clientSearch) ||
+                (c.address && c.address.toLowerCase().includes(clientSearch.toLowerCase()))
+            );
+            
+            return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Clients</h2><div class="flex gap-2"><button onclick="exportToCSV('clients')" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">Export CSV</button><button onclick="openModal('client')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Add Client</button></div></div><div class="mb-4"><input type="text" id="clientSearchInput" placeholder="Search clients by name, email, phone, or address..." value="${clientSearch}" oninput="clientSearch=this.value; renderClientsOnly();" class="w-full px-4 py-2 border rounded-lg" /></div><div id="clientsList" class="grid gap-4">${filteredClients.length === 0 ? '<div class="text-center py-12 text-gray-500">No clients found</div>' : filteredClients.map(c => `<div class="bg-white p-4 rounded-lg shadow"><div class="flex justify-between"><div class="flex-1"><h3 class="text-lg font-semibold">${c.name}</h3><p class="text-sm text-gray-600">${c.email}</p><p class="text-sm text-gray-600">${c.phone}</p>${c.address ? `<p class="text-sm text-gray-600 mt-1">📍 ${c.address}</p>` : ''}</div><div class="flex gap-2"><button onclick='openQuoteForClient(${JSON.stringify(c).replace(/"/g, "&quot;")})' class="w-24 px-3 py-1 bg-teal-600 text-white rounded text-sm">New Quote</button><button onclick='openModal("client", ${JSON.stringify(c).replace(/"/g, "&quot;")})' class="w-24 px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button><button onclick="deleteClient('${c.id}')" class="w-24 px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button></div></div></div>`).join('')}</div></div>`;
         }
         
-        function hideTerms() {
-            document.getElementById('termsPage').style.display = 'none';
-            window.scrollTo(0, 0);
+        function renderClientsOnly() {
+            const filteredClients = clients.filter(c => 
+                c.name.toLowerCase().includes(clientSearch.toLowerCase()) ||
+                c.email.toLowerCase().includes(clientSearch.toLowerCase()) ||
+                c.phone.includes(clientSearch) ||
+                (c.address && c.address.toLowerCase().includes(clientSearch.toLowerCase()))
+            );
+            
+            const listHtml = filteredClients.length === 0 ? '<div class="text-center py-12 text-gray-500">No clients found</div>' : filteredClients.map(c => `<div class="bg-white p-4 rounded-lg shadow"><div class="flex justify-between"><div class="flex-1"><h3 class="text-lg font-semibold">${c.name}</h3><p class="text-sm text-gray-600">${c.email}</p><p class="text-sm text-gray-600">${c.phone}</p>${c.address ? `<p class="text-sm text-gray-600 mt-1">📍 ${c.address}</p>` : ''}</div><div class="flex gap-2"><button onclick='openQuoteForClient(${JSON.stringify(c).replace(/"/g, "&quot;")})' class="w-24 px-3 py-1 bg-teal-600 text-white rounded text-sm">New Quote</button><button onclick='openModal("client", ${JSON.stringify(c).replace(/"/g, "&quot;")})' class="w-24 px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button><button onclick="deleteClient('${c.id}')" class="w-24 px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button></div></div></div>`).join('');
+            
+            const listElement = document.getElementById('clientsList');
+            if (listElement) listElement.innerHTML = listHtml;
         }
+        
+        function renderQuotes() {
+    const successNotification = lastCreatedQuote ? `<div class="bg-green-50 border-l-4 border-green-500 p-4 mb-4"><div class="flex justify-between items-center"><div><p class="text-sm text-green-700"><strong>✓ Quote Created!</strong> ${lastCreatedQuote.title} has been created successfully.</p></div></div></div>` : '';
+    
+    // Auto-dismiss notification after 5 seconds
+    if (lastCreatedQuote) {
+        setTimeout(() => {
+            lastCreatedQuote = null;
+            renderApp();
+        }, 5000);
+    }
+    
+    return `<div>${successNotification}<div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Quotes</h2><div class="flex gap-2"><button onclick="exportToCSV('quotes')" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">Export CSV</button><button onclick="openModal('quote')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Create Quote</button></div></div><div class="grid gap-4">${quotes.length === 0 ? '<div class="text-center py-12 text-gray-500">No quotes</div>' : quotes.map(q => { 
+        const client = clients.find(c => c.id === q.client_id);
+        const isAccepted = q.accepted || q.status === 'accepted';
+        const isNewQuote = lastCreatedQuote && lastCreatedQuote.id === q.id;
+        return `<div class="bg-white p-4 rounded-lg shadow ${isAccepted ? 'border-l-4 border-green-500' : ''} ${isNewQuote ? 'ring-2 ring-green-400' : ''}"><div class="flex justify-between mb-3"><div><h3 class="text-lg font-semibold">${q.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p>${isAccepted ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mt-1 inline-block">✓ ACCEPTED</span>' : ''}</div><p class="text-2xl font-bold text-teal-500">$${q.total?.toFixed(2)}</p></div>${q.notes ? `<p class="text-sm text-gray-600 italic mb-3">${q.notes}</p>` : ''}<div class="flex gap-2 flex-wrap">${isAccepted ? `<button onclick='openJobFromQuote(${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-teal-600 text-white rounded text-sm">📅 Schedule Job</button>` : ''}${!isAccepted ? `<button onclick='openModal("quote", ${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>` : ''}${!isAccepted && q.status === 'pending' ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm">Convert to Invoice</button>` : ''}${isAccepted ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm">Convert to Invoice</button>` : ''}<button onclick='generatePDF("quote", ${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Download PDF</button><button onclick='sendQuoteEmail(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-purple-600 text-white rounded text-sm">Send Email</button><button onclick="deleteQuote('${q.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div></div>`; 
+    }).join('')}</div></div>`;
+}
+        
+        function renderInvoices() {
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            
+            const filteredInvoices = invoiceFilter === 'unpaid' 
+                ? invoices.filter(i => i.status === 'unpaid')
+                : invoices.filter(i => i.status === 'paid');
+            
+            const unpaidTotal = invoices.filter(i => i.status === 'unpaid').reduce((s, i) => s + parseFloat(i.total || 0), 0);
+            const paidTotal = invoices.filter(i => i.status === 'paid').reduce((s, i) => s + parseFloat(i.total || 0), 0);
+            
+            const filterTabs = `<div class="flex gap-2 mb-4"><button onclick="invoiceFilter='unpaid'; renderApp();" class="px-4 py-2 rounded ${invoiceFilter === 'unpaid' ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'} border">Unpaid (${invoices.filter(i => i.status === 'unpaid').length})</button><button onclick="invoiceFilter='paid'; renderApp();" class="px-4 py-2 rounded ${invoiceFilter === 'paid' ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'} border">Paid (${invoices.filter(i => i.status === 'paid').length})</button></div>`;
+            
+            return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Invoices</h2><div class="flex gap-2"><button onclick="exportToCSV('invoices')" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">Export CSV</button><div class="text-sm"><div>Outstanding: <span class="font-bold text-red-600">$${unpaidTotal.toFixed(2)}</span></div><div>Paid: <span class="font-bold text-green-600">$${paidTotal.toFixed(2)}</span></div></div></div></div>${filterTabs}<div class="grid gap-4">${filteredInvoices.length === 0 ? `<div class="text-center py-12 text-gray-500">No ${invoiceFilter} invoices</div>` : filteredInvoices.map(inv => { 
+                const client = clients.find(c => c.id === inv.client_id);
+                let borderColor = '';
+                let statusBadge = '';
+                
+                if (inv.status === 'paid') {
+                    borderColor = 'border-l-4 border-green-500';
+                    statusBadge = '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mt-1 inline-block">✓ PAID</span>';
+                } else if (inv.due_date) {
+                    const dueDate = new Date(inv.due_date);
+                    dueDate.setHours(0,0,0,0);
+                    const diffTime = dueDate - today;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    if (diffDays < 0) {
+                        borderColor = 'border-l-4 border-red-500';
+                        statusBadge = `<span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded mt-1 inline-block">⚠ OVERDUE (${Math.abs(diffDays)} days)</span>`;
+                    } else if (diffDays <= 7) {
+                        borderColor = 'border-l-4 border-yellow-500';
+                        statusBadge = `<span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded mt-1 inline-block">⏰ DUE IN ${diffDays} DAYS</span>`;
+                    }
+                }
+                
+                return `<div class="bg-white p-4 rounded-lg shadow ${borderColor}"><div class="flex justify-between mb-3"><div><h3 class="text-lg font-semibold">${inv.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p><p class="text-xs">${inv.invoice_number}</p><p class="text-xs text-gray-500">Issued: ${inv.issue_date}</p>${inv.due_date ? `<p class="text-xs text-gray-500">Due: ${inv.due_date}</p>` : ''}${statusBadge}</div><p class="text-2xl font-bold text-teal-500">$${inv.total?.toFixed(2)}</p></div><div class="flex gap-2">${inv.status === 'unpaid' ? `<button onclick="updateInvoice('${inv.id}', 'paid')" class="px-3 py-1 bg-green-600 text-white rounded text-sm">Mark Paid</button>` : ''}<button onclick="generatePDF('invoice', ${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Download PDF</button><button onclick="deleteInvoice('${inv.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div></div>`; 
+            }).join('')}</div></div>`;
+        }
+        
+        function renderModal() {
+            let form = '';
+            if (modalType === 'client') {
+                const name = editingItem?.name || '';
+                const email = editingItem?.email || '';
+                const phone = editingItem?.phone || '';
+                const address = editingItem?.address || '';
+                const notes = editingItem?.notes || '';
+                const buttonText = editingItem ? 'Update Client' : 'Add Client';
+                const action = editingItem ? `updateClient('${editingItem.id}')` : `addClient({name:document.getElementById('name').value,email:document.getElementById('email').value,phone:document.getElementById('phone').value,address:document.getElementById('address').value,notes:document.getElementById('clientNotes').value})`;
+                form = `<input type="text" id="name" placeholder="Name" value="${name}" class="w-full px-4 py-2 border rounded mb-3"><input type="email" id="email" placeholder="Email" value="${email}" class="w-full px-4 py-2 border rounded mb-3"><input type="tel" id="phone" placeholder="Phone" value="${phone}" class="w-full px-4 py-2 border rounded mb-3"><input type="text" id="address" placeholder="Address" value="${address}" class="w-full px-4 py-2 border rounded mb-3"><textarea id="clientNotes" placeholder="Internal notes (only visible to you)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${notes}</textarea><button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
+            }
+            if (modalType === 'job') {
+                const clientId = editingItem?.client_id || '';
+                const title = editingItem?.title || '';
+                const date = editingItem?.date || '';
+                const time = editingItem?.time || '';
+                const notes = editingItem?.notes || '';
+                const status = editingItem?.status || 'scheduled';
+                const buttonText = (editingItem && editingItem.id) ? 'Update Job' : 'Schedule Job';
+                const action = (editingItem && editingItem.id) ? `updateJob('${editingItem.id}')` : `addJob({client_id:document.getElementById('client_id').value,title:document.getElementById('title').value,date:document.getElementById('date').value,time:document.getElementById('time').value,notes:document.getElementById('notes').value,status:document.getElementById('jobStatus').value})`;
+                form = `<select id="client_id" class="w-full px-4 py-2 border rounded mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}</select><input type="text" id="title" placeholder="Job Title" value="${title}" class="w-full px-4 py-2 border rounded mb-3"><input type="date" id="date" value="${date}" class="w-full px-4 py-2 border rounded mb-3"><input type="time" id="time" value="${time}" class="w-full px-4 py-2 border rounded mb-3"><select id="jobStatus" class="w-full px-4 py-2 border rounded mb-3"><option value="scheduled" ${status === 'scheduled' ? 'selected' : ''}>Scheduled</option><option value="in_progress" ${status === 'in_progress' ? 'selected' : ''}>In Progress</option><option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option></select><textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${notes}</textarea><button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
+            }
+            if (modalType === 'quote') {
+                const clientId = editingItem?.client_id || '';
+                const title = editingItem?.title || '';
+                const notes = editingItem?.notes || '';
+                const quoteNumber = editingItem?.quote_number || '';
+                const includeGst = editingItem?.include_gst || false;
+                const isEditing = editingItem && editingItem.id;
+                const buttonText = isEditing ? 'Update Quote' : 'Create Quote';
+                if (isEditing) {
+                    quoteItems = editingItem.items || [{ description: '', quantity: 1, price: 0 }];
+                } else if (!editingItem || !editingItem.client_id) {
+                    quoteItems = [{ description: '', quantity: 1, price: 0 }];
+                }
+                // Pre-generate quote number for new quotes or show existing for editing
+                const displayQuoteNumber = isEditing ? quoteNumber : `QT-${String(quotes.length + 1).padStart(3, '0')}`;
+                const titleField = `<input type="text" id="title" value="${displayQuoteNumber}" class="w-full px-4 py-2 border rounded mb-3 bg-gray-100" readonly>`;
+                form = `<select id="client_id" class="w-full px-4 py-2 border rounded mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}</select>${titleField}<div id="items-list"></div><button onclick="addQuoteItem()" class="text-teal-500 text-sm mb-3">+ Add Item</button><div id="quote-total" class="font-bold mb-3">Total: $0</div><div class="mb-3"><label class="flex items-center cursor-pointer"><input type="checkbox" id="include_gst" ${includeGst ? 'checked' : ''} onchange="updateQuoteTotal()" class="mr-2"><span class="text-sm font-medium">Include GST (10%)</span></label></div><textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${notes}</textarea><button onclick="${isEditing ? `updateQuote('${editingItem.id}')` : 'saveQuote()'}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
+            }
+            return `<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onclick="if(event.target===this)closeModal()"><div class="bg-white rounded-lg p-6 max-w-2xl w-full"><div class="flex justify-between mb-4"><h3 class="text-xl font-bold">${editingItem ? 'Edit ' + modalType : modalType}</h3><button onclick="closeModal()" class="text-2xl">×</button></div>${form}</div></div>`;
+        }
+        
+        let quoteItems = [];
+        function addQuoteItem() { quoteItems.push({ description: '', quantity: 1, price: 0 }); renderQuoteItems(); }
+        function updateQuoteTotal() { renderQuoteItems(); }
+        function renderQuoteItems() {
+            const c = document.getElementById('items-list');
+            if (!c) return;
+            c.innerHTML = quoteItems.map((item, i) => `<div class="grid grid-cols-12 gap-2 mb-2"><input type="text" value="${item.description}" onchange="quoteItems[${i}].description=this.value;renderQuoteItems()" placeholder="Description" class="col-span-6 px-3 py-2 border rounded"><input type="number" value="${item.quantity}" onchange="quoteItems[${i}].quantity=parseFloat(this.value);renderQuoteItems()" class="col-span-2 px-3 py-2 border rounded"><input type="number" value="${item.price}" onchange="quoteItems[${i}].price=parseFloat(this.value);renderQuoteItems()" class="col-span-3 px-3 py-2 border rounded"><button onclick="quoteItems.splice(${i},1);renderQuoteItems()" class="text-red-600">×</button></div>`).join('');
+            
+            const subtotal = quoteItems.reduce((s, i) => s + (i.quantity * i.price), 0);
+            const includeGst = document.getElementById('include_gst')?.checked || false;
+            const gst = includeGst ? subtotal * 0.1 : 0;
+            const total = subtotal + gst;
+            
+            const t = document.getElementById('quote-total');
+            if (t) {
+                if (includeGst) {
+                    t.innerHTML = `<div class="text-right"><div class="text-sm">Subtotal: $${subtotal.toFixed(2)}</div><div class="text-sm">GST (10%): $${gst.toFixed(2)}</div><div class="font-bold text-lg border-t pt-1 mt-1">Total: $${total.toFixed(2)}</div></div>`;
+                } else {
+                    t.innerHTML = `Total: $${total.toFixed(2)}`;
+                }
+            }
+        }
+        function saveQuote() {
+            const subtotal = quoteItems.reduce((s, i) => s + (i.quantity * i.price), 0);
+            const includeGst = document.getElementById('include_gst').checked;
+            const gst = includeGst ? subtotal * 0.1 : 0;
+            const total = subtotal + gst;
+            const notes = document.getElementById('notes').value;
+            const quoteNumber = document.getElementById('title').value;
+            addQuote({client_id:document.getElementById('client_id').value,title:quoteNumber,items:quoteItems,subtotal:subtotal,gst:gst,total:total,include_gst:includeGst,notes:notes,date:new Date().toISOString().split('T')[0],status:'pending'});
+        }
+        
+        async function updateQuote(id) {
+            const subtotal = quoteItems.reduce((s, i) => s + (i.quantity * i.price), 0);
+            const includeGst = document.getElementById('include_gst').checked;
+            const gst = includeGst ? subtotal * 0.1 : 0;
+            const total = subtotal + gst;
+            const updatedQuote = {
+                client_id: document.getElementById('client_id').value,
+                title: document.getElementById('title').value,
+                items: quoteItems,
+                subtotal: subtotal,
+                gst: gst,
+                total: total,
+                include_gst: includeGst,
+                notes: document.getElementById('notes').value
+            };
+            const { data } = await supabaseClient.from('quotes').update(updatedQuote).eq('id', id).select();
+            if (data) {
+                const index = quotes.findIndex(q => q.id === id);
+                if (index !== -1) quotes[index] = data[0];
+                quoteItems = []; // Reset quote items
+                closeModal();
+                renderApp();
+            }
+        }
+async function uploadJobPhoto(input, jobId) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${jobId}-${Date.now()}.${fileExt}`;
+    const filePath = `${fileName}`;
+    
+    const { data: uploadData, error: uploadError } = await supabaseClient.storage
+        .from('job-photos')
+        .upload(filePath, file);
+    
+    if (uploadError) {
+        alert('Error uploading photo: ' + uploadError.message);
+        return;
+    }
+    
+    const { data: urlData } = supabaseClient.storage
+        .from('job-photos')
+        .getPublicUrl(filePath);
+    
+    const job = jobs.find(j => j.id === jobId);
+    const photos = job.photos || [];
+    photos.push(urlData.publicUrl);
+    
+    const { error: updateError } = await supabaseClient
+        .from('jobs')
+        .update({ photos })
+        .eq('id', jobId);
+    
+    if (!updateError) {
+        await loadAllData();
+        renderApp();
+    }
+}        
+
+async function sendQuoteEmail(quote) {
+    const client = clients.find(c => c.id === quote.client_id);
+    if (!client || !client.email) {
+        alert('Client email not found!');
+        return;
+    }
+    
+    // Update this URL to match your GitHub Pages URL
+    const baseUrl = window.location.href.split('?')[0].replace('index.html', '');
+    const shareLink = baseUrl + 'quote-viewer.html?quote=' + quote.share_token;
+    
+    const templateParams = {
+        to_email: client.email,
+        from_name: currentUser.email.split('@')[0],
+        client_name: client.name,
+        quote_title: quote.title,
+        quote_total: quote.total.toFixed(2),
+        quote_link: shareLink,
+        message: 'Please click the link below to view and download your quote.',
+        reply_to: currentUser.email
+    };
+    
+    try {
+        await emailjs.send('service_og2tkc8', 'template_xvsfuhv', templateParams);
+        alert('Email sent successfully to ' + client.email + '!');
+    } catch (error) {
+        alert('Failed to send email: ' + error.text);
+    }
+}
+
+window.addEventListener('load', checkAuth);
     </script>
 </body>
 </html>
