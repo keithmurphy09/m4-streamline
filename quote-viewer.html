@@ -27,6 +27,15 @@
         .button-container { text-align: center; margin-top: 40px; }
         .loading { text-align: center; padding: 50px; color: #666; }
         .error { text-align: center; padding: 50px; color: #ef4444; }
+        
+        /* Print styles */
+        @media print {
+            body { background: white; margin: 0; padding: 0; max-width: none; }
+            .no-print { display: none !important; }
+            .page-break { page-break-before: always; }
+            .header, .content { box-shadow: none; margin: 0; padding: 20px; }
+            #termsPage { display: block !important; }
+        }
     </style>
 </head>
 <body>
@@ -127,12 +136,59 @@
                     
                     ${quote.notes ? `<div class="section"><p class="label">Notes:</p><p>${quote.notes}</p></div>` : ''}
                     
-                    <div class="button-container">
+                    <div style="margin-top: 30px; padding: 15px; background: #f9fafb; border-left: 3px solid #14b8a6; font-size: 12px; color: #666;">
+                        <strong>Important:</strong> By accepting this quote, you are agreeing to the Terms and Conditions outlined on the next page.
+                    </div>
+                    
+                    <div class="button-container no-print">
                         ${!isAccepted ? '<button class="accept-btn" onclick="acceptQuote()">Accept Quote</button>' : ''}
                         <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+                        <button class="print-btn" onclick="showTerms()">View Terms & Conditions</button>
                     </div>
                     
                     <div id="message" style="text-align: center; margin-top: 20px; font-size: 16px;"></div>
+                </div>
+                
+                <!-- Terms and Conditions Page (Hidden by default, shown when clicked or printed) -->
+                <div id="termsPage" style="display: none;" class="page-break">
+                    <div class="header">
+                        <div class="logo">M4</div>
+                        <div class="subtitle">Streamline</div>
+                    </div>
+                    
+                    <div class="content">
+                        <h1 style="margin-bottom: 20px;">Terms and Conditions</h1>
+                        
+                        <div style="font-size: 14px; line-height: 1.6;">
+                            <h3 style="margin-top: 20px; color: #14b8a6;">1. Quote Acceptance</h3>
+                            <p>This quote is valid for 30 days from the date of issue. Acceptance of this quote constitutes agreement to these terms and conditions.</p>
+                            
+                            <h3 style="margin-top: 20px; color: #14b8a6;">2. Payment Terms</h3>
+                            <p>Payment is due within 30 days of invoice date unless otherwise agreed. Late payments may incur interest charges at a rate of 1.5% per month.</p>
+                            
+                            <h3 style="margin-top: 20px; color: #14b8a6;">3. Scope of Work</h3>
+                            <p>The work to be completed is as described in the quote. Any additional work requested will be quoted separately and requires written approval before commencement.</p>
+                            
+                            <h3 style="margin-top: 20px; color: #14b8a6;">4. Variations</h3>
+                            <p>Any variations to the quoted work must be agreed in writing. Variations may result in additional charges and extended completion times.</p>
+                            
+                            <h3 style="margin-top: 20px; color: #14b8a6;">5. Warranty</h3>
+                            <p>All work is guaranteed for a period of 12 months from completion date, subject to normal wear and tear.</p>
+                            
+                            <h3 style="margin-top: 20px; color: #14b8a6;">6. Liability</h3>
+                            <p>Our liability is limited to the cost of rectifying any defects in our workmanship. We are not liable for consequential losses or damages.</p>
+                            
+                            <h3 style="margin-top: 20px; color: #14b8a6;">7. Access and Site Conditions</h3>
+                            <p>Client must provide reasonable access to the work site and ensure utilities are available. Additional charges may apply if site conditions differ from those described.</p>
+                            
+                            <h3 style="margin-top: 20px; color: #14b8a6;">8. Cancellation</h3>
+                            <p>Cancellation must be made in writing. Cancellation fees may apply for work already commenced or materials ordered.</p>
+                        </div>
+                        
+                        <div class="button-container no-print" style="margin-top: 40px;">
+                            <button class="print-btn" onclick="hideTerms()">Back to Quote</button>
+                        </div>
+                    </div>
                 </div>
             `;
 
@@ -181,6 +237,16 @@
 
         // Load quote when page loads
         window.addEventListener('load', loadQuote);
+        
+        function showTerms() {
+            document.getElementById('termsPage').style.display = 'block';
+            window.scrollTo(0, document.getElementById('termsPage').offsetTop - 50);
+        }
+        
+        function hideTerms() {
+            document.getElementById('termsPage').style.display = 'none';
+            window.scrollTo(0, 0);
+        }
     </script>
 </body>
 </html>
