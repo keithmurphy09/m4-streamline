@@ -24,6 +24,8 @@
         let quotes = [];
         let invoices = [];
         let companySettings = null;
+        let subscription = null;
+        let isAdmin = false;
         let showModal = false;
         let modalType = '';
         let editingItem = null;
@@ -135,18 +137,32 @@
         }
         
         async function loadAllData() {
-            const [c, j, q, i, s] = await Promise.all([
+            const [c, j, q, i, s, sub, admin] = await Promise.all([
                 supabaseClient.from('clients').select('*'), 
                 supabaseClient.from('jobs').select('*'), 
                 supabaseClient.from('quotes').select('*'), 
                 supabaseClient.from('invoices').select('*'),
-                supabaseClient.from('company_settings').select('*').eq('user_id', currentUser.id).single()
+                supabaseClient.from('company_settings').select('*').eq('user_id', currentUser.id).single(),
+                supabaseClient.from('subscriptions').select('*').eq('user_id', currentUser.id).single(),
+                supabaseClient.from('admin_users').select('*').eq('user_id', currentUser.id).single()
             ]);
             clients = c.data || []; 
             jobs = j.data || []; 
             quotes = q.data || []; 
             invoices = i.data || [];
             companySettings = s.data || null;
+            subscription = sub.data || null;
+            isAdmin = admin.data?.is_admin || false;
+            
+            // Create subscription if doesn't exist
+            if (!subscription) {
+                const { data } = await supabaseClient.from('subscriptions').insert([{
+                    user_id: currentUser.id,
+                    trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+                    subscription_status: 'trial'
+                }]).select().single();
+                subscription = data;
+            }
         }
         
         async function addClient(client) { 
@@ -492,7 +508,31 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
         }
         
         function renderApp() {
-            document.getElementById('app').innerHTML = `<div class="min-h-screen bg-gray-50"><div class="bg-black text-white p-6 shadow-lg border-b-4 border-teal-400"><div class="max-w-7xl mx-auto flex justify-between items-center"><div><h1 class="text-3xl font-bold text-teal-400">M4 Streamline</h1><p class="text-teal-400 mt-1">Business Management</p></div><div class="flex items-center gap-4"><img src="final_logo.png" alt="M4 Projects Logo" class="h-20 w-20 object-contain"><button onclick="handleLogout()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm border border-teal-400">Logout</button></div></div></div><div class="bg-white shadow"><div class="max-w-7xl mx-auto px-4"><div class="flex space-x-1">${['dashboard', 'schedule', 'clients', 'quotes', 'invoices', 'company'].map(tab => `<button onclick="switchTab('${tab}')" class="px-6 py-4 font-medium border-b-2 ${activeTab === tab ? 'border-teal-400 text-black' : 'border-transparent text-gray-600'}">${tab === 'company' ? 'Company Info' : tab.charAt(0).toUpperCase() + tab.slice(1)}</button>`).join('')}</div></div></div><div class="max-w-7xl mx-auto p-6">${renderContent()}</div>${showModal ? renderModal() : ''}</div>`;
+            // Check if subscription is active
+            if (subscription && !isAdmin) {
+                const trialEnds = new Date(subscription.trial_ends_at);
+                const now = new Date();
+                const daysLeft = Math.ceil((trialEnds - now) / (1000 * 60 * 60 * 24));
+                
+                if (subscription.subscription_status === 'trial' && daysLeft <= 0) {
+                    // Trial expired, show paywall
+                    renderPaywall();
+                    return;
+                }
+            }
+            
+            // Calculate trial days for header
+            let trialBanner = '';
+            if (subscription && subscription.subscription_status === 'trial' && !isAdmin) {
+                const trialEnds = new Date(subscription.trial_ends_at);
+                const now = new Date();
+                const daysLeft = Math.ceil((trialEnds - now) / (1000 * 60 * 60 * 24));
+                if (daysLeft > 0) {
+                    trialBanner = `<div class="bg-yellow-500 text-black text-center py-2 text-sm font-medium">⏰ Trial: ${daysLeft} day${daysLeft === 1 ? '' : 's'} remaining</div>`;
+                }
+            }
+            
+            document.getElementById('app').innerHTML = `<div class="min-h-screen bg-gray-50">${trialBanner}<div class="bg-black text-white p-6 shadow-lg border-b-4 border-teal-400"><div class="max-w-7xl mx-auto flex justify-between items-center"><div><h1 class="text-3xl font-bold text-teal-400">M4 Streamline</h1><p class="text-teal-400 mt-1">Business Management</p></div><div class="flex items-center gap-4">${isAdmin ? '<span class="bg-red-600 px-3 py-1 rounded text-xs font-bold">ADMIN</span>' : ''}<img src="final_logo.png" alt="M4 Projects Logo" class="h-20 w-20 object-contain"><button onclick="handleLogout()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm border border-teal-400">Logout</button></div></div></div><div class="bg-white shadow"><div class="max-w-7xl mx-auto px-4"><div class="flex space-x-1">${['dashboard', 'schedule', 'clients', 'quotes', 'invoices', 'company'].map(tab => `<button onclick="switchTab('${tab}')" class="px-6 py-4 font-medium border-b-2 ${activeTab === tab ? 'border-teal-400 text-black' : 'border-transparent text-gray-600'}">${tab === 'company' ? 'Company Info' : tab.charAt(0).toUpperCase() + tab.slice(1)}</button>`).join('')}${isAdmin ? '<button onclick="switchTab(\'admin\')" class="px-6 py-4 font-medium border-b-2 ' + (activeTab === 'admin' ? 'border-teal-400 text-black' : 'border-transparent text-gray-600') + '">Admin</button>' : ''}</div></div></div><div class="max-w-7xl mx-auto p-6">${renderContent()}</div>${showModal ? renderModal() : ''}</div>`;
         }
         
         async function switchTab(tab) {
@@ -591,6 +631,134 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
             if (activeTab === 'quotes') return renderQuotes();
             if (activeTab === 'invoices') return renderInvoices();
             if (activeTab === 'company') return renderSettings();
+            if (activeTab === 'admin' && isAdmin) return renderAdmin();
+        }
+        
+        function renderPaywall() {
+            document.getElementById('app').innerHTML = `
+                <div class="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+                    <div class="bg-white p-8 rounded-lg shadow-xl max-w-2xl w-full">
+                        <div class="text-center mb-8">
+                            <div class="text-teal-400 text-5xl font-bold mb-2">M4</div>
+                            <h1 class="text-2xl font-bold text-black">Streamline</h1>
+                            <p class="text-gray-600 mt-2">Business Management</p>
+                        </div>
+                        
+                        <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6">
+                            <p class="text-yellow-700 font-medium">⏰ Your 14-day free trial has ended</p>
+                        </div>
+                        
+                        <h2 class="text-2xl font-bold mb-4">Continue with M4 Streamline</h2>
+                        <p class="text-gray-600 mb-6">To continue using M4 Streamline, please subscribe for just <strong>$29/month</strong>.</p>
+                        
+                        <div class="bg-gray-50 p-6 rounded-lg mb-6">
+                            <h3 class="font-bold mb-3">Payment Instructions:</h3>
+                            <ol class="list-decimal list-inside space-y-2 text-sm">
+                                <li>Transfer $29 to the account details below</li>
+                                <li>Include your email (<strong>${currentUser.email}</strong>) in the payment reference</li>
+                                <li>Email m4projectsanddesigns@gmail.com to confirm payment</li>
+                                <li>Your account will be activated within 24 hours</li>
+                            </ol>
+                        </div>
+                        
+                        <div class="bg-teal-50 p-6 rounded-lg border border-teal-200">
+                            <h3 class="font-bold mb-3 text-teal-900">Bank Details:</h3>
+                            <div class="space-y-2 text-sm">
+                                <div><span class="font-medium">Account Name:</span> [Your Account Name]</div>
+                                <div><span class="font-medium">BSB:</span> [Your BSB]</div>
+                                <div><span class="font-medium">Account Number:</span> [Your Account Number]</div>
+                                <div><span class="font-medium">Amount:</span> $29.00</div>
+                                <div><span class="font-medium">Reference:</span> ${currentUser.email}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 text-center">
+                            <button onclick="handleLogout()" class="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">Logout</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        async function renderAdmin() {
+            // Load all users and their subscriptions
+            const { data: allSubs } = await supabaseClient.from('subscriptions').select(`
+                *,
+                user:user_id (email)
+            `);
+            
+            const users = allSubs || [];
+            
+            return `<div>
+                <h2 class="text-2xl font-bold mb-6">Admin - Subscription Management</h2>
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trial Ends</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            ${users.map(u => {
+                                const trialEnds = new Date(u.trial_ends_at);
+                                const daysLeft = Math.ceil((trialEnds - new Date()) / (1000 * 60 * 60 * 24));
+                                const statusColor = u.subscription_status === 'active' ? 'text-green-600' : u.subscription_status === 'trial' ? 'text-yellow-600' : 'text-red-600';
+                                
+                                return `<tr>
+                                    <td class="px-6 py-4 text-sm">${u.user?.email || 'Unknown'}</td>
+                                    <td class="px-6 py-4 text-sm ${statusColor} font-medium">${u.subscription_status.toUpperCase()}</td>
+                                    <td class="px-6 py-4 text-sm">${trialEnds.toLocaleDateString()} (${daysLeft} days)</td>
+                                    <td class="px-6 py-4 text-sm">
+                                        ${u.subscription_status !== 'active' ? 
+                                            `<button onclick="activateSubscription('${u.user_id}')" class="px-3 py-1 bg-green-600 text-white rounded text-xs mr-2">Activate</button>` : 
+                                            `<button onclick="deactivateSubscription('${u.user_id}')" class="px-3 py-1 bg-red-600 text-white rounded text-xs mr-2">Deactivate</button>`
+                                        }
+                                        <button onclick="extendTrial('${u.user_id}')" class="px-3 py-1 bg-blue-600 text-white rounded text-xs">Extend Trial</button>
+                                    </td>
+                                </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>`;
+        }
+        
+        async function activateSubscription(userId) {
+            await supabaseClient.from('subscriptions').update({
+                subscription_status: 'active',
+                subscription_activated_at: new Date().toISOString()
+            }).eq('user_id', userId);
+            alert('Subscription activated!');
+            renderApp();
+        }
+        
+        async function deactivateSubscription(userId) {
+            if (confirm('Are you sure you want to deactivate this subscription?')) {
+                await supabaseClient.from('subscriptions').update({
+                    subscription_status: 'expired'
+                }).eq('user_id', userId);
+                alert('Subscription deactivated!');
+                renderApp();
+            }
+        }
+        
+        async function extendTrial(userId) {
+            const days = prompt('How many days to extend trial?', '14');
+            if (days) {
+                const { data } = await supabaseClient.from('subscriptions').select('trial_ends_at').eq('user_id', userId).single();
+                const currentEnd = new Date(data.trial_ends_at);
+                const newEnd = new Date(currentEnd.getTime() + parseInt(days) * 24 * 60 * 60 * 1000);
+                
+                await supabaseClient.from('subscriptions').update({
+                    trial_ends_at: newEnd.toISOString()
+                }).eq('user_id', userId);
+                
+                alert(`Trial extended by ${days} days!`);
+                renderApp();
+            }
         }
         
         function renderSettings() {
