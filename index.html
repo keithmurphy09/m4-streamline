@@ -124,7 +124,11 @@
             }
         }
         
-        async function deleteClient(id) { 
+        async function deleteClient(id) {
+            const client = clients.find(c => c.id === id);
+            if (!confirm(`Are you sure you want to delete ${client?.name || 'this client'}? This action cannot be undone.`)) {
+                return;
+            }
             await supabaseClient.from('clients').delete().eq('id', id); 
             clients = clients.filter(c => c.id !== id); 
             renderApp(); 
@@ -157,7 +161,11 @@
             }
         }
         
-        async function deleteJob(id) { 
+        async function deleteJob(id) {
+            const job = jobs.find(j => j.id === id);
+            if (!confirm(`Are you sure you want to delete the job "${job?.title || 'this job'}"? This action cannot be undone.`)) {
+                return;
+            }
             await supabaseClient.from('jobs').delete().eq('id', id); 
             jobs = jobs.filter(j => j.id !== id); 
             renderApp(); 
@@ -221,7 +229,11 @@ async function acceptQuote(quoteId, shareToken) {
     }
 }
         
-        async function deleteQuote(id) { 
+        async function deleteQuote(id) {
+            const quote = quotes.find(q => q.id === id);
+            if (!confirm(`Are you sure you want to delete the quote "${quote?.title || 'this quote'}"? This action cannot be undone.`)) {
+                return;
+            }
             await supabaseClient.from('quotes').delete().eq('id', id); 
             quotes = quotes.filter(q => q.id !== id); 
             renderApp(); 
@@ -257,7 +269,11 @@ async function acceptQuote(quoteId, shareToken) {
             renderApp(); 
         }
         
-        async function deleteInvoice(id) { 
+        async function deleteInvoice(id) {
+            const invoice = invoices.find(i => i.id === id);
+            if (!confirm(`Are you sure you want to delete invoice "${invoice?.invoice_number || 'this invoice'}"? This action cannot be undone.`)) {
+                return;
+            }
             await supabaseClient.from('invoices').delete().eq('id', id); 
             invoices = invoices.filter(i => i.id !== id); 
             renderApp(); 
