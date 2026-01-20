@@ -603,7 +603,7 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
                         ${upcomingJobs.length === 0 ? '<p class="text-gray-500 text-center py-4">No upcoming jobs</p>' : upcomingJobs.map(job => {
                             const client = clients.find(c => c.id === job.client_id);
                             const isTomorrow = job.date === tomorrow;
-                            return `<div class="border-l-4 ${isTomorrow ? 'border-blue-400 bg-blue-50' : 'border-teal-400'} pl-3 py-2 mb-3">
+                            return `<div class="border-l-4 ${isTomorrow ? 'border-blue-400 bg-blue-50' : 'border-teal-400'} pl-3 py-2 mb-3 cursor-pointer hover:bg-gray-50" onclick="switchTab('schedule')">
                                 <div class="font-semibold">${job.title} ${isTomorrow ? '⏰' : ''}</div>
                                 <div class="text-sm text-gray-600">${client?.name || 'Unknown'}</div>
                                 <div class="text-sm text-gray-500">${new Date(job.date).toLocaleDateString()} at ${job.time}</div>
