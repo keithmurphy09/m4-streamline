@@ -768,9 +768,13 @@ function renderCalendar() {
                 const clientId = editingItem?.client_id || '';
                 const title = editingItem?.title || '';
                 const notes = editingItem?.notes || '';
-                const buttonText = editingItem ? 'Update Quote' : 'Create Quote';
-                if (editingItem) quoteItems = editingItem.items || [];
-                form = `<select id="client_id" class="w-full px-4 py-2 border rounded mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}</select><input type="text" id="title" placeholder="Quote Title" value="${title}" class="w-full px-4 py-2 border rounded mb-3"><div id="items-list"></div><button onclick="addQuoteItem()" class="text-teal-500 text-sm mb-3">+ Add Item</button><div id="quote-total" class="font-bold mb-3">Total: $0</div><textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${notes}</textarea><button onclick="${editingItem ? `updateQuote('${editingItem.id}')` : 'saveQuote()'}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
+                const buttonText = editingItem && editingItem.id ? 'Update Quote' : 'Create Quote';
+                if (editingItem && editingItem.id) {
+                    quoteItems = editingItem.items || [{ description: '', quantity: 1, price: 0 }];
+                } else if (!editingItem || !editingItem.client_id) {
+                    quoteItems = [{ description: '', quantity: 1, price: 0 }];
+                }
+                form = `<select id="client_id" class="w-full px-4 py-2 border rounded mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}</select><input type="text" id="title" placeholder="Quote Title" value="${title}" class="w-full px-4 py-2 border rounded mb-3"><div id="items-list"></div><button onclick="addQuoteItem()" class="text-teal-500 text-sm mb-3">+ Add Item</button><div id="quote-total" class="font-bold mb-3">Total: $0</div><textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${notes}</textarea><button onclick="${editingItem && editingItem.id ? `updateQuote('${editingItem.id}')` : 'saveQuote()'}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
             }
             return `<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onclick="if(event.target===this)closeModal()"><div class="bg-white rounded-lg p-6 max-w-2xl w-full"><div class="flex justify-between mb-4"><h3 class="text-xl font-bold">${editingItem ? 'Edit ' + modalType : modalType}</h3><button onclick="closeModal()" class="text-2xl">×</button></div>${form}</div></div>`;
         }
@@ -804,6 +808,7 @@ function renderCalendar() {
             if (data) {
                 const index = quotes.findIndex(q => q.id === id);
                 if (index !== -1) quotes[index] = data[0];
+                quoteItems = []; // Reset quote items
                 closeModal();
                 renderApp();
             }
