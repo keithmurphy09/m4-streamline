@@ -434,7 +434,7 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
                         ${acceptedQuotes.length === 0 && unpaidInvoices.length === 0 ? '<p class="text-gray-500 text-center py-4">No recent activity</p>' : `
                             ${acceptedQuotes.slice(0, 3).map(q => {
                                 const client = clients.find(c => c.id === q.client_id);
-                                return `<div class="py-2 mb-2 border-b">
+                                return `<div class="py-2 mb-2 border-b cursor-pointer hover:bg-gray-50" onclick="activeTab='quotes'; renderApp();">
                                     <div class="flex justify-between">
                                         <span class="text-sm">✓ Quote accepted: <strong>${q.title}</strong></span>
                                     </div>
@@ -443,7 +443,7 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
                             }).join('')}
                             ${unpaidInvoices.slice(0, 3).map(inv => {
                                 const client = clients.find(c => c.id === inv.client_id);
-                                return `<div class="py-2 mb-2 border-b">
+                                return `<div class="py-2 mb-2 border-b cursor-pointer hover:bg-gray-50" onclick="activeTab='invoices'; renderApp();">
                                     <div class="flex justify-between">
                                         <span class="text-sm">⏳ Unpaid: <strong>${inv.title}</strong></span>
                                     </div>
