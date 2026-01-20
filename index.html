@@ -1284,8 +1284,6 @@ function renderCalendar() {
             const filterTabs = `<div class="flex gap-2 mb-4"><button onclick="invoiceFilter='unpaid'; renderApp();" class="px-4 py-2 rounded ${invoiceFilter === 'unpaid' ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'} border">Unpaid (${invoices.filter(i => i.status === 'unpaid').length})</button><button onclick="invoiceFilter='paid'; renderApp();" class="px-4 py-2 rounded ${invoiceFilter === 'paid' ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'} border">Paid (${invoices.filter(i => i.status === 'paid').length})</button><button onclick="invoiceFilter='monthly'; renderApp();" class="px-4 py-2 rounded ${invoiceFilter === 'monthly' ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'} border">Monthly</button></div>`;
             
             return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Invoices</h2><div class="flex gap-2"><button onclick="exportToCSV('invoices')" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">Export CSV</button><div class="text-sm"><div>Outstanding: <span class="font-bold text-red-600">$${unpaidTotal.toFixed(2)}</span></div><div>Paid: <span class="font-bold text-green-600">$${paidTotal.toFixed(2)}</span></div></div></div></div>${filterTabs}<div class="grid gap-4">${content}</div></div>`;
-            
-        }
         }
         
         function renderModal() {
