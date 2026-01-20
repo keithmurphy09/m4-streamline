@@ -297,8 +297,6 @@ async function acceptQuote(quoteId, shareToken) {
         
         async function convertToInvoice(quote) {
             const issueDate = new Date();
-            const dueDate = new Date(issueDate);
-            dueDate.setDate(dueDate.getDate() + 30); // Due in 30 days
             
             const inv = {
                 client_id: quote.client_id,
@@ -309,7 +307,7 @@ async function acceptQuote(quoteId, shareToken) {
                 invoice_number: 'INV-' + Date.now(),
                 status: 'unpaid',
                 issue_date: issueDate.toISOString().split('T')[0],
-                due_date: dueDate.toISOString().split('T')[0],
+                due_date: issueDate.toISOString().split('T')[0], // Due on completion (same day)
                 user_id: currentUser.id
             };
             const { data, error } = await supabaseClient.from('invoices').insert([inv]).select();
@@ -571,9 +569,9 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
                 <h2 class="text-2xl font-bold mb-6">Dashboard</h2>
                 
                 <!-- Alerts -->
-                ${tomorrowJobs.length > 0 ? `<div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4"><div class="flex"><div class="flex-shrink-0">⏰</div><div class="ml-3"><p class="text-sm text-blue-700"><strong>Tomorrow's Jobs (${tomorrowJobs.length}):</strong> ${tomorrowJobs.map(j => j.title).join(', ')}</p></div></div></div>` : ''}
-                ${expiringQuotes.length > 0 ? `<div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-4"><div class="flex"><div class="flex-shrink-0">⚠️</div><div class="ml-3"><p class="text-sm text-yellow-700"><strong>Quotes Expiring Soon (${expiringQuotes.length}):</strong> These quotes will expire in less than 48 hours</p></div></div></div>` : ''}
-                ${overdueInvoices.length > 0 ? `<div class="bg-red-50 border-l-4 border-red-500 p-4 mb-4"><div class="flex"><div class="flex-shrink-0">🚨</div><div class="ml-3"><p class="text-sm text-red-700"><strong>Overdue Invoices (${overdueInvoices.length}):</strong> $${overdueInvoices.reduce((s,i) => s + parseFloat(i.total || 0), 0).toFixed(2)} overdue</p></div></div></div>` : ''}
+                ${tomorrowJobs.length > 0 ? `<div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4 cursor-pointer hover:bg-blue-100" onclick="switchTab('schedule')"><div class="flex"><div class="flex-shrink-0">⏰</div><div class="ml-3"><p class="text-sm text-blue-700"><strong>Tomorrow's Jobs (${tomorrowJobs.length}):</strong> ${tomorrowJobs.map(j => j.title).join(', ')}</p></div></div></div>` : ''}
+                ${expiringQuotes.length > 0 ? `<div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-4 cursor-pointer hover:bg-yellow-100" onclick="switchTab('quotes')"><div class="flex"><div class="flex-shrink-0">⚠️</div><div class="ml-3"><p class="text-sm text-yellow-700"><strong>Quotes Expiring Soon (${expiringQuotes.length}):</strong> These quotes will expire in less than 48 hours</p></div></div></div>` : ''}
+                ${overdueInvoices.length > 0 ? `<div class="bg-red-50 border-l-4 border-red-500 p-4 mb-4 cursor-pointer hover:bg-red-100" onclick="switchTab('invoices')"><div class="flex"><div class="flex-shrink-0">🚨</div><div class="ml-3"><p class="text-sm text-red-700"><strong>Overdue Invoices (${overdueInvoices.length}):</strong> $${overdueInvoices.reduce((s,i) => s + parseFloat(i.total || 0), 0).toFixed(2)} overdue</p></div></div></div>` : ''}
                 
                 <!-- Stats Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
