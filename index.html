@@ -858,7 +858,15 @@ function renderCalendar() {
         }
         
         function renderQuotes() {
-    const successNotification = lastCreatedQuote ? `<div class="bg-green-50 border-l-4 border-green-500 p-4 mb-4"><div class="flex justify-between items-center"><div><p class="text-sm text-green-700"><strong>✓ Quote Created!</strong> ${lastCreatedQuote.title} has been created successfully.</p></div><button onclick="lastCreatedQuote = null; renderApp();" class="text-green-700 hover:text-green-900 text-xl font-bold">&times;</button></div></div>` : '';
+    const successNotification = lastCreatedQuote ? `<div class="bg-green-50 border-l-4 border-green-500 p-4 mb-4"><div class="flex justify-between items-center"><div><p class="text-sm text-green-700"><strong>✓ Quote Created!</strong> ${lastCreatedQuote.title} has been created successfully.</p></div></div></div>` : '';
+    
+    // Auto-dismiss notification after 5 seconds
+    if (lastCreatedQuote) {
+        setTimeout(() => {
+            lastCreatedQuote = null;
+            renderApp();
+        }, 5000);
+    }
     
     return `<div>${successNotification}<div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Quotes</h2><div class="flex gap-2"><button onclick="exportToCSV('quotes')" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">Export CSV</button><button onclick="openModal('quote')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Create Quote</button></div></div><div class="grid gap-4">${quotes.length === 0 ? '<div class="text-center py-12 text-gray-500">No quotes</div>' : quotes.map(q => { 
         const client = clients.find(c => c.id === q.client_id);
