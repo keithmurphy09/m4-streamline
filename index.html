@@ -159,7 +159,8 @@
                 name: document.getElementById('name').value,
                 email: document.getElementById('email').value,
                 phone: document.getElementById('phone').value,
-                address: document.getElementById('address').value
+                address: document.getElementById('address').value,
+                notes: document.getElementById('clientNotes').value
             };
             const { data } = await supabaseClient.from('clients').update(updatedClient).eq('id', id).select();
             if (data) {
@@ -196,7 +197,8 @@
                 title: document.getElementById('title').value,
                 date: document.getElementById('date').value,
                 time: document.getElementById('time').value,
-                notes: document.getElementById('notes').value
+                notes: document.getElementById('notes').value,
+                status: document.getElementById('jobStatus').value
             };
             const { data } = await supabaseClient.from('jobs').update(updatedJob).eq('id', id).select();
             if (data) {
@@ -462,6 +464,54 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
             renderApp();
         }
         
+        function exportToCSV(type) {
+            let data = [];
+            let filename = '';
+            let headers = [];
+            
+            if (type === 'clients') {
+                headers = ['Name', 'Email', 'Phone', 'Address', 'Notes'];
+                data = clients.map(c => [c.name, c.email, c.phone, c.address || '', c.notes || '']);
+                filename = 'clients.csv';
+            } else if (type === 'jobs') {
+                headers = ['Client', 'Title', 'Date', 'Time', 'Status', 'Notes'];
+                data = jobs.map(j => {
+                    const client = clients.find(c => c.id === j.client_id);
+                    return [client?.name || 'Unknown', j.title, j.date, j.time, j.status || 'scheduled', j.notes || ''];
+                });
+                filename = 'jobs.csv';
+            } else if (type === 'quotes') {
+                headers = ['Client', 'Title', 'Date', 'Total', 'Status', 'Accepted'];
+                data = quotes.map(q => {
+                    const client = clients.find(c => c.id === q.client_id);
+                    return [client?.name || 'Unknown', q.title, q.date, q.total, q.status, q.accepted ? 'Yes' : 'No'];
+                });
+                filename = 'quotes.csv';
+            } else if (type === 'invoices') {
+                headers = ['Client', 'Invoice #', 'Title', 'Issue Date', 'Due Date', 'Total', 'Status'];
+                data = invoices.map(i => {
+                    const client = clients.find(c => c.id === i.client_id);
+                    return [client?.name || 'Unknown', i.invoice_number, i.title, i.issue_date, i.due_date || '', i.total, i.status];
+                });
+                filename = 'invoices.csv';
+            }
+            
+            // Create CSV content
+            let csvContent = headers.join(',') + '\n';
+            data.forEach(row => {
+                csvContent += row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',') + '\n';
+            });
+            
+            // Download CSV
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+        
         function renderContent() {
             if (activeTab === 'dashboard') return renderDashboard();
             if (activeTab === 'schedule') return renderSchedule();
@@ -565,9 +615,21 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
         return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Schedule</h2><div class="flex gap-4">${viewToggle}<button onclick="openModal('job')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Schedule Job</button></div></div><div id="calendar" class="bg-white p-4 rounded-lg shadow"></div></div>`;
     }
     
-    return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Schedule</h2><div class="flex gap-4">${viewToggle}<button onclick="openModal('job')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Schedule Job</button></div></div><div class="grid gap-4">${jobs.length === 0 ? '<div class="text-center py-12 text-gray-500">No jobs</div>' : jobs.map(job => { 
-        const client = clients.find(c => c.id === job.client_id); 
-        return `<div class="bg-white p-4 rounded-lg shadow border-l-4 border-teal-400"><div class="flex justify-between"><div class="flex-1"><h3 class="text-lg font-semibold">${job.title}</h3><p class="text-gray-600">${client?.name || 'Unknown'}</p>${client?.address ? `<p class="text-sm text-gray-500">📍 ${client.address}</p>` : ''}<div class="text-sm text-gray-500 mt-2">${new Date(job.date).toLocaleDateString()} ${job.time}</div>${job.notes ? `<p class="text-sm text-gray-700 mt-2 italic">${job.notes}</p>` : ''}${job.photos && job.photos.length > 0 ? `<div class="mt-3 flex gap-2 flex-wrap">${job.photos.map(photo => `<img src="${photo}" class="w-20 h-20 object-cover rounded border border-teal-400" />`).join('')}</div>` : ''}</div><div class="flex flex-col gap-2"><button onclick='openModal("job", ${JSON.stringify(job).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button><label class="cursor-pointer px-3 py-1 bg-teal-500 text-white rounded text-sm text-center"><input type="file" accept="image/*" onchange="uploadJobPhoto(this, '${job.id}')" class="hidden" />Add Photo</label><button onclick="deleteJob('${job.id}')" class="px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button></div></div></div>`; 
+    return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Schedule</h2><div class="flex gap-4">${viewToggle}<button onclick="exportToCSV('jobs')" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">Export CSV</button><button onclick="openModal('job')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Schedule Job</button></div></div><div class="grid gap-4">${jobs.length === 0 ? '<div class="text-center py-12 text-gray-500">No jobs</div>' : jobs.map(job => { 
+        const client = clients.find(c => c.id === job.client_id);
+        const statusColors = {
+            scheduled: 'bg-blue-100 text-blue-800',
+            in_progress: 'bg-yellow-100 text-yellow-800',
+            completed: 'bg-green-100 text-green-800'
+        };
+        const statusLabels = {
+            scheduled: 'Scheduled',
+            in_progress: 'In Progress',
+            completed: 'Completed'
+        };
+        const statusColor = statusColors[job.status] || statusColors.scheduled;
+        const statusLabel = statusLabels[job.status] || statusLabels.scheduled;
+        return `<div class="bg-white p-4 rounded-lg shadow border-l-4 border-teal-400"><div class="flex justify-between"><div class="flex-1"><h3 class="text-lg font-semibold">${job.title}</h3><span class="text-xs ${statusColor} px-2 py-1 rounded inline-block mt-1">${statusLabel}</span><p class="text-gray-600 mt-1">${client?.name || 'Unknown'}</p>${client?.address ? `<p class="text-sm text-gray-500">📍 ${client.address}</p>` : ''}<div class="text-sm text-gray-500 mt-2">${new Date(job.date).toLocaleDateString()} ${job.time}</div>${job.notes ? `<p class="text-sm text-gray-700 mt-2 italic">${job.notes}</p>` : ''}${job.photos && job.photos.length > 0 ? `<div class="mt-3 flex gap-2 flex-wrap">${job.photos.map(photo => `<img src="${photo}" class="w-20 h-20 object-cover rounded border border-teal-400" />`).join('')}</div>` : ''}</div><div class="flex flex-col gap-2"><button onclick='openModal("job", ${JSON.stringify(job).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button><label class="cursor-pointer px-3 py-1 bg-teal-500 text-white rounded text-sm text-center"><input type="file" accept="image/*" onchange="uploadJobPhoto(this, '${job.id}')" class="hidden" />Add Photo</label><button onclick="deleteJob('${job.id}')" class="px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button></div></div></div>`; 
     }).join('')}</div></div>`;
 }
 
@@ -614,7 +676,7 @@ function renderCalendar() {
                 (c.address && c.address.toLowerCase().includes(clientSearch.toLowerCase()))
             );
             
-            return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Clients</h2><button onclick="openModal('client')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Add Client</button></div><div class="mb-4"><input type="text" id="clientSearchInput" placeholder="Search clients by name, email, phone, or address..." value="${clientSearch}" oninput="clientSearch=this.value; renderClientsOnly();" class="w-full px-4 py-2 border rounded-lg" /></div><div id="clientsList" class="grid gap-4">${filteredClients.length === 0 ? '<div class="text-center py-12 text-gray-500">No clients found</div>' : filteredClients.map(c => `<div class="bg-white p-4 rounded-lg shadow"><div class="flex justify-between"><div class="flex-1"><h3 class="text-lg font-semibold">${c.name}</h3><p class="text-sm text-gray-600">${c.email}</p><p class="text-sm text-gray-600">${c.phone}</p>${c.address ? `<p class="text-sm text-gray-600 mt-1">📍 ${c.address}</p>` : ''}</div><div class="flex gap-2"><button onclick='openQuoteForClient(${JSON.stringify(c).replace(/"/g, "&quot;")})' class="w-24 px-3 py-1 bg-teal-600 text-white rounded text-sm">New Quote</button><button onclick='openModal("client", ${JSON.stringify(c).replace(/"/g, "&quot;")})' class="w-24 px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button><button onclick="deleteClient('${c.id}')" class="w-24 px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button></div></div></div>`).join('')}</div></div>`;
+            return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Clients</h2><div class="flex gap-2"><button onclick="exportToCSV('clients')" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">Export CSV</button><button onclick="openModal('client')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Add Client</button></div></div><div class="mb-4"><input type="text" id="clientSearchInput" placeholder="Search clients by name, email, phone, or address..." value="${clientSearch}" oninput="clientSearch=this.value; renderClientsOnly();" class="w-full px-4 py-2 border rounded-lg" /></div><div id="clientsList" class="grid gap-4">${filteredClients.length === 0 ? '<div class="text-center py-12 text-gray-500">No clients found</div>' : filteredClients.map(c => `<div class="bg-white p-4 rounded-lg shadow"><div class="flex justify-between"><div class="flex-1"><h3 class="text-lg font-semibold">${c.name}</h3><p class="text-sm text-gray-600">${c.email}</p><p class="text-sm text-gray-600">${c.phone}</p>${c.address ? `<p class="text-sm text-gray-600 mt-1">📍 ${c.address}</p>` : ''}</div><div class="flex gap-2"><button onclick='openQuoteForClient(${JSON.stringify(c).replace(/"/g, "&quot;")})' class="w-24 px-3 py-1 bg-teal-600 text-white rounded text-sm">New Quote</button><button onclick='openModal("client", ${JSON.stringify(c).replace(/"/g, "&quot;")})' class="w-24 px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button><button onclick="deleteClient('${c.id}')" class="w-24 px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button></div></div></div>`).join('')}</div></div>`;
         }
         
         function renderClientsOnly() {
@@ -632,7 +694,7 @@ function renderCalendar() {
         }
         
         function renderQuotes() {
-    return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Quotes</h2><button onclick="openModal('quote')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Create Quote</button></div><div class="grid gap-4">${quotes.length === 0 ? '<div class="text-center py-12 text-gray-500">No quotes</div>' : quotes.map(q => { 
+    return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Quotes</h2><div class="flex gap-2"><button onclick="exportToCSV('quotes')" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">Export CSV</button><button onclick="openModal('quote')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Create Quote</button></div></div><div class="grid gap-4">${quotes.length === 0 ? '<div class="text-center py-12 text-gray-500">No quotes</div>' : quotes.map(q => { 
         const client = clients.find(c => c.id === q.client_id);
         const isAccepted = q.accepted || q.status === 'accepted';
         return `<div class="bg-white p-4 rounded-lg shadow ${isAccepted ? 'border-l-4 border-green-500' : ''}"><div class="flex justify-between mb-3"><div><h3 class="text-lg font-semibold">${q.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p>${isAccepted ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mt-1 inline-block">✓ ACCEPTED</span>' : ''}</div><p class="text-2xl font-bold text-teal-500">$${q.total?.toFixed(2)}</p></div>${q.notes ? `<p class="text-sm text-gray-600 italic mb-3">${q.notes}</p>` : ''}<div class="flex gap-2 flex-wrap">${isAccepted ? `<button onclick='openJobFromQuote(${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-teal-600 text-white rounded text-sm">📅 Schedule Job</button>` : ''}${!isAccepted ? `<button onclick='openModal("quote", ${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>` : ''}${!isAccepted && q.status === 'pending' ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm">Convert to Invoice</button>` : ''}${isAccepted ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm">Convert to Invoice</button>` : ''}<button onclick='generatePDF("quote", ${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Download PDF</button><button onclick='sendQuoteEmail(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-purple-600 text-white rounded text-sm">Send Email</button><button onclick="deleteQuote('${q.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div></div>`; 
@@ -640,6 +702,9 @@ function renderCalendar() {
 }
         
         function renderInvoices() {
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            
             const filteredInvoices = invoiceFilter === 'unpaid' 
                 ? invoices.filter(i => i.status === 'unpaid')
                 : invoices.filter(i => i.status === 'paid');
@@ -649,9 +714,30 @@ function renderCalendar() {
             
             const filterTabs = `<div class="flex gap-2 mb-4"><button onclick="invoiceFilter='unpaid'; renderApp();" class="px-4 py-2 rounded ${invoiceFilter === 'unpaid' ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'} border">Unpaid (${invoices.filter(i => i.status === 'unpaid').length})</button><button onclick="invoiceFilter='paid'; renderApp();" class="px-4 py-2 rounded ${invoiceFilter === 'paid' ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'} border">Paid (${invoices.filter(i => i.status === 'paid').length})</button></div>`;
             
-            return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Invoices</h2><div class="text-sm"><div>Outstanding: <span class="font-bold text-red-600">$${unpaidTotal.toFixed(2)}</span></div><div>Paid: <span class="font-bold text-green-600">$${paidTotal.toFixed(2)}</span></div></div></div>${filterTabs}<div class="grid gap-4">${filteredInvoices.length === 0 ? `<div class="text-center py-12 text-gray-500">No ${invoiceFilter} invoices</div>` : filteredInvoices.map(inv => { 
-                const client = clients.find(c => c.id === inv.client_id); 
-                return `<div class="bg-white p-4 rounded-lg shadow ${inv.status === 'paid' ? 'border-l-4 border-green-500' : ''}"><div class="flex justify-between mb-3"><div><h3 class="text-lg font-semibold">${inv.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p><p class="text-xs">${inv.invoice_number}</p><p class="text-xs text-gray-500">${inv.issue_date}</p>${inv.status === 'paid' ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mt-1 inline-block">✓ PAID</span>' : ''}</div><p class="text-2xl font-bold text-teal-500">$${inv.total?.toFixed(2)}</p></div><div class="flex gap-2">${inv.status === 'unpaid' ? `<button onclick="updateInvoice('${inv.id}', 'paid')" class="px-3 py-1 bg-green-600 text-white rounded text-sm">Mark Paid</button>` : ''}<button onclick="generatePDF('invoice', ${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Download PDF</button><button onclick="deleteInvoice('${inv.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div></div>`; 
+            return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Invoices</h2><div class="flex gap-2"><button onclick="exportToCSV('invoices')" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">Export CSV</button><div class="text-sm"><div>Outstanding: <span class="font-bold text-red-600">$${unpaidTotal.toFixed(2)}</span></div><div>Paid: <span class="font-bold text-green-600">$${paidTotal.toFixed(2)}</span></div></div></div></div>${filterTabs}<div class="grid gap-4">${filteredInvoices.length === 0 ? `<div class="text-center py-12 text-gray-500">No ${invoiceFilter} invoices</div>` : filteredInvoices.map(inv => { 
+                const client = clients.find(c => c.id === inv.client_id);
+                let borderColor = '';
+                let statusBadge = '';
+                
+                if (inv.status === 'paid') {
+                    borderColor = 'border-l-4 border-green-500';
+                    statusBadge = '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mt-1 inline-block">✓ PAID</span>';
+                } else if (inv.due_date) {
+                    const dueDate = new Date(inv.due_date);
+                    dueDate.setHours(0,0,0,0);
+                    const diffTime = dueDate - today;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    if (diffDays < 0) {
+                        borderColor = 'border-l-4 border-red-500';
+                        statusBadge = `<span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded mt-1 inline-block">⚠ OVERDUE (${Math.abs(diffDays)} days)</span>`;
+                    } else if (diffDays <= 7) {
+                        borderColor = 'border-l-4 border-yellow-500';
+                        statusBadge = `<span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded mt-1 inline-block">⏰ DUE IN ${diffDays} DAYS</span>`;
+                    }
+                }
+                
+                return `<div class="bg-white p-4 rounded-lg shadow ${borderColor}"><div class="flex justify-between mb-3"><div><h3 class="text-lg font-semibold">${inv.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p><p class="text-xs">${inv.invoice_number}</p><p class="text-xs text-gray-500">Issued: ${inv.issue_date}</p>${inv.due_date ? `<p class="text-xs text-gray-500">Due: ${inv.due_date}</p>` : ''}${statusBadge}</div><p class="text-2xl font-bold text-teal-500">$${inv.total?.toFixed(2)}</p></div><div class="flex gap-2">${inv.status === 'unpaid' ? `<button onclick="updateInvoice('${inv.id}', 'paid')" class="px-3 py-1 bg-green-600 text-white rounded text-sm">Mark Paid</button>` : ''}<button onclick="generatePDF('invoice', ${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Download PDF</button><button onclick="deleteInvoice('${inv.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div></div>`; 
             }).join('')}</div></div>`;
         }
         
@@ -662,9 +748,10 @@ function renderCalendar() {
                 const email = editingItem?.email || '';
                 const phone = editingItem?.phone || '';
                 const address = editingItem?.address || '';
+                const notes = editingItem?.notes || '';
                 const buttonText = editingItem ? 'Update Client' : 'Add Client';
-                const action = editingItem ? `updateClient('${editingItem.id}')` : `addClient({name:document.getElementById('name').value,email:document.getElementById('email').value,phone:document.getElementById('phone').value,address:document.getElementById('address').value})`;
-                form = `<input type="text" id="name" placeholder="Name" value="${name}" class="w-full px-4 py-2 border rounded mb-3"><input type="email" id="email" placeholder="Email" value="${email}" class="w-full px-4 py-2 border rounded mb-3"><input type="tel" id="phone" placeholder="Phone" value="${phone}" class="w-full px-4 py-2 border rounded mb-3"><input type="text" id="address" placeholder="Address" value="${address}" class="w-full px-4 py-2 border rounded mb-3"><button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
+                const action = editingItem ? `updateClient('${editingItem.id}')` : `addClient({name:document.getElementById('name').value,email:document.getElementById('email').value,phone:document.getElementById('phone').value,address:document.getElementById('address').value,notes:document.getElementById('clientNotes').value})`;
+                form = `<input type="text" id="name" placeholder="Name" value="${name}" class="w-full px-4 py-2 border rounded mb-3"><input type="email" id="email" placeholder="Email" value="${email}" class="w-full px-4 py-2 border rounded mb-3"><input type="tel" id="phone" placeholder="Phone" value="${phone}" class="w-full px-4 py-2 border rounded mb-3"><input type="text" id="address" placeholder="Address" value="${address}" class="w-full px-4 py-2 border rounded mb-3"><textarea id="clientNotes" placeholder="Internal notes (only visible to you)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${notes}</textarea><button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
             }
             if (modalType === 'job') {
                 const clientId = editingItem?.client_id || '';
@@ -672,9 +759,10 @@ function renderCalendar() {
                 const date = editingItem?.date || '';
                 const time = editingItem?.time || '';
                 const notes = editingItem?.notes || '';
+                const status = editingItem?.status || 'scheduled';
                 const buttonText = (editingItem && editingItem.id) ? 'Update Job' : 'Schedule Job';
-                const action = (editingItem && editingItem.id) ? `updateJob('${editingItem.id}')` : `addJob({client_id:document.getElementById('client_id').value,title:document.getElementById('title').value,date:document.getElementById('date').value,time:document.getElementById('time').value,notes:document.getElementById('notes').value})`;
-                form = `<select id="client_id" class="w-full px-4 py-2 border rounded mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}</select><input type="text" id="title" placeholder="Job Title" value="${title}" class="w-full px-4 py-2 border rounded mb-3"><input type="date" id="date" value="${date}" class="w-full px-4 py-2 border rounded mb-3"><input type="time" id="time" value="${time}" class="w-full px-4 py-2 border rounded mb-3"><textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${notes}</textarea><button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
+                const action = (editingItem && editingItem.id) ? `updateJob('${editingItem.id}')` : `addJob({client_id:document.getElementById('client_id').value,title:document.getElementById('title').value,date:document.getElementById('date').value,time:document.getElementById('time').value,notes:document.getElementById('notes').value,status:document.getElementById('jobStatus').value})`;
+                form = `<select id="client_id" class="w-full px-4 py-2 border rounded mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}</select><input type="text" id="title" placeholder="Job Title" value="${title}" class="w-full px-4 py-2 border rounded mb-3"><input type="date" id="date" value="${date}" class="w-full px-4 py-2 border rounded mb-3"><input type="time" id="time" value="${time}" class="w-full px-4 py-2 border rounded mb-3"><select id="jobStatus" class="w-full px-4 py-2 border rounded mb-3"><option value="scheduled" ${status === 'scheduled' ? 'selected' : ''}>Scheduled</option><option value="in_progress" ${status === 'in_progress' ? 'selected' : ''}>In Progress</option><option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option></select><textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${notes}</textarea><button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
             }
             if (modalType === 'quote') {
                 const clientId = editingItem?.client_id || '';
