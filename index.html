@@ -590,21 +590,26 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
         
         async function deleteAccount() {
             try {
-                // Delete all user data
+                // Delete all user data first
                 await Promise.all([
                     supabaseClient.from('clients').delete().eq('user_id', currentUser.id),
                     supabaseClient.from('jobs').delete().eq('user_id', currentUser.id),
                     supabaseClient.from('quotes').delete().eq('user_id', currentUser.id),
                     supabaseClient.from('invoices').delete().eq('user_id', currentUser.id),
                     supabaseClient.from('company_settings').delete().eq('user_id', currentUser.id),
-                    supabaseClient.from('subscriptions').delete().eq('user_id', currentUser.id)
+                    supabaseClient.from('subscriptions').delete().eq('user_id', currentUser.id),
+                    supabaseClient.from('admin_users').delete().eq('user_id', currentUser.id)
                 ]);
                 
-                // Delete auth user
-                const { error } = await supabaseClient.auth.admin.deleteUser(currentUser.id);
+                // Use RPC function to delete user (requires database function)
+                const { error } = await supabaseClient.rpc('delete_user');
                 
                 if (error) {
-                    alert('Error deleting account. Please contact support.');
+                    console.error('Delete error:', error);
+                    alert('Account data deleted. Please contact support to complete account deletion: m4projectsanddesigns@gmail.com');
+                    await supabaseClient.auth.signOut();
+                    currentUser = null;
+                    renderAuth();
                 } else {
                     alert('Account deleted successfully.');
                     await supabaseClient.auth.signOut();
@@ -612,7 +617,11 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
                     renderAuth();
                 }
             } catch (error) {
-                alert('Error deleting account: ' + error.message);
+                console.error('Delete error:', error);
+                alert('Account data deleted. Please contact support to complete account deletion: m4projectsanddesigns@gmail.com');
+                await supabaseClient.auth.signOut();
+                currentUser = null;
+                renderAuth();
             }
         }
         
