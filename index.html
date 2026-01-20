@@ -812,15 +812,19 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
         }
         
         async function renderAdmin() {
-            // Load all users and their subscriptions using the view
-            const { data: allSubs, error } = await supabaseClient.from('subscription_users').select('*');
+            // Load all subscriptions
+            const { data: allSubs, error } = await supabaseClient.from('subscriptions').select('*');
             
             if (error) {
                 console.error('Error loading subscriptions:', error);
-                return `<div><h2 class="text-2xl font-bold mb-6">Admin - Subscription Management</h2><p class="text-red-600">Error loading subscriptions. Check console.</p></div>`;
+                console.error('Error message:', error.message);
+                console.error('Error details:', error.details);
+                console.error('Error hint:', error.hint);
+                return `<div><h2 class="text-2xl font-bold mb-6">Admin - Subscription Management</h2><p class="text-red-600">Error: ${error.message || 'Unknown error'}</p></div>`;
             }
             
             const users = allSubs || [];
+            console.log('Loaded subscriptions:', users);
             
             return `<div>
                 <h2 class="text-2xl font-bold mb-6">Admin - Subscription Management</h2>
@@ -835,13 +839,13 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200">
-                            ${users.map(u => {
+                            ${users.length === 0 ? '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No subscriptions found</td></tr>' : users.map(u => {
                                 const trialEnds = new Date(u.trial_ends_at);
                                 const daysLeft = Math.ceil((trialEnds - new Date()) / (1000 * 60 * 60 * 24));
                                 const statusColor = u.subscription_status === 'active' ? 'text-green-600' : u.subscription_status === 'trial' ? 'text-yellow-600' : 'text-red-600';
                                 
                                 return `<tr>
-                                    <td class="px-6 py-4 text-sm">${u.email || 'Unknown'}</td>
+                                    <td class="px-6 py-4 text-sm">${u.user_email || 'Unknown'}</td>
                                     <td class="px-6 py-4 text-sm ${statusColor} font-medium">${u.subscription_status.toUpperCase()}</td>
                                     <td class="px-6 py-4 text-sm">${trialEnds.toLocaleDateString()} (${daysLeft} days)</td>
                                     <td class="px-6 py-4 text-sm">
