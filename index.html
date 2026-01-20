@@ -368,7 +368,13 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
         }
         
         function renderApp() {
-            document.getElementById('app').innerHTML = `<div class="min-h-screen bg-gray-50"><div class="bg-black text-white p-6 shadow-lg border-b-4 border-teal-400"><div class="max-w-7xl mx-auto flex justify-between items-center"><div><h1 class="text-3xl font-bold text-teal-400">M4 Streamline</h1><p class="text-teal-400 mt-1">Business Management</p></div><div class="flex items-center gap-4"><img src="final_logo.png" alt="M4 Projects Logo" class="h-20 w-20 object-contain"><button onclick="handleLogout()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm border border-teal-400">Logout</button></div></div></div><div class="bg-white shadow"><div class="max-w-7xl mx-auto px-4"><div class="flex space-x-1">${['dashboard', 'schedule', 'clients', 'quotes', 'invoices'].map(tab => `<button onclick="activeTab='${tab}'; renderApp();" class="px-6 py-4 font-medium border-b-2 ${activeTab === tab ? 'border-teal-400 text-black' : 'border-transparent text-gray-600'}">${tab.charAt(0).toUpperCase() + tab.slice(1)}</button>`).join('')}</div></div></div><div class="max-w-7xl mx-auto p-6">${renderContent()}</div>${showModal ? renderModal() : ''}</div>`;
+            document.getElementById('app').innerHTML = `<div class="min-h-screen bg-gray-50"><div class="bg-black text-white p-6 shadow-lg border-b-4 border-teal-400"><div class="max-w-7xl mx-auto flex justify-between items-center"><div><h1 class="text-3xl font-bold text-teal-400">M4 Streamline</h1><p class="text-teal-400 mt-1">Business Management</p></div><div class="flex items-center gap-4"><img src="final_logo.png" alt="M4 Projects Logo" class="h-20 w-20 object-contain"><button onclick="handleLogout()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm border border-teal-400">Logout</button></div></div></div><div class="bg-white shadow"><div class="max-w-7xl mx-auto px-4"><div class="flex space-x-1">${['dashboard', 'schedule', 'clients', 'quotes', 'invoices'].map(tab => `<button onclick="switchTab('${tab}')" class="px-6 py-4 font-medium border-b-2 ${activeTab === tab ? 'border-teal-400 text-black' : 'border-transparent text-gray-600'}">${tab.charAt(0).toUpperCase() + tab.slice(1)}</button>`).join('')}</div></div></div><div class="max-w-7xl mx-auto p-6">${renderContent()}</div>${showModal ? renderModal() : ''}</div>`;
+        }
+        
+        async function switchTab(tab) {
+            activeTab = tab;
+            await loadAllData();
+            renderApp();
         }
         
         function renderContent() {
@@ -434,7 +440,7 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
                         ${acceptedQuotes.length === 0 && unpaidInvoices.length === 0 ? '<p class="text-gray-500 text-center py-4">No recent activity</p>' : `
                             ${acceptedQuotes.slice(0, 3).map(q => {
                                 const client = clients.find(c => c.id === q.client_id);
-                                return `<div class="py-2 mb-2 border-b cursor-pointer hover:bg-gray-50" onclick="activeTab='quotes'; renderApp();">
+                                return `<div class="py-2 mb-2 border-b cursor-pointer hover:bg-gray-50" onclick="switchTab('quotes')">
                                     <div class="flex justify-between">
                                         <span class="text-sm">✓ Quote accepted: <strong>${q.title}</strong></span>
                                     </div>
@@ -443,7 +449,7 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
                             }).join('')}
                             ${unpaidInvoices.slice(0, 3).map(inv => {
                                 const client = clients.find(c => c.id === inv.client_id);
-                                return `<div class="py-2 mb-2 border-b cursor-pointer hover:bg-gray-50" onclick="activeTab='invoices'; renderApp();">
+                                return `<div class="py-2 mb-2 border-b cursor-pointer hover:bg-gray-50" onclick="switchTab('invoices')">
                                     <div class="flex justify-between">
                                         <span class="text-sm">⏳ Unpaid: <strong>${inv.title}</strong></span>
                                     </div>
