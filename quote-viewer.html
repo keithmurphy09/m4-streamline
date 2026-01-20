@@ -92,6 +92,7 @@
             const quote = currentQuote;
             const client = currentClient;
             const isAccepted = quote.accepted || quote.status === 'accepted';
+            const company = quote.company_info || {};
 
             const html = `
                 <div class="header">
@@ -100,6 +101,14 @@
                 </div>
                 
                 <div class="content">
+                    ${company.business_name ? `<div style="text-align: center; margin-bottom: 20px; padding: 15px; background: #f0fdfa; border-radius: 8px;">
+                        <h2 style="margin: 0; color: #14b8a6;">${company.business_name}</h2>
+                        ${company.abn ? `<p style="margin: 5px 0; font-size: 12px; color: #666;">ABN: ${company.abn}</p>` : ''}
+                        ${company.phone ? `<p style="margin: 5px 0; font-size: 12px; color: #666;">📞 ${company.phone}</p>` : ''}
+                        ${company.email ? `<p style="margin: 5px 0; font-size: 12px; color: #666;">✉️ ${company.email}</p>` : ''}
+                        ${company.address ? `<p style="margin: 5px 0; font-size: 12px; color: #666;">📍 ${company.address}</p>` : ''}
+                    </div>` : ''}
+                    
                     <h1 style="margin-bottom: 10px;">Quote: ${quote.title}</h1>
                     
                     ${isAccepted ? '<div class="accepted-badge">✓ QUOTE ACCEPTED</div>' : ''}
