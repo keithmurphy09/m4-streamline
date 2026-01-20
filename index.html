@@ -221,7 +221,15 @@
         
         async function addQuote(quote) {
     const shareToken = 'q_' + Math.random().toString(36).substring(2, 15);
-    const quoteData = { ...quote, user_id: currentUser.id, share_token: shareToken, accepted: false };
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + 30);
+    const quoteData = { 
+        ...quote, 
+        user_id: currentUser.id, 
+        share_token: shareToken, 
+        accepted: false,
+        expiry_date: expiryDate.toISOString().split('T')[0]
+    };
     const { data } = await supabaseClient.from('quotes').insert([quoteData]).select();
     if (data) {
         quotes.push(data[0]);
@@ -288,6 +296,10 @@ async function acceptQuote(quoteId, shareToken) {
         }
         
         async function convertToInvoice(quote) {
+            const issueDate = new Date();
+            const dueDate = new Date(issueDate);
+            dueDate.setDate(dueDate.getDate() + 30); // Due in 30 days
+            
             const inv = {
                 client_id: quote.client_id,
                 title: quote.title,
@@ -296,7 +308,8 @@ async function acceptQuote(quoteId, shareToken) {
                 total: quote.total,
                 invoice_number: 'INV-' + Date.now(),
                 status: 'unpaid',
-                issue_date: new Date().toISOString().split('T')[0],
+                issue_date: issueDate.toISOString().split('T')[0],
+                due_date: dueDate.toISOString().split('T')[0],
                 user_id: currentUser.id
             };
             const { data, error } = await supabaseClient.from('invoices').insert([inv]).select();
@@ -522,31 +535,61 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
         
         function renderDashboard() {
             const today = new Date().toISOString().split('T')[0];
+            const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
             const upcomingJobs = jobs.filter(j => j.date >= today).sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 5);
+            const tomorrowJobs = jobs.filter(j => j.date === tomorrow);
             const pendingQuotes = quotes.filter(q => q.status === 'pending' && !q.accepted);
             const acceptedQuotes = quotes.filter(q => q.accepted || q.status === 'accepted');
             const unpaidInvoices = invoices.filter(i => i.status === 'unpaid');
+            
+            // Quote expiry warnings (48 hours before 30 days)
+            const expiringQuotes = quotes.filter(q => {
+                if (q.accepted || q.status !== 'pending') return false;
+                const createdDate = new Date(q.created_at);
+                const expiryDate = new Date(createdDate);
+                expiryDate.setDate(expiryDate.getDate() + 30);
+                const warningDate = new Date(expiryDate);
+                warningDate.setHours(warningDate.getHours() - 48);
+                const now = new Date();
+                return now >= warningDate && now < expiryDate;
+            });
+            
+            // Overdue invoices
+            const todayDate = new Date();
+            todayDate.setHours(0,0,0,0);
+            const overdueInvoices = unpaidInvoices.filter(i => {
+                if (!i.due_date) return false;
+                const dueDate = new Date(i.due_date);
+                dueDate.setHours(0,0,0,0);
+                return dueDate < todayDate;
+            });
+            
             const totalUnpaid = unpaidInvoices.reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
             const totalRevenue = invoices.filter(i => i.status === 'paid').reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
             
             return `<div>
                 <h2 class="text-2xl font-bold mb-6">Dashboard</h2>
                 
+                <!-- Alerts -->
+                ${tomorrowJobs.length > 0 ? `<div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4"><div class="flex"><div class="flex-shrink-0">⏰</div><div class="ml-3"><p class="text-sm text-blue-700"><strong>Tomorrow's Jobs (${tomorrowJobs.length}):</strong> ${tomorrowJobs.map(j => j.title).join(', ')}</p></div></div></div>` : ''}
+                ${expiringQuotes.length > 0 ? `<div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-4"><div class="flex"><div class="flex-shrink-0">⚠️</div><div class="ml-3"><p class="text-sm text-yellow-700"><strong>Quotes Expiring Soon (${expiringQuotes.length}):</strong> These quotes will expire in less than 48 hours</p></div></div></div>` : ''}
+                ${overdueInvoices.length > 0 ? `<div class="bg-red-50 border-l-4 border-red-500 p-4 mb-4"><div class="flex"><div class="flex-shrink-0">🚨</div><div class="ml-3"><p class="text-sm text-red-700"><strong>Overdue Invoices (${overdueInvoices.length}):</strong> $${overdueInvoices.reduce((s,i) => s + parseFloat(i.total || 0), 0).toFixed(2)} overdue</p></div></div></div>` : ''}
+                
                 <!-- Stats Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-teal-400">
+                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-teal-400 cursor-pointer hover:bg-gray-50" onclick="switchTab('clients')">
                         <div class="text-gray-600 text-sm">Total Clients</div>
                         <div class="text-3xl font-bold mt-2">${clients.length}</div>
                     </div>
-                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-blue-400">
+                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-blue-400 cursor-pointer hover:bg-gray-50" onclick="switchTab('schedule')">
                         <div class="text-gray-600 text-sm">Upcoming Jobs</div>
                         <div class="text-3xl font-bold mt-2">${upcomingJobs.length}</div>
                     </div>
-                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-yellow-400">
+                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-yellow-400 cursor-pointer hover:bg-gray-50" onclick="switchTab('quotes')">
                         <div class="text-gray-600 text-sm">Pending Quotes</div>
                         <div class="text-3xl font-bold mt-2">${pendingQuotes.length}</div>
                     </div>
-                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-red-400">
+                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-red-400 cursor-pointer hover:bg-gray-50" onclick="switchTab('invoices')">
                         <div class="text-gray-600 text-sm">Unpaid Invoices</div>
                         <div class="text-3xl font-bold mt-2">$${totalUnpaid.toFixed(2)}</div>
                     </div>
@@ -557,12 +600,13 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
                     <div class="bg-white p-6 rounded-lg shadow">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="text-lg font-bold">Upcoming Jobs</h3>
-                            <button onclick="activeTab='schedule'; renderApp();" class="text-teal-500 text-sm hover:underline">View All</button>
+                            <button onclick="switchTab('schedule')" class="text-teal-500 text-sm hover:underline">View All</button>
                         </div>
                         ${upcomingJobs.length === 0 ? '<p class="text-gray-500 text-center py-4">No upcoming jobs</p>' : upcomingJobs.map(job => {
                             const client = clients.find(c => c.id === job.client_id);
-                            return `<div class="border-l-4 border-teal-400 pl-3 py-2 mb-3">
-                                <div class="font-semibold">${job.title}</div>
+                            const isTomorrow = job.date === tomorrow;
+                            return `<div class="border-l-4 ${isTomorrow ? 'border-blue-400 bg-blue-50' : 'border-teal-400'} pl-3 py-2 mb-3">
+                                <div class="font-semibold">${job.title} ${isTomorrow ? '⏰' : ''}</div>
                                 <div class="text-sm text-gray-600">${client?.name || 'Unknown'}</div>
                                 <div class="text-sm text-gray-500">${new Date(job.date).toLocaleDateString()} at ${job.time}</div>
                             </div>`;
@@ -584,9 +628,10 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
                             }).join('')}
                             ${unpaidInvoices.slice(0, 3).map(inv => {
                                 const client = clients.find(c => c.id === inv.client_id);
+                                const isOverdue = inv.due_date && new Date(inv.due_date) < todayDate;
                                 return `<div class="py-2 mb-2 border-b cursor-pointer hover:bg-gray-50" onclick="switchTab('invoices')">
                                     <div class="flex justify-between">
-                                        <span class="text-sm">⏳ Unpaid: <strong>${inv.title}</strong></span>
+                                        <span class="text-sm">${isOverdue ? '🚨' : '⏳'} ${isOverdue ? 'Overdue' : 'Unpaid'}: <strong>${inv.title}</strong></span>
                                     </div>
                                     <div class="text-xs text-gray-500">${client?.name || 'Unknown'} - $${inv.total.toFixed(2)}</div>
                                 </div>`;
