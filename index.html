@@ -154,6 +154,9 @@
             subscription = sub.data || null;
             isAdmin = admin.data?.is_admin || false;
             
+            console.log('Admin query result:', admin);
+            console.log('isAdmin value:', isAdmin);
+            
             // Create subscription if doesn't exist
             if (!subscription) {
                 const { data } = await supabaseClient.from('subscriptions').insert([{
