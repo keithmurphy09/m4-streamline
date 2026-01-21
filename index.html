@@ -617,36 +617,52 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
             doc.text('$' + (item.total || 0).toFixed(2), 170, y);
             
             // Add deposit information for quotes
-            if (type === 'quote' && item.deposit_percentage > 0) {
-                y += 12;
-                doc.setFontSize(12);
-                doc.setFont(undefined, 'bold');
-                doc.setTextColor(0, 0, 0);
-                doc.text('DEPOSIT REQUIRED:', 125, y);
-                doc.setTextColor(255, 140, 0); // Orange color
-                doc.text('$' + (item.deposit_amount || 0).toFixed(2), 170, y);
-                
-                y += 6;
-                doc.setFontSize(9);
-                doc.setFont(undefined, 'italic');
-                doc.setTextColor(100, 100, 100);
-                doc.text('(' + item.deposit_percentage + '% of total)', 125, y);
-                
-                // Calculate and show balance
-                const balance = (item.total || 0) - (item.deposit_amount || 0);
-                y += 8;
-                doc.setFontSize(10);
-                doc.setFont(undefined, 'normal');
-                doc.setTextColor(0, 0, 0);
-                doc.text('Balance on completion:', 125, y);
-                doc.text('$' + balance.toFixed(2), 170, y);
-                
-                y += 6;
-                doc.setFontSize(8);
-                doc.setFont(undefined, 'italic');
-                doc.setTextColor(100, 100, 100);
-                const balanceText = doc.splitTextToSize('(Unless specified otherwise)', 65);
-                doc.text(balanceText, 125, y);
+            if (type === 'quote') {
+                if (item.deposit_percentage > 0) {
+                    y += 12;
+                    doc.setFontSize(12);
+                    doc.setFont(undefined, 'bold');
+                    doc.setTextColor(0, 0, 0);
+                    doc.text('DEPOSIT REQUIRED:', 125, y);
+                    doc.setTextColor(255, 140, 0); // Orange color
+                    doc.text('$' + (item.deposit_amount || 0).toFixed(2), 170, y);
+                    
+                    y += 6;
+                    doc.setFontSize(9);
+                    doc.setFont(undefined, 'italic');
+                    doc.setTextColor(100, 100, 100);
+                    doc.text('(' + item.deposit_percentage + '% of total)', 125, y);
+                    
+                    // Calculate and show balance
+                    const balance = (item.total || 0) - (item.deposit_amount || 0);
+                    y += 8;
+                    doc.setFontSize(10);
+                    doc.setFont(undefined, 'normal');
+                    doc.setTextColor(0, 0, 0);
+                    doc.text('Balance on completion:', 125, y);
+                    doc.text('$' + balance.toFixed(2), 170, y);
+                    
+                    y += 6;
+                    doc.setFontSize(8);
+                    doc.setFont(undefined, 'italic');
+                    doc.setTextColor(100, 100, 100);
+                    const balanceText = doc.splitTextToSize('(Unless specified otherwise)', 65);
+                    doc.text(balanceText, 125, y);
+                } else {
+                    // 0% deposit - show COD message
+                    y += 12;
+                    doc.setFontSize(11);
+                    doc.setFont(undefined, 'bold');
+                    doc.setTextColor(0, 0, 0);
+                    doc.text('Payment Terms:', 125, y);
+                    
+                    y += 6;
+                    doc.setFontSize(10);
+                    doc.setFont(undefined, 'normal');
+                    doc.setTextColor(100, 100, 100);
+                    const codText = doc.splitTextToSize('Full payment (COD) to be paid on completion', 65);
+                    doc.text(codText, 125, y);
+                }
             }
             
             if (item.notes) {
@@ -2042,7 +2058,7 @@ function renderCalendar() {
                 // Pre-generate quote number for new quotes or show existing for editing
                 const displayQuoteNumber = isEditing ? quoteNumber : `QT-${String(quotes.length + 1).padStart(3, '0')}`;
                 const titleField = `<input type="text" id="title" value="${displayQuoteNumber}" class="w-full px-4 py-2 border rounded mb-3 bg-gray-100" readonly>`;
-                form = `<select id="client_id" class="w-full px-4 py-2 border rounded mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}</select>${titleField}<div id="items-list"></div><button onclick="addQuoteItem()" class="text-teal-500 text-sm mb-3">+ Add Item</button><div id="quote-total" class="font-bold mb-3">Total: $0</div><div class="mb-3"><label class="flex items-center cursor-pointer"><input type="checkbox" id="include_gst" ${includeGst ? 'checked' : ''} onchange="updateQuoteTotal()" class="mr-2"><span class="text-sm font-medium">Include GST (10%)</span></label></div><div class="mb-3"><label class="block text-sm font-medium mb-1">Deposit Required (%)</label><input type="number" id="deposit_percentage" value="${depositPercentage}" min="0" max="100" onchange="updateQuoteTotal()" class="w-full px-4 py-2 border rounded" placeholder="e.g., 30 for 30%"></div><div id="deposit-amount" class="text-sm text-gray-600 mb-3"></div><textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${notes}</textarea><button onclick="${isEditing ? `updateQuote('${editingItem.id}')` : 'saveQuote()'}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
+                form = `<select id="client_id" class="w-full px-4 py-2 border rounded mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}</select>${titleField}<div id="items-list"></div><button onclick="addQuoteItem()" class="text-teal-500 text-sm mb-3">+ Add Item</button><div id="quote-total" class="font-bold mb-3">Total: $0</div><div class="mb-3"><label class="flex items-center cursor-pointer"><input type="checkbox" id="include_gst" ${includeGst ? 'checked' : ''} onchange="updateQuoteTotal()" class="mr-2"><span class="text-sm font-medium">Include GST (10%)</span></label></div><div class="mb-3"><label class="block text-sm font-medium mb-2">Deposit Required</label><input type="hidden" id="deposit_percentage" value="${depositPercentage}"><div class="flex gap-2 flex-wrap"><button type="button" onclick="setDeposit(0)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 0 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100'}">0% (COD)</button><button type="button" onclick="setDeposit(30)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 30 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100'}">30%</button><button type="button" onclick="setDeposit(40)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 40 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100'}">40%</button><button type="button" onclick="setDeposit(50)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 50 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100'}">50%</button></div></div><div id="deposit-amount" class="text-sm text-gray-600 mb-3"></div><textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${notes}</textarea><button onclick="${isEditing ? `updateQuote('${editingItem.id}')` : 'saveQuote()'}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
             }
             return `<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto" onclick="if(event.target===this)closeModal()"><div class="bg-white rounded-lg p-4 sm:p-6 max-w-2xl w-full my-4 max-h-[90vh] overflow-y-auto"><div class="flex justify-between mb-4"><h3 class="text-lg sm:text-xl font-bold">${editingItem ? 'Edit ' + modalType : modalType}</h3><button onclick="closeModal()" class="text-2xl leading-none">×</button></div>${form}</div></div>`;
         }
@@ -2050,6 +2066,10 @@ function renderCalendar() {
         let quoteItems = [];
         function addQuoteItem() { quoteItems.push({ description: '', quantity: 1, price: 0 }); renderQuoteItems(); }
         function updateQuoteTotal() { renderQuoteItems(); }
+        function setDeposit(percentage) {
+            document.getElementById('deposit_percentage').value = percentage;
+            renderQuoteItems();
+        }
         function renderQuoteItems() {
             const c = document.getElementById('items-list');
             if (!c) return;
@@ -2077,7 +2097,7 @@ function renderCalendar() {
                 if (depositPercentage > 0) {
                     d.innerHTML = `<strong>Deposit Required:</strong> $${depositAmount.toFixed(2)} (${depositPercentage}% of total)`;
                 } else {
-                    d.innerHTML = '';
+                    d.innerHTML = '<strong>Payment Terms:</strong> Full payment (COD) to be paid on completion';
                 }
             }
         }
