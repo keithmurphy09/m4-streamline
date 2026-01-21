@@ -616,6 +616,39 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
             doc.setTextColor(20, 184, 166);
             doc.text('$' + (item.total || 0).toFixed(2), 170, y);
             
+            // Add deposit information for quotes
+            if (type === 'quote' && item.deposit_percentage > 0) {
+                y += 12;
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'bold');
+                doc.setTextColor(0, 0, 0);
+                doc.text('DEPOSIT REQUIRED:', 125, y);
+                doc.setTextColor(255, 140, 0); // Orange color
+                doc.text('$' + (item.deposit_amount || 0).toFixed(2), 170, y);
+                
+                y += 6;
+                doc.setFontSize(9);
+                doc.setFont(undefined, 'italic');
+                doc.setTextColor(100, 100, 100);
+                doc.text('(' + item.deposit_percentage + '% of total)', 125, y);
+                
+                // Calculate and show balance
+                const balance = (item.total || 0) - (item.deposit_amount || 0);
+                y += 8;
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'normal');
+                doc.setTextColor(0, 0, 0);
+                doc.text('Balance on completion:', 125, y);
+                doc.text('$' + balance.toFixed(2), 170, y);
+                
+                y += 6;
+                doc.setFontSize(8);
+                doc.setFont(undefined, 'italic');
+                doc.setTextColor(100, 100, 100);
+                const balanceText = doc.splitTextToSize('(Unless specified otherwise)', 65);
+                doc.text(balanceText, 125, y);
+            }
+            
             if (item.notes) {
                 y += 15;
                 doc.setFontSize(10);
