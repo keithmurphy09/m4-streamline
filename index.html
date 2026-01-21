@@ -35,6 +35,7 @@
         let calendarFilter = 'all'; // Track which worker's calendar to show
         let clientSearch = '';
         let invoiceFilter = 'unpaid';
+        let expenseFilter = 'all'; // 'all' or 'YYYY-MM' format
         let lastCreatedQuote = null;  // Track last created quote
         
         // Session timeout (30 minutes of inactivity)
@@ -1704,27 +1705,49 @@ function renderCalendar() {
         
         function renderExpenses() {
             const categories = ['Materials', 'Fuel', 'Equipment', 'Subcontractors', 'Office Supplies', 'Insurance', 'Marketing', 'Other'];
-            const totalExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
             
-            // Group by category for summary
-            const categoryTotals = {};
-            categories.forEach(cat => categoryTotals[cat] = 0);
+            // Get unique months from expenses
+            const monthsSet = new Set();
             expenses.forEach(exp => {
-                if (categoryTotals[exp.category] !== undefined) {
-                    categoryTotals[exp.category] += parseFloat(exp.amount || 0);
-                } else {
-                    categoryTotals['Other'] += parseFloat(exp.amount || 0);
-                }
+                const date = new Date(exp.date);
+                const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                monthsSet.add(monthKey);
             });
+            const months = Array.from(monthsSet).sort().reverse(); // Newest first
+            
+            // Filter expenses by selected month
+            const filteredExpenses = expenseFilter === 'all' 
+                ? expenses 
+                : expenses.filter(exp => {
+                    const date = new Date(exp.date);
+                    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                    return monthKey === expenseFilter;
+                });
+            
+            const totalExpenses = filteredExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+            
+            // Get month label for display
+            const getMonthLabel = (monthKey) => {
+                if (monthKey === 'all') return 'All Time';
+                const [year, month] = monthKey.split('-');
+                const date = new Date(year, parseInt(month) - 1);
+                return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            };
             
             return `<div>
-                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-6">
                     <div>
                         <h2 class="text-2xl font-bold">Expenses</h2>
                         <div class="text-3xl font-bold text-red-600 mt-2">$${totalExpenses.toFixed(2)}</div>
-                        <div class="text-sm text-gray-500">${expenses.length} total expenses</div>
+                        <div class="text-sm text-gray-500">${filteredExpenses.length} expense${filteredExpenses.length !== 1 ? 's' : ''} - ${getMonthLabel(expenseFilter)}</div>
                     </div>
-                    <div class="flex flex-wrap gap-2">
+                    <div class="flex flex-wrap gap-2 items-center">
+                        ${months.length > 0 ? `
+                            <select onchange="expenseFilter=this.value; renderApp();" class="px-3 py-2 border rounded bg-white text-sm">
+                                <option value="all" ${expenseFilter === 'all' ? 'selected' : ''}>All Months</option>
+                                ${months.map(m => `<option value="${m}" ${expenseFilter === m ? 'selected' : ''}>${getMonthLabel(m)}</option>`).join('')}
+                            </select>
+                        ` : ''}
                         <button onclick="exportToCSV('expenses')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button>
                         <button onclick="openModal('expense')" class="bg-black text-white px-3 sm:px-4 py-2 rounded-lg border border-teal-400 text-sm whitespace-nowrap">+ Add Expense</button>
                     </div>
@@ -1732,8 +1755,8 @@ function renderCalendar() {
                 
                 <!-- Expenses Table -->
                 <div class="bg-white rounded-lg shadow overflow-hidden">
-                    ${expenses.length === 0 ? 
-                        '<div class="text-center py-12 text-gray-500">No expenses yet. Click "+ Add Expense" to get started!</div>' 
+                    ${filteredExpenses.length === 0 ? 
+                        `<div class="text-center py-12 text-gray-500">${expenseFilter === 'all' ? 'No expenses yet. Click "+ Add Expense" to get started!' : 'No expenses for this month.'}</div>` 
                         : 
                         `<div class="overflow-x-auto">
                             <table class="w-full">
@@ -1747,7 +1770,7 @@ function renderCalendar() {
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200">
-                                    ${expenses.sort((a, b) => new Date(b.date) - new Date(a.date)).map(exp => `
+                                    ${filteredExpenses.sort((a, b) => new Date(b.date) - new Date(a.date)).map(exp => `
                                         <tr class="hover:bg-gray-50">
                                             <td class="px-4 py-3 text-sm text-gray-900">${new Date(exp.date).toLocaleDateString()}</td>
                                             <td class="px-4 py-3">
@@ -1766,9 +1789,9 @@ function renderCalendar() {
                                             </td>
                                         </tr>
                                     `).join('')}
-                                    <tr class="bg-gray-50 font-bold">
-                                        <td colspan="3" class="px-4 py-3 text-right text-sm">TOTAL:</td>
-                                        <td class="px-4 py-3 text-right text-lg text-red-600">$${totalExpenses.toFixed(2)}</td>
+                                    <tr class="bg-gray-50 font-bold border-t-2 border-gray-300">
+                                        <td colspan="3" class="px-4 py-4 text-right text-sm uppercase">Total ${expenseFilter !== 'all' ? `(${getMonthLabel(expenseFilter)})` : ''}:</td>
+                                        <td class="px-4 py-4 text-right text-lg text-red-600">$${totalExpenses.toFixed(2)}</td>
                                         <td></td>
                                     </tr>
                                 </tbody>
