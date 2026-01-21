@@ -625,7 +625,7 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
             
             const content = await renderContent();
             
-            document.getElementById('app').innerHTML = `<div class="min-h-screen bg-gray-50">${trialBanner}<div class="bg-black text-white p-6 shadow-lg border-b-4 border-teal-400"><div class="max-w-7xl mx-auto flex items-center"><div class="flex items-center gap-4" style="width: 25%;"><img src="final_logo.png" alt="M4 Projects Logo" class="h-32 w-32 object-contain"><div class="text-sm"><div class="text-xs text-teal-400">Logged in as:</div><div class="font-medium text-teal-400">${currentUser.email}</div></div></div><div class="text-center" style="width: 50%;"><h1 class="text-3xl font-bold text-teal-400">M4 STREAMLINE</h1><p class="text-teal-400 mt-1 text-sm italic">"streamlining your business"</p></div><div class="flex items-center justify-end gap-4" style="width: 25%;">${isAdmin ? '<span class="bg-red-600 px-3 py-1 rounded text-xs font-bold">ADMIN</span>' : ''}<div class="relative"><button onclick="toggleSettingsMenu()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm border border-teal-400 flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></button><div id="settings-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50"><div class="py-1"><button onclick="handleLogout()" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>Logout</button><a href="mailto:m4projectsanddesigns@gmail.com?subject=M4 Streamline Support Request" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>Contact Support</a>${subscription?.account_type === 'sole_trader' && !isAdmin ? '<button onclick="confirmUpgradeToBusiness()" class="w-full text-left px-4 py-2 text-sm text-teal-600 hover:bg-teal-50 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>Upgrade to Business</button>' : ''}<button onclick="confirmDeleteAccount()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>Delete Account</button></div></div></div></div></div></div><div class="bg-white shadow"><div class="max-w-7xl mx-auto px-4"><div class="flex space-x-1">${['dashboard', 'schedule', 'clients', 'quotes', 'invoices', 'company'].map(tab => `<button onclick="switchTab('${tab}')" class="px-6 py-4 font-medium border-b-2 ${activeTab === tab ? 'border-teal-400 text-black' : 'border-transparent text-gray-600'}">${tab === 'company' ? 'Company Info' : tab.charAt(0).toUpperCase() + tab.slice(1)}</button>`).join('')}${subscription?.account_type === 'business' || isAdmin ? '<button onclick="switchTab(\'team\')" class="px-6 py-4 font-medium border-b-2 ' + (activeTab === 'team' ? 'border-teal-400 text-black' : 'border-transparent text-gray-600') + '">Team</button>' : ''}${isAdmin ? '<button onclick="switchTab(\'admin\')" class="px-6 py-4 font-medium border-b-2 ' + (activeTab === 'admin' ? 'border-teal-400 text-black' : 'border-transparent text-gray-600') + '">Admin</button>' : ''}</div></div></div><div class="max-w-7xl mx-auto p-6">${content}</div>${showModal ? renderModal() : ''}</div>`;
+            document.getElementById('app').innerHTML = `<div class="min-h-screen bg-gray-50">${trialBanner}<div class="bg-black text-white p-6 shadow-lg border-b-4 border-teal-400"><div class="max-w-7xl mx-auto flex items-center"><div class="flex items-center gap-4" style="width: 25%;"><img src="final_logo.png" alt="M4 Projects Logo" class="h-32 w-32 object-contain"><div class="text-sm"><div class="text-xs text-teal-400">Logged in as:</div><div class="font-medium text-teal-400">${currentUser.email}</div></div></div><div class="text-center" style="width: 50%;"><h1 class="text-3xl font-bold text-teal-400">M4 STREAMLINE</h1><p class="text-teal-400 mt-1 text-sm italic">"streamlining your business"</p></div><div class="flex items-center justify-end gap-4" style="width: 25%;">${isAdmin ? '<span class="bg-red-600 px-3 py-1 rounded text-xs font-bold">ADMIN</span>' : ''}<div class="relative"><button onclick="toggleSettingsMenu()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm border border-teal-400 flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></button><div id="settings-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50"><div class="py-1"><button onclick="handleLogout()" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>Logout</button><a href="mailto:m4projectsanddesigns@gmail.com?subject=M4 Streamline Support Request" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>Contact Support</a>${subscription?.account_type === 'sole_trader' && !isAdmin ? '<button onclick="confirmUpgradeToBusiness()" class="w-full text-left px-4 py-2 text-sm text-teal-600 hover:bg-teal-50 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>Upgrade to Business</button>' : ''}<button onclick="confirmDeleteAccount()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>Delete Account</button></div></div></div></div></div></div><div class="bg-white shadow"><div class="max-w-7xl mx-auto px-4"><div class="flex space-x-1">${['dashboard', 'schedule', 'clients', 'quotes', 'invoices', 'analytics', 'company'].map(tab => `<button onclick="switchTab('${tab}')" class="px-6 py-4 font-medium border-b-2 ${activeTab === tab ? 'border-teal-400 text-black' : 'border-transparent text-gray-600'}">${tab === 'company' ? 'Company Info' : tab.charAt(0).toUpperCase() + tab.slice(1)}</button>`).join('')}${subscription?.account_type === 'business' || isAdmin ? '<button onclick="switchTab(\'team\')" class="px-6 py-4 font-medium border-b-2 ' + (activeTab === 'team' ? 'border-teal-400 text-black' : 'border-transparent text-gray-600') + '">Team</button>' : ''}${isAdmin ? '<button onclick="switchTab(\'admin\')" class="px-6 py-4 font-medium border-b-2 ' + (activeTab === 'admin' ? 'border-teal-400 text-black' : 'border-transparent text-gray-600') + '">Admin</button>' : ''}</div></div></div><div class="max-w-7xl mx-auto p-6">${content}</div>${showModal ? renderModal() : ''}</div>`;
         }
         
         function toggleSettingsMenu() {
@@ -784,9 +784,241 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
             if (activeTab === 'clients') return renderClients();
             if (activeTab === 'quotes') return renderQuotes();
             if (activeTab === 'invoices') return renderInvoices();
+            if (activeTab === 'analytics') return renderAnalytics();
             if (activeTab === 'company') return renderSettings();
             if (activeTab === 'team') return renderTeam();
             if (activeTab === 'admin' && isAdmin) return await renderAdmin();
+        }
+        
+        function renderAnalytics() {
+            // Calculate all metrics
+            const totalQuotes = quotes.length;
+            const acceptedQuotes = quotes.filter(q => q.status === 'accepted' || q.accepted).length;
+            const quoteWinRate = totalQuotes > 0 ? ((acceptedQuotes / totalQuotes) * 100).toFixed(1) : 0;
+            
+            const avgQuoteValue = totalQuotes > 0 ? (quotes.reduce((sum, q) => sum + (q.total || 0), 0) / totalQuotes).toFixed(2) : 0;
+            
+            const totalInvoices = invoices.length;
+            const paidInvoices = invoices.filter(inv => inv.status === 'paid').length;
+            const unpaidInvoices = invoices.filter(inv => inv.status === 'unpaid').length;
+            const overdueInvoices = invoices.filter(inv => {
+                if (inv.status !== 'paid' && inv.due_date) {
+                    const dueDate = new Date(inv.due_date);
+                    dueDate.setHours(0,0,0,0);
+                    const today = new Date();
+                    today.setHours(0,0,0,0);
+                    return dueDate < today;
+                }
+                return false;
+            }).length;
+            
+            const totalRevenue = invoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + (inv.total || 0), 0);
+            const outstandingRevenue = invoices.filter(inv => inv.status === 'unpaid').reduce((sum, inv) => sum + (inv.total || 0), 0);
+            
+            // Average collection time (for paid invoices)
+            const paidInvoicesWithDates = invoices.filter(inv => inv.status === 'paid' && inv.date && inv.paid_date);
+            const avgCollectionDays = paidInvoicesWithDates.length > 0 
+                ? Math.round(paidInvoicesWithDates.reduce((sum, inv) => {
+                    const created = new Date(inv.date);
+                    const paid = new Date(inv.paid_date);
+                    const days = Math.ceil((paid - created) / (1000 * 60 * 60 * 24));
+                    return sum + days;
+                }, 0) / paidInvoicesWithDates.length)
+                : 0;
+            
+            // Most profitable clients
+            const clientRevenue = {};
+            invoices.filter(inv => inv.status === 'paid').forEach(inv => {
+                const clientId = inv.client_id;
+                if (!clientRevenue[clientId]) clientRevenue[clientId] = 0;
+                clientRevenue[clientId] += inv.total || 0;
+            });
+            const topClients = Object.entries(clientRevenue)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5)
+                .map(([clientId, revenue]) => {
+                    const client = clients.find(c => c.id === clientId);
+                    return { name: client?.name || 'Unknown', revenue };
+                });
+            
+            // Monthly revenue trend (last 6 months)
+            const monthlyRevenue = {};
+            const now = new Date();
+            for (let i = 5; i >= 0; i--) {
+                const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                monthlyRevenue[key] = 0;
+            }
+            invoices.filter(inv => inv.status === 'paid' && inv.paid_date).forEach(inv => {
+                const paidDate = new Date(inv.paid_date);
+                const key = paidDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                if (monthlyRevenue[key] !== undefined) {
+                    monthlyRevenue[key] += inv.total || 0;
+                }
+            });
+            
+            // Conversion funnel
+            const totalJobs = jobs.length;
+            const completedJobs = jobs.filter(j => j.status === 'completed').length;
+            
+            // Insights & Alerts
+            const insights = [];
+            if (quoteWinRate < 30 && totalQuotes >= 5) {
+                insights.push({ type: 'warning', text: `Your quote win rate is ${quoteWinRate}% - Consider reviewing your pricing or proposal approach` });
+            }
+            if (avgCollectionDays > 45 && paidInvoicesWithDates.length >= 3) {
+                insights.push({ type: 'warning', text: `Average payment time is ${avgCollectionDays} days - Consider sending earlier payment reminders` });
+            }
+            if (overdueInvoices > 0) {
+                insights.push({ type: 'alert', text: `You have ${overdueInvoices} overdue invoice${overdueInvoices > 1 ? 's' : ''} - Follow up with clients for payment` });
+            }
+            if (quoteWinRate >= 60 && totalQuotes >= 5) {
+                insights.push({ type: 'success', text: `Excellent ${quoteWinRate}% quote win rate - Your pricing and proposals are working well!` });
+            }
+            if (totalRevenue === 0 && totalInvoices > 0) {
+                insights.push({ type: 'info', text: 'No revenue collected yet - Mark invoices as paid when clients pay' });
+            }
+            
+            return `<div>
+                <h2 class="text-2xl font-bold mb-6">📊 Analytics & Insights</h2>
+                
+                ${insights.length > 0 ? `
+                    <div class="mb-6 space-y-3">
+                        ${insights.map(insight => `
+                            <div class="p-4 rounded-lg border-l-4 ${
+                                insight.type === 'warning' ? 'bg-yellow-50 border-yellow-500' :
+                                insight.type === 'alert' ? 'bg-red-50 border-red-500' :
+                                insight.type === 'success' ? 'bg-green-50 border-green-500' :
+                                'bg-blue-50 border-blue-500'
+                            }">
+                                <p class="text-sm font-medium ${
+                                    insight.type === 'warning' ? 'text-yellow-800' :
+                                    insight.type === 'alert' ? 'text-red-800' :
+                                    insight.type === 'success' ? 'text-green-800' :
+                                    'text-blue-800'
+                                }">${insight.text}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+                
+                <!-- Key Metrics Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-teal-500">
+                        <div class="text-sm text-gray-600 mb-1">Quote Win Rate</div>
+                        <div class="text-3xl font-bold text-teal-600">${quoteWinRate}%</div>
+                        <div class="text-xs text-gray-500 mt-1">${acceptedQuotes} of ${totalQuotes} quotes accepted</div>
+                    </div>
+                    
+                    <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-blue-500">
+                        <div class="text-sm text-gray-600 mb-1">Avg Quote Value</div>
+                        <div class="text-3xl font-bold text-blue-600">$${avgQuoteValue}</div>
+                        <div class="text-xs text-gray-500 mt-1">Based on ${totalQuotes} quotes</div>
+                    </div>
+                    
+                    <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-green-500">
+                        <div class="text-sm text-gray-600 mb-1">Total Revenue</div>
+                        <div class="text-3xl font-bold text-green-600">$${totalRevenue.toFixed(2)}</div>
+                        <div class="text-xs text-gray-500 mt-1">${paidInvoices} paid invoices</div>
+                    </div>
+                    
+                    <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-orange-500">
+                        <div class="text-sm text-gray-600 mb-1">Outstanding</div>
+                        <div class="text-3xl font-bold text-orange-600">$${outstandingRevenue.toFixed(2)}</div>
+                        <div class="text-xs text-gray-500 mt-1">${unpaidInvoices} unpaid invoices</div>
+                    </div>
+                </div>
+                
+                <!-- Secondary Metrics -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <div class="text-sm text-gray-600 mb-1">Avg Collection Time</div>
+                        <div class="text-2xl font-bold">${avgCollectionDays} days</div>
+                        <div class="text-xs text-gray-500 mt-1">${paidInvoicesWithDates.length} paid invoices tracked</div>
+                    </div>
+                    
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <div class="text-sm text-gray-600 mb-1">Total Clients</div>
+                        <div class="text-2xl font-bold">${clients.length}</div>
+                        <div class="text-xs text-gray-500 mt-1">Active client base</div>
+                    </div>
+                    
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <div class="text-sm text-gray-600 mb-1">Completed Jobs</div>
+                        <div class="text-2xl font-bold">${completedJobs}</div>
+                        <div class="text-xs text-gray-500 mt-1">${totalJobs} total jobs</div>
+                    </div>
+                </div>
+                
+                <!-- Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <!-- Monthly Revenue Trend -->
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="text-lg font-bold mb-4">Revenue Trend (Last 6 Months)</h3>
+                        <div class="space-y-2">
+                            ${Object.entries(monthlyRevenue).map(([month, revenue]) => {
+                                const maxRevenue = Math.max(...Object.values(monthlyRevenue), 1);
+                                const percentage = (revenue / maxRevenue) * 100;
+                                return `
+                                    <div>
+                                        <div class="flex justify-between text-sm mb-1">
+                                            <span class="text-gray-600">${month}</span>
+                                            <span class="font-medium">$${revenue.toFixed(2)}</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2">
+                                            <div class="bg-teal-500 h-2 rounded-full" style="width: ${percentage}%"></div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                    
+                    <!-- Top Clients -->
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="text-lg font-bold mb-4">Top 5 Clients by Revenue</h3>
+                        ${topClients.length > 0 ? `
+                            <div class="space-y-3">
+                                ${topClients.map((client, index) => `
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center font-bold text-teal-600">
+                                                ${index + 1}
+                                            </div>
+                                            <span class="font-medium">${client.name}</span>
+                                        </div>
+                                        <span class="text-green-600 font-bold">$${client.revenue.toFixed(2)}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : '<div class="text-center text-gray-500 py-8">No client revenue data yet</div>'}
+                    </div>
+                </div>
+                
+                <!-- Conversion Funnel -->
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-lg font-bold mb-4">Business Funnel</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="text-center p-4 bg-blue-50 rounded">
+                            <div class="text-3xl font-bold text-blue-600">${totalQuotes}</div>
+                            <div class="text-sm text-gray-600 mt-1">Quotes Sent</div>
+                        </div>
+                        <div class="text-center p-4 bg-teal-50 rounded">
+                            <div class="text-3xl font-bold text-teal-600">${acceptedQuotes}</div>
+                            <div class="text-sm text-gray-600 mt-1">Quotes Accepted</div>
+                        </div>
+                        <div class="text-center p-4 bg-purple-50 rounded">
+                            <div class="text-3xl font-bold text-purple-600">${totalInvoices}</div>
+                            <div class="text-sm text-gray-600 mt-1">Invoices Sent</div>
+                        </div>
+                        <div class="text-center p-4 bg-green-50 rounded">
+                            <div class="text-3xl font-bold text-green-600">${paidInvoices}</div>
+                            <div class="text-sm text-gray-600 mt-1">Invoices Paid</div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>`;
         }
         
         function renderTeam() {
@@ -797,13 +1029,17 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
                 </div>
                 <div class="grid gap-4">
                     ${teamMembers.length === 0 ? '<div class="text-center py-12 text-gray-500">No team members yet. Add your first worker!</div>' : teamMembers.map(member => `
-                        <div class="bg-white p-4 rounded-lg shadow">
+                        <div class="bg-white p-4 rounded-lg shadow border-l-4" style="border-color: ${member.color || '#3b82f6'}">
                             <div class="flex justify-between items-center">
                                 <div>
                                     <h3 class="text-lg font-semibold">${member.name}</h3>
+                                    ${member.occupation ? `<p class="text-sm text-gray-600 font-medium">${member.occupation}</p>` : ''}
                                     <p class="text-sm text-gray-600">${member.email || 'No email'}</p>
                                     <p class="text-sm text-gray-600">${member.phone || 'No phone'}</p>
-                                    <span class="text-xs bg-teal-100 text-teal-800 px-2 py-1 rounded mt-2 inline-block">${member.role || 'Worker'}</span>
+                                    <div class="flex items-center gap-2 mt-2">
+                                        <div class="w-4 h-4 rounded" style="background-color: ${member.color || '#3b82f6'}"></div>
+                                        <span class="text-xs text-gray-500">Calendar color</span>
+                                    </div>
                                 </div>
                                 <div class="flex gap-2">
                                     <button onclick="editTeamMember('${member.id}')" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
