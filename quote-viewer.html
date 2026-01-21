@@ -55,30 +55,13 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 const shareToken = urlParams.get('quote');
                 
-                // Create debug display
-                const debugDiv = document.createElement('div');
-                debugDiv.style.cssText = 'padding: 20px; font-family: monospace; font-size: 12px; background: #f0f0f0; margin: 20px;';
-                
-                const addDebug = (label, value) => {
-                    const p = document.createElement('p');
-                    p.innerHTML = '<strong>' + label + ':</strong> ' + (value || 'null');
-                    debugDiv.appendChild(p);
-                };
-                
-                addDebug('Share Token', shareToken);
-                addDebug('Full URL', window.location.href);
-                addDebug('Search String', window.location.search);
-                
                 if (!shareToken) {
-                    addDebug('ERROR', 'No quote parameter found');
-                    document.getElementById('app').innerHTML = '';
-                    document.getElementById('app').appendChild(debugDiv);
+                    document.getElementById('app').innerHTML = '<div class="error">No quote specified</div>';
                     return;
                 }
 
-                addDebug('Status', 'Querying database...');
-                document.getElementById('app').innerHTML = '';
-                document.getElementById('app').appendChild(debugDiv);
+                // Show simple loading message
+                document.getElementById('app').innerHTML = '<div class="loading">Loading quote...</div>';
 
                 // Query database
                 const response = await supabaseClient
@@ -86,16 +69,13 @@
                     .select('*')
                     .eq('share_token', shareToken);
 
-                addDebug('DB Response Error', response.error ? response.error.message : 'none');
-                addDebug('DB Data Count', response.data ? response.data.length : 0);
-
                 if (response.error) {
-                    addDebug('FAILED', response.error.message);
+                    document.getElementById('app').innerHTML = '<div class="error">Error loading quote</div>';
                     return;
                 }
 
                 if (!response.data || response.data.length === 0) {
-                    addDebug('FAILED', 'No matching quote found');
+                    document.getElementById('app').innerHTML = '<div class="error">Quote not found</div>';
                     return;
                 }
 
