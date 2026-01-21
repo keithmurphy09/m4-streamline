@@ -54,8 +54,11 @@
             const urlParams = new URLSearchParams(window.location.search);
             const shareToken = urlParams.get('quote');
             
+            console.log('Share token from URL:', shareToken);
+            console.log('Full URL:', window.location.href);
+            
             if (!shareToken) {
-                document.getElementById('app').innerHTML = '<div class="error">No quote specified</div>';
+                document.getElementById('app').innerHTML = '<div class="error">No quote specified. URL: ' + window.location.href + '</div>';
                 return;
             }
 
@@ -66,8 +69,11 @@
                     .eq('share_token', shareToken)
                     .single();
 
+                console.log('Quote data:', quote);
+                console.log('Quote error:', quoteError);
+
                 if (quoteError || !quote) {
-                    document.getElementById('app').innerHTML = '<div class="error">Quote not found</div>';
+                    document.getElementById('app').innerHTML = '<div class="error">Quote not found. Token: ' + shareToken + '<br>Error: ' + (quoteError?.message || 'No quote with this token') + '</div>';
                     return;
                 }
 
@@ -164,12 +170,12 @@
                                     (${quote.deposit_percentage}% of total)
                                 </div>
                                 <div style="padding-top: 8px; border-top: 1px solid #e5e7eb;">
-                                    <div style="display: flex; justify-content: space-between;">
-                                        <span style="font-size: 14px; color: #666;">Balance on completion:</span>
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                        <div style="display: flex; flex-direction: column;">
+                                            <span style="font-size: 14px; color: #666;">Balance on completion:</span>
+                                            <span style="font-size: 10px; color: #999; font-style: italic; margin-top: 2px;">(Unless specified otherwise)</span>
+                                        </div>
                                         <span style="font-size: 14px; font-weight: 500;">$${(parseFloat(quote.total) - parseFloat(quote.deposit_amount)).toFixed(2)}</span>
-                                    </div>
-                                    <div style="font-size: 10px; color: #999; font-style: italic; margin-top: 2px;">
-                                        (Unless specified otherwise)
                                     </div>
                                 </div>
                             ` : `
