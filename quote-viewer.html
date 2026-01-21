@@ -170,7 +170,12 @@
                                 <div style="text-align: right; font-size: 10px; color: #999; font-style: italic; margin-top: 4px;">
                                     (Unless specified otherwise)
                                 </div>
-                            ` : ''}
+                            ` : `
+                                <div style="margin-top: 12px; padding: 10px; background: #f0f9ff; border-radius: 8px; border-left: 3px solid #3b82f6;">
+                                    <div style="font-size: 13px; font-weight: bold; color: #1e40af;">Payment Terms:</div>
+                                    <div style="font-size: 12px; color: #475569; margin-top: 4px;">Full payment (COD) to be paid on completion</div>
+                                </div>
+                            `}
                         </div>
                     ` : `
                         <div class="total">Total: $${parseFloat(quote.total).toFixed(2)}</div>
@@ -181,7 +186,12 @@
                                 <div style="font-size: 14px; color: #666;">Balance on completion: $${(parseFloat(quote.total) - parseFloat(quote.deposit_amount)).toFixed(2)}</div>
                                 <div style="font-size: 10px; color: #999; font-style: italic; margin-top: 4px;">(Unless specified otherwise)</div>
                             </div>
-                        ` : ''}
+                        ` : `
+                            <div style="margin-top: 15px; padding: 15px; background: #f0f9ff; border-radius: 8px; border: 2px solid #3b82f6;">
+                                <div style="font-size: 14px; font-weight: bold; color: #1e40af; margin-bottom: 5px;">Payment Terms:</div>
+                                <div style="font-size: 13px; color: #475569;">Full payment (COD) to be paid on completion</div>
+                            </div>
+                        `}
                     `}
                     
                     ${quote.notes ? `<div class="section"><p class="label">Notes:</p><p>${quote.notes}</p></div>` : ''}
