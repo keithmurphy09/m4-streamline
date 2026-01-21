@@ -2183,9 +2183,12 @@ async function sendQuoteEmail(quote) {
         return;
     }
     
-    // Update this URL to match your GitHub Pages URL
-    const baseUrl = window.location.href.split('?')[0].replace('index.html', '');
+    // More robust URL construction
+    const currentUrl = window.location.href.split('?')[0].split('#')[0];
+    const baseUrl = currentUrl.replace(/\/[^\/]*$/, '/'); // Remove filename, keep trailing slash
     const shareLink = baseUrl + 'quote-viewer.html?quote=' + quote.share_token;
+    
+    console.log('Generated share link:', shareLink); // Debug log
     
     const templateParams = {
         to_email: client.email,
@@ -2200,7 +2203,7 @@ async function sendQuoteEmail(quote) {
     
     try {
         await emailjs.send('service_og2tkc8', 'template_xvsfuhv', templateParams);
-        alert('Email sent successfully to ' + client.email + '!');
+        alert('Email sent successfully to ' + client.email + '!\n\nLink: ' + shareLink);
     } catch (error) {
         alert('Failed to send email: ' + error.text);
     }
