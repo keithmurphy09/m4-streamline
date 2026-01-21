@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pay Invoice - M4 Streamline</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-50">
+    <div id="app"></div>
+    
+    <script>
+        const supabaseClient = window.supabase.createClient('https://xviustrrsuhidzbcpgow.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aXVzdHJyc3VoaWR6YmNwZ293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3ODk1NDgsImV4cCI6MjA4NDM2NTU0OH0.CEcc50c1K2Qnh6rXt_1-_w30LzHvDniGLbqWhdOolRY');
+        
+        let invoice = null;
+        let client = null;
+        let stripeSettings = null;
+        let stripe = null;
+        let elements = null;
+        
+        async function init() {
+            // Get invoice ID from URL
+            const params = new URLSearchParams(window.location.search);
+            const invoiceId = params.get('invoice');
+            
+            if (!invoiceId) {
+                document.getElementById('app').innerHTML = '<div class="min-h-screen flex items-center justify-center"><div class="text-center"><h1 class="text-2xl font-bold text-red-600">Invalid payment link</h1></div></div>';
+                return;
+            }
+            
+            // Load invoice
+            const { data: inv } = await supabaseClient.from('invoices').select('*').eq('id', invoiceId).single();
+            if (!inv) {
+                document.getElementById('app').innerHTML = '<div class="min-h-screen flex items-center justify-center"><div class="text-center"><h1 class="text-2xl font-bold text-red-600">Invoice not found</h1></div></div>';
+                return;
+            }
+            
+            invoice = inv;
+            
+            // Load client
+            const { data: cli } = await supabaseClient.from('clients').select('*').eq('id', invoice.client_id).single();
+            client = cli;
+            
+            // Load stripe settings
+            const { data: stripeSett } = await supabaseClient.from('stripe_settings').select('*').eq('user_id', invoice.user_id).single();
+            stripeSettings = stripeSett;
+            
+            if (!stripeSettings || !stripeSettings.publishable_key) {
+                document.getElementById('app').innerHTML = '<div class="min-h-screen flex items-center justify-center"><div class="text-center"><h1 class="text-2xl font-bold text-red-600">Payment not configured</h1><p class="text-gray-600 mt-2">The business has not set up online payments yet.</p></div></div>';
+                return;
+            }
+            
+            if (invoice.status === 'paid') {
+                document.getElementById('app').innerHTML = '<div class="min-h-screen flex items-center justify-center"><div class="text-center"><div class="text-6xl mb-4">✓</div><h1 class="text-2xl font-bold text-green-600">Invoice Already Paid</h1><p class="text-gray-600 mt-2">This invoice has already been paid.</p></div></div>';
+                return;
+            }
+            
+            // Initialize Stripe
+            stripe = Stripe(stripeSettings.publishable_key);
+            
+            renderPaymentForm();
+        }
+        
+        function renderPaymentForm() {
+            const dueDate = invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A';
+            
+            document.getElementById('app').innerHTML = `
+                <div class="min-h-screen py-12 px-4">
+                    <div class="max-w-2xl mx-auto">
+                        <!-- Header -->
+                        <div class="bg-black text-white p-6 rounded-t-lg border-b-4 border-teal-400">
+                            <h1 class="text-3xl font-bold text-teal-400">M4 STREAMLINE</h1>
+                            <p class="text-teal-400 text-sm italic">"streamlining your business"</p>
+                        </div>
+                        
+                        <!-- Invoice Details -->
+                        <div class="bg-white p-6 shadow-lg">
+                            <h2 class="text-2xl font-bold mb-4">Pay Invoice</h2>
+                            
+                            <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
+                                <div>
+                                    <div class="text-gray-600">Invoice #</div>
+                                    <div class="font-semibold">${invoice.invoice_number}</div>
+                                </div>
+                                <div>
+                                    <div class="text-gray-600">Due Date</div>
+                                    <div class="font-semibold">${dueDate}</div>
+                                </div>
+                                <div>
+                                    <div class="text-gray-600">Bill To</div>
+                                    <div class="font-semibold">${client?.name || 'Unknown'}</div>
+                                </div>
+                                <div>
+                                    <div class="text-gray-600">Amount Due</div>
+                                    <div class="text-2xl font-bold text-teal-600">$${parseFloat(invoice.total).toFixed(2)}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="border-t pt-6">
+                                <h3 class="font-semibold mb-4">Payment Information</h3>
+                                
+                                <div id="payment-element" class="mb-4"></div>
+                                
+                                <button id="submit-button" onclick="handlePayment()" class="w-full bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 font-semibold">
+                                    Pay $${parseFloat(invoice.total).toFixed(2)}
+                                </button>
+                                
+                                <div id="error-message" class="text-red-600 text-sm mt-3 hidden"></div>
+                                <div id="success-message" class="text-green-600 text-sm mt-3 hidden"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-100 p-4 rounded-b-lg text-center text-sm text-gray-600">
+                            🔒 Secure payment powered by Stripe
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Initialize Stripe Elements
+            setupStripeElements();
+        }
+        
+        async function setupStripeElements() {
+            // Create Payment Intent on backend (we'll use Supabase Edge Function for this)
+            // For now, we'll use Stripe's Payment Element in setup mode
+            
+            const options = {
+                mode: 'payment',
+                amount: Math.round(invoice.total * 100), // Convert to cents
+                currency: 'aud',
+                appearance: {
+                    theme: 'stripe'
+                }
+            };
+            
+            elements = stripe.elements(options);
+            const paymentElement = elements.create('payment');
+            paymentElement.mount('#payment-element');
+        }
+        
+        async function handlePayment() {
+            const submitButton = document.getElementById('submit-button');
+            const errorDiv = document.getElementById('error-message');
+            const successDiv = document.getElementById('success-message');
+            
+            submitButton.disabled = true;
+            submitButton.textContent = 'Processing...';
+            errorDiv.classList.add('hidden');
+            successDiv.classList.add('hidden');
+            
+            try {
+                // Submit payment
+                const { error: submitError } = await elements.submit();
+                if (submitError) {
+                    throw new Error(submitError.message);
+                }
+                
+                // Create payment intent via Stripe API
+                // Note: In production, this should be done server-side
+                const response = await fetch('https://api.stripe.com/v1/payment_intents', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + stripeSettings.secret_key,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        amount: Math.round(invoice.total * 100),
+                        currency: 'aud',
+                        'metadata[invoice_id]': invoice.id,
+                        'metadata[invoice_number]': invoice.invoice_number
+                    })
+                });
+                
+                const paymentIntent = await response.json();
+                
+                // Confirm payment
+                const { error } = await stripe.confirmPayment({
+                    elements,
+                    clientSecret: paymentIntent.client_secret,
+                    confirmParams: {
+                        return_url: window.location.origin + '/payment-success.html?invoice=' + invoice.id
+                    }
+                });
+                
+                if (error) {
+                    throw new Error(error.message);
+                }
+                
+            } catch (error) {
+                errorDiv.textContent = error.message;
+                errorDiv.classList.remove('hidden');
+                submitButton.disabled = false;
+                submitButton.textContent = 'Pay $' + parseFloat(invoice.total).toFixed(2);
+            }
+        }
+        
+        init();
+    </script>
+</body>
+</html>
