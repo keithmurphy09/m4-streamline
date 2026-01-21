@@ -266,7 +266,13 @@
         
         async function addJob(job) { 
     const jobData = { ...job, user_id: currentUser.id, photos: [] };
-    const { data } = await supabaseClient.from('jobs').insert([jobData]).select(); 
+    console.log('Inserting job data:', jobData);
+    const { data, error } = await supabaseClient.from('jobs').insert([jobData]).select(); 
+    if (error) {
+        console.error('Error inserting job:', error);
+        alert('Error creating job: ' + error.message);
+        return;
+    }
     if (data) { 
         jobs.push(data[0]); 
         closeModal(); 
@@ -286,10 +292,11 @@
             
             // Add assigned_to if the field exists (business accounts)
             const assignedToField = document.getElementById('assigned_to');
-            if (assignedToField) {
-                jobData.assigned_to = assignedToField.value || null;
+            if (assignedToField && assignedToField.value) {
+                jobData.assigned_to = assignedToField.value;
             }
             
+            console.log('Saving job with data:', jobData);
             addJob(jobData);
         }
         
