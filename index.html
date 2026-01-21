@@ -642,12 +642,11 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
                     doc.text('Balance on completion:', 125, y);
                     doc.text('$' + balance.toFixed(2), 170, y);
                     
-                    y += 6;
+                    y += 5;
                     doc.setFontSize(8);
                     doc.setFont(undefined, 'italic');
                     doc.setTextColor(100, 100, 100);
-                    const balanceText = doc.splitTextToSize('(Unless specified otherwise)', 65);
-                    doc.text(balanceText, 125, y);
+                    doc.text('(Unless specified otherwise)', 125, y);
                 } else {
                     // 0% deposit - show COD message
                     y += 12;
