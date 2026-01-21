@@ -51,53 +51,58 @@
         let currentClient = null;
 
         async function loadQuote() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const shareToken = urlParams.get('quote');
-            
-            console.log('Share token from URL:', shareToken);
-            console.log('Full URL:', window.location.href);
-            
-            if (!shareToken) {
-                document.getElementById('app').innerHTML = '<div class="error">No quote specified. URL: ' + window.location.href + '</div>';
-                return;
-            }
-
             try {
-                // First, let's check how many quotes match this token
-                const { data: allQuotes, error: countError } = await supabaseClient
+                const urlParams = new URLSearchParams(window.location.search);
+                const shareToken = urlParams.get('quote');
+                
+                // Show debug info on screen for mobile debugging
+                let debugInfo = 'Token: ' + shareToken + '<br>';
+                debugInfo += 'URL: ' + window.location.href + '<br>';
+                debugInfo += 'User Agent: ' + navigator.userAgent + '<br><br>';
+                
+                if (!shareToken) {
+                    document.getElementById('app').innerHTML = '<div class="error">No quote specified.<br><br>' + debugInfo + '</div>';
+                    return;
+                }
+
+                debugInfo += 'Querying database...<br>';
+                document.getElementById('app').innerHTML = '<div class="loading">' + debugInfo + '</div>';
+
+                // Query database
+                const response = await supabaseClient
                     .from('quotes')
                     .select('*')
                     .eq('share_token', shareToken);
 
-                console.log('All matching quotes:', allQuotes);
-                console.log('Count:', allQuotes?.length);
+                debugInfo += 'Response received<br>';
+                debugInfo += 'Error: ' + JSON.stringify(response.error) + '<br>';
+                debugInfo += 'Data count: ' + (response.data ? response.data.length : 'null') + '<br>';
+                debugInfo += 'Data: ' + JSON.stringify(response.data ? response.data[0] : 'none').substring(0, 100) + '<br>';
 
-                if (countError) {
-                    document.getElementById('app').innerHTML = '<div class="error">Database error: ' + countError.message + '</div>';
+                if (response.error) {
+                    document.getElementById('app').innerHTML = '<div class="error">Database error:<br>' + response.error.message + '<br><br>' + debugInfo + '</div>';
                     return;
                 }
 
-                if (!allQuotes || allQuotes.length === 0) {
-                    document.getElementById('app').innerHTML = '<div class="error">Quote not found. Token: ' + shareToken + '</div>';
+                if (!response.data || response.data.length === 0) {
+                    document.getElementById('app').innerHTML = '<div class="error">Quote not found.<br><br>' + debugInfo + '</div>';
                     return;
                 }
 
-                // If multiple quotes, use the most recent one
-                const quote = allQuotes.length > 1 
-                    ? allQuotes.sort((a, b) => new Date(b.date) - new Date(a.date))[0]
-                    : allQuotes[0];
-
-                console.log('Selected quote:', quote);
+                // Get the quote
+                const quote = response.data.length > 1 
+                    ? response.data.sort((a, b) => new Date(b.date) - new Date(a.date))[0]
+                    : response.data[0];
 
                 currentQuote = quote;
 
-                const { data: client } = await supabaseClient
+                const clientResponse = await supabaseClient
                     .from('clients')
                     .select('*')
                     .eq('id', quote.client_id)
                     .single();
 
-                currentClient = client;
+                currentClient = clientResponse.data;
 
                 renderQuote();
             } catch (error) {
