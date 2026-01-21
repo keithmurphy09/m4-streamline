@@ -2067,6 +2067,18 @@ function renderCalendar() {
         function updateQuoteTotal() { renderQuoteItems(); }
         function setDeposit(percentage) {
             document.getElementById('deposit_percentage').value = percentage;
+            
+            // Update button styles
+            const buttons = document.querySelectorAll('[onclick^="setDeposit"]');
+            buttons.forEach(btn => {
+                const btnPercentage = parseInt(btn.textContent);
+                if (btnPercentage === percentage || (percentage === 0 && btn.textContent.includes('COD'))) {
+                    btn.className = 'px-4 py-2 border rounded text-sm bg-black text-white border-teal-400';
+                } else {
+                    btn.className = 'px-4 py-2 border rounded text-sm bg-white text-black border-gray-300 hover:bg-gray-100';
+                }
+            });
+            
             renderQuoteItems();
         }
         function renderQuoteItems() {
