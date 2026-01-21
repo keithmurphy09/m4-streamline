@@ -1719,50 +1719,62 @@ function renderCalendar() {
             
             return `<div>
                 <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
-                    <h2 class="text-2xl font-bold">Expenses</h2>
+                    <div>
+                        <h2 class="text-2xl font-bold">Expenses</h2>
+                        <div class="text-3xl font-bold text-red-600 mt-2">$${totalExpenses.toFixed(2)}</div>
+                        <div class="text-sm text-gray-500">${expenses.length} total expenses</div>
+                    </div>
                     <div class="flex flex-wrap gap-2">
                         <button onclick="exportToCSV('expenses')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button>
                         <button onclick="openModal('expense')" class="bg-black text-white px-3 sm:px-4 py-2 rounded-lg border border-teal-400 text-sm whitespace-nowrap">+ Add Expense</button>
                     </div>
                 </div>
                 
-                <!-- Summary Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <div class="bg-white p-4 rounded-lg shadow border-l-4 border-red-500">
-                        <div class="text-sm text-gray-600 mb-1">Total Expenses</div>
-                        <div class="text-2xl font-bold text-red-600">$${totalExpenses.toFixed(2)}</div>
-                        <div class="text-xs text-gray-500 mt-1">${expenses.length} expenses</div>
-                    </div>
-                    ${Object.entries(categoryTotals).filter(([cat, amt]) => amt > 0).slice(0, 3).map(([cat, amt]) => `
-                        <div class="bg-white p-4 rounded-lg shadow">
-                            <div class="text-sm text-gray-600 mb-1">${cat}</div>
-                            <div class="text-xl font-bold">$${amt.toFixed(2)}</div>
-                        </div>
-                    `).join('')}
-                </div>
-                
-                <!-- Expenses List -->
-                <div class="grid gap-4">
-                    ${expenses.length === 0 ? '<div class="text-center py-12 text-gray-500">No expenses yet. Add your first expense!</div>' : 
-                    expenses.sort((a, b) => new Date(b.date) - new Date(a.date)).map(exp => `
-                        <div class="bg-white p-4 rounded-lg shadow border-l-4 border-red-400">
-                            <div class="flex flex-col sm:flex-row sm:justify-between gap-3">
-                                <div class="flex-1">
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <h3 class="text-lg font-semibold">$${parseFloat(exp.amount).toFixed(2)}</h3>
-                                        <span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">${exp.category}</span>
-                                    </div>
-                                    <p class="text-sm text-gray-600">${exp.description || 'No description'}</p>
-                                    <p class="text-xs text-gray-500 mt-1">${new Date(exp.date).toLocaleDateString()}</p>
-                                    ${exp.receipt_url ? `<a href="${exp.receipt_url}" target="_blank" class="text-xs text-teal-600 hover:underline mt-1 inline-block">📎 View Receipt</a>` : ''}
-                                </div>
-                                <div class="flex sm:flex-col gap-2">
-                                    <button onclick='openModal("expense", ${JSON.stringify(exp).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
-                                    <button onclick="deleteExpense('${exp.id}')" class="px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
+                <!-- Expenses Table -->
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    ${expenses.length === 0 ? 
+                        '<div class="text-center py-12 text-gray-500">No expenses yet. Click "+ Add Expense" to get started!</div>' 
+                        : 
+                        `<div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-black text-white">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold">Date</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold">Category</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold">Description</th>
+                                        <th class="px-4 py-3 text-right text-sm font-semibold">Amount</th>
+                                        <th class="px-4 py-3 text-center text-sm font-semibold">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200">
+                                    ${expenses.sort((a, b) => new Date(b.date) - new Date(a.date)).map(exp => `
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-3 text-sm text-gray-900">${new Date(exp.date).toLocaleDateString()}</td>
+                                            <td class="px-4 py-3">
+                                                <span class="inline-block px-2 py-1 text-xs font-medium rounded bg-gray-100 text-gray-800">${exp.category}</span>
+                                            </td>
+                                            <td class="px-4 py-3 text-sm text-gray-600">
+                                                ${exp.description || '-'}
+                                                ${exp.receipt_url ? `<a href="${exp.receipt_url}" target="_blank" class="text-teal-600 hover:underline ml-2">📎</a>` : ''}
+                                            </td>
+                                            <td class="px-4 py-3 text-sm font-semibold text-right text-red-600">$${parseFloat(exp.amount).toFixed(2)}</td>
+                                            <td class="px-4 py-3 text-center">
+                                                <div class="flex justify-center gap-2">
+                                                    <button onclick='openModal("expense", ${JSON.stringify(exp).replace(/"/g, "&quot;")})' class="text-blue-600 hover:text-blue-800 text-sm font-medium">Edit</button>
+                                                    <button onclick="deleteExpense('${exp.id}')" class="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                    <tr class="bg-gray-50 font-bold">
+                                        <td colspan="3" class="px-4 py-3 text-right text-sm">TOTAL:</td>
+                                        <td class="px-4 py-3 text-right text-lg text-red-600">$${totalExpenses.toFixed(2)}</td>
+                                        <td></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>`
+                    }
                 </div>
             </div>`;
         }
