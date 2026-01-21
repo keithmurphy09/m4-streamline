@@ -55,18 +55,30 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 const shareToken = urlParams.get('quote');
                 
-                // Show debug info on screen for mobile debugging
-                let debugInfo = 'Token: ' + shareToken + '<br>';
-                debugInfo += 'URL: ' + window.location.href + '<br>';
-                debugInfo += 'User Agent: ' + navigator.userAgent + '<br><br>';
+                // Create debug display
+                const debugDiv = document.createElement('div');
+                debugDiv.style.cssText = 'padding: 20px; font-family: monospace; font-size: 12px; background: #f0f0f0; margin: 20px;';
+                
+                const addDebug = (label, value) => {
+                    const p = document.createElement('p');
+                    p.innerHTML = '<strong>' + label + ':</strong> ' + (value || 'null');
+                    debugDiv.appendChild(p);
+                };
+                
+                addDebug('Share Token', shareToken);
+                addDebug('Full URL', window.location.href);
+                addDebug('Search String', window.location.search);
                 
                 if (!shareToken) {
-                    document.getElementById('app').innerHTML = '<div class="error">No quote specified.<br><br>' + debugInfo + '</div>';
+                    addDebug('ERROR', 'No quote parameter found');
+                    document.getElementById('app').innerHTML = '';
+                    document.getElementById('app').appendChild(debugDiv);
                     return;
                 }
 
-                debugInfo += 'Querying database...<br>';
-                document.getElementById('app').innerHTML = '<div class="loading">' + debugInfo + '</div>';
+                addDebug('Status', 'Querying database...');
+                document.getElementById('app').innerHTML = '';
+                document.getElementById('app').appendChild(debugDiv);
 
                 // Query database
                 const response = await supabaseClient
@@ -74,18 +86,16 @@
                     .select('*')
                     .eq('share_token', shareToken);
 
-                debugInfo += 'Response received<br>';
-                debugInfo += 'Error: ' + JSON.stringify(response.error) + '<br>';
-                debugInfo += 'Data count: ' + (response.data ? response.data.length : 'null') + '<br>';
-                debugInfo += 'Data: ' + JSON.stringify(response.data ? response.data[0] : 'none').substring(0, 100) + '<br>';
+                addDebug('DB Response Error', response.error ? response.error.message : 'none');
+                addDebug('DB Data Count', response.data ? response.data.length : 0);
 
                 if (response.error) {
-                    document.getElementById('app').innerHTML = '<div class="error">Database error:<br>' + response.error.message + '<br><br>' + debugInfo + '</div>';
+                    addDebug('FAILED', response.error.message);
                     return;
                 }
 
                 if (!response.data || response.data.length === 0) {
-                    document.getElementById('app').innerHTML = '<div class="error">Quote not found.<br><br>' + debugInfo + '</div>';
+                    addDebug('FAILED', 'No matching quote found');
                     return;
                 }
 
