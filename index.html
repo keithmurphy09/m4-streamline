@@ -2119,6 +2119,10 @@ function renderCalendar() {
             const total = subtotal + gst;
             const depositPercentage = parseFloat(document.getElementById('deposit_percentage').value || 0);
             const depositAmount = (total * depositPercentage) / 100;
+            
+            // Get the existing quote to preserve share_token
+            const existingQuote = quotes.find(q => q.id === id);
+            
             const updatedQuote = {
                 client_id: document.getElementById('client_id').value,
                 title: document.getElementById('title').value,
@@ -2129,7 +2133,8 @@ function renderCalendar() {
                 include_gst: includeGst,
                 notes: document.getElementById('notes').value,
                 deposit_percentage: depositPercentage,
-                deposit_amount: depositAmount
+                deposit_amount: depositAmount,
+                share_token: existingQuote?.share_token  // Preserve the share_token!
             };
             const { data } = await supabaseClient.from('quotes').update(updatedQuote).eq('id', id).select();
             if (data) {
