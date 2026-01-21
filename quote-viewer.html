@@ -63,19 +63,31 @@
             }
 
             try {
-                const { data: quote, error: quoteError } = await supabaseClient
+                // First, let's check how many quotes match this token
+                const { data: allQuotes, error: countError } = await supabaseClient
                     .from('quotes')
                     .select('*')
-                    .eq('share_token', shareToken)
-                    .single();
+                    .eq('share_token', shareToken);
 
-                console.log('Quote data:', quote);
-                console.log('Quote error:', quoteError);
+                console.log('All matching quotes:', allQuotes);
+                console.log('Count:', allQuotes?.length);
 
-                if (quoteError || !quote) {
-                    document.getElementById('app').innerHTML = '<div class="error">Quote not found. Token: ' + shareToken + '<br>Error: ' + (quoteError?.message || 'No quote with this token') + '</div>';
+                if (countError) {
+                    document.getElementById('app').innerHTML = '<div class="error">Database error: ' + countError.message + '</div>';
                     return;
                 }
+
+                if (!allQuotes || allQuotes.length === 0) {
+                    document.getElementById('app').innerHTML = '<div class="error">Quote not found. Token: ' + shareToken + '</div>';
+                    return;
+                }
+
+                // If multiple quotes, use the most recent one
+                const quote = allQuotes.length > 1 
+                    ? allQuotes.sort((a, b) => new Date(b.date) - new Date(a.date))[0]
+                    : allQuotes[0];
+
+                console.log('Selected quote:', quote);
 
                 currentQuote = quote;
 
