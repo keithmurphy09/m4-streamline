@@ -31,6 +31,7 @@
         let modalType = '';
         let editingItem = null;
 	let scheduleView = 'list';
+        let calendarFilter = 'all'; // Track which worker's calendar to show
         let clientSearch = '';
         let invoiceFilter = 'unpaid';
         let lastCreatedQuote = null;  // Track last created quote
@@ -1447,9 +1448,18 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
         function renderSchedule() {
     const viewToggle = `<div class="flex gap-2"><button onclick="scheduleView='list'; renderApp();" class="px-3 py-2 rounded ${scheduleView === 'list' ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'} border">List</button><button onclick="scheduleView='calendar'; renderApp();" class="px-3 py-2 rounded ${scheduleView === 'calendar' ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'} border">Calendar</button></div>`;
     
+    // Worker filter dropdown for calendar view
+    const workerFilter = (subscription?.account_type === 'business' || isAdmin) && teamMembers.length > 0 
+        ? `<select onchange="calendarFilter=this.value; renderApp();" class="px-3 py-2 border rounded bg-white">
+            <option value="all" ${calendarFilter === 'all' ? 'selected' : ''}>All Workers</option>
+            <option value="unassigned" ${calendarFilter === 'unassigned' ? 'selected' : ''}>Unassigned</option>
+            ${teamMembers.map(m => `<option value="${m.id}" ${calendarFilter === m.id ? 'selected' : ''}>${m.name}${m.occupation ? ' - ' + m.occupation : ''}</option>`).join('')}
+           </select>`
+        : '';
+    
     if (scheduleView === 'calendar') {
         setTimeout(() => renderCalendar(), 100);
-        return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Schedule</h2><div class="flex gap-4">${viewToggle}<button onclick="openModal('job')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Schedule Job</button></div></div><div id="calendar" class="bg-white p-4 rounded-lg shadow"></div></div>`;
+        return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Schedule</h2><div class="flex gap-4">${workerFilter}${viewToggle}<button onclick="openModal('job')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Schedule Job</button></div></div><div id="calendar" class="bg-white p-4 rounded-lg shadow"></div></div>`;
     }
     
     return `<div><div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Schedule</h2><div class="flex gap-4">${viewToggle}<button onclick="exportToCSV('jobs')" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">Export CSV</button><button onclick="openModal('job')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400">+ Schedule Job</button></div></div><div class="grid gap-4">${jobs.length === 0 ? '<div class="text-center py-12 text-gray-500">No jobs</div>' : jobs.map(job => { 
@@ -1476,6 +1486,16 @@ function renderCalendar() {
     const calendarEl = document.getElementById('calendar');
     if (!calendarEl) return;
     
+    // Filter jobs based on selected worker
+    let filteredJobs = jobs;
+    if (calendarFilter !== 'all') {
+        if (calendarFilter === 'unassigned') {
+            filteredJobs = jobs.filter(job => !job.assigned_to);
+        } else {
+            filteredJobs = jobs.filter(job => job.assigned_to === calendarFilter);
+        }
+    }
+    
     const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         headerToolbar: {
@@ -1483,7 +1503,7 @@ function renderCalendar() {
             center: 'title',
             right: 'dayGridMonth,timeGridWeek'
         },
-        events: jobs.map(job => {
+        events: filteredJobs.map(job => {
             const client = clients.find(c => c.id === job.client_id);
             const assignedWorker = teamMembers.find(m => m.id === job.assigned_to);
             const workerColor = assignedWorker?.color || '#14b8a6';
