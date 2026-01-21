@@ -28,6 +28,19 @@
         .loading { text-align: center; padding: 50px; color: #666; }
         .error { text-align: center; padding: 50px; color: #ef4444; }
         
+        /* Mobile styles */
+        @media (max-width: 640px) {
+            body { margin: 0; padding: 10px; }
+            .header { padding: 20px 15px; margin-bottom: 20px; border-radius: 0; }
+            .logo { font-size: 36px; }
+            .subtitle { font-size: 14px; }
+            .content { padding: 20px 15px; border-radius: 0; }
+            .total { font-size: 24px; padding: 15px; }
+            table { font-size: 14px; }
+            th, td { padding: 8px 4px; font-size: 12px; }
+            .accept-btn, .print-btn { font-size: 14px; padding: 12px 20px; }
+        }
+        
         /* Print styles */
         @media print {
             body { background: white; margin: 0; padding: 0; max-width: none; }
