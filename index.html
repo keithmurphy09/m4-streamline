@@ -2205,24 +2205,33 @@ async function sendQuoteEmail(quote) {
     const baseUrl = currentUrl.replace(/\/[^\/]*$/, '/'); // Remove filename, keep trailing slash
     const shareLink = baseUrl + 'quote-viewer.html?quote=' + quote.share_token;
     
-    console.log('Generated share link:', shareLink); // Debug log
+    console.log('Generated share link:', shareLink);
+    console.log('Sending to:', client.email);
     
     const templateParams = {
         to_email: client.email,
-        from_name: currentUser.email.split('@')[0],
+        from_name: companySettings?.business_name || currentUser.email.split('@')[0],
         client_name: client.name,
         quote_title: quote.title,
         quote_total: quote.total.toFixed(2),
         quote_link: shareLink,
         message: 'Please click the link below to view and download your quote.',
-        reply_to: currentUser.email
+        reply_to: companySettings?.email || currentUser.email
     };
     
     try {
-        await emailjs.send('service_og2tkc8', 'template_xvsfuhv', templateParams);
-        alert('Email sent successfully to ' + client.email + '!\n\nLink: ' + shareLink);
+        console.log('Calling EmailJS...');
+        const response = await emailjs.send('service_og2tkc8', 'template_xvsfuhv', templateParams);
+        console.log('EmailJS response:', response);
+        
+        if (response.status === 200) {
+            alert('✅ Email sent successfully to ' + client.email + '!\n\nQuote link: ' + shareLink);
+        } else {
+            alert('⚠️ Email may not have sent. Status: ' + response.status + '\n\nManually send this link:\n' + shareLink);
+        }
     } catch (error) {
-        alert('Failed to send email: ' + error.text);
+        console.error('EmailJS error:', error);
+        alert('❌ Failed to send email: ' + (error.text || error.message || 'Unknown error') + '\n\nManually send this link to ' + client.email + ':\n' + shareLink);
     }
 }
 
