@@ -26,6 +26,7 @@
         let invoices = [];
         let expenses = [];
         let stripeSettings = null;
+        let emailSettings = null;
         let payments = [];
         let companySettings = null;
         let subscription = null;
@@ -161,7 +162,7 @@
         }
         
         async function loadAllData() {
-            const [c, j, q, i, e, s, sub, admin, team, stripe, pay] = await Promise.all([
+            const [c, j, q, i, e, s, sub, admin, team, stripe, pay, email] = await Promise.all([
                 supabaseClient.from('clients').select('*'), 
                 supabaseClient.from('jobs').select('*'), 
                 supabaseClient.from('quotes').select('*'), 
@@ -172,7 +173,8 @@
                 supabaseClient.from('admin_users').select('*').eq('user_id', currentUser.id).single(),
                 supabaseClient.from('team_members').select('*').eq('account_owner_id', currentUser.id),
                 supabaseClient.from('stripe_settings').select('*').eq('user_id', currentUser.id).single(),
-                supabaseClient.from('payments').select('*')
+                supabaseClient.from('payments').select('*'),
+                supabaseClient.from('email_settings').select('*').eq('user_id', currentUser.id).single()
             ]);
             clients = c.data || []; 
             jobs = j.data || []; 
@@ -185,6 +187,7 @@
             teamMembers = team.data || [];
             stripeSettings = stripe.data || null;
             payments = pay.data || [];
+            emailSettings = email.data || null;
             
             console.log('Admin query result:', admin);
             console.log('isAdmin value:', isAdmin);
@@ -863,6 +866,54 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
             renderApp();
         }
         
+        async function saveEmailSettings() {
+            const apiKey = document.getElementById('sendgrid_api_key').value.trim();
+            const fromEmail = document.getElementById('sendgrid_from_email').value.trim();
+            const fromName = document.getElementById('sendgrid_from_name').value.trim();
+            
+            if (!apiKey || !fromEmail || !fromName) {
+                alert('Please fill in all email settings fields');
+                return;
+            }
+            
+            if (!apiKey.startsWith('SG.')) {
+                alert('Invalid SendGrid API Key. Should start with SG.');
+                return;
+            }
+            
+            if (!fromEmail.includes('@')) {
+                alert('Please enter a valid email address');
+                return;
+            }
+            
+            const settings = {
+                user_id: currentUser.id,
+                sendgrid_api_key: apiKey,
+                from_email: fromEmail,
+                from_name: fromName
+            };
+            
+            if (emailSettings) {
+                // Update existing
+                const { data } = await supabaseClient
+                    .from('email_settings')
+                    .update(settings)
+                    .eq('user_id', currentUser.id)
+                    .select();
+                if (data) emailSettings = data[0];
+            } else {
+                // Create new
+                const { data } = await supabaseClient
+                    .from('email_settings')
+                    .insert([settings])
+                    .select();
+                if (data) emailSettings = data[0];
+            }
+            
+            alert('✅ Email settings saved! You can now send quotes and invoices.');
+            renderApp();
+        }
+        
         function copyPaymentLink(invoiceId) {
             const paymentUrl = `${window.location.origin}/payment.html?invoice=${invoiceId}`;
             
@@ -1481,6 +1532,35 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
                         ${stripe.publishable_key ? '<div class="bg-green-50 border border-green-200 rounded p-3 text-sm text-green-800">✓ Stripe is configured. Clients can now pay invoices online!</div>' : '<div class="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800">⚠ Add your Stripe keys to enable online payments</div>'}
                         
                         <button onclick="saveStripeSettings()" class="w-full bg-black text-white px-4 py-3 rounded-lg border border-teal-400 hover:bg-gray-800">Save Stripe Settings</button>
+                    </div>
+                </div>
+                
+                <!-- SendGrid Email Settings -->
+                <div class="bg-white p-6 rounded-lg shadow max-w-2xl">
+                    <h3 class="text-lg font-bold mb-2">📧 Email Settings (SendGrid)</h3>
+                    <p class="text-sm text-gray-600 mb-6">Configure email delivery for quotes and invoices. Get your API key from <a href="https://app.sendgrid.com/settings/api_keys" target="_blank" class="text-teal-600 underline">SendGrid Dashboard</a>.</p>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">SendGrid API Key</label>
+                            <input type="password" id="sendgrid_api_key" value="${emailSettings?.sendgrid_api_key || ''}" placeholder="SG...." class="w-full px-4 py-2 border rounded font-mono text-sm">
+                            <p class="text-xs text-gray-500 mt-1">Starts with SG.</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">From Email (Verified in SendGrid)</label>
+                            <input type="email" id="sendgrid_from_email" value="${emailSettings?.from_email || companySettings?.email || ''}" placeholder="your@email.com" class="w-full px-4 py-2 border rounded">
+                            <p class="text-xs text-gray-500 mt-1">Must be verified in SendGrid</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">From Name</label>
+                            <input type="text" id="sendgrid_from_name" value="${emailSettings?.from_name || companySettings?.business_name || ''}" placeholder="Your Business Name" class="w-full px-4 py-2 border rounded">
+                        </div>
+                        
+                        ${emailSettings?.sendgrid_api_key ? '<div class="bg-green-50 border border-green-200 rounded p-3 text-sm text-green-800">✓ Email is configured. You can send quotes and invoices!</div>' : '<div class="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800">⚠ Add your SendGrid API key to enable email sending</div>'}
+                        
+                        <button onclick="saveEmailSettings()" class="w-full bg-black text-white px-4 py-3 rounded-lg border border-teal-400 hover:bg-gray-800">Save Email Settings</button>
                     </div>
                 </div>
             </div>`;
@@ -2200,6 +2280,11 @@ async function sendQuoteEmail(quote) {
         return;
     }
     
+    if (!emailSettings || !emailSettings.sendgrid_api_key) {
+        alert('⚠️ Email not configured! Please add your SendGrid settings in Company Info.');
+        return;
+    }
+    
     // More robust URL construction
     const currentUrl = window.location.href.split('?')[0].split('#')[0];
     const baseUrl = currentUrl.replace(/\/[^\/]*$/, '/'); // Remove filename, keep trailing slash
@@ -2208,26 +2293,55 @@ async function sendQuoteEmail(quote) {
     console.log('Generated share link:', shareLink);
     console.log('Sending to:', client.email);
     
-    const templateParams = {
-        to_email: client.email,
-        from_name: companySettings?.business_name || currentUser.email.split('@')[0],
-        client_name: client.name,
-        quote_title: quote.title,
-        quote_total: quote.total.toFixed(2),
-        quote_link: shareLink,
-        message: 'Please click the link below to view and download your quote.',
-        reply_to: companySettings?.email || currentUser.email
+    const fromEmail = emailSettings.from_email;
+    const fromName = emailSettings.from_name;
+    
+    const emailData = {
+        personalizations: [{
+            to: [{ email: client.email, name: client.name }],
+            subject: `Quote from ${fromName}: ${quote.title}`
+        }],
+        from: { email: fromEmail, name: fromName },
+        reply_to: { email: fromEmail },
+        content: [{
+            type: 'text/html',
+            value: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <p>Hello ${client.name},</p>
+                    <p>${fromName} has sent you a quote for: <strong>${quote.title}</strong></p>
+                    <p>Total Amount: <strong>$${quote.total.toFixed(2)}</strong></p>
+                    <p>Please click the link below to view and download your quote.</p>
+                    <p style="margin: 30px 0;">
+                        <a href="${shareLink}" style="background-color: #14b8a6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">View Your Quote</a>
+                    </p>
+                    <p>Or copy and paste this link into your browser:</p>
+                    <p style="color: #14b8a6; word-break: break-all;">${shareLink}</p>
+                    <p>Best regards,<br>${fromName}</p>
+                </div>
+            `
+        }]
     };
     
     try {
-        console.log('Calling EmailJS...');
-        const response = await emailjs.send('service_og2tkc8', 'template_xvsfuhv', templateParams);
-        console.log('EmailJS response:', response);
+        console.log('Calling SendGrid...');
+        const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + emailSettings.sendgrid_api_key
+            },
+            body: JSON.stringify(emailData)
+        });
         
-        if (response.status === 200) {
+        console.log('SendGrid response status:', response.status);
+        
+        if (response.status === 202) {
             alert('✅ Email sent successfully to ' + client.email + '!\n\nQuote link: ' + shareLink);
         } else {
+            const errorText = await response.text();
+            console.error('SendGrid error:', errorText);
             alert('⚠️ Email may not have sent. Status: ' + response.status + '\n\nManually send this link:\n' + shareLink);
+        }
         }
     } catch (error) {
         console.error('EmailJS error:', error);
@@ -2242,31 +2356,71 @@ async function sendInvoiceEmail(invoice) {
         return;
     }
     
-    const baseUrl = window.location.href.split('?')[0].replace('index.html', '');
-    
-    // Include payment link if Stripe is configured and invoice is unpaid
-    let paymentInfo = '';
-    if (invoice.status === 'unpaid' && stripeSettings?.publishable_key) {
-        const paymentLink = baseUrl + 'payment.html?invoice=' + invoice.id;
-        paymentInfo = `\n\nPay Online: ${paymentLink}`;
+    if (!emailSettings || !emailSettings.sendgrid_api_key) {
+        alert('⚠️ Email not configured! Please add your SendGrid settings in Company Info.');
+        return;
     }
     
-    const templateParams = {
-        to_email: client.email,
-        from_name: companySettings?.business_name || currentUser.email.split('@')[0],
-        client_name: client.name,
-        quote_title: 'Invoice ' + invoice.invoice_number,
-        quote_total: invoice.total.toFixed(2),
-        quote_link: '',
-        message: `Your invoice is ready.\n\nInvoice #: ${invoice.invoice_number}\nAmount Due: $${invoice.total.toFixed(2)}\nDue Date: ${invoice.due_date || 'Upon receipt'}${paymentInfo}\n\nThank you for your business!`,
-        reply_to: companySettings?.email || currentUser.email
+    const baseUrl = window.location.href.split('?')[0].replace('index.html', '');
+    const fromEmail = emailSettings.from_email;
+    const fromName = emailSettings.from_name;
+    
+    // Include payment link if Stripe is configured and invoice is unpaid
+    let paymentButton = '';
+    if (invoice.status === 'unpaid' && stripeSettings?.publishable_key) {
+        const paymentLink = baseUrl + 'payment.html?invoice=' + invoice.id;
+        paymentButton = `<p style="margin: 30px 0;">
+            <a href="${paymentLink}" style="background-color: #14b8a6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">Pay Invoice Online</a>
+        </p>
+        <p>Or copy and paste this link: <span style="color: #14b8a6;">${paymentLink}</span></p>`;
+    }
+    
+    const emailData = {
+        personalizations: [{
+            to: [{ email: client.email, name: client.name }],
+            subject: `Invoice ${invoice.invoice_number} from ${fromName}`
+        }],
+        from: { email: fromEmail, name: fromName },
+        reply_to: { email: fromEmail },
+        content: [{
+            type: 'text/html',
+            value: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <p>Hello ${client.name},</p>
+                    <p>Your invoice is ready.</p>
+                    <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <p style="margin: 5px 0;"><strong>Invoice #:</strong> ${invoice.invoice_number}</p>
+                        <p style="margin: 5px 0;"><strong>Amount Due:</strong> $${invoice.total.toFixed(2)}</p>
+                        <p style="margin: 5px 0;"><strong>Due Date:</strong> ${invoice.due_date || 'Upon receipt'}</p>
+                    </div>
+                    ${paymentButton}
+                    <p>Thank you for your business!</p>
+                    <p>Best regards,<br>${fromName}</p>
+                </div>
+            `
+        }]
     };
     
     try {
-        await emailjs.send('service_og2tkc8', 'template_xvsfuhv', templateParams);
-        alert('Invoice email sent successfully to ' + client.email + '!');
+        const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + emailSettings.sendgrid_api_key
+            },
+            body: JSON.stringify(emailData)
+        });
+        
+        if (response.status === 202) {
+            alert('✅ Invoice email sent successfully to ' + client.email + '!');
+        } else {
+            const errorText = await response.text();
+            console.error('SendGrid error:', errorText);
+            alert('⚠️ Failed to send invoice email. Please try again.');
+        }
     } catch (error) {
-        alert('Failed to send email: ' + error.text);
+        console.error('Email error:', error);
+        alert('❌ Failed to send email: ' + error.message);
     }
 }
 
