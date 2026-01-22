@@ -1006,6 +1006,8 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
                 if (inv.status !== 'paid' && inv.due_date) {
                     const dueDate = new Date(inv.due_date);
                     dueDate.setHours(0,0,0,0);
+                    // Add 24-hour grace period
+                    dueDate.setDate(dueDate.getDate() + 1);
                     const today = new Date();
                     today.setHours(0,0,0,0);
                     return dueDate < today;
@@ -1594,6 +1596,8 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
                 if (!i.due_date) return false;
                 const dueDate = new Date(i.due_date);
                 dueDate.setHours(0,0,0,0);
+                // Add 24-hour grace period
+                dueDate.setDate(dueDate.getDate() + 1);
                 return dueDate < todayDate;
             });
             
