@@ -2347,11 +2347,6 @@ async function sendQuoteEmail(quote) {
         alert('❌ Failed to send email: ' + error.message);
     }
 }
-    } catch (error) {
-        console.error('EmailJS error:', error);
-        alert('❌ Failed to send email: ' + (error.text || error.message || 'Unknown error') + '\n\nManually send this link to ' + client.email + ':\n' + shareLink);
-    }
-}
 
 async function sendInvoiceEmail(invoice) {
     const client = clients.find(c => c.id === invoice.client_id);
