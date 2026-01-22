@@ -2342,7 +2342,11 @@ async function sendQuoteEmail(quote) {
             console.error('SendGrid error:', errorText);
             alert('⚠️ Email may not have sent. Status: ' + response.status + '\n\nManually send this link:\n' + shareLink);
         }
-        }
+    } catch (error) {
+        console.error('Email error:', error);
+        alert('❌ Failed to send email: ' + error.message);
+    }
+}
     } catch (error) {
         console.error('EmailJS error:', error);
         alert('❌ Failed to send email: ' + (error.text || error.message || 'Unknown error') + '\n\nManually send this link to ' + client.email + ':\n' + shareLink);
