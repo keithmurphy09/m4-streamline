@@ -2312,11 +2312,15 @@ async function sendQuoteEmail(quote) {
     
     try {
         console.log('Calling Edge Function...');
+        
+        // Get current session token
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        
         const response = await fetch('https://xviustrrsuhidzbcpgow.supabase.co/functions/v1/send-email', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${supabaseClient.supabaseKey}`
+                'Authorization': `Bearer ${session?.access_token || ''}`
             },
             body: JSON.stringify({
                 user_id: currentUser.id,
@@ -2383,11 +2387,14 @@ async function sendInvoiceEmail(invoice) {
     `;
     
     try {
+        // Get current session token
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        
         const response = await fetch('https://xviustrrsuhidzbcpgow.supabase.co/functions/v1/send-email', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${supabaseClient.supabaseKey}`
+                'Authorization': `Bearer ${session?.access_token || ''}`
             },
             body: JSON.stringify({
                 user_id: currentUser.id,
