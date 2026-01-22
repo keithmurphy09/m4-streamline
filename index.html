@@ -2118,7 +2118,7 @@ function renderCalendar() {
                     ? `updateJob('${editingItem.id}')` 
                     : `saveJob()`;
                     
-                form = `<select id="client_id" class="w-full px-4 py-2 border rounded mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}</select><input type="text" id="title" placeholder="Job Title" value="${title}" class="w-full px-4 py-2 border rounded mb-3"><input type="date" id="date" value="${date}" class="w-full px-4 py-2 border rounded mb-3"><input type="time" id="time" value="${time}" class="w-full px-4 py-2 border rounded mb-3">${workerDropdown}<select id="jobStatus" class="w-full px-4 py-2 border rounded mb-3"><option value="scheduled" ${status === 'scheduled' ? 'selected' : ''}>Scheduled</option><option value="in_progress" ${status === 'in_progress' ? 'selected' : ''}>In Progress</option><option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option></select><textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${notes}</textarea><button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
+                form = `<select id="client_id" class="w-full px-4 py-2 border rounded mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}</select><input type="text" id="title" placeholder="Job Title" value="${title}" class="w-full px-4 py-2 border rounded mb-3"><input type="date" id="date" value="${date}" class="w-full px-4 py-2 border rounded mb-3"><input type="time" id="time" value="${time}" placeholder="Optional" class="w-full px-4 py-2 border rounded mb-3">${workerDropdown}<select id="jobStatus" class="w-full px-4 py-2 border rounded mb-3"><option value="scheduled" ${status === 'scheduled' ? 'selected' : ''}>Scheduled</option><option value="in_progress" ${status === 'in_progress' ? 'selected' : ''}>In Progress</option><option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option></select><textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${notes}</textarea><button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
             }
             if (modalType === 'quote') {
                 const clientId = editingItem?.client_id || '';
@@ -2317,7 +2317,7 @@ async function sendQuoteEmail(quote) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aXVzdHJyc3VoaWR6YmNwZ293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3ODk1NDgsImV4cCI6MjA4NDM2NTU0OH0.CEcc50c1K2Qnh6rXt_1-_w30LzHvDniGLbqWhdOolRY'
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aXVzdHJyc3VoaWR6YmNwZ293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3ODk1NDgsImV4cCI6MjA4NDM2NTU0OH0.CEcc50c1K2Qnh6rXt_1-_w30LzHvDniGLbqWhdOolRY'
             },
             body: JSON.stringify({
                 user_id: currentUser.id,
@@ -2363,7 +2363,7 @@ async function sendInvoiceEmail(invoice) {
     if (invoice.status === 'unpaid' && stripeSettings?.publishable_key) {
         const paymentLink = baseUrl + 'payment.html?invoice=' + invoice.id;
         paymentButton = `<p style="margin: 30px 0;">
-            <a href="${paymentLink}" style="background-color: #14b8a6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">Pay Invoice Online</a>
+            <a href="${paymentLink}" style="background-color: #14b8a6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">View Invoice</a>
         </p>
         <p>Or copy and paste this link: <span style="color: #14b8a6;">${paymentLink}</span></p>`;
     }
@@ -2388,7 +2388,7 @@ async function sendInvoiceEmail(invoice) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aXVzdHJyc3VoaWR6YmNwZ293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3ODk1NDgsImV4cCI6MjA4NDM2NTU0OH0.CEcc50c1K2Qnh6rXt_1-_w30LzHvDniGLbqWhdOolRY'
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aXVzdHJyc3VoaWR6YmNwZ293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3ODk1NDgsImV4cCI6MjA4NDM2NTU0OH0.CEcc50c1K2Qnh6rXt_1-_w30LzHvDniGLbqWhdOolRY'
             },
             body: JSON.stringify({
                 user_id: currentUser.id,
