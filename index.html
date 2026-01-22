@@ -2315,12 +2315,21 @@ async function sendQuoteEmail(quote) {
         
         // Get current session token
         const { data: { session } } = await supabaseClient.auth.getSession();
+        const token = session?.access_token;
+        
+        if (!token) {
+            console.error('No auth token found');
+            alert('❌ Authentication error. Please refresh the page and try again.');
+            return;
+        }
+        
+        console.log('Using auth token:', token.substring(0, 20) + '...');
         
         const response = await fetch('https://xviustrrsuhidzbcpgow.supabase.co/functions/v1/send-email', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${session?.access_token || ''}`
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
                 user_id: currentUser.id,
@@ -2389,12 +2398,19 @@ async function sendInvoiceEmail(invoice) {
     try {
         // Get current session token
         const { data: { session } } = await supabaseClient.auth.getSession();
+        const token = session?.access_token;
+        
+        if (!token) {
+            console.error('No auth token found');
+            alert('❌ Authentication error. Please refresh the page and try again.');
+            return;
+        }
         
         const response = await fetch('https://xviustrrsuhidzbcpgow.supabase.co/functions/v1/send-email', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${session?.access_token || ''}`
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
                 user_id: currentUser.id,
