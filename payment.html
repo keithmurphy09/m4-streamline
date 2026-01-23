@@ -48,7 +48,8 @@
             stripeSettings = stripeSett;
             
             if (!stripeSettings || !stripeSettings.publishable_key) {
-                document.getElementById('app').innerHTML = '<div class="min-h-screen flex items-center justify-center"><div class="text-center"><h1 class="text-2xl font-bold text-red-600">Payment not configured</h1><p class="text-gray-600 mt-2">The business has not set up online payments yet.</p></div></div>';
+                // Show invoice details even without Stripe
+                renderInvoiceOnly();
                 return;
             }
             
@@ -61,6 +62,81 @@
             stripe = Stripe(stripeSettings.publishable_key);
             
             renderPaymentForm();
+        }
+        
+        function renderInvoiceOnly() {
+            const dueDate = invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A';
+            
+            document.getElementById('app').innerHTML = `
+                <div class="min-h-screen py-12 px-4">
+                    <div class="max-w-2xl mx-auto">
+                        <!-- Header -->
+                        <div class="bg-black text-white p-6 rounded-t-lg border-b-4 border-teal-400">
+                            <h1 class="text-3xl font-bold text-teal-400">M4 STREAMLINE</h1>
+                            <p class="text-teal-400 text-sm italic">"streamlining your business"</p>
+                        </div>
+                        
+                        <!-- Invoice Details -->
+                        <div class="bg-white p-6 shadow-lg">
+                            <h2 class="text-2xl font-bold mb-4">Invoice</h2>
+                            
+                            <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
+                                <div>
+                                    <div class="text-gray-600">Invoice #</div>
+                                    <div class="font-semibold">${invoice.invoice_number}</div>
+                                </div>
+                                <div>
+                                    <div class="text-gray-600">Due Date</div>
+                                    <div class="font-semibold">${dueDate}</div>
+                                </div>
+                                <div>
+                                    <div class="text-gray-600">Bill To</div>
+                                    <div class="font-semibold">${client?.name || 'Unknown'}</div>
+                                </div>
+                                <div>
+                                    <div class="text-gray-600">Amount Due</div>
+                                    <div class="text-2xl font-bold text-teal-600">$${parseFloat(invoice.total).toFixed(2)}</div>
+                                </div>
+                            </div>
+                            
+                            ${invoice.items ? `
+                            <div class="border-t pt-4 mb-6">
+                                <h3 class="font-semibold mb-3">Invoice Items</h3>
+                                <table class="w-full text-sm">
+                                    <thead class="border-b">
+                                        <tr class="text-left">
+                                            <th class="pb-2">Description</th>
+                                            <th class="pb-2 text-right">Quantity</th>
+                                            <th class="pb-2 text-right">Price</th>
+                                            <th class="pb-2 text-right">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${invoice.items.map(item => `
+                                            <tr class="border-b">
+                                                <td class="py-2">${item.description}</td>
+                                                <td class="py-2 text-right">${item.quantity}</td>
+                                                <td class="py-2 text-right">$${parseFloat(item.price).toFixed(2)}</td>
+                                                <td class="py-2 text-right">$${(item.quantity * item.price).toFixed(2)}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                            ` : ''}
+                            
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                                <p class="text-yellow-800 font-medium">⚠️ Online payment not available</p>
+                                <p class="text-yellow-700 text-sm mt-1">Please contact the business for payment options (bank transfer, cash, etc.)</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-100 p-4 rounded-b-lg text-center text-sm text-gray-600">
+                            M4 Streamline - Business Management
+                        </div>
+                    </div>
+                </div>
+            `;
         }
         
         function renderPaymentForm() {
