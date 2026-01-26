@@ -17,6 +17,7 @@
         let invoice = null;
         let client = null;
         let stripeSettings = null;
+        let companySettings = null;
         let stripe = null;
         let elements = null;
         
@@ -42,6 +43,10 @@
             // Load client
             const { data: cli } = await supabaseClient.from('clients').select('*').eq('id', invoice.client_id).single();
             client = cli;
+            
+            // Load company settings
+            const { data: companySett } = await supabaseClient.from('company_settings').select('*').eq('user_id', invoice.user_id).single();
+            companySettings = companySett;
             
             // Load stripe settings
             const { data: stripeSett } = await supabaseClient.from('stripe_settings').select('*').eq('user_id', invoice.user_id).single();
@@ -125,9 +130,31 @@
                             </div>
                             ` : ''}
                             
+                            ${companySettings && (companySettings.bank_name || companySettings.business_name) ? `
+                            <div class="border-t pt-4 mb-4">
+                                <h3 class="font-semibold mb-3">Payment Details</h3>
+                                <div class="bg-teal-50 p-4 rounded-lg">
+                                    ${companySettings.business_name ? `<p class="font-medium text-teal-900 mb-2">${companySettings.business_name}</p>` : ''}
+                                    ${companySettings.abn ? `<p class="text-sm text-gray-700 mb-1">ABN: ${companySettings.abn}</p>` : ''}
+                                    ${companySettings.phone ? `<p class="text-sm text-gray-700 mb-1">Phone: ${companySettings.phone}</p>` : ''}
+                                    ${companySettings.email ? `<p class="text-sm text-gray-700 mb-3">Email: ${companySettings.email}</p>` : ''}
+                                    
+                                    ${companySettings.bank_name || companySettings.bsb || companySettings.account_number ? `
+                                    <div class="border-t border-teal-200 mt-3 pt-3">
+                                        <p class="text-sm font-semibold text-teal-900 mb-2">Bank Transfer Details:</p>
+                                        ${companySettings.bank_name ? `<p class="text-sm text-gray-700">Bank: ${companySettings.bank_name}</p>` : ''}
+                                        ${companySettings.account_name ? `<p class="text-sm text-gray-700">Account Name: ${companySettings.account_name}</p>` : ''}
+                                        ${companySettings.bsb ? `<p class="text-sm text-gray-700">BSB: ${companySettings.bsb}</p>` : ''}
+                                        ${companySettings.account_number ? `<p class="text-sm text-gray-700">Account Number: ${companySettings.account_number}</p>` : ''}
+                                    </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                            ` : ''}
+                            
                             <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
                                 <p class="text-yellow-800 font-medium">⚠️ Online payment not available</p>
-                                <p class="text-yellow-700 text-sm mt-1">Please contact the business for payment options (bank transfer, cash, etc.)</p>
+                                <p class="text-yellow-700 text-sm mt-1">Please use bank transfer or contact the business for other payment options.</p>
                             </div>
                         </div>
                         
