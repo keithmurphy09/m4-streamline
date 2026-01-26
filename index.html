@@ -835,26 +835,30 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
         async function saveStripeSettings() {
             const publishableKey = document.getElementById('stripe_publishable_key').value.trim();
             const secretKey = document.getElementById('stripe_secret_key').value.trim();
+            const enabled = document.getElementById('stripe_enabled').checked;
             
-            if (!publishableKey || !secretKey) {
-                alert('Please enter both Stripe keys');
-                return;
-            }
-            
-            if (!publishableKey.startsWith('pk_')) {
+            // If keys are provided, validate them
+            if (publishableKey && !publishableKey.startsWith('pk_')) {
                 alert('Invalid Publishable Key. Should start with pk_test_ or pk_live_');
                 return;
             }
             
-            if (!secretKey.startsWith('sk_')) {
+            if (secretKey && !secretKey.startsWith('sk_')) {
                 alert('Invalid Secret Key. Should start with sk_test_ or sk_live_');
+                return;
+            }
+            
+            // If enabled is true but no keys, warn user
+            if (enabled && (!publishableKey || !secretKey)) {
+                alert('Stripe is enabled but keys are missing. Please add keys or turn off Stripe.');
                 return;
             }
             
             const settings = {
                 user_id: currentUser.id,
-                publishable_key: publishableKey,
-                secret_key: secretKey
+                publishable_key: publishableKey || null,
+                secret_key: secretKey || null,
+                enabled: enabled
             };
             
             if (stripeSettings) {
@@ -1531,19 +1535,30 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
                     <p class="text-sm text-gray-600 mb-6">Enable online payments for your invoices. Get your API keys from <a href="https://dashboard.stripe.com/apikeys" target="_blank" class="text-teal-600 underline">Stripe Dashboard</a>.</p>
                     
                     <div class="space-y-4">
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
+                            <div>
+                                <p class="font-medium">Enable Stripe Payments</p>
+                                <p class="text-xs text-gray-600">Turn off to show bank details instead</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="stripe_enabled" ${stripe.enabled !== false ? 'checked' : ''} class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                            </label>
+                        </div>
+                        
                         <div>
                             <label class="block text-sm font-medium mb-1">Publishable Key</label>
-                            <input type="text" id="stripe_publishable_key" value="${stripe.publishable_key || ''}" placeholder="pk_test_..." class="w-full px-4 py-2 border rounded font-mono text-sm">
+                            <input type="text" id="stripe_publishable_key" value="${stripe.publishable_key || ''}" placeholder="pk_test_... (optional)" class="w-full px-4 py-2 border rounded font-mono text-sm">
                             <p class="text-xs text-gray-500 mt-1">Starts with pk_test_ or pk_live_</p>
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium mb-1">Secret Key</label>
-                            <input type="password" id="stripe_secret_key" value="${stripe.secret_key || ''}" placeholder="sk_test_..." class="w-full px-4 py-2 border rounded font-mono text-sm">
+                            <input type="password" id="stripe_secret_key" value="${stripe.secret_key || ''}" placeholder="sk_test_... (optional)" class="w-full px-4 py-2 border rounded font-mono text-sm">
                             <p class="text-xs text-gray-500 mt-1">Starts with sk_test_ or sk_live_</p>
                         </div>
                         
-                        ${stripe.publishable_key ? '<div class="bg-green-50 border border-green-200 rounded p-3 text-sm text-green-800">✓ Stripe is configured. Clients can now pay invoices online!</div>' : '<div class="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800">⚠ Add your Stripe keys to enable online payments</div>'}
+                        ${stripe.enabled !== false && stripe.publishable_key ? '<div class="bg-green-50 border border-green-200 rounded p-3 text-sm text-green-800">✓ Stripe is enabled. Clients can pay invoices online!</div>' : '<div class="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800">⚠ Stripe is disabled. Clients will see bank transfer details.</div>'}
                         
                         <button onclick="saveStripeSettings()" class="w-full bg-black text-white px-4 py-3 rounded-lg border border-teal-400 hover:bg-gray-800">Save Stripe Settings</button>
                     </div>
