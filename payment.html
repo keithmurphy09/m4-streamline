@@ -52,8 +52,8 @@
             const { data: stripeSett } = await supabaseClient.from('stripe_settings').select('*').eq('user_id', invoice.user_id).single();
             stripeSettings = stripeSett;
             
-            if (!stripeSettings || !stripeSettings.publishable_key) {
-                // Show invoice details even without Stripe
+            if (!stripeSettings || !stripeSettings.publishable_key || stripeSettings.enabled === false) {
+                // Show invoice details even without Stripe or if disabled
                 renderInvoiceOnly();
                 return;
             }
