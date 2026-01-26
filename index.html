@@ -679,6 +679,45 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
                 }
             }
             
+            // Add bank details for invoices (if Stripe is disabled or not configured)
+            if (type === 'invoice' && company.bank_name) {
+                y += 15;
+                doc.setFontSize(11);
+                doc.setFont(undefined, 'bold');
+                doc.setTextColor(0, 0, 0);
+                doc.text('Payment Details:', 20, y);
+                
+                y += 7;
+                doc.setFontSize(9);
+                doc.setFont(undefined, 'normal');
+                doc.setTextColor(50, 50, 50);
+                
+                if (company.bank_name) {
+                    doc.text('Bank: ' + company.bank_name, 20, y);
+                    y += 5;
+                }
+                if (company.account_name) {
+                    doc.text('Account Name: ' + company.account_name, 20, y);
+                    y += 5;
+                }
+                if (company.bsb) {
+                    doc.text('BSB: ' + company.bsb, 20, y);
+                    y += 5;
+                }
+                if (company.account_number) {
+                    doc.text('Account Number: ' + company.account_number, 20, y);
+                    y += 5;
+                }
+                
+                // Add payment reference suggestion
+                y += 3;
+                doc.setFontSize(8);
+                doc.setFont(undefined, 'italic');
+                doc.setTextColor(100, 100, 100);
+                const referenceText = doc.splitTextToSize('Please use invoice number as payment reference', 170);
+                doc.text(referenceText, 20, y);
+            }
+            
             if (item.notes) {
                 y += 15;
                 doc.setFontSize(10);
