@@ -39,6 +39,7 @@
         let expenses = [];
         let stripeSettings = null;
         let emailSettings = null;
+        let smsSettings = null;
         let payments = [];
         let companySettings = null;
         let subscription = null;
@@ -174,7 +175,7 @@
         }
         
         async function loadAllData() {
-            const [c, j, q, i, e, s, sub, admin, team, stripe, pay, email] = await Promise.all([
+            const [c, j, q, i, e, s, sub, admin, team, stripe, pay, email, sms] = await Promise.all([
                 supabaseClient.from('clients').select('*'), 
                 supabaseClient.from('jobs').select('*'), 
                 supabaseClient.from('quotes').select('*'), 
@@ -186,7 +187,8 @@
                 supabaseClient.from('team_members').select('*').eq('account_owner_id', currentUser.id),
                 supabaseClient.from('stripe_settings').select('*').eq('user_id', currentUser.id).single(),
                 supabaseClient.from('payments').select('*'),
-                supabaseClient.from('email_settings').select('*').eq('user_id', currentUser.id).single()
+                supabaseClient.from('email_settings').select('*').eq('user_id', currentUser.id).single(),
+                supabaseClient.from('sms_settings').select('*').eq('user_id', currentUser.id).single()
             ]);
             clients = c.data || []; 
             jobs = j.data || []; 
@@ -200,6 +202,7 @@
             stripeSettings = stripe.data || null;
             payments = pay.data || [];
             emailSettings = email.data || null;
+            smsSettings = sms.data || null;
             
             console.log('Admin query result:', admin);
             console.log('isAdmin value:', isAdmin);
@@ -969,6 +972,43 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
             renderApp();
         }
         
+        async function saveSMSSettings() {
+            const enabled = document.getElementById('sms_enabled').checked;
+            const notify_quote_sent = document.getElementById('notify_quote_sent').checked;
+            const notify_invoice_sent = document.getElementById('notify_invoice_sent').checked;
+            const notify_payment_received = document.getElementById('notify_payment_received').checked;
+            const notify_job_reminder = document.getElementById('notify_job_reminder').checked;
+            
+            const settings = {
+                user_id: currentUser.id,
+                enabled: enabled,
+                notify_quote_sent: notify_quote_sent,
+                notify_invoice_sent: notify_invoice_sent,
+                notify_payment_received: notify_payment_received,
+                notify_job_reminder: notify_job_reminder
+            };
+            
+            if (smsSettings) {
+                // Update existing
+                const { data } = await supabaseClient
+                    .from('sms_settings')
+                    .update(settings)
+                    .eq('user_id', currentUser.id)
+                    .select();
+                if (data) smsSettings = data[0];
+            } else {
+                // Create new
+                const { data } = await supabaseClient
+                    .from('sms_settings')
+                    .insert([settings])
+                    .select();
+                if (data) smsSettings = data[0];
+            }
+            
+            alert('✅ SMS settings saved!');
+            renderApp();
+        }
+        
         function copyPaymentLink(invoiceId) {
             const paymentUrl = `${window.location.origin}/payment.html?invoice=${invoiceId}`;
             
@@ -1631,6 +1671,71 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
                         <button onclick="saveEmailSettings()" class="w-full bg-black text-white px-4 py-3 rounded-lg border border-teal-400 hover:bg-gray-800">Save Email Settings</button>
                     </div>
                 </div>
+                
+                <!-- SMS Settings -->
+                <div class="bg-white p-6 rounded-lg shadow max-w-2xl">
+                    <h3 class="text-lg font-bold mb-2">📱 SMS Notifications (Twilio)</h3>
+                    <p class="text-sm text-gray-600 mb-6">Send SMS notifications to clients. Solves email delivery issues (BigPond, etc.)</p>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
+                            <div>
+                                <p class="font-medium">Enable SMS Notifications</p>
+                                <p class="text-xs text-gray-600">Turn on to send SMS to clients</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="sms_enabled" ${smsSettings?.enabled ? 'checked' : ''} class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                            </label>
+                        </div>
+                        
+                        <div class="bg-blue-50 border border-blue-200 rounded p-3 text-sm">
+                            <p class="text-blue-900 font-medium mb-1">📊 SMS Usage</p>
+                            <p class="text-blue-700">${smsSettings?.sms_count_current_month || 0} / ${smsSettings?.sms_limit || 50} SMS used this month</p>
+                            <div class="w-full bg-blue-200 rounded-full h-2 mt-2">
+                                <div class="bg-blue-600 h-2 rounded-full" style="width: ${Math.min(((smsSettings?.sms_count_current_month || 0) / (smsSettings?.sms_limit || 50)) * 100, 100)}%"></div>
+                            </div>
+                        </div>
+                        
+                        <h4 class="font-semibold mt-4">Send SMS when:</h4>
+                        
+                        <label class="flex items-center space-x-3 cursor-pointer p-3 hover:bg-gray-50 rounded">
+                            <input type="checkbox" id="notify_quote_sent" ${smsSettings?.notify_quote_sent !== false ? 'checked' : ''} class="w-5 h-5 text-teal-600 rounded">
+                            <div>
+                                <p class="font-medium">Quote Sent</p>
+                                <p class="text-xs text-gray-600">Notify client when quote is ready</p>
+                            </div>
+                        </label>
+                        
+                        <label class="flex items-center space-x-3 cursor-pointer p-3 hover:bg-gray-50 rounded">
+                            <input type="checkbox" id="notify_invoice_sent" ${smsSettings?.notify_invoice_sent !== false ? 'checked' : ''} class="w-5 h-5 text-teal-600 rounded">
+                            <div>
+                                <p class="font-medium">Invoice Sent</p>
+                                <p class="text-xs text-gray-600">Notify client when invoice is ready</p>
+                            </div>
+                        </label>
+                        
+                        <label class="flex items-center space-x-3 cursor-pointer p-3 hover:bg-gray-50 rounded">
+                            <input type="checkbox" id="notify_payment_received" ${smsSettings?.notify_payment_received ? 'checked' : ''} class="w-5 h-5 text-teal-600 rounded">
+                            <div>
+                                <p class="font-medium">Payment Received</p>
+                                <p class="text-xs text-gray-600">Thank client when payment is received</p>
+                            </div>
+                        </label>
+                        
+                        <label class="flex items-center space-x-3 cursor-pointer p-3 hover:bg-gray-50 rounded">
+                            <input type="checkbox" id="notify_job_reminder" ${smsSettings?.notify_job_reminder ? 'checked' : ''} class="w-5 h-5 text-teal-600 rounded">
+                            <div>
+                                <p class="font-medium">Job Reminder</p>
+                                <p class="text-xs text-gray-600">Remind client 1 day before scheduled job</p>
+                            </div>
+                        </label>
+                        
+                        ${smsSettings?.enabled ? '<div class="bg-green-50 border border-green-200 rounded p-3 text-sm text-green-800">✓ SMS is enabled. Clients will receive SMS notifications!</div>' : '<div class="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800">⚠ SMS is disabled. Turn on to start sending SMS</div>'}
+                        
+                        <button onclick="saveSMSSettings()" class="w-full bg-black text-white px-4 py-3 rounded-lg border border-teal-400 hover:bg-gray-800">Save SMS Settings</button>
+                    </div>
+                </div>
             </div>`;
         }
         
@@ -1881,7 +1986,7 @@ function renderCalendar() {
         const client = clients.find(c => c.id === q.client_id);
         const isAccepted = q.accepted || q.status === 'accepted';
         const isNewQuote = lastCreatedQuote && lastCreatedQuote.id === q.id;
-        return `<div class="bg-white p-4 rounded-lg shadow ${isAccepted ? 'border-l-4 border-green-500' : ''} ${isNewQuote ? 'ring-2 ring-green-400' : ''}"><div class="flex flex-col sm:flex-row sm:justify-between gap-2 mb-3"><div><h3 class="text-lg font-semibold">${q.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p>${isAccepted ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mt-1 inline-block">✓ ACCEPTED</span>' : ''}</div><p class="text-2xl font-bold text-teal-500">$${q.total?.toFixed(2)}</p></div>${q.notes ? `<p class="text-sm text-gray-600 italic mb-3">${q.notes}</p>` : ''}<div class="flex gap-2 flex-wrap">${isAccepted ? `<button onclick='openJobFromQuote(${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-teal-600 text-white rounded text-sm whitespace-nowrap">📅 Schedule Job</button>` : ''}${!isAccepted ? `<button onclick='openModal("quote", ${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>` : ''}${!isAccepted && q.status === 'pending' ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm whitespace-nowrap">Convert to Invoice</button>` : ''}${isAccepted ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm whitespace-nowrap">Convert to Invoice</button>` : ''}<button onclick='generatePDF("quote", ${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm whitespace-nowrap">Download PDF</button><button onclick='sendQuoteEmail(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-purple-600 text-white rounded text-sm whitespace-nowrap">Send Email</button><button onclick="deleteQuote('${q.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div></div>`; 
+        return `<div class="bg-white p-4 rounded-lg shadow ${isAccepted ? 'border-l-4 border-green-500' : ''} ${isNewQuote ? 'ring-2 ring-green-400' : ''}"><div class="flex flex-col sm:flex-row sm:justify-between gap-2 mb-3"><div><h3 class="text-lg font-semibold">${q.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p>${isAccepted ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mt-1 inline-block">✓ ACCEPTED</span>' : ''}</div><p class="text-2xl font-bold text-teal-500">$${q.total?.toFixed(2)}</p></div>${q.notes ? `<p class="text-sm text-gray-600 italic mb-3">${q.notes}</p>` : ''}<div class="flex gap-2 flex-wrap">${isAccepted ? `<button onclick='openJobFromQuote(${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-teal-600 text-white rounded text-sm whitespace-nowrap">📅 Schedule Job</button>` : ''}${!isAccepted ? `<button onclick='openModal("quote", ${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>` : ''}${!isAccepted && q.status === 'pending' ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm whitespace-nowrap">Convert to Invoice</button>` : ''}${isAccepted ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm whitespace-nowrap">Convert to Invoice</button>` : ''}<button onclick='generatePDF("quote", ${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm whitespace-nowrap">Download PDF</button><button onclick='sendQuoteEmail(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-purple-600 text-white rounded text-sm whitespace-nowrap">📧 Email</button>${client?.phone && smsSettings?.enabled ? `<button onclick='sendQuoteSMS(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm whitespace-nowrap">📱 SMS</button>` : ''}<button onclick="deleteQuote('${q.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div></div>`; 
     }).join('')}</div></div>`;
 }
         
@@ -1985,7 +2090,7 @@ function renderCalendar() {
                             ? `<button onclick="copyPaymentLink('${inv.id}')" class="px-3 py-1 bg-purple-600 text-white rounded text-sm">💳 Get Payment Link</button>` 
                             : '';
                         
-                        return `<div class="bg-white p-4 rounded-lg shadow ${borderColor}"><div class="flex justify-between mb-3"><div><h3 class="text-lg font-semibold">${inv.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p><p class="text-xs">${inv.invoice_number}</p><p class="text-xs text-gray-500">Issued: ${inv.issue_date}</p>${inv.due_date ? `<p class="text-xs text-gray-500">Due: ${inv.due_date}</p>` : ''}${statusBadge}</div><p class="text-2xl font-bold text-teal-500">$${inv.total?.toFixed(2)}</p></div><div class="flex gap-2 flex-wrap">${inv.status === 'unpaid' ? `<button onclick="updateInvoice('${inv.id}', 'paid')" class="px-3 py-1 bg-green-600 text-white rounded text-sm">Mark Paid</button>` : ''}${paymentLinkButton}<button onclick="generatePDF('invoice', ${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Download PDF</button><button onclick="sendInvoiceEmail(${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-teal-600 text-white rounded text-sm">Send Email</button><button onclick="deleteInvoice('${inv.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div></div>`; 
+                        return `<div class="bg-white p-4 rounded-lg shadow ${borderColor}"><div class="flex justify-between mb-3"><div><h3 class="text-lg font-semibold">${inv.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p><p class="text-xs">${inv.invoice_number}</p><p class="text-xs text-gray-500">Issued: ${inv.issue_date}</p>${inv.due_date ? `<p class="text-xs text-gray-500">Due: ${inv.due_date}</p>` : ''}${statusBadge}</div><p class="text-2xl font-bold text-teal-500">$${inv.total?.toFixed(2)}</p></div><div class="flex gap-2 flex-wrap">${inv.status === 'unpaid' ? `<button onclick="updateInvoice('${inv.id}', 'paid')" class="px-3 py-1 bg-green-600 text-white rounded text-sm">Mark Paid</button>` : ''}${paymentLinkButton}<button onclick="generatePDF('invoice', ${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Download PDF</button><button onclick="sendInvoiceEmail(${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-teal-600 text-white rounded text-sm">📧 Email</button>${client?.phone && smsSettings?.enabled ? `<button onclick="sendInvoiceSMS(${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-green-600 text-white rounded text-sm">📱 SMS</button>` : ''}<button onclick="deleteInvoice('${inv.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div></div>`; 
                     }).join('');
             }
             
@@ -2058,18 +2163,25 @@ function renderCalendar() {
                                     <tr>
                                         <th class="px-4 py-3 text-left text-sm font-semibold">Date</th>
                                         <th class="px-4 py-3 text-left text-sm font-semibold">Category</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold">Job</th>
+                                        ${subscription?.account_type === 'business' ? '<th class="px-4 py-3 text-left text-sm font-semibold">Team Member</th>' : ''}
                                         <th class="px-4 py-3 text-left text-sm font-semibold">Description</th>
                                         <th class="px-4 py-3 text-right text-sm font-semibold">Amount</th>
                                         <th class="px-4 py-3 text-center text-sm font-semibold">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200">
-                                    ${filteredExpenses.sort((a, b) => new Date(b.date) - new Date(a.date)).map(exp => `
+                                    ${filteredExpenses.sort((a, b) => new Date(b.date) - new Date(a.date)).map(exp => {
+                                        const teamMember = exp.team_member_id ? teamMembers.find(tm => tm.id === exp.team_member_id) : null;
+                                        const job = exp.job_id ? jobs.find(j => j.id === exp.job_id) : null;
+                                        return `
                                         <tr class="hover:bg-gray-50">
                                             <td class="px-4 py-3 text-sm text-gray-900">${new Date(exp.date).toLocaleDateString()}</td>
                                             <td class="px-4 py-3">
                                                 <span class="inline-block px-2 py-1 text-xs font-medium rounded bg-gray-100 text-gray-800">${exp.category}</span>
                                             </td>
+                                            <td class="px-4 py-3 text-sm text-gray-600">${job ? job.title : '-'}</td>
+                                            ${subscription?.account_type === 'business' ? `<td class="px-4 py-3 text-sm text-gray-600">${teamMember ? teamMember.name : '-'}</td>` : ''}
                                             <td class="px-4 py-3 text-sm text-gray-600">
                                                 ${exp.description || '-'}
                                                 ${exp.receipt_url ? `<a href="${exp.receipt_url}" target="_blank" class="text-teal-600 hover:underline ml-2">📎</a>` : ''}
@@ -2082,9 +2194,9 @@ function renderCalendar() {
                                                 </div>
                                             </td>
                                         </tr>
-                                    `).join('')}
+                                    `}).join('')}
                                     <tr class="bg-gray-50 font-bold border-t-2 border-gray-300">
-                                        <td colspan="3" class="px-4 py-4 text-right text-sm uppercase">Total ${expenseFilter !== 'all' ? `(${getMonthLabel(expenseFilter)})` : ''}:</td>
+                                        <td colspan="${subscription?.account_type === 'business' ? '5' : '4'}" class="px-4 py-4 text-right text-sm uppercase">Total ${expenseFilter !== 'all' ? `(${getMonthLabel(expenseFilter)})` : ''}:</td>
                                         <td class="px-4 py-4 text-right text-lg text-red-600">$${totalExpenses.toFixed(2)}</td>
                                         <td></td>
                                     </tr>
@@ -2113,7 +2225,9 @@ function renderCalendar() {
                 date: document.getElementById('expense_date').value,
                 amount: parseFloat(document.getElementById('expense_amount').value),
                 category: document.getElementById('expense_category').value,
-                description: document.getElementById('expense_description').value
+                description: document.getElementById('expense_description').value,
+                team_member_id: document.getElementById('team_member_id')?.value || null,
+                job_id: document.getElementById('job_id')?.value || null
             };
             const { data } = await supabaseClient.from('expenses').update(updatedExpense).eq('id', id).select();
             if (data) {
@@ -2139,12 +2253,27 @@ function renderCalendar() {
                 const amount = editingItem?.amount || '';
                 const category = editingItem?.category || 'Materials';
                 const description = editingItem?.description || '';
+                const team_member_id = editingItem?.team_member_id || '';
+                const job_id = editingItem?.job_id || '';
                 const categories = ['Materials', 'Fuel', 'Equipment', 'Subcontractors', 'Office Supplies', 'Insurance', 'Marketing', 'Other'];
                 const buttonText = editingItem ? 'Update Expense' : 'Add Expense';
+                
+                // Job dropdown - show recent/active jobs
+                const activeJobs = jobs.filter(j => j.status !== 'completed').sort((a, b) => new Date(b.date) - new Date(a.date));
+                const jobDropdown = `<div><label class="block text-sm font-medium mb-1">Related Job (Optional)</label><select id="job_id" class="w-full px-4 py-2 border rounded mb-3"><option value="">No specific job</option>${activeJobs.map(j => {
+                    const client = clients.find(c => c.id === j.client_id);
+                    return `<option value="${j.id}" ${j.id === job_id ? 'selected' : ''}>${j.title}${client ? ' - ' + client.name : ''}</option>`;
+                }).join('')}</select></div>`;
+                
+                // Team member dropdown for business accounts
+                const teamMemberDropdown = subscription?.account_type === 'business' 
+                    ? `<div><label class="block text-sm font-medium mb-1">Team Member (Optional)</label><select id="team_member_id" class="w-full px-4 py-2 border rounded mb-3"><option value="">No specific team member</option>${teamMembers.map(tm => `<option value="${tm.id}" ${tm.id === team_member_id ? 'selected' : ''}>${tm.name}${tm.occupation ? ' (' + tm.occupation + ')' : ''}</option>`).join('')}</select></div>` 
+                    : '';
+                
                 const action = editingItem 
                     ? `updateExpense('${editingItem.id}')` 
-                    : `addExpense({date:document.getElementById('expense_date').value,amount:parseFloat(document.getElementById('expense_amount').value),category:document.getElementById('expense_category').value,description:document.getElementById('expense_description').value})`;
-                form = `<input type="date" id="expense_date" value="${date}" class="w-full px-4 py-2 border rounded mb-3" required><input type="number" id="expense_amount" placeholder="Amount" value="${amount}" step="0.01" class="w-full px-4 py-2 border rounded mb-3" required><select id="expense_category" class="w-full px-4 py-2 border rounded mb-3">${categories.map(cat => `<option value="${cat}" ${cat === category ? 'selected' : ''}>${cat}</option>`).join('')}</select><textarea id="expense_description" placeholder="Description (e.g., Plumbing supplies for Smith job)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${description}</textarea><button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
+                    : `addExpense({date:document.getElementById('expense_date').value,amount:parseFloat(document.getElementById('expense_amount').value),category:document.getElementById('expense_category').value,description:document.getElementById('expense_description').value,team_member_id:document.getElementById('team_member_id')?.value||null,job_id:document.getElementById('job_id')?.value||null})`;
+                form = `<input type="date" id="expense_date" value="${date}" class="w-full px-4 py-2 border rounded mb-3" required><input type="number" id="expense_amount" placeholder="Amount" value="${amount}" step="0.01" class="w-full px-4 py-2 border rounded mb-3" required><select id="expense_category" class="w-full px-4 py-2 border rounded mb-3">${categories.map(cat => `<option value="${cat}" ${cat === category ? 'selected' : ''}>${cat}</option>`).join('')}</select>${jobDropdown}${teamMemberDropdown}<textarea id="expense_description" placeholder="Description (e.g., Plumbing supplies for Smith job)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${description}</textarea><button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
             }
             if (modalType === 'team_member') {
                 const name = editingItem?.name || '';
@@ -2410,6 +2539,115 @@ async function sendQuoteEmail(quote) {
     } catch (error) {
         console.error('Email error:', error);
         alert('❌ Failed to send email: ' + error.message + '\n\nManually send this link:\n' + shareLink);
+    }
+}
+
+async function sendQuoteSMS(quote) {
+    const client = clients.find(c => c.id === quote.client_id);
+    if (!client || !client.phone) {
+        alert('Client phone number not found!');
+        return;
+    }
+    
+    if (!smsSettings || !smsSettings.enabled) {
+        alert('⚠️ SMS is not enabled! Please enable SMS in Company Info settings.');
+        return;
+    }
+    
+    // Check SMS limit
+    if (smsSettings.sms_count_current_month >= smsSettings.sms_limit) {
+        alert('⚠️ SMS limit reached for this month (' + smsSettings.sms_limit + ' SMS). Please wait until next month or upgrade your plan.');
+        return;
+    }
+    
+    // Construct share link
+    const currentUrl = window.location.href.split('?')[0].split('#')[0];
+    const baseUrl = currentUrl.replace(/\/[^\/]*$/, '/');
+    const shareLink = baseUrl + 'quote-viewer.html?quote=' + quote.share_token;
+    
+    const fromName = companySettings?.business_name || 'M4 Projects & Designs';
+    const message = `${fromName}: Your quote for "${quote.title}" is ready! Total: $${quote.total.toFixed(2)}. View: ${shareLink}`;
+    
+    try {
+        const response = await fetch('https://xviustrrsuhidzbcpgow.supabase.co/functions/v1/send-sms', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aXVzdHJyc3VoaWR6YmNwZ293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3ODk1NDgsImV4cCI6MjA4NDM2NTU0OH0.CEcc50c1K2Qnh6rXt_1-_w30LzHvDniGLbqWhdOolRY'
+            },
+            body: JSON.stringify({
+                user_id: currentUser.id,
+                to_number: client.phone,
+                message: message,
+                type: 'quote'
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            alert('✅ SMS sent successfully to ' + client.phone + '!');
+            await loadAllData(); // Refresh SMS counter
+            renderApp();
+        } else {
+            alert('⚠️ SMS failed: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('SMS error:', error);
+        alert('❌ Failed to send SMS: ' + error.message);
+    }
+}
+
+async function sendInvoiceSMS(invoice) {
+    const client = clients.find(c => c.id === invoice.client_id);
+    if (!client || !client.phone) {
+        alert('Client phone number not found!');
+        return;
+    }
+    
+    if (!smsSettings || !smsSettings.enabled) {
+        alert('⚠️ SMS is not enabled! Please enable SMS in Company Info settings.');
+        return;
+    }
+    
+    // Check SMS limit
+    if (smsSettings.sms_count_current_month >= smsSettings.sms_limit) {
+        alert('⚠️ SMS limit reached for this month (' + smsSettings.sms_limit + ' SMS). Please wait until next month or upgrade your plan.');
+        return;
+    }
+    
+    const baseUrl = window.location.href.split('?')[0].replace('index.html', '');
+    const paymentLink = baseUrl + 'payment.html?invoice=' + invoice.id;
+    const fromName = companySettings?.business_name || 'M4 Projects & Designs';
+    const message = `${fromName}: Invoice #${invoice.invoice_number} is ready. Amount: $${invoice.total.toFixed(2)}${invoice.due_date ? ', Due: ' + invoice.due_date : ''}. View: ${paymentLink}`;
+    
+    try {
+        const response = await fetch('https://xviustrrsuhidzbcpgow.supabase.co/functions/v1/send-sms', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aXVzdHJyc3VoaWR6YmNwZ293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3ODk1NDgsImV4cCI6MjA4NDM2NTU0OH0.CEcc50c1K2Qnh6rXt_1-_w30LzHvDniGLbqWhdOolRY'
+            },
+            body: JSON.stringify({
+                user_id: currentUser.id,
+                to_number: client.phone,
+                message: message,
+                type: 'invoice'
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            alert('✅ SMS sent successfully to ' + client.phone + '!');
+            await loadAllData(); // Refresh SMS counter
+            renderApp();
+        } else {
+            alert('⚠️ SMS failed: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('SMS error:', error);
+        alert('❌ Failed to send SMS: ' + error.message);
     }
 }
 
