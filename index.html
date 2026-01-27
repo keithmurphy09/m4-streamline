@@ -739,48 +739,48 @@ async function acceptQuote(quoteId, shareToken) {
             const logoImg = new Image();
             logoImg.src = 'https://i.imgur.com/dF4xRDK.jpeg';
             
-            if (type === 'invoice') {
-                // Invoice header: Logo left, M4 STREAMLINE centered, Quote number right
-                doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
-                
-                // Centered M4 STREAMLINE
-                doc.setFontSize(24);
+            // Same header for both quote and invoice - clean and simple
+            doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
+            
+            doc.setFontSize(24);
+            doc.setTextColor(20, 184, 166);
+            doc.text('M4 STREAMLINE', 35, 22);
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'italic');
+            doc.setTextColor(20, 184, 166);
+            doc.text('"streamlining your business"', 35, 28);
+            
+            // Company info
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(100, 100, 100);
+            doc.setFontSize(9);
+            if (company.abn) doc.text('ABN: ' + company.abn, 35, 33);
+            if (company.phone) doc.text(company.phone, 35, 38);
+            if (company.email) doc.text(company.email, 35, 43);
+            
+            // Quote/Invoice number top right
+            if (type === 'invoice' && (item.quote_number || item.original_quote_number)) {
+                doc.setFontSize(11);
+                doc.setFont(undefined, 'normal');
+                doc.setTextColor(100, 100, 100);
+                doc.text('Quote #:', 155, 15);
+                doc.setFontSize(12);
                 doc.setTextColor(20, 184, 166);
-                doc.text('M4 STREAMLINE', 105, 22, { align: 'center' });
-                doc.setFontSize(10);
-                doc.setFont(undefined, 'italic');
-                doc.text('"streamlining your business"', 105, 28, { align: 'center' });
-                
-                // Quote number top right (if available)
-                if (item.quote_number || item.original_quote_number) {
-                    doc.setFontSize(10);
-                    doc.setFont(undefined, 'normal');
-                    doc.setTextColor(100, 100, 100);
-                    doc.text('Quote #:', 160, 15);
-                    doc.text(item.quote_number || item.original_quote_number || '', 185, 15);
-                }
-            } else {
-                // Quote header: Black background, logo and info
-                // Black header background
-                doc.setFillColor(0, 0, 0);
-                doc.rect(0, 0, 210, 40, 'F');
-                
-                doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
-                
-                doc.setFontSize(24);
+                doc.text(item.quote_number || item.original_quote_number || '', 155, 22);
+            } else if (type === 'quote' && item.quote_number) {
+                doc.setFontSize(11);
+                doc.setFont(undefined, 'normal');
+                doc.setTextColor(100, 100, 100);
+                doc.text('Quote #:', 155, 15);
+                doc.setFontSize(12);
                 doc.setTextColor(20, 184, 166);
-                doc.text(company.business_name || 'M4 Streamline', 35, 22);
-                doc.setFontSize(10);
-                doc.setTextColor(20, 184, 166);
-                if (company.abn) doc.text('ABN: ' + company.abn, 35, 28);
-                if (company.phone) doc.text(company.phone, 35, 33);
-                if (company.email) doc.text(company.email, 35, 38);
+                doc.text(item.quote_number, 155, 22);
             }
             
             doc.setFontSize(18);
             doc.setTextColor(20, 184, 166);
             const title = type === 'quote' ? 'QUOTE' : 'INVOICE';
-            doc.text(title, 20, 50);
+            doc.text(title, 20, 55);
             
             const client = clients.find(c => c.id === item.client_id);
             doc.setFontSize(11);
@@ -789,6 +789,18 @@ async function acceptQuote(quoteId, shareToken) {
             doc.text(client?.name || 'Unknown', 45, 65);
             doc.text(client?.email || '', 45, 71);
             doc.text(client?.phone || '', 45, 77);
+            
+            // Add job address if different from client address or if specified
+            if (type === 'quote' && item.job_address) {
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'bold');
+                doc.setTextColor(0, 0, 0);
+                doc.text('Job Site:', 20, 85);
+                doc.setFont(undefined, 'normal');
+                doc.setTextColor(100, 100, 100);
+                const addressLines = doc.splitTextToSize(item.job_address, 100);
+                doc.text(addressLines, 45, 85);
+            }
             
             if (type === 'invoice') {
                 doc.text('Invoice #:', 140, 65);
@@ -807,7 +819,7 @@ async function acceptQuote(quoteId, shareToken) {
                 }
             }
             
-            let y = 95;
+            let y = item.job_address && type === 'quote' ? 105 : 95;
             doc.setFontSize(12);
             doc.setTextColor(255, 255, 255);
             doc.setFillColor(0, 0, 0);
@@ -2801,6 +2813,7 @@ function renderCalendar() {
                 const clientId = editingItem?.client_id || '';
                 const title = editingItem?.title || '';
                 const notes = editingItem?.notes || '';
+                const jobAddress = editingItem?.job_address || '';
                 const quoteNumber = editingItem?.quote_number || '';
                 const includeGst = editingItem?.include_gst || false;
                 const depositPercentage = editingItem?.deposit_percentage || 0;
@@ -2814,7 +2827,11 @@ function renderCalendar() {
                 // Pre-generate quote number for new quotes or show existing for editing
                 const displayQuoteNumber = isEditing ? quoteNumber : `QT-${String(quotes.length + 1).padStart(3, '0')}`;
                 const titleField = `<input type="text" id="title" value="${displayQuoteNumber}" class="w-full px-4 py-2 border rounded mb-3 bg-gray-100" readonly>`;
-                form = `<select id="client_id" class="w-full px-4 py-2 border rounded mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}</select>${titleField}<div id="items-list"></div><button onclick="addQuoteItem()" class="text-teal-500 text-sm mb-3">+ Add Item</button><div id="quote-total" class="font-bold mb-3">Total: $0</div><div class="mb-3"><label class="flex items-center cursor-pointer"><input type="checkbox" id="include_gst" ${includeGst ? 'checked' : ''} onchange="updateQuoteTotal()" class="mr-2"><span class="text-sm font-medium">Include GST (10%)</span></label></div><div class="mb-3"><label class="block text-sm font-medium mb-2">Deposit Required</label><input type="hidden" id="deposit_percentage" value="${depositPercentage}"><div class="flex gap-2 flex-wrap"><button type="button" onclick="setDeposit(0)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 0 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100'}">0% (COD)</button><button type="button" onclick="setDeposit(30)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 30 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100'}">30%</button><button type="button" onclick="setDeposit(40)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 40 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100'}">40%</button><button type="button" onclick="setDeposit(50)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 50 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100'}">50%</button></div></div><div id="deposit-amount" class="text-sm text-gray-600 mb-3"></div><textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${notes}</textarea><button onclick="${isEditing ? `updateQuote('${editingItem.id}')` : 'saveQuote()'}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
+                
+                // Job address field with auto-fill from client
+                const addressField = `<div class="mb-3"><label class="block text-sm font-medium mb-1">Job Address</label><textarea id="job_address" placeholder="Job site address (auto-fills from client)" class="w-full px-4 py-2 border rounded" rows="2">${jobAddress}</textarea><p class="text-xs text-gray-500 mt-1">💡 Defaults to client address, edit if job is at different location</p></div>`;
+                
+                form = `<select id="client_id" onchange="autoFillJobAddress()" class="w-full px-4 py-2 border rounded mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}</select>${titleField}${addressField}<div id="items-list"></div><button onclick="addQuoteItem()" class="text-teal-500 text-sm mb-3">+ Add Item</button><div id="quote-total" class="font-bold mb-3">Total: $0</div><div class="mb-3"><label class="flex items-center cursor-pointer"><input type="checkbox" id="include_gst" ${includeGst ? 'checked' : ''} onchange="updateQuoteTotal()" class="mr-2"><span class="text-sm font-medium">Include GST (10%)</span></label></div><div class="mb-3"><label class="block text-sm font-medium mb-2">Deposit Required</label><input type="hidden" id="deposit_percentage" value="${depositPercentage}"><div class="flex gap-2 flex-wrap"><button type="button" onclick="setDeposit(0)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 0 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100'}">0% (COD)</button><button type="button" onclick="setDeposit(30)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 30 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100'}">30%</button><button type="button" onclick="setDeposit(40)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 40 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100'}">40%</button><button type="button" onclick="setDeposit(50)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 50 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100'}">50%</button></div></div><div id="deposit-amount" class="text-sm text-gray-600 mb-3"></div><textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${notes}</textarea><button onclick="${isEditing ? `updateQuote('${editingItem.id}')` : 'saveQuote()'}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
             }
             return `<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto" onclick="if(event.target===this)closeModal()"><div class="bg-white rounded-lg p-4 sm:p-6 max-w-2xl w-full my-4 max-h-[90vh] overflow-y-auto"><div class="flex justify-between mb-4"><h3 class="text-lg sm:text-xl font-bold">${editingItem ? 'Edit ' + modalType : modalType}</h3><button onclick="closeModal()" class="text-2xl leading-none">×</button></div>${form}</div></div>`;
         }
@@ -2869,16 +2886,30 @@ function renderCalendar() {
                 }
             }
         }
+        // Auto-fill job address from selected client
+        function autoFillJobAddress() {
+            const clientId = document.getElementById('client_id').value;
+            const jobAddressField = document.getElementById('job_address');
+            
+            if (clientId && jobAddressField) {
+                const client = clients.find(c => c.id === clientId);
+                if (client && client.address && !jobAddressField.value) {
+                    jobAddressField.value = client.address;
+                }
+            }
+        }
+        
         function saveQuote() {
             const subtotal = quoteItems.reduce((s, i) => s + (i.quantity * i.price), 0);
             const includeGst = document.getElementById('include_gst').checked;
             const gst = includeGst ? subtotal * 0.1 : 0;
             const total = subtotal + gst;
             const notes = document.getElementById('notes').value;
+            const jobAddress = document.getElementById('job_address').value;
             const quoteNumber = document.getElementById('title').value;
             const depositPercentage = parseFloat(document.getElementById('deposit_percentage').value || 0);
             const depositAmount = (total * depositPercentage) / 100;
-            addQuote({client_id:document.getElementById('client_id').value,title:quoteNumber,items:quoteItems,subtotal:subtotal,gst:gst,total:total,include_gst:includeGst,notes:notes,date:new Date().toISOString().split('T')[0],status:'pending',deposit_percentage:depositPercentage,deposit_amount:depositAmount});
+            addQuote({client_id:document.getElementById('client_id').value,title:quoteNumber,items:quoteItems,subtotal:subtotal,gst:gst,total:total,include_gst:includeGst,notes:notes,job_address:jobAddress,date:new Date().toISOString().split('T')[0],status:'pending',deposit_percentage:depositPercentage,deposit_amount:depositAmount});
         }
         
         async function updateQuote(id) {
@@ -2901,6 +2932,7 @@ function renderCalendar() {
                 total: total,
                 include_gst: includeGst,
                 notes: document.getElementById('notes').value,
+                job_address: document.getElementById('job_address').value,
                 deposit_percentage: depositPercentage,
                 deposit_amount: depositAmount,
                 share_token: existingQuote?.share_token  // Preserve the share_token!
