@@ -45,6 +45,15 @@
         let subscription = null;
         let isAdmin = false;
         let demoMode = null; // 'sole_trader', 'business', or null (use real account type)
+        let useDemoData = false; // When true, use demo data instead of real database
+        
+        // Demo data storage
+        let demoClients = [];
+        let demoJobs = [];
+        let demoQuotes = [];
+        let demoInvoices = [];
+        let demoExpenses = [];
+        let demoTeamMembers = [];
         let teamMembers = [];
         let showModal = false;
         let modalType = '';
@@ -182,7 +191,107 @@
             return subscription?.account_type || 'sole_trader';
         }
         
+        // Initialize demo data with sample content
+        function initDemoData() {
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            
+            // Sample clients
+            demoClients = [
+                { id: 'demo-client-1', name: 'John Smith', email: 'john@example.com', phone: '0412 345 678', address: '123 Main St, Brisbane', notes: 'Prefers morning appointments' },
+                { id: 'demo-client-2', name: 'Sarah Johnson', email: 'sarah@example.com', phone: '0423 456 789', address: '456 Oak Ave, Gold Coast', notes: 'VIP customer' }
+            ];
+            
+            // Sample jobs
+            demoJobs = [
+                { id: 'demo-job-1', client_id: 'demo-client-1', title: 'Bathroom Renovation', date: today, time: '09:00', status: 'scheduled', notes: 'Full bathroom remodel', photos: [] },
+                { id: 'demo-job-2', client_id: 'demo-client-2', title: 'Kitchen Installation', date: today, time: '14:00', status: 'in_progress', notes: 'Cabinet installation', photos: [] }
+            ];
+            
+            // Sample quotes
+            demoQuotes = [
+                { 
+                    id: 'demo-quote-1', 
+                    client_id: 'demo-client-1', 
+                    title: 'Bathroom Renovation', 
+                    date: today,
+                    quote_number: 'QT-001',
+                    items: [
+                        { description: 'Labour', quantity: 1, price: 3000 },
+                        { description: 'Materials', quantity: 1, price: 2000 }
+                    ],
+                    total: 5000,
+                    deposit_percentage: 30,
+                    deposit_amount: 1500,
+                    status: 'pending',
+                    share_token: 'demo-token-1'
+                }
+            ];
+            
+            // Sample invoices
+            demoInvoices = [
+                {
+                    id: 'demo-invoice-1',
+                    client_id: 'demo-client-2',
+                    title: 'Kitchen Installation - Deposit',
+                    invoice_number: 'INV-001',
+                    issue_date: today,
+                    due_date: today,
+                    items: [{ description: 'Deposit - Kitchen Installation', quantity: 1, price: 2000 }],
+                    total: 2000,
+                    status: 'unpaid'
+                }
+            ];
+            
+            // Sample expenses
+            demoExpenses = [
+                { id: 'demo-expense-1', date: today, amount: 150, category: 'Materials', description: 'Tiles for bathroom', job_id: 'demo-job-1' },
+                { id: 'demo-expense-2', date: today, amount: 80, category: 'Fuel', description: 'Weekly fuel', job_id: null }
+            ];
+            
+            // Sample team members (for business demo)
+            if (demoMode === 'business') {
+                demoTeamMembers = [
+                    { id: 'demo-team-1', name: 'Mike Wilson', email: 'mike@example.com', phone: '0434 567 890', occupation: 'Painter', color: '#3b82f6' },
+                    { id: 'demo-team-2', name: 'Lisa Brown', email: 'lisa@example.com', phone: '0445 678 901', occupation: 'Electrician', color: '#ef4444' }
+                ];
+                // Add team member to job
+                demoJobs[0].assigned_to = 'demo-team-1';
+                // Add team member to expense
+                demoExpenses[0].team_member_id = 'demo-team-1';
+            } else {
+                demoTeamMembers = [];
+            }
+            
+            useDemoData = true;
+        }
+        
+        // Switch to demo mode with sample data
+        function enterDemoMode(mode) {
+            demoMode = mode;
+            initDemoData();
+            renderApp();
+        }
+        
+        // Exit demo mode and return to real data
+        function exitDemoMode() {
+            demoMode = null;
+            useDemoData = false;
+            renderApp();
+        }
+        
         async function loadAllData() {
+            // If in demo mode, use demo data instead of database
+            if (useDemoData) {
+                clients = demoClients;
+                jobs = demoJobs;
+                quotes = demoQuotes;
+                invoices = demoInvoices;
+                expenses = demoExpenses;
+                teamMembers = demoTeamMembers;
+                return;
+            }
+            
             const [c, j, q, i, e, s, sub, admin, team, stripe, pay, email, sms] = await Promise.all([
                 supabaseClient.from('clients').select('*'), 
                 supabaseClient.from('jobs').select('*'), 
@@ -263,7 +372,17 @@
             }
         }
         
-        async function addClient(client) { 
+        async function addClient(client) {
+            if (useDemoData) {
+                // Demo mode: add to demo array
+                const newClient = { ...client, id: 'demo-client-' + Date.now(), user_id: currentUser.id };
+                demoClients.push(newClient);
+                clients = demoClients;
+                closeModal();
+                renderApp();
+                return;
+            }
+            
             const { data } = await supabaseClient.from('clients').insert([{
                 ...client, 
                 user_id: currentUser.id
@@ -759,25 +878,32 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
             
             // Calculate trial days for header
             let trialBanner = '';
-            console.log('Subscription:', subscription);
-            console.log('isAdmin:', isAdmin);
             
-            if (subscription && subscription.subscription_status === 'trial' && !isAdmin) {
-                const trialEnds = new Date(subscription.trial_ends_at);
-                const now = new Date();
-                const daysLeft = Math.ceil((trialEnds - now) / (1000 * 60 * 60 * 24));
-                console.log('Days left in trial:', daysLeft);
-                if (daysLeft > 0) {
-                    trialBanner = `<div class="bg-yellow-500 text-black text-center py-2 text-sm font-medium">⏰ Trial: ${daysLeft} day${daysLeft === 1 ? '' : 's'} remaining</div>`;
+            // Demo mode banner
+            if (useDemoData) {
+                const demoType = demoMode === 'sole_trader' ? 'Sole Trader' : 'Business';
+                trialBanner = `<div class="bg-orange-500 text-white text-center py-2 text-sm font-bold">🎬 DEMO MODE (${demoType}) - Sample Data Only - Changes Won't Be Saved</div>`;
+            } else {
+                console.log('Subscription:', subscription);
+                console.log('isAdmin:', isAdmin);
+                
+                if (subscription && subscription.subscription_status === 'trial' && !isAdmin) {
+                    const trialEnds = new Date(subscription.trial_ends_at);
+                    const now = new Date();
+                    const daysLeft = Math.ceil((trialEnds - now) / (1000 * 60 * 60 * 24));
+                    console.log('Days left in trial:', daysLeft);
+                    if (daysLeft > 0) {
+                        trialBanner = `<div class="bg-yellow-500 text-black text-center py-2 text-sm font-medium">⏰ Trial: ${daysLeft} day${daysLeft === 1 ? '' : 's'} remaining</div>`;
+                    }
+                } else if (!subscription && !isAdmin) {
+                    // Fallback for users without subscription record yet
+                    trialBanner = `<div class="bg-yellow-500 text-black text-center py-2 text-sm font-medium">⏰ Trial: 14 days remaining</div>`;
                 }
-            } else if (!subscription && !isAdmin) {
-                // Fallback for users without subscription record yet
-                trialBanner = `<div class="bg-yellow-500 text-black text-center py-2 text-sm font-medium">⏰ Trial: 14 days remaining</div>`;
             }
             
             const content = await renderContent();
             
-            document.getElementById('app').innerHTML = `<div class="min-h-screen bg-gray-50">${trialBanner}<div class="bg-black text-white p-4 md:p-6 shadow-lg border-b-4 border-teal-400"><div class="max-w-7xl mx-auto flex flex-col md:grid md:grid-cols-3 gap-4 md:items-center"><div class="flex items-center gap-3 justify-center md:justify-start"><img src="final_logo.png" alt="M4 Projects Logo" class="h-20 w-20 md:h-32 md:w-32 object-contain"><div class="text-xs md:text-sm"><div class="text-xs text-teal-400">Logged in:</div><div class="font-medium text-teal-400 truncate">${currentUser.email}</div></div></div><div class="text-center"><h1 class="text-2xl md:text-3xl font-bold text-teal-400">M4 STREAMLINE</h1><p class="text-teal-400 text-xs md:text-sm italic">"streamlining your business"</p></div><div class="flex items-center justify-center md:justify-end gap-3 md:gap-4">${isAdmin ? '<span class="bg-red-600 px-2 py-1 rounded text-xs font-bold whitespace-nowrap">ADMIN</span>' : ''}${isAdmin ? `<div class="flex gap-1 bg-gray-800 rounded p-1"><button onclick="demoMode='sole_trader'; renderApp();" class="px-2 py-1 rounded text-xs ${demoMode === 'sole_trader' ? 'bg-teal-600' : 'hover:bg-gray-700'}">Sole Trader</button><button onclick="demoMode='business'; renderApp();" class="px-2 py-1 rounded text-xs ${demoMode === 'business' ? 'bg-teal-600' : 'hover:bg-gray-700'}">Business</button><button onclick="demoMode=null; renderApp();" class="px-2 py-1 rounded text-xs ${demoMode === null ? 'bg-teal-600' : 'hover:bg-gray-700'}">Real</button></div>` : ''}<div class="relative"><button onclick="toggleSettingsMenu()" class="px-3 py-2 md:px-4 md:py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm border border-teal-400 flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></button><div id="settings-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50"><div class="py-1"><button onclick="handleLogout()" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>Logout</button><a href="mailto:m4projectsanddesigns@gmail.com?subject=M4 Streamline Support Request" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>Contact Support</a>${subscription?.account_type === 'sole_trader' ? '<button onclick="confirmUpgradeToBusiness()" class="w-full text-left px-4 py-2 text-sm text-teal-600 hover:bg-teal-50 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>Upgrade to Business</button>' : ''}<button onclick="confirmDeleteAccount()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>Delete Account</button></div></div></div></div></div></div><div class="bg-white shadow overflow-x-auto"><div class="max-w-7xl mx-auto px-2 md:px-4"><div class="flex space-x-1 min-w-max">${['dashboard', 'schedule', 'clients', 'quotes', 'invoices', 'expenses', 'analytics', 'company'].map(tab => `<button onclick="switchTab('${tab}')" class="px-3 md:px-6 py-3 md:py-4 font-medium border-b-2 text-sm md:text-base whitespace-nowrap ${activeTab === tab ? 'border-teal-400 text-black' : 'border-transparent text-gray-600'}">${tab === 'company' ? 'Company Info' : tab.charAt(0).toUpperCase() + tab.slice(1)}</button>`).join('')}${getAccountType() === 'business' ? '<button onclick="switchTab(\'team\')" class="px-3 md:px-6 py-3 md:py-4 font-medium border-b-2 text-sm md:text-base whitespace-nowrap ' + (activeTab === 'team' ? 'border-teal-400 text-black' : 'border-transparent text-gray-600') + '">Team</button>' : ''}${isAdmin ? '<button onclick="switchTab(\'admin\')" class="px-3 md:px-6 py-3 md:py-4 font-medium border-b-2 text-sm md:text-base whitespace-nowrap ' + (activeTab === 'admin' ? 'border-teal-400 text-black' : 'border-transparent text-gray-600') + '">Admin</button>' : ''}</div></div></div><div class="max-w-7xl mx-auto p-3 md:p-6">${content}</div>${showModal ? renderModal() : ''}</div>`;
+            document.getElementById('app').innerHTML = `<div class="min-h-screen bg-gray-50">${trialBanner}<div class="bg-black text-white p-4 md:p-6 shadow-lg border-b-4 border-teal-400"><div class="max-w-7xl mx-auto flex flex-col md:grid md:grid-cols-3 gap-4 md:items-center"><div class="flex items-center gap-3 justify-center md:justify-start"><img src="final_logo.png" alt="M4 Projects Logo" class="h-20 w-20 md:h-32 md:w-32 object-contain"><div class="text-xs md:text-sm"><div class="text-xs text-teal-400">Logged in:</div><div class="font-medium text-teal-400 truncate">${currentUser.email}</div></div></div><div class="text-center"><h1 class="text-2xl md:text-3xl font-bold text-teal-400">M4 STREAMLINE</h1><p class="text-teal-400 text-xs md:text-sm italic">"streamlining your business"</p></div><div class="flex items-center justify-center md:justify-end gap-3 md:gap-4">${isAdmin ? '<span class="bg-red-600 px-2 py-1 rounded text-xs font-bold whitespace-nowrap">ADMIN</span>' : ''}${isAdmin ? `<div class="flex gap-1 bg-gray-800 rounded p-1"><button onclick="enterDemoMode('sole_trader');" class="px-2 py-1 rounded text-xs ${demoMode === 'sole_trader' ? 'bg-teal-600' : 'hover:bg-gray-700'}">Sole Trader</button><button onclick="enterDemoMode('business');" class="px-2 py-1 rounded text-xs ${demoMode === 'business' ? 'bg-teal-600' : 'hover:bg-gray-700'}">Business</button><button onclick="exitDemoMode();" class="px-2 py-1 rounded text-xs ${demoMode === null ? 'bg-teal-600' : 'hover:bg-gray-700'}">Real</button>${demoMode ? '<button onclick="initDemoData(); renderApp();" class="px-2 py-1 rounded text-xs bg-yellow-600 hover:bg-yellow-700" title="Reset demo data">🔄</button>' : ''}</div>` : ''}<div class="relative"><button onclick="toggleSettingsMenu()" class="px-3 py-2 md:px-4 md:py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm border border-teal-400 flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></button><div id="settings-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50"><div class="py-1"><button onclick="handleLogout()" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>Logout</button><a href="mailto:m4projectsanddesigns@gmail.com?subject=M4 Streamline Support Request" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>Contact Support</a>${subscription?.account_type === 'sole_trader' ? '<button onclick="confirmUpgradeToBusiness()" class="w-full text-left px-4 py-2 text-sm text-teal-600 hover:bg-teal-50 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>Upgrade to Business</button>' : ''}<button onclick="confirmDeleteAccount()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>Delete Account</button></div></div></div></div></div></div><div class="bg-white shadow overflow-x-auto"><div class="max-w-7xl mx-auto px-2 md:px-4"><div class="flex space-x-1 min-w-max">${['dashboard', 'schedule', 'clients', 'quotes', 'invoices', 'expenses', 'analytics', 'company'].map(tab => `<button onclick="switchTab('${tab}')" class="px-3 md:px-6 py-3 md:py-4 font-medium border-b-2 text-sm md:text-base whitespace-nowrap ${activeTab === tab ? 'border-teal-400 text-black' : 'border-transparent text-gray-600'}">${tab === 'company' ? 'Company Info' : tab.charAt(0).toUpperCase() + tab.slice(1)}</button>`).join('')}${getAccountType() === 'business' ? '<button onclick="switchTab(\'team\')" class="px-3 md:px-6 py-3 md:py-4 font-medium border-b-2 text-sm md:text-base whitespace-nowrap ' + (activeTab === 'team' ? 'border-teal-400 text-black' : 'border-transparent text-gray-600') + '">Team</button>' : ''}${isAdmin ? '<button onclick="switchTab(\'admin\')" class="px-3 md:px-6 py-3 md:py-4 font-medium border-b-2 text-sm md:text-base whitespace-nowrap ' + (activeTab === 'admin' ? 'border-teal-400 text-black' : 'border-transparent text-gray-600') + '">Admin</button>' : ''}</div></div></div><div class="max-w-7xl mx-auto p-3 md:p-6">${content}</div>${showModal ? renderModal() : ''}</div>`;
         }
         
         function toggleSettingsMenu() {
