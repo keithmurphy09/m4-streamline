@@ -753,23 +753,23 @@ async function acceptQuote(quoteId, shareToken) {
             doc.setFont(undefined, 'italic');
             doc.text('"streamlining your business"', 105, 28, { align: 'center' });
             
-            // Quote/Invoice number top right - ALL TEAL
+            // Quote/Invoice number top right - ALL TEAL, aligned with M4 STREAMLINE
             if (type === 'invoice' && (item.quote_number || item.original_quote_number)) {
                 doc.setFontSize(11);
                 doc.setFont(undefined, 'normal');
                 doc.setTextColor(20, 184, 166);
-                doc.text('Quote #:', 155, 15);
+                doc.text('Quote #:', 170, 17, { align: 'right' });
                 doc.setFontSize(12);
                 doc.setFont(undefined, 'bold');
-                doc.text(item.quote_number || item.original_quote_number || '', 155, 22);
+                doc.text(item.quote_number || item.original_quote_number || '', 200, 17, { align: 'right' });
             } else if (type === 'quote' && item.quote_number) {
                 doc.setFontSize(11);
                 doc.setFont(undefined, 'normal');
                 doc.setTextColor(20, 184, 166);
-                doc.text('Quote #:', 155, 15);
+                doc.text('Quote #:', 170, 17, { align: 'right' });
                 doc.setFontSize(12);
                 doc.setFont(undefined, 'bold');
-                doc.text(item.quote_number, 155, 22);
+                doc.text(item.quote_number, 200, 17, { align: 'right' });
             }
             
             doc.setFontSize(18);
