@@ -445,6 +445,14 @@
 }
         
         function saveJob() {
+            const dateValue = document.getElementById('date').value;
+            
+            // Validate date is not empty
+            if (!dateValue) {
+                alert('⚠️ Please select a date for the job!');
+                return;
+            }
+            
             let timeValue = document.getElementById('time').value;
             // Default to 6am if no time selected
             if (!timeValue) {
@@ -456,7 +464,7 @@
             const jobData = {
                 client_id: document.getElementById('client_id').value,
                 title: document.getElementById('title').value,
-                date: document.getElementById('date').value,
+                date: dateValue,
                 time: timeValue,
                 duration: duration,
                 notes: document.getElementById('notes').value,
@@ -705,9 +713,13 @@ async function acceptQuote(quoteId, shareToken) {
         
         function openJobFromQuote(quote) {
             const client = clients.find(c => c.id === quote.client_id);
+            // Default to today's date
+            const today = new Date().toISOString().split('T')[0];
             editingItem = {
                 client_id: quote.client_id,
                 title: quote.title,
+                date: today,
+                time: '06:00',
                 notes: `Quote: ${quote.title} - Total: $${quote.total.toFixed(2)}\n\n${quote.notes || ''}`
             };
             modalType = 'job';
