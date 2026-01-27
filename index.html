@@ -647,6 +647,7 @@ async function acceptQuote(quoteId, shareToken) {
                 total: remainingBalance > 0 ? remainingBalance : quote.total,
                 original_total: quote.total,
                 deposit_paid: depositPaid,
+                quote_number: quote.quote_number || quote.title,
                 include_gst: quote.include_gst || false,
                 invoice_number: invoiceNumber,
                 status: remainingBalance <= 0 ? 'paid' : 'unpaid',
@@ -735,18 +736,46 @@ async function acceptQuote(quoteId, shareToken) {
             const company = item.company_info || companySettings || {};
             
             // Add M4 logo from image
-const logoImg = new Image();
-logoImg.src = 'https://i.imgur.com/dF4xRDK.jpeg';
-doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
+            const logoImg = new Image();
+            logoImg.src = 'https://i.imgur.com/dF4xRDK.jpeg';
             
-            doc.setFontSize(24);
-            doc.setTextColor(0, 0, 0);
-            doc.text(company.business_name || 'M4 Streamline', 35, 22);
-            doc.setFontSize(10);
-            doc.setTextColor(100, 100, 100);
-            if (company.abn) doc.text('ABN: ' + company.abn, 35, 28);
-            if (company.phone) doc.text(company.phone, 35, 33);
-            if (company.email) doc.text(company.email, 35, 38);
+            if (type === 'invoice') {
+                // Invoice header: Logo left, M4 STREAMLINE centered, Quote number right
+                doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
+                
+                // Centered M4 STREAMLINE
+                doc.setFontSize(24);
+                doc.setTextColor(20, 184, 166);
+                doc.text('M4 STREAMLINE', 105, 22, { align: 'center' });
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'italic');
+                doc.text('"streamlining your business"', 105, 28, { align: 'center' });
+                
+                // Quote number top right (if available)
+                if (item.quote_number || item.original_quote_number) {
+                    doc.setFontSize(10);
+                    doc.setFont(undefined, 'normal');
+                    doc.setTextColor(100, 100, 100);
+                    doc.text('Quote #:', 160, 15);
+                    doc.text(item.quote_number || item.original_quote_number || '', 185, 15);
+                }
+            } else {
+                // Quote header: Black background, logo and info
+                // Black header background
+                doc.setFillColor(0, 0, 0);
+                doc.rect(0, 0, 210, 40, 'F');
+                
+                doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
+                
+                doc.setFontSize(24);
+                doc.setTextColor(20, 184, 166);
+                doc.text(company.business_name || 'M4 Streamline', 35, 22);
+                doc.setFontSize(10);
+                doc.setTextColor(20, 184, 166);
+                if (company.abn) doc.text('ABN: ' + company.abn, 35, 28);
+                if (company.phone) doc.text(company.phone, 35, 33);
+                if (company.email) doc.text(company.email, 35, 38);
+            }
             
             doc.setFontSize(18);
             doc.setTextColor(20, 184, 166);
@@ -957,6 +986,81 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
                 doc.text('Notes:', 20, y);
                 const splitNotes = doc.splitTextToSize(item.notes, 170);
                 doc.text(splitNotes, 20, y + 5);
+            }
+            
+            // Add Terms & Conditions page for quotes
+            if (type === 'quote') {
+                doc.addPage();
+                
+                // Header
+                doc.setFillColor(0, 0, 0);
+                doc.rect(0, 0, 210, 40, 'F');
+                doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
+                doc.setFontSize(24);
+                doc.setTextColor(20, 184, 166);
+                doc.text(company.business_name || 'M4 Streamline', 35, 22);
+                
+                // Terms & Conditions title
+                doc.setFontSize(16);
+                doc.setTextColor(0, 0, 0);
+                doc.setFont(undefined, 'bold');
+                doc.text('Terms & Conditions', 20, 55);
+                
+                let y = 70;
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'normal');
+                
+                // Terms content
+                const terms = [
+                    {
+                        title: '1. Acceptance',
+                        text: 'By accepting this quote, you agree to these terms and conditions. The quote is valid for 30 days from the date of issue.'
+                    },
+                    {
+                        title: '2. Payment',
+                        text: 'Payment terms are as specified in the quote. Deposits must be paid before work commences. Final payment is due upon completion unless otherwise agreed.'
+                    },
+                    {
+                        title: '3. Scope of Work',
+                        text: 'Work will be carried out as described in this quote. Any additional work outside this scope will be quoted separately and requires written approval.'
+                    },
+                    {
+                        title: '4. Variations',
+                        text: 'Any variations to the quoted work must be agreed in writing. Variations may result in additional charges and extended completion times.'
+                    },
+                    {
+                        title: '5. Warranty',
+                        text: 'All work is guaranteed for a period of 12 months from completion date, subject to normal wear and tear.'
+                    },
+                    {
+                        title: '6. Liability',
+                        text: 'Our liability is limited to the cost of rectifying any defects in our workmanship. We are not liable for consequential losses or damages.'
+                    },
+                    {
+                        title: '7. Access and Site Conditions',
+                        text: 'Client must provide reasonable access to the work site and ensure utilities are available. Additional charges may apply if site conditions differ from those described.'
+                    },
+                    {
+                        title: '8. Cancellation',
+                        text: 'Cancellation must be made in writing. Cancellation fees may apply for work already commenced or materials ordered.'
+                    }
+                ];
+                
+                terms.forEach(term => {
+                    if (y > 270) {
+                        doc.addPage();
+                        y = 20;
+                    }
+                    
+                    doc.setFont(undefined, 'bold');
+                    doc.text(term.title, 20, y);
+                    y += 6;
+                    
+                    doc.setFont(undefined, 'normal');
+                    const lines = doc.splitTextToSize(term.text, 170);
+                    doc.text(lines, 20, y);
+                    y += (lines.length * 5) + 8;
+                });
             }
             
             const filename = type === 'quote' ? `Quote-${item.title}.pdf` : `Invoice-${item.invoice_number}.pdf`;
