@@ -315,12 +315,53 @@
                     })
                 });
                 
-                messageDiv.innerHTML = '<p style="color: #10b981; font-weight: bold; font-size: 18px;">✓ Quote Accepted! The tradesperson has been notified.</p>';
-                
-                // Reload quote data and re-render
-                setTimeout(() => {
-                    loadQuote();
-                }, 1500);
+                // Check if deposit needs to be paid
+                if (currentQuote.deposit_amount && currentQuote.deposit_amount > 0) {
+                    messageDiv.innerHTML = '<p style="color: #10b981; font-weight: bold; font-size: 18px;">✓ Quote Accepted!</p><p style="margin-top: 10px;">Redirecting to deposit payment...</p>';
+                    
+                    // Create a deposit invoice and redirect to payment
+                    setTimeout(async () => {
+                        // Generate invoice number
+                        const invoiceNumber = `INV-DEP-${Date.now()}`;
+                        
+                        // Create deposit invoice
+                        const depositInvoice = {
+                            client_id: currentQuote.client_id,
+                            title: currentQuote.title + ' - Deposit',
+                            items: [{
+                                description: `Deposit (${currentQuote.deposit_percentage}%)`,
+                                quantity: 1,
+                                price: currentQuote.deposit_amount
+                            }],
+                            notes: `Deposit for quote: ${currentQuote.title}\nRemaining balance: $${(currentQuote.total - currentQuote.deposit_amount).toFixed(2)}`,
+                            subtotal: currentQuote.deposit_amount,
+                            gst: 0,
+                            total: currentQuote.deposit_amount,
+                            invoice_number: invoiceNumber,
+                            status: 'unpaid',
+                            issue_date: new Date().toISOString().split('T')[0],
+                            due_date: new Date().toISOString().split('T')[0],
+                            user_id: currentQuote.user_id
+                        };
+                        
+                        const { data: invoiceData } = await supabaseClient
+                            .from('invoices')
+                            .insert([depositInvoice])
+                            .select();
+                        
+                        if (invoiceData && invoiceData[0]) {
+                            // Redirect to payment page
+                            window.location.href = `payment.html?invoice=${invoiceData[0].id}`;
+                        }
+                    }, 1500);
+                } else {
+                    // No deposit - just show success
+                    messageDiv.innerHTML = '<p style="color: #10b981; font-weight: bold; font-size: 18px;">✓ Quote Accepted! The tradesperson has been notified.</p>';
+                    
+                    setTimeout(() => {
+                        loadQuote();
+                    }, 1500);
+                }
                 
             } catch (error) {
                 console.error('Error:', error);
