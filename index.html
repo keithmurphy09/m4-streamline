@@ -327,6 +327,9 @@
             
             console.log('Admin query result:', admin);
             console.log('isAdmin value:', isAdmin);
+            console.log('📱 SMS Settings:', smsSettings);
+            console.log('📱 SMS Enabled:', smsSettings?.enabled);
+            console.log('👥 Clients with phones:', clients.filter(c => c.phone).length);
             
             // Create subscription if doesn't exist
             if (!subscription) {
