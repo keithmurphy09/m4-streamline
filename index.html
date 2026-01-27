@@ -2297,18 +2297,19 @@ function renderCalendar() {
             const workerName = assignedWorker?.name || 'Unassigned';
             const duration = job.duration || 1;
             
-            // Calculate end date for multi-day jobs
-            // FullCalendar uses exclusive end dates, so for a 1-day job, end = start + 1
-            const startDate = new Date(job.date);
-            const endDate = new Date(startDate);
-            endDate.setDate(endDate.getDate() + duration); // Add duration days
+            // Calculate end date for multi-day jobs - FIXED timezone issue
+            // Parse date as YYYY-MM-DD and add duration
+            const [year, month, day] = job.date.split('-').map(Number);
+            const startDate = new Date(year, month - 1, day); // month is 0-indexed
+            const endDate = new Date(year, month - 1, day + duration);
+            const endDateString = endDate.toISOString().split('T')[0];
             
-            console.log(`  Job: ${job.title}, Start: ${job.date}, Duration: ${duration}, End: ${endDate.toISOString().split('T')[0]}`);
+            console.log(`  Job: ${job.title}, Start: ${job.date}, Duration: ${duration}, End: ${endDateString}`);
             
             return {
                 title: job.title + (client ? ' - ' + client.name : '') + ' (' + workerName + ')' + (duration > 1 ? ` [${duration} days]` : ''),
                 start: job.date,
-                end: endDate.toISOString().split('T')[0], // Exclusive end date
+                end: endDateString, // Exclusive end date
                 allDay: true, // Mark as all-day event
                 backgroundColor: workerColor,
                 borderColor: workerColor,
