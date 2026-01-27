@@ -180,7 +180,9 @@
         async function handleLogout() { 
             clearTimeout(sessionTimeout); // Clear timeout on logout
             await supabaseClient.auth.signOut(); 
-            currentUser = null; 
+            currentUser = null;
+            activeTab = 'dashboard'; // Reset to dashboard
+            localStorage.setItem('activeTab', 'dashboard'); // Clear saved tab
             renderAuth(); 
         }
         
@@ -440,11 +442,20 @@
 }
         
         function saveJob() {
+            let timeValue = document.getElementById('time').value;
+            // Default to 6am if no time selected
+            if (!timeValue) {
+                timeValue = '06:00';
+            }
+            
+            const duration = parseInt(document.getElementById('duration').value) || 1;
+            
             const jobData = {
                 client_id: document.getElementById('client_id').value,
                 title: document.getElementById('title').value,
                 date: document.getElementById('date').value,
-                time: document.getElementById('time').value,
+                time: timeValue,
+                duration: duration,
                 notes: document.getElementById('notes').value,
                 status: document.getElementById('jobStatus').value
             };
@@ -460,11 +471,20 @@
         }
         
         async function updateJob(id) {
+            let timeValue = document.getElementById('time').value;
+            // Default to 6am if no time selected
+            if (!timeValue) {
+                timeValue = '06:00';
+            }
+            
+            const duration = parseInt(document.getElementById('duration').value) || 1;
+            
             const updatedJob = {
                 client_id: document.getElementById('client_id').value,
                 title: document.getElementById('title').value,
                 date: document.getElementById('date').value,
-                time: document.getElementById('time').value,
+                time: timeValue,
+                duration: duration,
                 notes: document.getElementById('notes').value,
                 status: document.getElementById('jobStatus').value,
                 assigned_to: document.getElementById('assigned_to')?.value || null
@@ -570,27 +590,70 @@ async function acceptQuote(quoteId, shareToken) {
         }
         
         async function convertToInvoice(quote) {
+            // If quote has a deposit, ask if it's been paid
+            if (quote.deposit_amount && quote.deposit_amount > 0) {
+                const depositPaid = confirm(
+                    `This quote has a deposit of $${quote.deposit_amount.toFixed(2)}.\n\n` +
+                    `Has the deposit been paid?\n\n` +
+                    `Click OK if deposit was paid (invoice will be for remaining balance)\n` +
+                    `Click Cancel to enter actual amount paid`
+                );
+                
+                if (depositPaid === false) {
+                    // Show custom deposit amount dialog
+                    const actualDeposit = prompt(
+                        `Enter the actual deposit amount paid:\n(Quote deposit was $${quote.deposit_amount.toFixed(2)})`,
+                        quote.deposit_amount.toFixed(2)
+                    );
+                    
+                    if (actualDeposit === null) return; // User cancelled
+                    
+                    const depositAmount = parseFloat(actualDeposit);
+                    if (isNaN(depositAmount) || depositAmount < 0) {
+                        alert('Invalid amount entered');
+                        return;
+                    }
+                    
+                    // Create invoice with adjusted total
+                    await createInvoiceWithDeposit(quote, depositAmount);
+                    return;
+                }
+                
+                // Deposit paid as stated - create invoice for remaining balance
+                await createInvoiceWithDeposit(quote, quote.deposit_amount);
+                return;
+            }
+            
+            // No deposit - create full invoice
+            await createInvoiceWithDeposit(quote, 0);
+        }
+        
+        async function createInvoiceWithDeposit(quote, depositPaid) {
             const issueDate = new Date();
             
             // Generate sequential invoice number
             const invoiceNumber = `INV-${String(invoices.length + 1).padStart(3, '0')}`;
             
+            // Calculate remaining balance
+            const remainingBalance = quote.total - depositPaid;
+            
             const inv = {
                 client_id: quote.client_id,
-                title: quote.title,
+                title: quote.title + (depositPaid > 0 ? ' - Final Payment' : ''),
                 items: quote.items,
-                notes: quote.notes || '',
+                notes: (quote.notes || '') + (depositPaid > 0 ? `\n\nDeposit paid: $${depositPaid.toFixed(2)}` : ''),
                 subtotal: quote.subtotal || quote.total,
                 gst: quote.gst || 0,
-                total: quote.total,
+                total: remainingBalance > 0 ? remainingBalance : quote.total,
                 include_gst: quote.include_gst || false,
                 invoice_number: invoiceNumber,
-                status: 'unpaid',
+                status: remainingBalance <= 0 ? 'paid' : 'unpaid',
                 issue_date: issueDate.toISOString().split('T')[0],
-                due_date: issueDate.toISOString().split('T')[0], // Due on completion (same day)
+                due_date: issueDate.toISOString().split('T')[0],
                 user_id: currentUser.id,
-                company_info: companySettings  // Store company details with invoice
+                company_info: companySettings
             };
+            
             const { data, error } = await supabaseClient.from('invoices').insert([inv]).select();
             if (error) {
                 console.error('Invoice error:', error);
@@ -599,6 +662,12 @@ async function acceptQuote(quoteId, shareToken) {
                 await supabaseClient.from('quotes').update({ status: 'converted' }).eq('id', quote.id);
                 await loadAllData();
                 activeTab = 'invoices';
+                
+                // Show success message
+                if (depositPaid > 0) {
+                    alert(`✅ Invoice created!\n\nDeposit: $${depositPaid.toFixed(2)}\nRemaining: $${remainingBalance.toFixed(2)}\n\nInvoice #${invoiceNumber}`);
+                }
+                
                 renderApp();
             }
         }
@@ -2060,22 +2129,33 @@ function renderCalendar() {
             const assignedWorker = teamMembers.find(m => m.id === job.assigned_to);
             const workerColor = assignedWorker?.color || '#14b8a6';
             const workerName = assignedWorker?.name || 'Unassigned';
+            const duration = job.duration || 1;
+            
+            // Calculate end date for multi-day jobs
+            const startDate = new Date(job.date + 'T' + job.time);
+            const endDate = new Date(startDate);
+            endDate.setDate(endDate.getDate() + duration);
+            
             return {
-                title: job.title + (client ? ' - ' + client.name : '') + ' (' + workerName + ')',
+                title: job.title + (client ? ' - ' + client.name : '') + ' (' + workerName + ')' + (duration > 1 ? ` [${duration} days]` : ''),
                 start: job.date + 'T' + job.time,
+                end: endDate.toISOString().split('T')[0],
                 backgroundColor: workerColor,
                 borderColor: workerColor,
                 extendedProps: {
                     jobId: job.id,
                     client: client?.name,
-                    worker: workerName
+                    worker: workerName,
+                    duration: duration
                 }
             };
         }),
         eventClick: function(info) {
             const job = jobs.find(j => j.id === info.event.extendedProps.jobId);
             if (job) {
-                alert('Job: ' + job.title + '\nClient: ' + info.event.extendedProps.client + '\nWorker: ' + info.event.extendedProps.worker + '\nDate: ' + new Date(job.date).toLocaleDateString() + '\nTime: ' + job.time);
+                const duration = job.duration || 1;
+                const durationText = duration > 1 ? `\nDuration: ${duration} days` : '';
+                alert('Job: ' + job.title + '\nClient: ' + info.event.extendedProps.client + '\nWorker: ' + info.event.extendedProps.worker + '\nDate: ' + new Date(job.date).toLocaleDateString() + '\nTime: ' + job.time + durationText);
             }
         }
     });
@@ -2561,7 +2641,8 @@ function renderCalendar() {
                 const clientId = editingItem?.client_id || '';
                 const title = editingItem?.title || '';
                 const date = editingItem?.date || '';
-                const time = editingItem?.time || '';
+                const time = editingItem?.time || '06:00';
+                const duration = editingItem?.duration || 1;
                 const notes = editingItem?.notes || '';
                 const status = editingItem?.status || 'scheduled';
                 const assignedTo = editingItem?.assigned_to || '';
@@ -2579,7 +2660,7 @@ function renderCalendar() {
                     ? `updateJob('${editingItem.id}')` 
                     : `saveJob()`;
                     
-                form = `<select id="client_id" class="w-full px-4 py-2 border rounded mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}</select><input type="text" id="title" placeholder="Job Title" value="${title}" class="w-full px-4 py-2 border rounded mb-3"><input type="date" id="date" value="${date}" class="w-full px-4 py-2 border rounded mb-3"><input type="time" id="time" value="${time}" placeholder="Optional" class="w-full px-4 py-2 border rounded mb-3">${workerDropdown}<select id="jobStatus" class="w-full px-4 py-2 border rounded mb-3"><option value="scheduled" ${status === 'scheduled' ? 'selected' : ''}>Scheduled</option><option value="in_progress" ${status === 'in_progress' ? 'selected' : ''}>In Progress</option><option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option></select><textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${notes}</textarea><button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
+                form = `<select id="client_id" class="w-full px-4 py-2 border rounded mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}</select><input type="text" id="title" placeholder="Job Title" value="${title}" class="w-full px-4 py-2 border rounded mb-3"><div class="mb-3"><label class="block text-sm font-medium mb-1">Start Date</label><input type="date" id="date" value="${date}" class="w-full px-4 py-2 border rounded" required></div><div class="mb-3"><label class="block text-sm font-medium mb-1">Start Time (defaults to 6am if blank)</label><input type="time" id="time" value="${time}" class="w-full px-4 py-2 border rounded"></div><div class="mb-3"><label class="block text-sm font-medium mb-1">Duration (days)</label><input type="number" id="duration" value="${duration}" min="1" max="30" class="w-full px-4 py-2 border rounded" placeholder="1"></div>${workerDropdown}<select id="jobStatus" class="w-full px-4 py-2 border rounded mb-3"><option value="scheduled" ${status === 'scheduled' ? 'selected' : ''}>Scheduled</option><option value="in_progress" ${status === 'in_progress' ? 'selected' : ''}>In Progress</option><option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option></select><textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${notes}</textarea><button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
             }
             if (modalType === 'quote') {
                 const clientId = editingItem?.client_id || '';
