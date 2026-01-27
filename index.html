@@ -2280,14 +2280,15 @@ function renderCalendar() {
             const duration = job.duration || 1;
             
             // Calculate end date for multi-day jobs
-            const startDate = new Date(job.date + 'T' + job.time);
+            // FullCalendar uses exclusive end dates, so for a 1-day job, end = start + 1
+            const startDate = new Date(job.date);
             const endDate = new Date(startDate);
-            endDate.setDate(endDate.getDate() + duration);
+            endDate.setDate(endDate.getDate() + duration); // Add duration days
             
             return {
                 title: job.title + (client ? ' - ' + client.name : '') + ' (' + workerName + ')' + (duration > 1 ? ` [${duration} days]` : ''),
-                start: job.date + 'T' + job.time,
-                end: endDate.toISOString().split('T')[0],
+                start: job.date,
+                end: endDate.toISOString().split('T')[0], // Exclusive end date
                 backgroundColor: workerColor,
                 borderColor: workerColor,
                 extendedProps: {
