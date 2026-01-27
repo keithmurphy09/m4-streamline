@@ -739,41 +739,33 @@ async function acceptQuote(quoteId, shareToken) {
             const logoImg = new Image();
             logoImg.src = 'https://i.imgur.com/dF4xRDK.jpeg';
             
-            // Same header for both quote and invoice - clean and simple
+            // Logo left
             doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
             
+            // M4 STREAMLINE centered
             doc.setFontSize(24);
             doc.setTextColor(20, 184, 166);
-            doc.text('M4 STREAMLINE', 35, 22);
+            doc.text('M4 STREAMLINE', 105, 22, { align: 'center' });
             doc.setFontSize(10);
             doc.setFont(undefined, 'italic');
-            doc.setTextColor(20, 184, 166);
-            doc.text('"streamlining your business"', 35, 28);
+            doc.text('"streamlining your business"', 105, 28, { align: 'center' });
             
-            // Company info
-            doc.setFont(undefined, 'normal');
-            doc.setTextColor(100, 100, 100);
-            doc.setFontSize(9);
-            if (company.abn) doc.text('ABN: ' + company.abn, 35, 33);
-            if (company.phone) doc.text(company.phone, 35, 38);
-            if (company.email) doc.text(company.email, 35, 43);
-            
-            // Quote/Invoice number top right
+            // Quote/Invoice number top right - ALL TEAL
             if (type === 'invoice' && (item.quote_number || item.original_quote_number)) {
                 doc.setFontSize(11);
                 doc.setFont(undefined, 'normal');
-                doc.setTextColor(100, 100, 100);
+                doc.setTextColor(20, 184, 166);
                 doc.text('Quote #:', 155, 15);
                 doc.setFontSize(12);
-                doc.setTextColor(20, 184, 166);
+                doc.setFont(undefined, 'bold');
                 doc.text(item.quote_number || item.original_quote_number || '', 155, 22);
             } else if (type === 'quote' && item.quote_number) {
                 doc.setFontSize(11);
                 doc.setFont(undefined, 'normal');
-                doc.setTextColor(100, 100, 100);
+                doc.setTextColor(20, 184, 166);
                 doc.text('Quote #:', 155, 15);
                 doc.setFontSize(12);
-                doc.setTextColor(20, 184, 166);
+                doc.setFont(undefined, 'bold');
                 doc.text(item.quote_number, 155, 22);
             }
             
@@ -2328,7 +2320,7 @@ function renderCalendar() {
                 (c.address && c.address.toLowerCase().includes(clientSearch.toLowerCase()))
             );
             
-            const listHtml = filteredClients.length === 0 ? '<div class="text-center py-12 text-gray-500">No clients found</div>' : filteredClients.map(c => `<div class="bg-white p-4 rounded-lg shadow"><div class="flex flex-col sm:flex-row sm:justify-between gap-3"><div class="flex-1"><h3 class="text-lg font-semibold">${c.name}</h3><p class="text-sm text-gray-600">${c.email}</p><p class="text-sm text-gray-600">${c.phone}</p>${c.address ? `<p class="text-sm text-gray-600 mt-1">📍 ${c.address}</p>` : ''}</div><div class="flex sm:flex-col gap-2"><button onclick='openQuoteForClient(${JSON.stringify(c).replace(/"/g, "&quot;")})' class="flex-1 sm:w-24 px-3 py-1 bg-teal-600 text-white rounded text-sm whitespace-nowrap">New Quote</button><button onclick='openModal("client", ${JSON.stringify(c).replace(/"/g, "&quot;")})' class="flex-1 sm:w-24 px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button><button onclick="deleteClient('${c.id}')" class="flex-1 sm:w-24 px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button></div></div></div>`).join('');
+            const listHtml = filteredClients.length === 0 ? '<div class="text-center py-12 text-gray-500">No clients found</div>' : filteredClients.map(c => `<div class="bg-white p-4 rounded-lg shadow"><div class="flex flex-col sm:flex-row sm:justify-between gap-3"><div class="flex-1"><h3 class="text-lg font-semibold">${c.name}</h3><p class="text-sm text-gray-600">${c.email}</p><p class="text-sm text-gray-600">${c.phone}</p>${c.address ? `<p class="text-sm text-gray-600 mt-1">📍 ${c.address}</p>` : ''}${c.notes ? `<p class="text-sm text-gray-500 italic mt-2 p-2 bg-yellow-50 border-l-2 border-yellow-400">${c.notes}</p>` : ''}</div><div class="flex sm:flex-col gap-2"><button onclick='openQuoteForClient(${JSON.stringify(c).replace(/"/g, "&quot;")})' class="flex-1 sm:w-24 px-3 py-1 bg-teal-600 text-white rounded text-sm whitespace-nowrap">New Quote</button><button onclick='openModal("client", ${JSON.stringify(c).replace(/"/g, "&quot;")})' class="flex-1 sm:w-24 px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button><button onclick="deleteClient('${c.id}')" class="flex-1 sm:w-24 px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button></div></div></div>`).join('');
             
             const listElement = document.getElementById('clientsList');
             if (listElement) listElement.innerHTML = listHtml;
