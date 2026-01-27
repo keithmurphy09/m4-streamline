@@ -2267,6 +2267,9 @@ function renderCalendar() {
     const calendarEl = document.getElementById('calendar');
     if (!calendarEl) return;
     
+    // Clear any existing calendar instance
+    calendarEl.innerHTML = '';
+    
     // Filter jobs based on selected worker
     let filteredJobs = jobs;
     if (calendarFilter !== 'all') {
@@ -2276,6 +2279,9 @@ function renderCalendar() {
             filteredJobs = jobs.filter(job => job.assigned_to === calendarFilter);
         }
     }
+    
+    // Debug: log jobs to console
+    console.log('📅 Rendering calendar with jobs:', filteredJobs);
     
     const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
@@ -2296,6 +2302,8 @@ function renderCalendar() {
             const startDate = new Date(job.date);
             const endDate = new Date(startDate);
             endDate.setDate(endDate.getDate() + duration); // Add duration days
+            
+            console.log(`  Job: ${job.title}, Start: ${job.date}, Duration: ${duration}, End: ${endDate.toISOString().split('T')[0]}`);
             
             return {
                 title: job.title + (client ? ' - ' + client.name : '') + ' (' + workerName + ')' + (duration > 1 ? ` [${duration} days]` : ''),
