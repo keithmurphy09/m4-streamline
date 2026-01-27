@@ -645,6 +645,8 @@ async function acceptQuote(quoteId, shareToken) {
                 subtotal: quote.subtotal || quote.total,
                 gst: quote.gst || 0,
                 total: remainingBalance > 0 ? remainingBalance : quote.total,
+                original_total: quote.total,
+                deposit_paid: depositPaid,
                 include_gst: quote.include_gst || false,
                 invoice_number: invoiceNumber,
                 status: remainingBalance <= 0 ? 'paid' : 'unpaid',
@@ -665,7 +667,7 @@ async function acceptQuote(quoteId, shareToken) {
                 
                 // Show success message
                 if (depositPaid > 0) {
-                    alert(`✅ Invoice created!\n\nDeposit: $${depositPaid.toFixed(2)}\nRemaining: $${remainingBalance.toFixed(2)}\n\nInvoice #${invoiceNumber}`);
+                    alert(`✅ Invoice created!\n\nOriginal Total: $${quote.total.toFixed(2)}\nDeposit Paid: $${depositPaid.toFixed(2)}\nBalance Due: $${remainingBalance.toFixed(2)}\n\nInvoice #${invoiceNumber}`);
                 }
                 
                 renderApp();
@@ -831,6 +833,34 @@ doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
             doc.text(item.include_gst ? 'TOTAL (inc GST):' : 'TOTAL:', 125, y);
             doc.setTextColor(20, 184, 166);
             doc.text('$' + (item.total || 0).toFixed(2), 170, y);
+            
+            // Add deposit information for invoices with deposits
+            if (type === 'invoice' && item.deposit_paid && item.deposit_paid > 0) {
+                y += 12;
+                doc.setFontSize(11);
+                doc.setFont(undefined, 'bold');
+                doc.setTextColor(0, 0, 0);
+                doc.text('Payment Breakdown:', 125, y);
+                
+                y += 7;
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'normal');
+                doc.setTextColor(50, 50, 50);
+                
+                doc.text('Original Total:', 125, y);
+                doc.text('$' + (item.original_total || item.total).toFixed(2), 170, y);
+                
+                y += 5;
+                doc.setTextColor(100, 100, 100);
+                doc.text('Less Deposit Paid:', 125, y);
+                doc.text('-$' + item.deposit_paid.toFixed(2), 170, y);
+                
+                y += 5;
+                doc.setFont(undefined, 'bold');
+                doc.setTextColor(255, 140, 0); // Orange
+                doc.text('Balance Due:', 125, y);
+                doc.text('$' + item.total.toFixed(2), 170, y);
+            }
             
             // Add deposit information for quotes
             if (type === 'quote') {
