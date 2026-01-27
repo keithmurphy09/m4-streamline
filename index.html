@@ -2297,11 +2297,11 @@ function renderCalendar() {
             const workerName = assignedWorker?.name || 'Unassigned';
             const duration = job.duration || 1;
             
-            // Calculate end date for multi-day jobs - FIXED timezone issue
-            // Parse date as YYYY-MM-DD and add duration
+            // Calculate end date - PROPER FIX
             const [year, month, day] = job.date.split('-').map(Number);
-            const startDate = new Date(year, month - 1, day); // month is 0-indexed
-            const endDate = new Date(year, month - 1, day + duration);
+            const startDate = new Date(year, month - 1, day);
+            const endDate = new Date(year, month - 1, day);
+            endDate.setDate(endDate.getDate() + duration); // Add duration days
             const endDateString = endDate.toISOString().split('T')[0];
             
             console.log(`  Job: ${job.title}, Start: ${job.date}, Duration: ${duration}, End: ${endDateString}`);
