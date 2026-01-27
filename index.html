@@ -753,23 +753,18 @@ async function acceptQuote(quoteId, shareToken) {
             doc.setFont(undefined, 'italic');
             doc.text('"streamlining your business"', 105, 28, { align: 'center' });
             
-            // Quote/Invoice number top right - ALL TEAL, aligned with M4 STREAMLINE
+            // Quote/Invoice number top right - ALL TEAL, perfectly aligned
             if (type === 'invoice' && (item.quote_number || item.original_quote_number)) {
                 doc.setFontSize(11);
                 doc.setFont(undefined, 'normal');
                 doc.setTextColor(20, 184, 166);
-                doc.text('Quote #:', 170, 17, { align: 'right' });
-                doc.setFontSize(12);
-                doc.setFont(undefined, 'bold');
-                doc.text(item.quote_number || item.original_quote_number || '', 200, 17, { align: 'right' });
+                const quoteNum = item.quote_number || item.original_quote_number || '';
+                doc.text(`Quote #: ${quoteNum}`, 200, 22, { align: 'right' });
             } else if (type === 'quote' && item.quote_number) {
                 doc.setFontSize(11);
                 doc.setFont(undefined, 'normal');
                 doc.setTextColor(20, 184, 166);
-                doc.text('Quote #:', 170, 17, { align: 'right' });
-                doc.setFontSize(12);
-                doc.setFont(undefined, 'bold');
-                doc.text(item.quote_number, 200, 17, { align: 'right' });
+                doc.text(`Quote #: ${item.quote_number}`, 200, 22, { align: 'right' });
             }
             
             doc.setFontSize(18);
