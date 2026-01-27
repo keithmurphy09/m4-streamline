@@ -2289,6 +2289,7 @@ function renderCalendar() {
                 title: job.title + (client ? ' - ' + client.name : '') + ' (' + workerName + ')' + (duration > 1 ? ` [${duration} days]` : ''),
                 start: job.date,
                 end: endDate.toISOString().split('T')[0], // Exclusive end date
+                allDay: true, // Mark as all-day event
                 backgroundColor: workerColor,
                 borderColor: workerColor,
                 extendedProps: {
