@@ -85,6 +85,10 @@ For licensing inquiries, contact: [your-email@domain.com]
 	let scheduleView = 'list';
         let calendarFilter = 'all'; // Track which worker's calendar to show
         let clientSearch = '';
+        let quoteSearch = '';
+        let invoiceSearch = '';
+        let jobSearch = '';
+        let expenseSearch = '';
         let invoiceFilter = 'unpaid';
         let expenseFilter = 'all'; // 'all' or 'YYYY-MM' format
         let lastCreatedQuote = null;  // Track last created quote
@@ -2298,7 +2302,24 @@ async function acceptQuote(quoteId, shareToken) {
         return `<div><div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold">Schedule</h2><div class="flex flex-wrap gap-2 sm:gap-4">${workerFilter}${viewToggle}<button onclick="openModal('job')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400 text-sm whitespace-nowrap">+ Schedule Job</button></div></div><div id="calendar" class="bg-white p-4 rounded-lg shadow"></div></div>`;
     }
     
-    return `<div><div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold">Schedule</h2><div class="flex flex-wrap gap-2 sm:gap-4">${viewToggle}<button onclick="exportToCSV('jobs')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><button onclick="openModal('job')" class="bg-black text-white px-3 sm:px-4 py-2 rounded-lg border border-teal-400 text-sm whitespace-nowrap">+ Schedule Job</button></div></div><div class="grid gap-4">${jobs.length === 0 ? '<div class="text-center py-12 text-gray-500">No jobs</div>' : jobs.map(job => { 
+    // Filter jobs by search
+    const filteredJobs = jobs.filter(job => {
+        if (!jobSearch) return true;
+        const client = clients.find(c => c.id === job.client_id);
+        const assignedTeamIds = job.assigned_team_members || (job.assigned_to ? [job.assigned_to] : []);
+        const assignedWorkers = assignedTeamIds.map(id => teamMembers.find(m => m.id === id)).filter(w => w);
+        const workerNames = assignedWorkers.map(w => w.name).join(' ');
+        const searchLower = jobSearch.toLowerCase();
+        return (
+            job.title.toLowerCase().includes(searchLower) ||
+            (client?.name || '').toLowerCase().includes(searchLower) ||
+            (client?.address || '').toLowerCase().includes(searchLower) ||
+            workerNames.toLowerCase().includes(searchLower) ||
+            (job.notes || '').toLowerCase().includes(searchLower)
+        );
+    });
+    
+    return `<div><div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold">Schedule</h2><div class="flex flex-wrap gap-2 sm:gap-4">${viewToggle}<button onclick="exportToCSV('jobs')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><button onclick="openModal('job')" class="bg-black text-white px-3 sm:px-4 py-2 rounded-lg border border-teal-400 text-sm whitespace-nowrap">+ Schedule Job</button></div></div><input type="text" placeholder="🔍 Search jobs..." value="${jobSearch}" oninput="jobSearch=this.value; renderApp();" class="w-full px-4 py-2 border rounded-lg mb-4"><div class="grid gap-4">${filteredJobs.length === 0 ? '<div class="text-center py-12 text-gray-500">No jobs found</div>' : filteredJobs.map(job => { 
         const client = clients.find(c => c.id === job.client_id);
         
         // Get assigned team members (support both old single and new multiple format)
@@ -2465,7 +2486,20 @@ function renderCalendar() {
         }, 5000);
     }
     
-    return `<div>${successNotification}<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold">Quotes</h2><div class="flex flex-wrap gap-2"><button onclick="exportToCSV('quotes')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><button onclick="openModal('quote')" class="bg-black text-white px-3 sm:px-4 py-2 rounded-lg border border-teal-400 text-sm whitespace-nowrap">+ Create Quote</button></div></div><div class="grid gap-4">${quotes.length === 0 ? '<div class="text-center py-12 text-gray-500">No quotes</div>' : quotes.map(q => { 
+    // Filter quotes by search
+    const filteredQuotes = quotes.filter(q => {
+        if (!quoteSearch) return true;
+        const client = clients.find(c => c.id === q.client_id);
+        const searchLower = quoteSearch.toLowerCase();
+        return (
+            q.title.toLowerCase().includes(searchLower) ||
+            (client?.name || '').toLowerCase().includes(searchLower) ||
+            (q.total?.toString() || '').includes(searchLower) ||
+            (q.notes || '').toLowerCase().includes(searchLower)
+        );
+    });
+    
+    return `<div>${successNotification}<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold">Quotes</h2><div class="flex flex-wrap gap-2"><button onclick="exportToCSV('quotes')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><button onclick="openModal('quote')" class="bg-black text-white px-3 sm:px-4 py-2 rounded-lg border border-teal-400 text-sm whitespace-nowrap">+ Create Quote</button></div></div><input type="text" placeholder="🔍 Search quotes..." value="${quoteSearch}" oninput="quoteSearch=this.value; renderApp();" class="w-full px-4 py-2 border rounded-lg mb-4"><div class="grid gap-4">${filteredQuotes.length === 0 ? '<div class="text-center py-12 text-gray-500">No quotes found</div>' : filteredQuotes.map(q => { 
         const client = clients.find(c => c.id === q.client_id);
         const isAccepted = q.accepted || q.status === 'accepted';
         const isConverted = q.status === 'converted';
@@ -2541,12 +2575,26 @@ function renderCalendar() {
                         `;
                     }).join('');
             } else {
-                const filteredInvoices = invoiceFilter === 'unpaid' 
+                let filteredInvoices = invoiceFilter === 'unpaid' 
                     ? invoices.filter(i => i.status === 'unpaid')
                     : invoices.filter(i => i.status === 'paid');
                 
+                // Apply search filter
+                if (invoiceSearch) {
+                    filteredInvoices = filteredInvoices.filter(inv => {
+                        const client = clients.find(c => c.id === inv.client_id);
+                        const searchLower = invoiceSearch.toLowerCase();
+                        return (
+                            inv.title.toLowerCase().includes(searchLower) ||
+                            (inv.invoice_number || '').toLowerCase().includes(searchLower) ||
+                            (client?.name || '').toLowerCase().includes(searchLower) ||
+                            (inv.total?.toString() || '').includes(searchLower)
+                        );
+                    });
+                }
+                
                 content = filteredInvoices.length === 0 
-                    ? `<div class="text-center py-12 text-gray-500">No ${invoiceFilter} invoices</div>` 
+                    ? `<div class="text-center py-12 text-gray-500">No ${invoiceFilter} invoices found</div>` 
                     : filteredInvoices.map(inv => { 
                         const client = clients.find(c => c.id === inv.client_id);
                         let borderColor = '';
@@ -2583,7 +2631,9 @@ function renderCalendar() {
             
             const filterTabs = `<div class="flex flex-wrap gap-2 mb-4"><button onclick="invoiceFilter='unpaid'; renderApp();" class="px-3 sm:px-4 py-2 rounded text-sm ${invoiceFilter === 'unpaid' ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'} border">Unpaid (${invoices.filter(i => i.status === 'unpaid').length})</button><button onclick="invoiceFilter='paid'; renderApp();" class="px-3 sm:px-4 py-2 rounded text-sm ${invoiceFilter === 'paid' ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'} border">Paid (${invoices.filter(i => i.status === 'paid').length})</button><button onclick="invoiceFilter='monthly'; renderApp();" class="px-3 sm:px-4 py-2 rounded text-sm ${invoiceFilter === 'monthly' ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'} border">Monthly</button></div>`;
             
-            return `<div><div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-6"><h2 class="text-2xl font-bold">Invoices</h2><div class="flex flex-wrap items-center gap-3"><button onclick="exportToCSV('invoices')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><div class="text-sm flex gap-4"><div>Outstanding: <span class="font-bold text-red-600">$${unpaidTotal.toFixed(2)}</span></div><div>Paid: <span class="font-bold text-green-600">$${paidTotal.toFixed(2)}</span></div></div></div></div>${filterTabs}<div class="grid gap-4">${content}</div></div>`;
+            const searchBar = invoiceFilter !== 'monthly' ? `<input type="text" placeholder="🔍 Search invoices..." value="${invoiceSearch}" oninput="invoiceSearch=this.value; renderApp();" class="w-full px-4 py-2 border rounded-lg mb-4">` : '';
+            
+            return `<div><div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-6"><h2 class="text-2xl font-bold">Invoices</h2><div class="flex flex-wrap items-center gap-3"><button onclick="exportToCSV('invoices')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><div class="text-sm flex gap-4"><div>Outstanding: <span class="font-bold text-red-600">$${unpaidTotal.toFixed(2)}</span></div><div>Paid: <span class="font-bold text-green-600">$${paidTotal.toFixed(2)}</span></div></div></div></div>${filterTabs}${searchBar}<div class="grid gap-4">${content}</div></div>`;
         }
         
         function renderExpenses() {
@@ -2599,13 +2649,27 @@ function renderCalendar() {
             const months = Array.from(monthsSet).sort().reverse(); // Newest first
             
             // Filter expenses by selected month
-            const filteredExpenses = expenseFilter === 'all' 
+            let filteredExpenses = expenseFilter === 'all' 
                 ? expenses 
                 : expenses.filter(exp => {
                     const date = new Date(exp.date);
                     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
                     return monthKey === expenseFilter;
                 });
+            
+            // Apply search filter
+            if (expenseSearch) {
+                filteredExpenses = filteredExpenses.filter(exp => {
+                    const teamMember = teamMembers.find(m => m.id === exp.team_member_id);
+                    const searchLower = expenseSearch.toLowerCase();
+                    return (
+                        (exp.description || '').toLowerCase().includes(searchLower) ||
+                        (exp.category || '').toLowerCase().includes(searchLower) ||
+                        (exp.amount?.toString() || '').includes(searchLower) ||
+                        (teamMember?.name || '').toLowerCase().includes(searchLower)
+                    );
+                });
+            }
             
             const totalExpenses = filteredExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
             
@@ -2636,10 +2700,12 @@ function renderCalendar() {
                     </div>
                 </div>
                 
+                <input type="text" placeholder="🔍 Search expenses..." value="${expenseSearch}" oninput="expenseSearch=this.value; renderApp();" class="w-full px-4 py-2 border rounded-lg mb-4">
+                
                 <!-- Expenses Table -->
                 <div class="bg-white rounded-lg shadow overflow-hidden">
                     ${filteredExpenses.length === 0 ? 
-                        `<div class="text-center py-12 text-gray-500">${expenseFilter === 'all' ? 'No expenses yet. Click "+ Add Expense" to get started!' : 'No expenses for this month.'}</div>` 
+                        `<div class="text-center py-12 text-gray-500">${expenseSearch ? 'No expenses found' : expenseFilter === 'all' ? 'No expenses yet. Click "+ Add Expense" to get started!' : 'No expenses for this month.'}</div>` 
                         : 
                         `<div class="overflow-x-auto">
                             <table class="w-full">
