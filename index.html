@@ -2320,9 +2320,12 @@ function renderCalendar() {
     let filteredJobs = jobs;
     if (calendarFilter !== 'all') {
         if (calendarFilter === 'unassigned') {
-            filteredJobs = jobs.filter(job => !job.assigned_to);
+            filteredJobs = jobs.filter(job => !job.assigned_to && (!job.assigned_team_members || job.assigned_team_members.length === 0));
         } else {
-            filteredJobs = jobs.filter(job => job.assigned_to === calendarFilter);
+            filteredJobs = jobs.filter(job => {
+                const teamIds = job.assigned_team_members || (job.assigned_to ? [job.assigned_to] : []);
+                return teamIds.includes(calendarFilter);
+            });
         }
     }
     
@@ -2338,42 +2341,71 @@ function renderCalendar() {
         },
         events: filteredJobs.map(job => {
             const client = clients.find(c => c.id === job.client_id);
-            const assignedWorker = teamMembers.find(m => m.id === job.assigned_to);
-            const workerColor = assignedWorker?.color || '#14b8a6';
-            const workerName = assignedWorker?.name || 'Unassigned';
+            
+            // Get all assigned team members
+            const assignedTeamIds = job.assigned_team_members || (job.assigned_to ? [job.assigned_to] : []);
+            const assignedWorkers = assignedTeamIds.map(id => teamMembers.find(m => m.id === id)).filter(w => w);
+            
+            // Use first worker's color as background, or default teal
+            const backgroundColor = assignedWorkers[0]?.color || '#14b8a6';
             const duration = parseInt(job.duration) || 1;
             
-            // Calculate end date using simple string math to avoid timezone
+            // Calculate end date
             const [year, month, day] = job.date.split('-').map(Number);
-            const endDateObj = new Date(year, month - 1, day + duration); // Add duration to day
+            const endDateObj = new Date(year, month - 1, day + duration);
             const endYear = endDateObj.getFullYear();
             const endMonth = String(endDateObj.getMonth() + 1).padStart(2, '0');
             const endDay = String(endDateObj.getDate()).padStart(2, '0');
             const endDateString = `${endYear}-${endMonth}-${endDay}`;
             
-            console.log(`  Job: ${job.title}, Start: ${job.date}, Duration: ${duration}, End: ${endDateString}`);
+            // Build title with team member dots
+            let eventTitle = job.title;
+            if (assignedWorkers.length > 0) {
+                const workerDots = assignedWorkers.map(w => `●${w.name.split(' ')[0]}`).join(' ');
+                eventTitle = `${workerDots} ${eventTitle}`;
+            }
+            if (client) eventTitle += ` - ${client.name}`;
             
             return {
-                title: job.title + (client ? ' - ' + client.name : '') + ' (' + workerName + ')' + (duration > 1 ? ` [${duration} days]` : ''),
+                title: eventTitle,
                 start: job.date,
                 end: endDateString,
                 allDay: true,
-                backgroundColor: workerColor,
-                borderColor: workerColor,
+                backgroundColor: backgroundColor,
+                borderColor: backgroundColor,
+                textColor: '#ffffff',
                 extendedProps: {
                     jobId: job.id,
                     client: client?.name,
-                    worker: workerName,
+                    workers: assignedWorkers,
                     duration: duration
                 }
             };
         }),
+        eventDidMount: function(info) {
+            // Add custom styling for multi-worker jobs
+            const workers = info.event.extendedProps.workers || [];
+            if (workers.length > 1) {
+                // Add colored dots for each worker
+                const dotsHtml = workers.map(w => 
+                    `<span style="color: ${w.color}; font-size: 18px; line-height: 1;">●</span>`
+                ).join(' ');
+                const titleEl = info.el.querySelector('.fc-event-title');
+                if (titleEl) {
+                    titleEl.innerHTML = `${dotsHtml} ${titleEl.textContent}`;
+                }
+            }
+        },
         eventClick: function(info) {
             const job = jobs.find(j => j.id === info.event.extendedProps.jobId);
             if (job) {
+                const workers = info.event.extendedProps.workers || [];
+                const workerNames = workers.length > 0 
+                    ? workers.map(w => w.name + (w.occupation ? ` (${w.occupation})` : '')).join('\n')
+                    : 'Unassigned';
                 const duration = job.duration || 1;
                 const durationText = duration > 1 ? `\nDuration: ${duration} days` : '';
-                alert('Job: ' + job.title + '\nClient: ' + info.event.extendedProps.client + '\nWorker: ' + info.event.extendedProps.worker + '\nDate: ' + new Date(job.date).toLocaleDateString() + '\nTime: ' + job.time + durationText);
+                alert('Job: ' + job.title + '\nClient: ' + info.event.extendedProps.client + '\n\nTeam Members:\n' + workerNames + '\n\nDate: ' + new Date(job.date).toLocaleDateString() + '\nTime: ' + job.time + durationText);
             }
         }
     });
