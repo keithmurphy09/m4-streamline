@@ -82,6 +82,16 @@ For licensing inquiries, contact: [your-email@domain.com]
         let showModal = false;
         let isLoading = false;
         let loadingMessage = 'Loading...';
+        
+        // Pagination
+        let currentPage = {
+            clients: 1,
+            quotes: 1,
+            invoices: 1,
+            jobs: 1,
+            expenses: 1
+        };
+        const itemsPerPage = 50;
         let modalType = '';
         let editingItem = null;
 	let scheduleView = 'list';
@@ -421,26 +431,57 @@ For licensing inquiries, contact: [your-email@domain.com]
             }
         }
         
-        async function addClient(client) {
-            if (useDemoData) {
-                // Demo mode: add to demo array
-                const newClient = { ...client, id: 'demo-client-' + Date.now(), user_id: currentUser.id };
-                demoClients.push(newClient);
-                clients = demoClients;
-                closeModal();
-                renderApp();
-                return;
-            }
+        // Helper for showing temporary notifications
+        function showNotification(message, type = 'success') {
+            const icon = type === 'success' ? '✅' : '❌';
+            const bgColor = type === 'success' ? 'bg-green-50 border-green-500 text-green-700' : 'bg-red-50 border-red-500 text-red-700';
             
-            const { data } = await supabaseClient.from('clients').insert([{
-                ...client, 
-                user_id: currentUser.id
-            }]).select(); 
-            if (data) { 
-                clients.push(data[0]); 
-                closeModal(); 
-                renderApp(); 
-            } 
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 ${bgColor} border-l-4 p-4 rounded shadow-lg z-50 max-w-md animate-slide-in`;
+            notification.innerHTML = `<p class="font-medium">${icon} ${message}</p>`;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transition = 'opacity 0.3s';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+        
+        async function addClient(client) {
+            try {
+                isLoading = true;
+                loadingMessage = 'Adding client...';
+                renderApp();
+                
+                if (useDemoData) {
+                    // Demo mode: add to demo array
+                    const newClient = { ...client, id: 'demo-client-' + Date.now(), user_id: currentUser.id };
+                    demoClients.push(newClient);
+                    clients = demoClients;
+                    closeModal();
+                    return;
+                }
+                
+                const { data, error } = await supabaseClient.from('clients').insert([{
+                    ...client, 
+                    user_id: currentUser.id
+                }]).select(); 
+                
+                if (error) throw error;
+                
+                if (data) { 
+                    clients.push(data[0]); 
+                    closeModal(); 
+                    showNotification('Client added successfully!');
+                }
+            } catch (error) {
+                console.error('Error adding client:', error);
+                showNotification('Failed to add client: ' + error.message, 'error');
+            } finally {
+                isLoading = false;
+                renderApp();
+            }
         }
         
         async function updateClient(id) {
@@ -2464,6 +2505,37 @@ function renderCalendar() {
     calendar.render();
 }
         
+        function getPaginationHTML(section, totalItems, currentPageNum) {
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            if (totalPages <= 1) return '';
+            
+            const startItem = (currentPageNum - 1) * itemsPerPage + 1;
+            const endItem = Math.min(currentPageNum * itemsPerPage, totalItems);
+            
+            return `
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-3 mt-6 pt-4 border-t">
+                    <div class="text-sm text-gray-600">
+                        Showing ${startItem}-${endItem} of ${totalItems}
+                    </div>
+                    <div class="flex gap-2">
+                        ${currentPageNum > 1 ? `<button onclick="currentPage.${section}=${currentPageNum - 1}; renderApp();" class="px-3 py-1 border rounded hover:bg-gray-100">← Previous</button>` : ''}
+                        ${Array.from({length: Math.min(5, totalPages)}, (_, i) => {
+                            const pageNum = i + 1;
+                            if (totalPages > 5 && currentPageNum > 3) {
+                                // Show pages around current
+                                const start = Math.max(1, currentPageNum - 2);
+                                const actualPage = start + i;
+                                if (actualPage > totalPages) return '';
+                                return `<button onclick="currentPage.${section}=${actualPage}; renderApp();" class="px-3 py-1 border rounded ${actualPage === currentPageNum ? 'bg-black text-white' : 'hover:bg-gray-100'}">${actualPage}</button>`;
+                            }
+                            return `<button onclick="currentPage.${section}=${pageNum}; renderApp();" class="px-3 py-1 border rounded ${pageNum === currentPageNum ? 'bg-black text-white' : 'hover:bg-gray-100'}">${pageNum}</button>`;
+                        }).join('')}
+                        ${currentPageNum < totalPages ? `<button onclick="currentPage.${section}=${currentPageNum + 1}; renderApp();" class="px-3 py-1 border rounded hover:bg-gray-100">Next →</button>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
         function renderClients() {
             const filteredClients = clients.filter(c => 
                 c.name.toLowerCase().includes(clientSearch.toLowerCase()) ||
@@ -2472,7 +2544,19 @@ function renderCalendar() {
                 (c.address && c.address.toLowerCase().includes(clientSearch.toLowerCase()))
             );
             
-            return `<div><div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold">Clients</h2><div class="flex flex-wrap gap-2"><button onclick="exportToCSV('clients')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><button onclick="openModal('client')" class="bg-black text-white px-3 sm:px-4 py-2 rounded-lg border border-teal-400 text-sm whitespace-nowrap">+ Add Client</button></div></div><div class="mb-4"><input type="text" id="clientSearchInput" placeholder="Search clients..." value="${clientSearch}" oninput="clientSearch=this.value; renderClientsOnly();" class="w-full px-4 py-2 border rounded-lg text-sm" /></div><div id="clientsList" class="grid gap-4">${filteredClients.length === 0 ? '<div class="text-center py-12 text-gray-500">No clients found</div>' : filteredClients.map(c => `<div class="bg-white p-4 rounded-lg shadow"><div class="flex flex-col sm:flex-row sm:justify-between gap-3"><div class="flex-1"><h3 class="text-lg font-semibold">${c.name}</h3><p class="text-sm text-gray-600">${c.email}</p><p class="text-sm text-gray-600">${c.phone}</p>${c.address ? `<p class="text-sm text-gray-600 mt-1">📍 ${c.address}</p>` : ''}${c.notes ? `<p class="text-sm text-gray-700 italic mt-3 p-2 bg-yellow-50 border-l-4 border-yellow-400 rounded">📝 ${c.notes}</p>` : ''}</div><div class="flex sm:flex-col gap-2"><button onclick='openQuoteForClient(${JSON.stringify(c).replace(/"/g, "&quot;")})' class="flex-1 sm:w-24 px-3 py-1 bg-teal-600 text-white rounded text-sm whitespace-nowrap">New Quote</button><button onclick='openModal("client", ${JSON.stringify(c).replace(/"/g, "&quot;")})' class="flex-1 sm:w-24 px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button><button onclick="deleteClient('${c.id}')" class="flex-1 sm:w-24 px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button></div></div></div>`).join('')}</div></div>`;
+            // Pagination
+            const totalClients = filteredClients.length;
+            const startIndex = (currentPage.clients - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedClients = filteredClients.slice(startIndex, endIndex);
+            
+            const clientsList = paginatedClients.length === 0 
+                ? '<div class="text-center py-12 text-gray-500">No clients found</div>' 
+                : paginatedClients.map(c => `<div class="bg-white p-4 rounded-lg shadow"><div class="flex flex-col sm:flex-row sm:justify-between gap-3"><div class="flex-1"><h3 class="text-lg font-semibold">${c.name}</h3><p class="text-sm text-gray-600">${c.email}</p><p class="text-sm text-gray-600">${c.phone}</p>${c.address ? `<p class="text-sm text-gray-600 mt-1">📍 ${c.address}</p>` : ''}${c.notes ? `<p class="text-sm text-gray-700 italic mt-3 p-2 bg-yellow-50 border-l-4 border-yellow-400 rounded">📝 ${c.notes}</p>` : ''}</div><div class="flex sm:flex-col gap-2"><button onclick='openQuoteForClient(${JSON.stringify(c).replace(/"/g, "&quot;")})' class="flex-1 sm:w-24 px-3 py-1 bg-teal-600 text-white rounded text-sm whitespace-nowrap">New Quote</button><button onclick='openModal("client", ${JSON.stringify(c).replace(/"/g, "&quot;")})' class="flex-1 sm:w-24 px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button><button onclick="deleteClient('${c.id}')" class="flex-1 sm:w-24 px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button></div></div></div>`).join('');
+            
+            const pagination = getPaginationHTML('clients', totalClients, currentPage.clients);
+            
+            return `<div><div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold">Clients</h2><div class="flex flex-wrap gap-2"><button onclick="exportToCSV('clients')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><button onclick="openModal('client')" class="bg-black text-white px-3 sm:px-4 py-2 rounded-lg border border-teal-400 text-sm whitespace-nowrap">+ Add Client</button></div></div><div class="mb-4"><input type="text" id="clientSearchInput" placeholder="Search clients..." value="${clientSearch}" oninput="clientSearch=this.value; currentPage.clients=1; renderApp();" class="w-full px-4 py-2 border rounded-lg text-sm" /></div><div id="clientsList" class="grid gap-4">${clientsList}</div>${pagination}</div>`;
         }
         
         function renderClientsOnly() {
