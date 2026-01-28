@@ -2390,7 +2390,7 @@ function renderCalendar() {
         const isAccepted = q.accepted || q.status === 'accepted';
         const isConverted = q.status === 'converted';
         const isNewQuote = lastCreatedQuote && lastCreatedQuote.id === q.id;
-        return `<div class="bg-white p-4 rounded-lg shadow ${isAccepted ? 'border-l-4 border-green-500' : ''} ${isConverted ? 'border-l-4 border-gray-400' : ''} ${isNewQuote ? 'ring-2 ring-green-400' : ''}"><div class="flex flex-col sm:flex-row sm:justify-between gap-2 mb-3"><div><h3 class="text-lg font-semibold">${q.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p>${isAccepted ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mt-1 inline-block">✓ ACCEPTED</span>' : ''}${isConverted ? '<span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded mt-1 inline-block ml-2">✓ CONVERTED</span>' : ''}</div><p class="text-2xl font-bold text-teal-500">$${q.total?.toFixed(2)}</p></div>${q.notes ? `<p class="text-sm text-gray-600 italic mb-3">${q.notes}</p>` : ''}${isConverted ? '<p class="text-xs text-gray-500 italic mb-3">This quote has been converted to an invoice</p>' : ''}<div class="flex gap-2 flex-wrap">${isAccepted || isConverted ? `<button onclick='openJobFromQuote(${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-teal-600 text-white rounded text-sm whitespace-nowrap">📅 Schedule Job</button>` : ''}${!isAccepted && !isConverted ? `<button onclick='openModal("quote", ${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>` : ''}${!isConverted ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm whitespace-nowrap">Convert to Invoice</button>` : ''}<button onclick='generatePDF("quote", ${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm whitespace-nowrap">Download PDF</button><button onclick='sendQuoteEmail(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-purple-600 text-white rounded text-sm whitespace-nowrap">📧 Email</button>${client?.phone && smsSettings?.enabled ? `<button onclick='sendQuoteSMS(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm whitespace-nowrap">📱 SMS</button>` : ''}<button onclick="deleteQuote('${q.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div></div>`; 
+        return `<div class="bg-white p-4 rounded-lg shadow ${isAccepted ? 'border-l-4 border-green-500' : ''} ${isConverted ? 'border-l-4 border-gray-400' : ''} ${isNewQuote ? 'ring-2 ring-green-400' : ''}"><div class="flex flex-col sm:flex-row sm:justify-between gap-2 mb-3"><div><h3 class="text-lg font-semibold">${q.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p>${isAccepted ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mt-1 inline-block">✓ ACCEPTED</span>' : ''}${isConverted ? '<span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded mt-1 inline-block ml-2">✓ CONVERTED</span>' : ''}</div><p class="text-2xl font-bold text-teal-500">$${q.total?.toFixed(2)}</p></div>${q.notes ? `<p class="text-sm text-gray-600 italic mb-3">${q.notes}</p>` : ''}${isConverted ? '<p class="text-xs text-gray-500 italic mb-3">This quote has been converted to an invoice</p>' : ''}<div class="flex gap-2 flex-wrap">${isAccepted || isConverted ? `<button onclick='openJobFromQuote(${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-teal-600 text-white rounded text-sm whitespace-nowrap">📅 Schedule Job</button>` : ''}${!isAccepted && !isConverted ? `<button onclick='openModal("quote", ${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>` : ''}${!isConverted ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm whitespace-nowrap">Convert to Invoice</button>` : ''}<button onclick='generatePDF("quote", ${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm whitespace-nowrap">Download PDF</button><button onclick='sendQuoteEmail(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-purple-600 text-white rounded text-sm whitespace-nowrap">📧 Email</button>${client?.phone && smsSettings?.enabled ? `<button onclick='sendQuoteSMS(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm whitespace-nowrap">📱 SMS</button>` : ''}<label class="cursor-pointer px-3 py-1 bg-orange-600 text-white rounded text-sm whitespace-nowrap"><input type="file" accept="image/*,.pdf,.doc,.docx,.txt" onchange="uploadQuoteFile(this, '${q.id}')" class="hidden" />📎 Upload File</label><button onclick="viewQuoteFiles('${q.id}')" class="px-3 py-1 bg-gray-600 text-white rounded text-sm whitespace-nowrap">📁 View Files</button><button onclick="deleteQuote('${q.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div></div>`; 
     }).join('')}</div></div>`;
 }
         
@@ -2874,6 +2874,32 @@ function renderCalendar() {
                 
                 form = `<select id="client_id" onchange="autoFillJobAddress()" class="w-full px-4 py-2 border rounded mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}</select>${titleField}${addressField}<div id="items-list"></div><button onclick="addQuoteItem()" class="text-teal-500 text-sm mb-3">+ Add Item</button><div id="quote-total" class="font-bold mb-3">Total: $0</div><div class="mb-3"><label class="flex items-center cursor-pointer"><input type="checkbox" id="include_gst" ${includeGst ? 'checked' : ''} onchange="updateQuoteTotal()" class="mr-2"><span class="text-sm font-medium">Include GST (10%)</span></label></div><div class="mb-3"><label class="block text-sm font-medium mb-2">Deposit Required</label><input type="hidden" id="deposit_percentage" value="${depositPercentage}"><div class="flex gap-2 flex-wrap"><button type="button" onclick="setDeposit(0)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 0 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100'}">0% (COD)</button><button type="button" onclick="setDeposit(30)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 30 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100'}">30%</button><button type="button" onclick="setDeposit(40)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 40 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100'}">40%</button><button type="button" onclick="setDeposit(50)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 50 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100'}">50%</button></div></div><div id="deposit-amount" class="text-sm text-gray-600 mb-3"></div><div class="mb-3"><label class="block text-sm font-medium mb-1">Payment Terms</label><textarea id="payment_terms" placeholder="e.g., 30% deposit, balance on completion" class="w-full px-4 py-2 border rounded" rows="2">${paymentTerms}</textarea><p class="text-xs text-gray-500 mt-1">💡 Edit to match your agreement with the client</p></div><textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${notes}</textarea><button onclick="${isEditing ? `updateQuote('${editingItem.id}')` : 'saveQuote()'}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
             }
+            if (modalType === 'quote_files') {
+                const files = editingItem?.files || [];
+                const quoteId = editingItem?.quoteId;
+                form = `<div class="space-y-4">
+                    ${files.length === 0 ? '<p class="text-gray-500 text-center py-8">No files attached yet</p>' : ''}
+                    ${files.map(file => {
+                        const fileSize = (file.file_size / 1024).toFixed(1) + ' KB';
+                        const uploadDate = new Date(file.uploaded_at).toLocaleDateString();
+                        const isImage = file.file_type === 'image';
+                        
+                        return `<div class="border rounded p-3 flex items-center justify-between">
+                            <div class="flex items-center gap-3 flex-1">
+                                ${isImage ? `<img src="${file.file_url}" class="w-16 h-16 object-cover rounded" />` : `<div class="w-16 h-16 bg-gray-100 rounded flex items-center justify-center"><span class="text-2xl">📄</span></div>`}
+                                <div class="flex-1 min-w-0">
+                                    <p class="font-medium truncate">${file.file_name}</p>
+                                    <p class="text-xs text-gray-500">${fileSize} • ${uploadDate}</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <a href="${file.file_url}" target="_blank" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">View</a>
+                                <button onclick="deleteQuoteFile('${file.id}', '${file.file_url}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button>
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>`;
+            }
             return `<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto" onclick="if(event.target===this)closeModal()"><div class="bg-white rounded-lg p-4 sm:p-6 max-w-2xl w-full my-4 max-h-[90vh] overflow-y-auto"><div class="flex justify-between mb-4"><h3 class="text-lg sm:text-xl font-bold">${editingItem ? 'Edit ' + modalType : modalType}</h3><button onclick="closeModal()" class="text-2xl leading-none">×</button></div>${form}</div></div>`;
         }
         
@@ -3024,6 +3050,114 @@ async function uploadJobPhoto(input, jobId) {
         renderApp();
     }
 }        
+
+async function uploadQuoteFile(input, quoteId) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+        alert('⚠️ File too large! Maximum file size is 10MB.');
+        return;
+    }
+    
+    const fileExt = file.name.split('.').pop().toLowerCase();
+    const fileName = `${currentUser.id}/${quoteId}-${Date.now()}.${fileExt}`;
+    
+    // Show loading indicator
+    const loadingMsg = alert('⏳ Uploading file...');
+    
+    const { data: uploadData, error: uploadError } = await supabaseClient.storage
+        .from('quote-files')
+        .upload(fileName, file);
+    
+    if (uploadError) {
+        alert('❌ Error uploading file: ' + uploadError.message);
+        return;
+    }
+    
+    const { data: urlData } = supabaseClient.storage
+        .from('quote-files')
+        .getPublicUrl(fileName);
+    
+    // Determine file type
+    const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    const docExts = ['pdf', 'doc', 'docx', 'txt'];
+    let fileType = 'other';
+    if (imageExts.includes(fileExt)) fileType = 'image';
+    else if (docExts.includes(fileExt)) fileType = 'document';
+    
+    // Save file metadata to database
+    const { error: dbError } = await supabaseClient
+        .from('quote_files')
+        .insert([{
+            quote_id: quoteId,
+            user_id: currentUser.id,
+            file_name: file.name,
+            file_url: urlData.publicUrl,
+            file_type: fileType,
+            file_size: file.size
+        }]);
+    
+    if (dbError) {
+        alert('❌ Error saving file info: ' + dbError.message);
+        return;
+    }
+    
+    alert('✅ File uploaded successfully!');
+    await loadAllData();
+    renderApp();
+}
+
+async function deleteQuoteFile(fileId, fileUrl) {
+    if (!confirm('Delete this file?')) return;
+    
+    // Extract file path from URL
+    const urlParts = fileUrl.split('/');
+    const filePath = urlParts.slice(urlParts.indexOf('quote-files') + 1).join('/');
+    
+    // Delete from storage
+    await supabaseClient.storage
+        .from('quote-files')
+        .remove([filePath]);
+    
+    // Delete from database
+    const { error } = await supabaseClient
+        .from('quote_files')
+        .delete()
+        .eq('id', fileId);
+    
+    if (!error) {
+        alert('✅ File deleted!');
+        await loadAllData();
+        renderApp();
+    }
+}
+
+async function viewQuoteFiles(quoteId) {
+    // Fetch files for this quote
+    const { data: files, error } = await supabaseClient
+        .from('quote_files')
+        .select('*')
+        .eq('quote_id', quoteId)
+        .order('uploaded_at', { ascending: false });
+    
+    if (error) {
+        alert('Error loading files: ' + error.message);
+        return;
+    }
+    
+    if (!files || files.length === 0) {
+        alert('No files attached to this quote yet.');
+        return;
+    }
+    
+    // Show modal with files
+    showModal = true;
+    modalType = 'quote_files';
+    editingItem = { quoteId, files };
+    renderApp();
+}
 
 async function sendQuoteEmail(quote) {
     const client = clients.find(c => c.id === quote.client_id);
