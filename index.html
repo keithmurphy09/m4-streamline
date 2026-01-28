@@ -2374,7 +2374,13 @@ async function acceptQuote(quoteId, shareToken) {
         );
     });
     
-    return `<div><div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold">Schedule</h2><div class="flex flex-wrap gap-2 sm:gap-4">${viewToggle}<button onclick="exportToCSV('jobs')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><button onclick="openModal('job')" class="bg-black text-white px-3 sm:px-4 py-2 rounded-lg border border-teal-400 text-sm whitespace-nowrap">+ Schedule Job</button></div></div><input type="text" placeholder="🔍 Search jobs..." value="${jobSearch}" oninput="jobSearch=this.value; renderApp();" class="w-full px-4 py-2 border rounded-lg mb-4"><div class="grid gap-4">${filteredJobs.length === 0 ? '<div class="text-center py-12 text-gray-500">No jobs found</div>' : filteredJobs.map(job => { 
+    // Pagination
+    const totalJobs = filteredJobs.length;
+    const startIndex = (currentPage.jobs - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedJobs = filteredJobs.slice(startIndex, endIndex);
+    
+    const jobsList = paginatedJobs.length === 0 ? '<div class="text-center py-12 text-gray-500">No jobs found</div>' : paginatedJobs.map(job => { 
         const client = clients.find(c => c.id === job.client_id);
         
         // Get assigned team members (support both old single and new multiple format)
@@ -2406,7 +2412,11 @@ async function acceptQuote(quoteId, shareToken) {
             : '<p class="text-sm text-gray-400 mt-2">👤 Unassigned</p>';
         
         return `<div class="bg-white p-4 rounded-lg shadow border-l-4" style="border-color: ${workerColor}"><div class="flex flex-col sm:flex-row sm:justify-between gap-3"><div class="flex-1"><h3 class="text-lg font-semibold">${job.title}</h3><span class="text-xs ${statusColor} px-2 py-1 rounded inline-block mt-1">${statusLabel}</span><p class="text-gray-600 mt-1">${client?.name || 'Unknown'}</p>${client?.address ? `<a href="${/iPhone|iPad|iPod/.test(navigator.userAgent) ? 'maps://?q=' : 'https://maps.google.com/?q='}${encodeURIComponent(client.address)}" target="_blank" class="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1">📍 ${client.address}</a>` : ''}${teamDisplay}<div class="text-sm text-gray-500 mt-2">📅 ${new Date(job.date).toLocaleDateString()} ⏰ ${job.time}${job.duration > 1 ? ` (${job.duration} days)` : ''}</div>${job.notes ? `<p class="text-sm text-gray-700 mt-2 italic">${job.notes}</p>` : ''}${job.photos && job.photos.length > 0 ? `<div class="mt-3 flex gap-2 flex-wrap">${job.photos.map(photo => `<img src="${photo}" class="w-20 h-20 object-cover rounded border border-teal-400" />`).join('')}</div>` : ''}</div><div class="flex sm:flex-col gap-2"><button onclick='openModal("job", ${JSON.stringify(job).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button><label class="cursor-pointer px-3 py-1 bg-teal-500 text-white rounded text-sm text-center"><input type="file" accept="image/*" onchange="uploadJobPhoto(this, '${job.id}')" class="hidden" />Add Photo</label><button onclick="deleteJob('${job.id}')" class="px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button></div></div></div>`; 
-    }).join('')}</div></div>`;
+    }).join('');
+    
+    const pagination = getPaginationHTML('jobs', totalJobs, currentPage.jobs);
+    
+    return `<div><div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold">Schedule</h2><div class="flex flex-wrap gap-2 sm:gap-4">${viewToggle}<button onclick="exportToCSV('jobs')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><button onclick="openModal('job')" class="bg-black text-white px-3 sm:px-4 py-2 rounded-lg border border-teal-400 text-sm whitespace-nowrap">+ Schedule Job</button></div></div><input type="text" placeholder="🔍 Search jobs..." value="${jobSearch}" oninput="jobSearch=this.value; currentPage.jobs=1; renderApp();" class="w-full px-4 py-2 border rounded-lg mb-4"><div class="grid gap-4">${jobsList}</div>${pagination}</div>`;
 }
 
 function renderCalendar() {
@@ -2597,13 +2607,23 @@ function renderCalendar() {
         );
     });
     
-    return `<div>${successNotification}<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold">Quotes</h2><div class="flex flex-wrap gap-2"><button onclick="exportToCSV('quotes')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><button onclick="openModal('quote')" class="bg-black text-white px-3 sm:px-4 py-2 rounded-lg border border-teal-400 text-sm whitespace-nowrap">+ Create Quote</button></div></div><input type="text" placeholder="🔍 Search quotes..." value="${quoteSearch}" oninput="quoteSearch=this.value; renderApp();" class="w-full px-4 py-2 border rounded-lg mb-4"><div class="grid gap-4">${filteredQuotes.length === 0 ? '<div class="text-center py-12 text-gray-500">No quotes found</div>' : filteredQuotes.map(q => { 
+    // Pagination
+    const totalQuotes = filteredQuotes.length;
+    const startIndex = (currentPage.quotes - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedQuotes = filteredQuotes.slice(startIndex, endIndex);
+    
+    const quotesList = paginatedQuotes.length === 0 ? '<div class="text-center py-12 text-gray-500">No quotes found</div>' : paginatedQuotes.map(q => { 
         const client = clients.find(c => c.id === q.client_id);
         const isAccepted = q.accepted || q.status === 'accepted';
         const isConverted = q.status === 'converted';
         const isNewQuote = lastCreatedQuote && lastCreatedQuote.id === q.id;
         return `<div class="bg-white p-4 rounded-lg shadow ${isAccepted ? 'border-l-4 border-green-500' : ''} ${isConverted ? 'border-l-4 border-gray-400' : ''} ${isNewQuote ? 'ring-2 ring-green-400' : ''}"><div class="flex flex-col sm:flex-row sm:justify-between gap-2 mb-3"><div><h3 class="text-lg font-semibold">${q.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p>${isAccepted ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mt-1 inline-block">✓ ACCEPTED</span>' : ''}${isConverted ? '<span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded mt-1 inline-block ml-2">✓ CONVERTED</span>' : ''}</div><p class="text-2xl font-bold text-teal-500">$${q.total?.toFixed(2)}</p></div>${q.notes ? `<p class="text-sm text-gray-600 italic mb-3">${q.notes}</p>` : ''}${isConverted ? '<p class="text-xs text-gray-500 italic mb-3">This quote has been converted to an invoice</p>' : ''}<div class="flex gap-2 flex-wrap">${isAccepted || isConverted ? `<button onclick='openJobFromQuote(${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-teal-600 text-white rounded text-sm whitespace-nowrap">📅 Schedule Job</button>` : ''}${!isAccepted && !isConverted ? `<button onclick='openModal("quote", ${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>` : ''}${!isConverted ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm whitespace-nowrap">Convert to Invoice</button>` : ''}<button onclick='generatePDF("quote", ${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm whitespace-nowrap">Download PDF</button><button onclick='sendQuoteEmail(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-purple-600 text-white rounded text-sm whitespace-nowrap">📧 Email</button>${client?.phone && smsSettings?.enabled ? `<button onclick='sendQuoteSMS(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm whitespace-nowrap">📱 SMS</button>` : ''}<label class="cursor-pointer px-3 py-1 bg-orange-600 text-white rounded text-sm whitespace-nowrap"><input type="file" accept="image/*,.pdf,.doc,.docx,.txt" onchange="uploadQuoteFile(this, '${q.id}')" class="hidden" />📎 Upload File</label><button onclick="viewQuoteFiles('${q.id}')" class="px-3 py-1 bg-gray-600 text-white rounded text-sm whitespace-nowrap">📁 View Files</button><button onclick="deleteQuote('${q.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div></div>`; 
-    }).join('')}</div></div>`;
+    }).join('');
+    
+    const pagination = getPaginationHTML('quotes', totalQuotes, currentPage.quotes);
+    
+    return `<div>${successNotification}<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold">Quotes</h2><div class="flex flex-wrap gap-2"><button onclick="exportToCSV('quotes')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><button onclick="openModal('quote')" class="bg-black text-white px-3 sm:px-4 py-2 rounded-lg border border-teal-400 text-sm whitespace-nowrap">+ Create Quote</button></div></div><input type="text" placeholder="🔍 Search quotes..." value="${quoteSearch}" oninput="quoteSearch=this.value; currentPage.quotes=1; renderApp();" class="w-full px-4 py-2 border rounded-lg mb-4"><div class="grid gap-4">${quotesList}</div>${pagination}</div>`;
 }
         
         function renderInvoices() {
@@ -2769,7 +2789,12 @@ function renderCalendar() {
                 });
             }
             
+            // Pagination
             const totalExpenses = filteredExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+            const totalExpensesCount = filteredExpenses.length;
+            const startIndex = (currentPage.expenses - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedExpenses = filteredExpenses.slice(startIndex, endIndex);
             
             // Get month label for display
             const getMonthLabel = (monthKey) => {
@@ -2784,7 +2809,7 @@ function renderCalendar() {
                     <div>
                         <h2 class="text-2xl font-bold">Expenses</h2>
                         <div class="text-3xl font-bold text-red-600 mt-2">$${totalExpenses.toFixed(2)}</div>
-                        <div class="text-sm text-gray-500">${filteredExpenses.length} expense${filteredExpenses.length !== 1 ? 's' : ''} - ${getMonthLabel(expenseFilter)}</div>
+                        <div class="text-sm text-gray-500">${totalExpensesCount} expense${totalExpensesCount !== 1 ? 's' : ''} - ${getMonthLabel(expenseFilter)}</div>
                     </div>
                     <div class="flex flex-wrap gap-2 items-center">
                         ${months.length > 0 ? `
@@ -2798,11 +2823,11 @@ function renderCalendar() {
                     </div>
                 </div>
                 
-                <input type="text" placeholder="🔍 Search expenses..." value="${expenseSearch}" oninput="expenseSearch=this.value; renderApp();" class="w-full px-4 py-2 border rounded-lg mb-4">
+                <input type="text" placeholder="🔍 Search expenses..." value="${expenseSearch}" oninput="expenseSearch=this.value; currentPage.expenses=1; renderApp();" class="w-full px-4 py-2 border rounded-lg mb-4">
                 
                 <!-- Expenses Table -->
                 <div class="bg-white rounded-lg shadow overflow-hidden">
-                    ${filteredExpenses.length === 0 ? 
+                    ${paginatedExpenses.length === 0 ? 
                         `<div class="text-center py-12 text-gray-500">${expenseSearch ? 'No expenses found' : expenseFilter === 'all' ? 'No expenses yet. Click "+ Add Expense" to get started!' : 'No expenses for this month.'}</div>` 
                         : 
                         `<div class="overflow-x-auto">
@@ -2819,7 +2844,7 @@ function renderCalendar() {
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200">
-                                    ${filteredExpenses.sort((a, b) => new Date(b.date) - new Date(a.date)).map(exp => {
+                                    ${paginatedExpenses.sort((a, b) => new Date(b.date) - new Date(a.date)).map(exp => {
                                         const teamMember = exp.team_member_id ? teamMembers.find(tm => tm.id === exp.team_member_id) : null;
                                         const job = exp.job_id ? jobs.find(j => j.id === exp.job_id) : null;
                                         return `
@@ -2852,6 +2877,7 @@ function renderCalendar() {
                             </table>
                         </div>`
                     }
+                    ${getPaginationHTML('expenses', totalExpensesCount, currentPage.expenses)}
                 </div>
             </div>`;
         }
