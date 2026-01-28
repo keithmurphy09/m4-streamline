@@ -1929,13 +1929,17 @@ async function acceptQuote(quoteId, shareToken) {
                     <!-- Revenue vs Expenses Chart -->
                     <div class="bg-white p-6 rounded-lg shadow">
                         <h3 class="text-lg font-bold mb-4">Revenue vs Expenses</h3>
-                        <canvas id="revenueExpensesChart" height="250"></canvas>
+                        <div style="height: 300px; position: relative;">
+                            <canvas id="revenueExpensesChart"></canvas>
+                        </div>
                     </div>
                     
                     <!-- Expenses by Category Chart -->
                     <div class="bg-white p-6 rounded-lg shadow">
                         <h3 class="text-lg font-bold mb-4">Expenses by Category</h3>
-                        <canvas id="expensesCategoryChart" height="250"></canvas>
+                        <div style="height: 300px; position: relative;">
+                            <canvas id="expensesCategoryChart"></canvas>
+                        </div>
                     </div>
                 </div>
                 
@@ -2060,6 +2064,7 @@ async function acceptQuote(quoteId, shareToken) {
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        animation: false, // DISABLE ANIMATIONS - prevents sliding
                         plugins: {
                             legend: {
                                 display: true,
@@ -2124,6 +2129,7 @@ async function acceptQuote(quoteId, shareToken) {
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        animation: false, // DISABLE ANIMATIONS - prevents sliding
                         plugins: {
                             legend: {
                                 display: true,
