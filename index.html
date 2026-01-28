@@ -2311,27 +2311,16 @@ function renderCalendar() {
             const workerName = assignedWorker?.name || 'Unassigned';
             const duration = job.duration || 1;
             
-            // FINAL BULLETPROOF FIX - Create date, then add days using setUTCDate
-            const dateParts = job.date.split('-');
-            const year = parseInt(dateParts[0]);
-            const month = parseInt(dateParts[1]) - 1; // 0-indexed
-            const day = parseInt(dateParts[2]);
-            
-            const endDate = new Date(Date.UTC(year, month, day));
-            endDate.setUTCDate(endDate.getUTCDate() + duration); // Add days properly
-            
-            const endYear = endDate.getUTCFullYear();
-            const endMonth = String(endDate.getUTCMonth() + 1).padStart(2, '0');
-            const endDay = String(endDate.getUTCDate()).padStart(2, '0');
-            const endDateString = `${endYear}-${endMonth}-${endDay}`;
-            
-            console.log(`  Job: ${job.title}, Start: ${job.date}, Duration: ${duration}, End: ${endDateString}`);
+            // Calculate end date - BACK TO ORIGINAL WORKING CODE
+            const startDate = new Date(job.date + 'T' + job.time);
+            const endDate = new Date(startDate);
+            endDate.setDate(endDate.getDate() + duration);
             
             return {
                 title: job.title + (client ? ' - ' + client.name : '') + ' (' + workerName + ')' + (duration > 1 ? ` [${duration} days]` : ''),
                 start: job.date,
-                end: endDateString, // Exclusive end date
-                allDay: true, // Mark as all-day event
+                end: endDate.toISOString().split('T')[0],
+                allDay: true,
                 backgroundColor: workerColor,
                 borderColor: workerColor,
                 extendedProps: {
