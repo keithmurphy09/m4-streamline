@@ -2309,15 +2309,17 @@ function renderCalendar() {
             const assignedWorker = teamMembers.find(m => m.id === job.assigned_to);
             const workerColor = assignedWorker?.color || '#14b8a6';
             const workerName = assignedWorker?.name || 'Unassigned';
-            const duration = parseInt(job.duration) || 1; // FORCE to integer!
+            const duration = parseInt(job.duration) || 1;
             
-            // Calculate end date - BACK TO ORIGINAL WORKING CODE
-            const startDate = new Date(job.date + 'T' + job.time);
-            const endDate = new Date(startDate);
-            endDate.setDate(endDate.getDate() + duration);
-            const endDateString = endDate.toISOString().split('T')[0];
+            // Calculate end date using simple string math to avoid timezone
+            const [year, month, day] = job.date.split('-').map(Number);
+            const endDateObj = new Date(year, month - 1, day + duration); // Add duration to day
+            const endYear = endDateObj.getFullYear();
+            const endMonth = String(endDateObj.getMonth() + 1).padStart(2, '0');
+            const endDay = String(endDateObj.getDate()).padStart(2, '0');
+            const endDateString = `${endYear}-${endMonth}-${endDay}`;
             
-            console.log(`  Job: ${job.title}, Start: ${job.date}, Duration: ${duration}, End: ${endDateString}, StartObj: ${startDate}, EndObj: ${endDate}`);
+            console.log(`  Job: ${job.title}, Start: ${job.date}, Duration: ${duration}, End: ${endDateString}`);
             
             return {
                 title: job.title + (client ? ' - ' + client.name : '') + ' (' + workerName + ')' + (duration > 1 ? ` [${duration} days]` : ''),
