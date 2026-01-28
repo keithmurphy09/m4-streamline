@@ -2297,9 +2297,9 @@ async function acceptQuote(quoteId, shareToken) {
         
         // Build team members display
         const teamDisplay = assignedWorkers.length > 0 
-            ? `<div class="mt-2">
-                ${assignedWorkers.map(w => `<div class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
-                    <span class="w-3 h-3 rounded-full" style="background-color: ${w.color || '#14b8a6'}"></span>
+            ? `<div class="mt-2 max-h-20 overflow-y-auto space-y-1">
+                ${assignedWorkers.map(w => `<div class="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <span class="w-3 h-3 rounded-full flex-shrink-0" style="background-color: ${w.color || '#14b8a6'}"></span>
                     <span>👤 ${w.name}${w.occupation ? ' - ' + w.occupation : ''}</span>
                 </div>`).join('')}
                </div>`
