@@ -2309,7 +2309,7 @@ function renderCalendar() {
             const assignedWorker = teamMembers.find(m => m.id === job.assigned_to);
             const workerColor = assignedWorker?.color || '#14b8a6';
             const workerName = assignedWorker?.name || 'Unassigned';
-            const duration = job.duration || 1;
+            const duration = parseInt(job.duration) || 1; // FORCE to integer!
             
             // Calculate end date - BACK TO ORIGINAL WORKING CODE
             const startDate = new Date(job.date + 'T' + job.time);
