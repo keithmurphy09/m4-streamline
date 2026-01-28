@@ -2748,13 +2748,14 @@ function renderCalendar() {
         }
         
         async function addExpenseWithReceipt() {
+            const jobIdValue = document.getElementById('job_id')?.value;
             const expenseData = {
                 date: document.getElementById('expense_date').value,
                 amount: parseFloat(document.getElementById('expense_amount').value),
                 category: document.getElementById('expense_category').value,
                 description: document.getElementById('expense_description').value,
                 team_member_id: document.getElementById('team_member_id')?.value || null,
-                job_id: document.getElementById('job_id')?.value || null,
+                job_id: jobIdValue && jobIdValue !== '' ? jobIdValue : null,
                 user_id: currentUser.id
             };
             
@@ -2777,13 +2778,14 @@ function renderCalendar() {
         }
         
         async function updateExpenseWithReceipt(id) {
+            const jobIdValue = document.getElementById('job_id')?.value;
             const expenseData = {
                 date: document.getElementById('expense_date').value,
                 amount: parseFloat(document.getElementById('expense_amount').value),
                 category: document.getElementById('expense_category').value,
                 description: document.getElementById('expense_description').value,
                 team_member_id: document.getElementById('team_member_id')?.value || null,
-                job_id: document.getElementById('job_id')?.value || null
+                job_id: jobIdValue && jobIdValue !== '' ? jobIdValue : null
             };
             
             // Upload new receipt if one was selected
