@@ -428,20 +428,25 @@
             renderApp(); 
         }
         
-        async function addJob(job) { 
+        async function addJob(job) {
+    if (isSubmitting) return; // Prevent double submission
+    isSubmitting = true;
+    
     const jobData = { ...job, user_id: currentUser.id, photos: [] };
     console.log('Inserting job data:', jobData);
     const { data, error } = await supabaseClient.from('jobs').insert([jobData]).select(); 
     if (error) {
         console.error('Error inserting job:', error);
         alert('Error creating job: ' + error.message);
+        isSubmitting = false;
         return;
     }
     if (data) { 
         jobs.push(data[0]); 
         closeModal(); 
         renderApp(); 
-    } 
+    }
+    isSubmitting = false;
 }
         
         function saveJob() {
@@ -519,7 +524,12 @@
             renderApp(); 
         }
         
+        let isSubmitting = false; // Prevent double submissions
+        
         async function addQuote(quote) {
+    if (isSubmitting) return; // Prevent double submission
+    isSubmitting = true;
+    
     const shareToken = 'q_' + Math.random().toString(36).substring(2, 15);
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + 30);
@@ -541,6 +551,7 @@
         activeTab = 'quotes';  // Switch to quotes tab
         renderApp();
     }
+    isSubmitting = false;
 }
 
 async function acceptQuote(quoteId, shareToken) {
@@ -2300,11 +2311,19 @@ function renderCalendar() {
             const workerName = assignedWorker?.name || 'Unassigned';
             const duration = job.duration || 1;
             
-            // EMERGENCY FIX - Calculate end date using simple date string
-            // For FullCalendar: 1 day job needs end = start + 1 day
-            const startDateObj = new Date(job.date + 'T12:00:00'); // Noon to avoid timezone issues
-            startDateObj.setDate(startDateObj.getDate() + duration);
-            const endDateString = startDateObj.toISOString().split('T')[0];
+            // BULLETPROOF date calculation - parse as UTC to avoid timezone shift
+            const dateParts = job.date.split('-');
+            const year = parseInt(dateParts[0]);
+            const month = parseInt(dateParts[1]) - 1; // 0-indexed
+            const day = parseInt(dateParts[2]);
+            
+            const startDate = new Date(Date.UTC(year, month, day));
+            const endDate = new Date(Date.UTC(year, month, day + duration));
+            
+            const endYear = endDate.getUTCFullYear();
+            const endMonth = String(endDate.getUTCMonth() + 1).padStart(2, '0');
+            const endDay = String(endDate.getUTCDate()).padStart(2, '0');
+            const endDateString = `${endYear}-${endMonth}-${endDay}`;
             
             console.log(`  Job: ${job.title}, Start: ${job.date}, Duration: ${duration}, End: ${endDateString}`);
             
