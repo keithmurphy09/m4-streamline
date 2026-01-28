@@ -102,6 +102,13 @@ For licensing inquiries, contact: [your-email@domain.com]
         let invoiceSearch = '';
         let jobSearch = '';
         let expenseSearch = '';
+        
+        // Bulk selection tracking
+        let selectedQuotes = [];
+        let selectedInvoices = [];
+        let selectedJobs = [];
+        let selectedExpenses = [];
+        let selectedClients = [];
         let invoiceFilter = 'unpaid';
         let expenseFilter = 'all'; // 'all' or 'YYYY-MM' format
         let analyticsChartRange = 'current'; // 'current', '3months', '6months', '12months', 'all'
@@ -448,6 +455,113 @@ For licensing inquiries, contact: [your-email@domain.com]
                 notification.style.transition = 'opacity 0.3s';
                 setTimeout(() => notification.remove(), 300);
             }, 3000);
+        }
+        
+        // Bulk selection functions
+        function toggleSelection(type, id) {
+            const selectedArray = type === 'quotes' ? selectedQuotes : 
+                                  type === 'invoices' ? selectedInvoices :
+                                  type === 'jobs' ? selectedJobs :
+                                  type === 'expenses' ? selectedExpenses :
+                                  selectedClients;
+            
+            const index = selectedArray.indexOf(id);
+            if (index > -1) {
+                selectedArray.splice(index, 1);
+            } else {
+                selectedArray.push(id);
+            }
+            renderApp();
+        }
+        
+        function toggleSelectAll(type) {
+            const selectedArray = type === 'quotes' ? selectedQuotes : 
+                                  type === 'invoices' ? selectedInvoices :
+                                  type === 'jobs' ? selectedJobs :
+                                  type === 'expenses' ? selectedExpenses :
+                                  selectedClients;
+            
+            const allItems = type === 'quotes' ? quotes : 
+                             type === 'invoices' ? invoices :
+                             type === 'jobs' ? jobs :
+                             type === 'expenses' ? expenses :
+                             clients;
+            
+            if (selectedArray.length === allItems.length) {
+                // Deselect all
+                selectedArray.length = 0;
+            } else {
+                // Select all
+                selectedArray.length = 0;
+                allItems.forEach(item => selectedArray.push(item.id));
+            }
+            renderApp();
+        }
+        
+        async function bulkDelete(type) {
+            const selectedArray = type === 'quotes' ? selectedQuotes : 
+                                  type === 'invoices' ? selectedInvoices :
+                                  type === 'jobs' ? selectedJobs :
+                                  type === 'expenses' ? selectedExpenses :
+                                  selectedClients;
+            
+            if (selectedArray.length === 0) {
+                showNotification('No items selected', 'error');
+                return;
+            }
+            
+            const count = selectedArray.length;
+            const itemType = type.slice(0, -1); // Remove 's' from end
+            
+            if (!confirm(`Delete ${count} ${count === 1 ? itemType : type}? This cannot be undone.`)) {
+                return;
+            }
+            
+            try {
+                isLoading = true;
+                loadingMessage = `Deleting ${count} ${count === 1 ? itemType : type}...`;
+                renderApp();
+                
+                const tableName = type === 'jobs' ? 'jobs' : 
+                                  type === 'quotes' ? 'quotes' :
+                                  type === 'invoices' ? 'invoices' :
+                                  type === 'expenses' ? 'expenses' :
+                                  'clients';
+                
+                // Delete from database
+                const { error } = await supabaseClient
+                    .from(tableName)
+                    .delete()
+                    .in('id', selectedArray);
+                
+                if (error) throw error;
+                
+                // Remove from local arrays
+                if (type === 'quotes') {
+                    quotes = quotes.filter(q => !selectedArray.includes(q.id));
+                    selectedQuotes = [];
+                } else if (type === 'invoices') {
+                    invoices = invoices.filter(i => !selectedArray.includes(i.id));
+                    selectedInvoices = [];
+                } else if (type === 'jobs') {
+                    jobs = jobs.filter(j => !selectedArray.includes(j.id));
+                    selectedJobs = [];
+                } else if (type === 'expenses') {
+                    expenses = expenses.filter(e => !selectedArray.includes(e.id));
+                    selectedExpenses = [];
+                } else if (type === 'clients') {
+                    clients = clients.filter(c => !selectedArray.includes(c.id));
+                    selectedClients = [];
+                }
+                
+                showNotification(`${count} ${count === 1 ? itemType : type} deleted successfully!`);
+            } catch (error) {
+                console.error('Bulk delete error:', error);
+                showNotification(`Failed to delete ${type}: ` + error.message, 'error');
+            } finally {
+                isLoading = false;
+                renderApp();
+            }
         }
         
         async function addClient(client) {
@@ -2975,12 +3089,46 @@ function renderCalendar() {
         const isAccepted = q.accepted || q.status === 'accepted';
         const isConverted = q.status === 'converted';
         const isNewQuote = lastCreatedQuote && lastCreatedQuote.id === q.id;
-        return `<div class="bg-white p-4 rounded-lg shadow ${isAccepted ? 'border-l-4 border-green-500' : ''} ${isConverted ? 'border-l-4 border-gray-400' : ''} ${isNewQuote ? 'ring-2 ring-green-400' : ''}"><div class="flex flex-col sm:flex-row sm:justify-between gap-2 mb-3"><div><h3 class="text-lg font-semibold">${q.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p>${isAccepted ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mt-1 inline-block">✓ ACCEPTED</span>' : ''}${isConverted ? '<span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded mt-1 inline-block ml-2">✓ CONVERTED</span>' : ''}</div><p class="text-2xl font-bold text-teal-500">$${q.total?.toFixed(2)}</p></div>${q.notes ? `<p class="text-sm text-gray-600 italic mb-3">${q.notes}</p>` : ''}${isConverted ? '<p class="text-xs text-gray-500 italic mb-3">This quote has been converted to an invoice</p>' : ''}<div class="flex gap-2 flex-wrap">${isAccepted || isConverted ? `<button onclick='openJobFromQuote(${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-teal-600 text-white rounded text-sm whitespace-nowrap">📅 Schedule Job</button>` : ''}${!isAccepted && !isConverted ? `<button onclick='openModal("quote", ${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>` : ''}${!isConverted ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm whitespace-nowrap">Convert to Invoice</button>` : ''}<button onclick='generatePDF("quote", ${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm whitespace-nowrap">Download PDF</button><button onclick='sendQuoteEmail(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-purple-600 text-white rounded text-sm whitespace-nowrap">📧 Email</button>${client?.phone && smsSettings?.enabled ? `<button onclick='sendQuoteSMS(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm whitespace-nowrap">📱 SMS</button>` : ''}<label class="cursor-pointer px-3 py-1 bg-orange-600 text-white rounded text-sm whitespace-nowrap"><input type="file" accept="image/*,.pdf,.doc,.docx,.txt" onchange="uploadQuoteFile(this, '${q.id}')" class="hidden" />📎 Upload File</label><button onclick="viewQuoteFiles('${q.id}')" class="px-3 py-1 bg-gray-600 text-white rounded text-sm whitespace-nowrap">📁 View Files</button><button onclick="deleteQuote('${q.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div></div>`; 
+        const isSelected = selectedQuotes.includes(q.id);
+        return `<div class="bg-white p-4 rounded-lg shadow ${isAccepted ? 'border-l-4 border-green-500' : ''} ${isConverted ? 'border-l-4 border-gray-400' : ''} ${isNewQuote ? 'ring-2 ring-green-400' : ''} ${isSelected ? 'ring-2 ring-blue-400' : ''}">
+            <div class="flex gap-3">
+                <div class="flex items-start pt-1">
+                    <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelection('quotes', '${q.id}')" class="w-5 h-5 text-blue-600 rounded">
+                </div>
+                <div class="flex-1">
+                    <div class="flex flex-col sm:flex-row sm:justify-between gap-2 mb-3">
+                        <div><h3 class="text-lg font-semibold">${q.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p>${isAccepted ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mt-1 inline-block">✓ ACCEPTED</span>' : ''}${isConverted ? '<span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded mt-1 inline-block ml-2">✓ CONVERTED</span>' : ''}</div><p class="text-2xl font-bold text-teal-500">$${q.total?.toFixed(2)}</p>
+                    </div>
+                    ${q.notes ? `<p class="text-sm text-gray-600 italic mb-3">${q.notes}</p>` : ''}
+                    ${isConverted ? '<p class="text-xs text-gray-500 italic mb-3">This quote has been converted to an invoice</p>' : ''}
+                    <div class="flex gap-2 flex-wrap">${isAccepted || isConverted ? `<button onclick='openJobFromQuote(${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-teal-600 text-white rounded text-sm whitespace-nowrap">📅 Schedule Job</button>` : ''}${!isAccepted && !isConverted ? `<button onclick='openModal("quote", ${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>` : ''}${!isConverted ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm whitespace-nowrap">Convert to Invoice</button>` : ''}<button onclick='generatePDF("quote", ${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm whitespace-nowrap">Download PDF</button><button onclick='sendQuoteEmail(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-purple-600 text-white rounded text-sm whitespace-nowrap">📧 Email</button>${client?.phone && smsSettings?.enabled ? `<button onclick='sendQuoteSMS(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm whitespace-nowrap">📱 SMS</button>` : ''}<label class="cursor-pointer px-3 py-1 bg-orange-600 text-white rounded text-sm whitespace-nowrap"><input type="file" accept="image/*,.pdf,.doc,.docx,.txt" onchange="uploadQuoteFile(this, '${q.id}')" class="hidden" />📎 Upload File</label><button onclick="viewQuoteFiles('${q.id}')" class="px-3 py-1 bg-gray-600 text-white rounded text-sm whitespace-nowrap">📁 View Files</button><button onclick="deleteQuote('${q.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div>
+                </div>
+            </div>
+        </div>`; 
     }).join('');
     
     const pagination = getPaginationHTML('quotes', totalQuotes, currentPage.quotes);
     
-    return `<div>${successNotification}<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold">Quotes</h2><div class="flex flex-wrap gap-2"><button onclick="exportToCSV('quotes')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><button onclick="openModal('quote')" class="bg-black text-white px-3 sm:px-4 py-2 rounded-lg border border-teal-400 text-sm whitespace-nowrap">+ Create Quote</button></div></div><input type="text" placeholder="🔍 Search quotes..." value="${quoteSearch}" oninput="quoteSearch=this.value; currentPage.quotes=1; renderApp();" class="w-full px-4 py-2 border rounded-lg mb-4"><div class="grid gap-4">${quotesList}</div>${pagination}</div>`;
+    const bulkActions = selectedQuotes.length > 0 ? `
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex items-center justify-between">
+            <span class="text-sm font-medium text-blue-900">${selectedQuotes.length} quote${selectedQuotes.length > 1 ? 's' : ''} selected</span>
+            <button onclick="bulkDelete('quotes')" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium">
+                🗑️ Delete Selected
+            </button>
+        </div>
+    ` : '';
+    
+    const selectAllCheckbox = paginatedQuotes.length > 0 ? `
+        <div class="flex items-center gap-2 mb-4">
+            <input type="checkbox" 
+                   ${selectedQuotes.length === quotes.length && quotes.length > 0 ? 'checked' : ''} 
+                   onchange="toggleSelectAll('quotes')" 
+                   class="w-5 h-5 text-blue-600 rounded">
+            <label class="text-sm font-medium text-gray-700">Select All</label>
+        </div>
+    ` : '';
+    
+    return `<div>${successNotification}<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold">Quotes</h2><div class="flex flex-wrap gap-2"><button onclick="exportToCSV('quotes')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><button onclick="openModal('quote')" class="bg-black text-white px-3 sm:px-4 py-2 rounded-lg border border-teal-400 text-sm whitespace-nowrap">+ Create Quote</button></div></div><input type="text" placeholder="🔍 Search quotes..." value="${quoteSearch}" oninput="quoteSearch=this.value; currentPage.quotes=1; renderApp();" class="w-full px-4 py-2 border rounded-lg mb-4">${bulkActions}${selectAllCheckbox}<div class="grid gap-4">${quotesList}</div>${pagination}</div>`;
 }
         
         function renderInvoices() {
