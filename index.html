@@ -2339,7 +2339,7 @@ function renderCalendar() {
             center: 'title',
             right: 'dayGridMonth,timeGridWeek'
         },
-        events: filteredJobs.map(job => {
+        events: filteredJobs.flatMap(job => {
             const client = clients.find(c => c.id === job.client_id);
             
             // Get all assigned team members
@@ -2350,37 +2350,40 @@ function renderCalendar() {
             const backgroundColor = assignedWorkers[0]?.color || '#14b8a6';
             const duration = parseInt(job.duration) || 1;
             
-            // Calculate end date
-            const [year, month, day] = job.date.split('-').map(Number);
-            const endDateObj = new Date(year, month - 1, day + duration);
-            const endYear = endDateObj.getFullYear();
-            const endMonth = String(endDateObj.getMonth() + 1).padStart(2, '0');
-            const endDay = String(endDateObj.getDate()).padStart(2, '0');
-            const endDateString = `${endYear}-${endMonth}-${endDay}`;
-            
             // Build title with team member dots
-            let eventTitle = job.title;
+            let eventTitle = '';
             if (assignedWorkers.length > 0) {
                 const workerDots = assignedWorkers.map(w => `●${w.name.split(' ')[0]}`).join(' ');
-                eventTitle = `${workerDots} ${eventTitle}`;
+                eventTitle = `${workerDots} `;
             }
+            eventTitle += `${job.title}`;
             if (client) eventTitle += ` - ${client.name}`;
             
-            return {
-                title: eventTitle,
-                start: job.date,
-                end: endDateString,
-                allDay: true,
-                backgroundColor: backgroundColor,
-                borderColor: backgroundColor,
-                textColor: '#ffffff',
-                extendedProps: {
-                    jobId: job.id,
-                    client: client?.name,
-                    workers: assignedWorkers,
-                    duration: duration
-                }
-            };
+            // Create separate event for each day of the job
+            const events = [];
+            for (let i = 0; i < duration; i++) {
+                const [year, month, day] = job.date.split('-').map(Number);
+                const eventDate = new Date(year, month - 1, day + i);
+                const eventDateString = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}-${String(eventDate.getDate()).padStart(2, '0')}`;
+                
+                events.push({
+                    title: eventTitle + (duration > 1 ? ` (Day ${i + 1}/${duration})` : ''),
+                    start: eventDateString,
+                    allDay: true,
+                    backgroundColor: backgroundColor,
+                    borderColor: backgroundColor,
+                    textColor: '#ffffff',
+                    extendedProps: {
+                        jobId: job.id,
+                        client: client?.name,
+                        workers: assignedWorkers,
+                        duration: duration,
+                        dayNumber: i + 1
+                    }
+                });
+            }
+            
+            return events;
         }),
         eventDidMount: function(info) {
             // Add custom styling for multi-worker jobs
