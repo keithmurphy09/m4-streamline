@@ -485,51 +485,92 @@ For licensing inquiries, contact: [your-email@domain.com]
         }
         
         async function updateClient(id) {
-            const updatedClient = {
-                name: document.getElementById('name').value,
-                email: document.getElementById('email').value,
-                phone: document.getElementById('phone').value,
-                address: document.getElementById('address').value,
-                notes: document.getElementById('clientNotes').value
-            };
-            const { data } = await supabaseClient.from('clients').update(updatedClient).eq('id', id).select();
-            if (data) {
-                const index = clients.findIndex(c => c.id === id);
-                if (index !== -1) clients[index] = data[0];
-                closeModal();
+            try {
+                isLoading = true;
+                loadingMessage = 'Updating client...';
+                renderApp();
+                
+                const updatedClient = {
+                    name: document.getElementById('name').value,
+                    email: document.getElementById('email').value,
+                    phone: document.getElementById('phone').value,
+                    address: document.getElementById('address').value,
+                    notes: document.getElementById('clientNotes').value
+                };
+                
+                const { data, error } = await supabaseClient.from('clients').update(updatedClient).eq('id', id).select();
+                
+                if (error) throw error;
+                
+                if (data) {
+                    const index = clients.findIndex(c => c.id === id);
+                    if (index !== -1) clients[index] = data[0];
+                    closeModal();
+                    showNotification('Client updated successfully!');
+                }
+            } catch (error) {
+                console.error('Error updating client:', error);
+                showNotification('Failed to update client: ' + error.message, 'error');
+            } finally {
+                isLoading = false;
                 renderApp();
             }
         }
         
         async function deleteClient(id) {
-            const client = clients.find(c => c.id === id);
-            if (!confirm(`Are you sure you want to delete ${client?.name || 'this client'}? This action cannot be undone.`)) {
-                return;
+            try {
+                const client = clients.find(c => c.id === id);
+                if (!confirm(`Are you sure you want to delete ${client?.name || 'this client'}? This action cannot be undone.`)) {
+                    return;
+                }
+                
+                isLoading = true;
+                loadingMessage = 'Deleting client...';
+                renderApp();
+                
+                const { error } = await supabaseClient.from('clients').delete().eq('id', id);
+                
+                if (error) throw error;
+                
+                clients = clients.filter(c => c.id !== id);
+                showNotification('Client deleted successfully!');
+            } catch (error) {
+                console.error('Error deleting client:', error);
+                showNotification('Failed to delete client: ' + error.message, 'error');
+            } finally {
+                isLoading = false;
+                renderApp();
             }
-            await supabaseClient.from('clients').delete().eq('id', id); 
-            clients = clients.filter(c => c.id !== id); 
-            renderApp(); 
         }
         
         async function addJob(job) {
-    if (isSubmitting) return; // Prevent double submission
+    if (isSubmitting) return;
     isSubmitting = true;
     
-    const jobData = { ...job, user_id: currentUser.id, photos: [] };
-    console.log('Inserting job data:', jobData);
-    const { data, error } = await supabaseClient.from('jobs').insert([jobData]).select(); 
-    if (error) {
-        console.error('Error inserting job:', error);
-        alert('Error creating job: ' + error.message);
+    try {
+        isLoading = true;
+        loadingMessage = 'Creating job...';
+        renderApp();
+        
+        const jobData = { ...job, user_id: currentUser.id, photos: [] };
+        console.log('Inserting job data:', jobData);
+        const { data, error } = await supabaseClient.from('jobs').insert([jobData]).select();
+        
+        if (error) throw error;
+        
+        if (data) { 
+            jobs.push(data[0]); 
+            closeModal();
+            showNotification('Job created successfully!');
+        }
+    } catch (error) {
+        console.error('Error creating job:', error);
+        showNotification('Failed to create job: ' + error.message, 'error');
+    } finally {
+        isLoading = false;
         isSubmitting = false;
-        return;
+        renderApp();
     }
-    if (data) { 
-        jobs.push(data[0]); 
-        closeModal(); 
-        renderApp(); 
-    }
-    isSubmitting = false;
 }
         
         function saveJob() {
@@ -574,54 +615,82 @@ For licensing inquiries, contact: [your-email@domain.com]
         }
         
         async function updateJob(id) {
-            let timeValue = document.getElementById('time').value;
-            // Default to 6am if no time selected
-            if (!timeValue) {
-                timeValue = '06:00';
-            }
-            
-            const duration = parseInt(document.getElementById('duration').value) || 1;
-            
-            const updatedJob = {
-                client_id: document.getElementById('client_id').value,
-                title: document.getElementById('title').value,
-                date: document.getElementById('date').value,
-                time: timeValue,
-                duration: duration,
-                notes: document.getElementById('notes').value,
-                status: document.getElementById('jobStatus').value
-            };
-            
-            // Collect all checked team members
-            const checkedWorkers = Array.from(document.querySelectorAll('.worker-checkbox:checked'))
-                .map(cb => cb.value);
-            
-            if (checkedWorkers.length > 0) {
-                updatedJob.assigned_team_members = checkedWorkers;
-                // Set first worker as primary for backward compatibility
-                updatedJob.assigned_to = checkedWorkers[0];
-            } else {
-                updatedJob.assigned_team_members = [];
-                updatedJob.assigned_to = null;
-            }
-            
-            const { data } = await supabaseClient.from('jobs').update(updatedJob).eq('id', id).select();
-            if (data) {
-                const index = jobs.findIndex(j => j.id === id);
-                if (index !== -1) jobs[index] = data[0];
-                closeModal();
+            try {
+                isLoading = true;
+                loadingMessage = 'Updating job...';
+                renderApp();
+                
+                let timeValue = document.getElementById('time').value;
+                if (!timeValue) {
+                    timeValue = '06:00';
+                }
+                
+                const duration = parseInt(document.getElementById('duration').value) || 1;
+                
+                const updatedJob = {
+                    client_id: document.getElementById('client_id').value,
+                    title: document.getElementById('title').value,
+                    date: document.getElementById('date').value,
+                    time: timeValue,
+                    duration: duration,
+                    notes: document.getElementById('notes').value,
+                    status: document.getElementById('jobStatus').value
+                };
+                
+                const checkedWorkers = Array.from(document.querySelectorAll('.worker-checkbox:checked'))
+                    .map(cb => cb.value);
+                
+                if (checkedWorkers.length > 0) {
+                    updatedJob.assigned_team_members = checkedWorkers;
+                    updatedJob.assigned_to = checkedWorkers[0];
+                } else {
+                    updatedJob.assigned_team_members = [];
+                    updatedJob.assigned_to = null;
+                }
+                
+                const { data, error } = await supabaseClient.from('jobs').update(updatedJob).eq('id', id).select();
+                
+                if (error) throw error;
+                
+                if (data) {
+                    const index = jobs.findIndex(j => j.id === id);
+                    if (index !== -1) jobs[index] = data[0];
+                    closeModal();
+                    showNotification('Job updated successfully!');
+                }
+            } catch (error) {
+                console.error('Error updating job:', error);
+                showNotification('Failed to update job: ' + error.message, 'error');
+            } finally {
+                isLoading = false;
                 renderApp();
             }
         }
         
         async function deleteJob(id) {
-            const job = jobs.find(j => j.id === id);
-            if (!confirm(`Are you sure you want to delete the job "${job?.title || 'this job'}"? This action cannot be undone.`)) {
-                return;
+            try {
+                const job = jobs.find(j => j.id === id);
+                if (!confirm(`Are you sure you want to delete the job "${job?.title || 'this job'}"? This action cannot be undone.`)) {
+                    return;
+                }
+                
+                isLoading = true;
+                loadingMessage = 'Deleting job...';
+                renderApp();
+                
+                const { error } = await supabaseClient.from('jobs').delete().eq('id', id);
+                
+                if (error) throw error;
+                
+                jobs = jobs.filter(j => j.id !== id);
+                showNotification('Job deleted successfully!');
+            } catch (error) {
+                console.error('Error deleting job:', error);
+                showNotification('Failed to delete job: ' + error.message, 'error');
+            } finally {
+                isLoading = false;
+                renderApp();
             }
-            await supabaseClient.from('jobs').delete().eq('id', id); 
-            jobs = jobs.filter(j => j.id !== id); 
-            renderApp(); 
         }
         
         let isSubmitting = false; // Prevent double submissions
@@ -702,13 +771,29 @@ async function acceptQuote(quoteId, shareToken) {
 }
         
         async function deleteQuote(id) {
-            const quote = quotes.find(q => q.id === id);
-            if (!confirm(`Are you sure you want to delete the quote "${quote?.title || 'this quote'}"? This action cannot be undone.`)) {
-                return;
+            try {
+                const quote = quotes.find(q => q.id === id);
+                if (!confirm(`Are you sure you want to delete the quote "${quote?.title || 'this quote'}"? This action cannot be undone.`)) {
+                    return;
+                }
+                
+                isLoading = true;
+                loadingMessage = 'Deleting quote...';
+                renderApp();
+                
+                const { error } = await supabaseClient.from('quotes').delete().eq('id', id);
+                
+                if (error) throw error;
+                
+                quotes = quotes.filter(q => q.id !== id);
+                showNotification('Quote deleted successfully!');
+            } catch (error) {
+                console.error('Error deleting quote:', error);
+                showNotification('Failed to delete quote: ' + error.message, 'error');
+            } finally {
+                isLoading = false;
+                renderApp();
             }
-            await supabaseClient.from('quotes').delete().eq('id', id); 
-            quotes = quotes.filter(q => q.id !== id); 
-            renderApp(); 
         }
         
         async function convertToInvoice(quote) {
@@ -807,13 +892,29 @@ async function acceptQuote(quoteId, shareToken) {
         }
         
         async function deleteInvoice(id) {
-            const invoice = invoices.find(i => i.id === id);
-            if (!confirm(`Are you sure you want to delete invoice "${invoice?.invoice_number || 'this invoice'}"? This action cannot be undone.`)) {
-                return;
+            try {
+                const invoice = invoices.find(i => i.id === id);
+                if (!confirm(`Are you sure you want to delete invoice "${invoice?.invoice_number || 'this invoice'}"? This action cannot be undone.`)) {
+                    return;
+                }
+                
+                isLoading = true;
+                loadingMessage = 'Deleting invoice...';
+                renderApp();
+                
+                const { error } = await supabaseClient.from('invoices').delete().eq('id', id);
+                
+                if (error) throw error;
+                
+                invoices = invoices.filter(i => i.id !== id);
+                showNotification('Invoice deleted successfully!');
+            } catch (error) {
+                console.error('Error deleting invoice:', error);
+                showNotification('Failed to delete invoice: ' + error.message, 'error');
+            } finally {
+                isLoading = false;
+                renderApp();
             }
-            await supabaseClient.from('invoices').delete().eq('id', id); 
-            invoices = invoices.filter(i => i.id !== id); 
-            renderApp(); 
         }
         
         function openModal(type, item = null) { 
@@ -1877,9 +1978,26 @@ async function acceptQuote(quoteId, shareToken) {
         }
         
         async function deleteTeamMember(id) {
-            if (confirm('Delete this team member?')) {
-                await supabaseClient.from('team_members').delete().eq('id', id);
+            try {
+                if (!confirm('Delete this team member? This action cannot be undone.')) {
+                    return;
+                }
+                
+                isLoading = true;
+                loadingMessage = 'Deleting team member...';
+                renderApp();
+                
+                const { error } = await supabaseClient.from('team_members').delete().eq('id', id);
+                
+                if (error) throw error;
+                
                 teamMembers = teamMembers.filter(m => m.id !== id);
+                showNotification('Team member deleted successfully!');
+            } catch (error) {
+                console.error('Error deleting team member:', error);
+                showNotification('Failed to delete team member: ' + error.message, 'error');
+            } finally {
+                isLoading = false;
                 renderApp();
             }
         }
@@ -3078,9 +3196,26 @@ function renderCalendar() {
         }
         
         async function deleteExpense(id) {
-            if (confirm('Delete this expense?')) {
-                await supabaseClient.from('expenses').delete().eq('id', id);
+            try {
+                if (!confirm('Delete this expense? This action cannot be undone.')) {
+                    return;
+                }
+                
+                isLoading = true;
+                loadingMessage = 'Deleting expense...';
+                renderApp();
+                
+                const { error } = await supabaseClient.from('expenses').delete().eq('id', id);
+                
+                if (error) throw error;
+                
                 expenses = expenses.filter(e => e.id !== id);
+                showNotification('Expense deleted successfully!');
+            } catch (error) {
+                console.error('Error deleting expense:', error);
+                showNotification('Failed to delete expense: ' + error.message, 'error');
+            } finally {
+                isLoading = false;
                 renderApp();
             }
         }
