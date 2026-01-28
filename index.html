@@ -2346,47 +2346,33 @@ function renderCalendar() {
             const assignedTeamIds = job.assigned_team_members || (job.assigned_to ? [job.assigned_to] : []);
             const assignedWorkers = assignedTeamIds.map(id => teamMembers.find(m => m.id === id)).filter(w => w);
             
-            // Use first worker's color as background, or default teal
-            const backgroundColor = assignedWorkers[0]?.color || '#14b8a6';
             const duration = parseInt(job.duration) || 1;
             
-            // Build simple text title with names
-            let eventTitle = '';
+            // Build title with worker dots and names, one per line
+            let eventTitle = job.title;
+            if (client) eventTitle += ` - ${client.name}`;
             if (assignedWorkers.length > 0) {
-                const workerNames = assignedWorkers.map(w => w.name.split(' ')[0]).join(' ');
-                eventTitle = workerNames + ' - ';
+                const workerLines = assignedWorkers.map(w => `● ${w.name.split(' ')[0]}`).join(' ');
+                eventTitle = workerLines + '\n' + eventTitle;
             }
-            eventTitle += `${job.title}`;
-            if (client) eventTitle += ` (${client.name})`;
+            if (duration > 1) {
+                eventTitle += ` (${duration}d)`;
+            }
             
-            // Create separate background event for each day of the job
+            // Create one event per day
             const events = [];
             for (let i = 0; i < duration; i++) {
                 const [year, month, day] = job.date.split('-').map(Number);
                 const eventDate = new Date(year, month - 1, day + i);
                 const eventDateString = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}-${String(eventDate.getDate()).padStart(2, '0')}`;
                 
-                // Background event to fill the cell
                 events.push({
+                    title: eventTitle,
                     start: eventDateString,
                     allDay: true,
-                    display: 'background',
-                    backgroundColor: backgroundColor,
-                    extendedProps: {
-                        jobId: job.id,
-                        isBackground: true
-                    }
-                });
-                
-                // Text event on top
-                events.push({
-                    title: eventTitle + (duration > 1 ? ` [Day ${i + 1}/${duration}]` : ''),
-                    start: eventDateString,
-                    allDay: true,
-                    backgroundColor: 'transparent',
-                    borderColor: 'transparent',
+                    backgroundColor: '#f0f0f0',
+                    borderColor: assignedWorkers[0]?.color || '#14b8a6',
                     textColor: '#000000',
-                    classNames: ['job-text-event'],
                     extendedProps: {
                         jobId: job.id,
                         client: client?.name,
@@ -2400,9 +2386,6 @@ function renderCalendar() {
             return events;
         }),
         eventClick: function(info) {
-            // Don't handle clicks on background events
-            if (info.event.extendedProps.isBackground) return;
-            
             const job = jobs.find(j => j.id === info.event.extendedProps.jobId);
             if (job) {
                 const workers = info.event.extendedProps.workers || [];
