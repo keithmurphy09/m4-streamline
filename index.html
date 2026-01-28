@@ -2350,16 +2350,19 @@ function renderCalendar() {
             const backgroundColor = assignedWorkers[0]?.color || '#14b8a6';
             const duration = parseInt(job.duration) || 1;
             
-            // Build title with team member dots
+            // Build title with team member colored dots
             let eventTitle = '';
             if (assignedWorkers.length > 0) {
-                const workerDots = assignedWorkers.map(w => `●${w.name.split(' ')[0]}`).join(' ');
-                eventTitle = `${workerDots} `;
+                // Create colored circle HTML for each worker
+                const workerCircles = assignedWorkers.map(w => 
+                    `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${w.color};margin-right:3px;"></span>${w.name.split(' ')[0]}`
+                ).join(' ');
+                eventTitle = workerCircles + ' ';
             }
             eventTitle += `${job.title}`;
             if (client) eventTitle += ` - ${client.name}`;
             
-            // Create separate event for each day of the job
+            // Create separate background event for each day of the job
             const events = [];
             for (let i = 0; i < duration; i++) {
                 const [year, month, day] = job.date.split('-').map(Number);
@@ -2367,12 +2370,29 @@ function renderCalendar() {
                 const eventDateString = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}-${String(eventDate.getDate()).padStart(2, '0')}`;
                 
                 events.push({
-                    title: eventTitle + (duration > 1 ? ` (Day ${i + 1}/${duration})` : ''),
+                    title: eventTitle,
                     start: eventDateString,
                     allDay: true,
-                    backgroundColor: backgroundColor,
-                    borderColor: backgroundColor,
-                    textColor: '#ffffff',
+                    display: 'background',
+                    backgroundColor: backgroundColor + 'CC', // Add transparency
+                    extendedProps: {
+                        jobId: job.id,
+                        client: client?.name,
+                        workers: assignedWorkers,
+                        duration: duration,
+                        dayNumber: i + 1,
+                        totalDays: duration
+                    }
+                });
+                
+                // Add a regular event on top for the text
+                events.push({
+                    title: eventTitle + (duration > 1 ? ` (${i + 1}/${duration})` : ''),
+                    start: eventDateString,
+                    allDay: true,
+                    backgroundColor: 'transparent',
+                    borderColor: 'transparent',
+                    textColor: '#000000',
                     extendedProps: {
                         jobId: job.id,
                         client: client?.name,
@@ -2385,20 +2405,6 @@ function renderCalendar() {
             
             return events;
         }),
-        eventDidMount: function(info) {
-            // Add custom styling for multi-worker jobs
-            const workers = info.event.extendedProps.workers || [];
-            if (workers.length > 1) {
-                // Add colored dots for each worker
-                const dotsHtml = workers.map(w => 
-                    `<span style="color: ${w.color}; font-size: 18px; line-height: 1;">●</span>`
-                ).join(' ');
-                const titleEl = info.el.querySelector('.fc-event-title');
-                if (titleEl) {
-                    titleEl.innerHTML = `${dotsHtml} ${titleEl.textContent}`;
-                }
-            }
-        },
         eventClick: function(info) {
             const job = jobs.find(j => j.id === info.event.extendedProps.jobId);
             if (job) {
