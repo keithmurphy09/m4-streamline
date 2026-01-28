@@ -2348,16 +2348,14 @@ function renderCalendar() {
             
             const duration = parseInt(job.duration) || 1;
             
-            // Build title with worker dots and names, one per line
-            let eventTitle = job.title;
-            if (client) eventTitle += ` - ${client.name}`;
+            // Build title with workers listed vertically, then job info
+            let eventTitle = '';
             if (assignedWorkers.length > 0) {
-                const workerLines = assignedWorkers.map(w => `● ${w.name.split(' ')[0]}`).join(' ');
-                eventTitle = workerLines + '\n' + eventTitle;
+                eventTitle = assignedWorkers.map(w => `● ${w.name}`).join('\n');
+                eventTitle += '\n';
             }
-            if (duration > 1) {
-                eventTitle += ` (${duration}d)`;
-            }
+            eventTitle += `${job.title}`;
+            if (client) eventTitle += `\n${client.name}`;
             
             // Create one event per day
             const events = [];
@@ -2366,13 +2364,17 @@ function renderCalendar() {
                 const eventDate = new Date(year, month - 1, day + i);
                 const eventDateString = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}-${String(eventDate.getDate()).padStart(2, '0')}`;
                 
+                // Use first worker's color as border
+                const borderColor = assignedWorkers[0]?.color || '#14b8a6';
+                
                 events.push({
                     title: eventTitle,
                     start: eventDateString,
                     allDay: true,
-                    backgroundColor: '#f0f0f0',
-                    borderColor: assignedWorkers[0]?.color || '#14b8a6',
+                    backgroundColor: '#ffffff',
+                    borderColor: borderColor,
                     textColor: '#000000',
+                    borderWidth: 3,
                     extendedProps: {
                         jobId: job.id,
                         client: client?.name,
