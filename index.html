@@ -2311,14 +2311,14 @@ function renderCalendar() {
             const workerName = assignedWorker?.name || 'Unassigned';
             const duration = job.duration || 1;
             
-            // BULLETPROOF date calculation - parse as UTC to avoid timezone shift
+            // FINAL BULLETPROOF FIX - Create date, then add days using setUTCDate
             const dateParts = job.date.split('-');
             const year = parseInt(dateParts[0]);
             const month = parseInt(dateParts[1]) - 1; // 0-indexed
             const day = parseInt(dateParts[2]);
             
-            const startDate = new Date(Date.UTC(year, month, day));
-            const endDate = new Date(Date.UTC(year, month, day + duration));
+            const endDate = new Date(Date.UTC(year, month, day));
+            endDate.setUTCDate(endDate.getUTCDate() + duration); // Add days properly
             
             const endYear = endDate.getUTCFullYear();
             const endMonth = String(endDate.getUTCMonth() + 1).padStart(2, '0');
