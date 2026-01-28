@@ -2943,7 +2943,7 @@ function renderCalendar() {
                 }
                 // Pre-generate quote number for new quotes or show existing for editing
                 const displayQuoteNumber = isEditing ? quoteNumber : `QT-${String(quotes.length + 1).padStart(3, '0')}`;
-                const titleField = `<input type="text" id="title" value="${displayQuoteNumber}" class="w-full px-4 py-2 border rounded mb-3 bg-gray-100" readonly>`;
+                const titleField = `<div class="mb-3"><label class="block text-sm font-medium mb-1">Quote/PO Number</label><input type="text" id="title" value="${displayQuoteNumber}" class="w-full px-4 py-2 border rounded" placeholder="QT-001 or PO-12345"><p class="text-xs text-gray-500 mt-1">💡 Auto-generated, but you can edit it (e.g., use customer's PO number)</p></div>`;
                 
                 // Job address field with auto-fill from client
                 const addressField = `<div class="mb-3"><label class="block text-sm font-medium mb-1">Job Address</label><textarea id="job_address" placeholder="Job site address (auto-fills from client)" class="w-full px-4 py-2 border rounded" rows="2">${jobAddress}</textarea><p class="text-xs text-gray-500 mt-1">💡 Defaults to client address, edit if job is at different location</p></div>`;
