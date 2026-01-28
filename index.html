@@ -2315,11 +2315,14 @@ function renderCalendar() {
             const startDate = new Date(job.date + 'T' + job.time);
             const endDate = new Date(startDate);
             endDate.setDate(endDate.getDate() + duration);
+            const endDateString = endDate.toISOString().split('T')[0];
+            
+            console.log(`  Job: ${job.title}, Start: ${job.date}, Duration: ${duration}, End: ${endDateString}, StartObj: ${startDate}, EndObj: ${endDate}`);
             
             return {
                 title: job.title + (client ? ' - ' + client.name : '') + ' (' + workerName + ')' + (duration > 1 ? ` [${duration} days]` : ''),
                 start: job.date,
-                end: endDate.toISOString().split('T')[0],
+                end: endDateString,
                 allDay: true,
                 backgroundColor: workerColor,
                 borderColor: workerColor,
