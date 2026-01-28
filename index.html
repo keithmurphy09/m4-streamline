@@ -2749,13 +2749,33 @@ function renderCalendar() {
         
         async function addExpenseWithReceipt() {
             const jobIdValue = document.getElementById('job_id')?.value;
+            const description = document.getElementById('expense_description').value;
+            
+            // If a job/quote is selected, append it to description
+            let finalDescription = description;
+            if (jobIdValue && jobIdValue !== '') {
+                const jobOptions = [];
+                quotes.forEach(q => {
+                    const client = clients.find(c => c.id === q.client_id);
+                    jobOptions.push({ id: `quote_${q.id}`, display: `${q.title}${client ? ' - ' + client.name : ''}` });
+                });
+                jobs.forEach(j => {
+                    const client = clients.find(c => c.id === j.client_id);
+                    jobOptions.push({ id: `job_${j.id}`, display: `${j.title}${client ? ' - ' + client.name : ''}` });
+                });
+                const selectedJob = jobOptions.find(opt => opt.id === jobIdValue);
+                if (selectedJob) {
+                    finalDescription = description ? `${description} [Related to: ${selectedJob.display}]` : `[Related to: ${selectedJob.display}]`;
+                }
+            }
+            
             const expenseData = {
                 date: document.getElementById('expense_date').value,
                 amount: parseFloat(document.getElementById('expense_amount').value),
                 category: document.getElementById('expense_category').value,
-                description: document.getElementById('expense_description').value,
+                description: finalDescription,
                 team_member_id: document.getElementById('team_member_id')?.value || null,
-                job_id: jobIdValue && jobIdValue !== '' ? jobIdValue : null,
+                job_id: null, // Keep as null for now since we're storing reference in description
                 user_id: currentUser.id
             };
             
@@ -2779,13 +2799,35 @@ function renderCalendar() {
         
         async function updateExpenseWithReceipt(id) {
             const jobIdValue = document.getElementById('job_id')?.value;
+            const description = document.getElementById('expense_description').value;
+            
+            // If a job/quote is selected, append it to description
+            let finalDescription = description;
+            if (jobIdValue && jobIdValue !== '') {
+                const jobOptions = [];
+                quotes.forEach(q => {
+                    const client = clients.find(c => c.id === q.client_id);
+                    jobOptions.push({ id: `quote_${q.id}`, display: `${q.title}${client ? ' - ' + client.name : ''}` });
+                });
+                jobs.forEach(j => {
+                    const client = clients.find(c => c.id === j.client_id);
+                    jobOptions.push({ id: `job_${j.id}`, display: `${j.title}${client ? ' - ' + client.name : ''}` });
+                });
+                const selectedJob = jobOptions.find(opt => opt.id === jobIdValue);
+                if (selectedJob) {
+                    // Remove old reference if it exists
+                    finalDescription = description.replace(/\s*\[Related to:.*?\]/, '');
+                    finalDescription = finalDescription ? `${finalDescription} [Related to: ${selectedJob.display}]` : `[Related to: ${selectedJob.display}]`;
+                }
+            }
+            
             const expenseData = {
                 date: document.getElementById('expense_date').value,
                 amount: parseFloat(document.getElementById('expense_amount').value),
                 category: document.getElementById('expense_category').value,
-                description: document.getElementById('expense_description').value,
+                description: finalDescription,
                 team_member_id: document.getElementById('team_member_id')?.value || null,
-                job_id: jobIdValue && jobIdValue !== '' ? jobIdValue : null
+                job_id: null
             };
             
             // Upload new receipt if one was selected
