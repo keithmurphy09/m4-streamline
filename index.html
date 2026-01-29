@@ -3482,6 +3482,7 @@ function renderCalendar() {
     
     const quotesList = paginatedQuotes.length === 0 ? '<div class="text-center py-12 text-gray-500">No quotes found</div>' : paginatedQuotes.map(q => { 
         const client = clients.find(c => c.id === q.client_id);
+        const jobAddress = q.job_address || client?.address || '';
         const isAccepted = q.accepted || q.status === 'accepted';
         const isConverted = q.status === 'converted';
         const isNewQuote = lastCreatedQuote && lastCreatedQuote.id === q.id;
@@ -3493,7 +3494,7 @@ function renderCalendar() {
                 </div>
                 <div class="flex-1">
                     <div class="flex flex-col sm:flex-row sm:justify-between gap-2 mb-3">
-                        <div><h3 class="text-lg font-semibold">${q.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p>${isAccepted ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mt-1 inline-block">✓ ACCEPTED</span>' : ''}${isConverted ? '<span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded mt-1 inline-block ml-2">✓ CONVERTED</span>' : ''}</div><p class="text-2xl font-bold text-teal-500">$${q.total?.toFixed(2)}</p>
+                        <div><h3 class="text-lg font-semibold">${q.title}</h3><p class="text-sm">${client?.name || 'Unknown'}${jobAddress ? ` • 📍 ${jobAddress}` : ''}</p>${isAccepted ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mt-1 inline-block">✓ ACCEPTED</span>' : ''}${isConverted ? '<span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded mt-1 inline-block ml-2">✓ CONVERTED</span>' : ''}</div><p class="text-2xl font-bold text-teal-500">$${q.total?.toFixed(2)}</p>
                     </div>
                     ${q.notes ? `<p class="text-sm text-gray-600 italic mb-3">${q.notes}</p>` : ''}
                     ${isConverted ? '<p class="text-xs text-gray-500 italic mb-3">This quote has been converted to an invoice</p>' : ''}
