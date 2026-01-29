@@ -1094,6 +1094,62 @@ async function acceptQuote(quoteId, shareToken) {
             renderApp(); 
         }
         
+        async function updateInvoiceDetails(id) {
+            try {
+                isLoading = true;
+                loadingMessage = 'Updating invoice...';
+                renderApp();
+                
+                const title = document.getElementById('title').value;
+                const issueDate = document.getElementById('issue_date').value;
+                const dueDate = document.getElementById('due_date').value;
+                const status = document.getElementById('status').value;
+                const notes = document.getElementById('notes').value;
+                
+                if (!title) {
+                    showNotification('Title is required', 'error');
+                    return;
+                }
+                
+                const updateData = {
+                    title,
+                    issue_date: issueDate,
+                    due_date: dueDate || null,
+                    status,
+                    notes
+                };
+                
+                // If status changed to paid, add paid_date
+                if (status === 'paid') {
+                    updateData.paid_date = new Date().toISOString().split('T')[0];
+                } else {
+                    updateData.paid_date = null;
+                }
+                
+                const { data, error } = await supabaseClient
+                    .from('invoices')
+                    .update(updateData)
+                    .eq('id', id)
+                    .select();
+                
+                if (error) throw error;
+                
+                const index = invoices.findIndex(i => i.id === id);
+                if (index !== -1 && data && data[0]) {
+                    invoices[index] = data[0];
+                }
+                
+                showNotification('Invoice updated successfully!');
+                closeModal();
+            } catch (error) {
+                console.error('Error updating invoice:', error);
+                showNotification('Failed to update invoice: ' + error.message, 'error');
+            } finally {
+                isLoading = false;
+                renderApp();
+            }
+        }
+        
         async function deleteInvoice(id) {
             try {
                 const invoice = invoices.find(i => i.id === id);
@@ -3995,6 +4051,45 @@ function renderCalendar() {
                 const addressField = `<div class="mb-3"><label class="block text-sm font-medium mb-1">Job Address</label><textarea id="job_address" placeholder="Job site address (auto-fills from client)" class="w-full px-4 py-2 border rounded" rows="2">${jobAddress}</textarea><p class="text-xs text-gray-500 mt-1">💡 Defaults to client address, edit if job is at different location</p></div>`;
                 
                 form = `<select id="client_id" onchange="autoFillJobAddress()" class="w-full px-4 py-2 border rounded mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}</select>${titleField}${addressField}<div id="items-list"></div><button onclick="addQuoteItem()" class="text-teal-500 text-sm mb-3">+ Add Item</button><div id="quote-total" class="font-bold mb-3">Total: $0</div><div class="mb-3"><label class="flex items-center cursor-pointer"><input type="checkbox" id="include_gst" ${includeGst ? 'checked' : ''} onchange="updateQuoteTotal()" class="mr-2"><span class="text-sm font-medium">Include GST (10%)</span></label></div><div class="mb-3"><label class="block text-sm font-medium mb-2">Deposit Required</label><input type="hidden" id="deposit_percentage" value="${depositPercentage}"><div class="flex gap-2 flex-wrap"><button type="button" onclick="setDeposit(0)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 0 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100'}">0% (COD)</button><button type="button" onclick="setDeposit(30)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 30 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100'}">30%</button><button type="button" onclick="setDeposit(40)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 40 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100'}">40%</button><button type="button" onclick="setDeposit(50)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 50 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100'}">50%</button></div></div><div id="deposit-amount" class="text-sm text-gray-600 mb-3"></div><div class="mb-3"><label class="block text-sm font-medium mb-1">Payment Terms</label><textarea id="payment_terms" placeholder="e.g., 30% deposit, balance on completion" class="w-full px-4 py-2 border rounded" rows="2">${paymentTerms}</textarea><p class="text-xs text-gray-500 mt-1">💡 Edit to match your agreement with the client</p></div><textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${notes}</textarea><button onclick="${isEditing ? `updateQuote('${editingItem.id}')` : 'saveQuote()'}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
+            }
+            if (modalType === 'invoice') {
+                const title = editingItem?.title || '';
+                const invoiceNumber = editingItem?.invoice_number || '';
+                const issueDate = editingItem?.issue_date || new Date().toISOString().split('T')[0];
+                const dueDate = editingItem?.due_date || '';
+                const status = editingItem?.status || 'unpaid';
+                const notes = editingItem?.notes || '';
+                
+                form = `
+                    <div class="mb-3">
+                        <label class="block text-sm font-medium mb-1">Invoice Number</label>
+                        <input type="text" id="invoice_number" value="${invoiceNumber}" class="w-full px-4 py-2 border rounded" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-sm font-medium mb-1">Title</label>
+                        <input type="text" id="title" value="${title}" class="w-full px-4 py-2 border rounded">
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-sm font-medium mb-1">Issue Date</label>
+                        <input type="date" id="issue_date" value="${issueDate}" class="w-full px-4 py-2 border rounded">
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-sm font-medium mb-1">Due Date</label>
+                        <input type="date" id="due_date" value="${dueDate}" class="w-full px-4 py-2 border rounded">
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-sm font-medium mb-1">Status</label>
+                        <select id="status" class="w-full px-4 py-2 border rounded">
+                            <option value="unpaid" ${status === 'unpaid' ? 'selected' : ''}>Unpaid</option>
+                            <option value="paid" ${status === 'paid' ? 'selected' : ''}>Paid</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-sm font-medium mb-1">Notes</label>
+                        <textarea id="notes" class="w-full px-4 py-2 border rounded" rows="3">${notes}</textarea>
+                    </div>
+                    <button onclick="updateInvoiceDetails('${editingItem.id}')" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">Update Invoice</button>
+                `;
             }
             if (modalType === 'quote_files') {
                 const files = editingItem?.files || [];
