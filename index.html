@@ -1529,6 +1529,7 @@ async function acceptQuote(quoteId, shareToken) {
             else if ((event.ctrlKey || event.metaKey) && event.key === 'e') { event.preventDefault(); openModal('expense'); }
             else if ((event.ctrlKey || event.metaKey) && event.key === 's') { event.preventDefault(); switchTab('schedule'); }
             else if ((event.ctrlKey || event.metaKey) && event.key === 'd') { event.preventDefault(); switchTab('dashboard'); }
+            else if ((event.ctrlKey || event.metaKey) && event.key === 'a') { event.preventDefault(); switchTab('analytics'); }
         });
         
         async function confirmDeleteAccount() {
@@ -2879,7 +2880,7 @@ async function acceptQuote(quoteId, shareToken) {
                 <!-- Quick Actions -->
                 <div class="mt-6 bg-white p-6 rounded-lg shadow">
                     <h3 class="text-lg font-bold mb-4">Quick Actions</h3>
-                    <div class="flex flex-wrap gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         <button onclick="openModal('client')" class="px-4 py-2 bg-black text-white rounded-lg border border-teal-400 hover:bg-gray-800">
                             + Add Client
                             <span class="ml-2 text-xs text-gray-300">Ctrl+N</span>
@@ -2892,8 +2893,20 @@ async function acceptQuote(quoteId, shareToken) {
                             + Create Quote
                             <span class="ml-2 text-xs text-gray-300">Ctrl+Q</span>
                         </button>
+                        <button onclick="openModal('expense')" class="px-4 py-2 bg-black text-white rounded-lg border border-teal-400 hover:bg-gray-800">
+                            + Add Expense
+                            <span class="ml-2 text-xs text-gray-300">Ctrl+E</span>
+                        </button>
+                        <button onclick="switchTab('schedule')" class="px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-500 hover:bg-gray-600">
+                            📅 View Schedule
+                            <span class="ml-2 text-xs text-gray-300">Ctrl+S</span>
+                        </button>
+                        <button onclick="switchTab('analytics')" class="px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-500 hover:bg-gray-600">
+                            📊 View Analytics
+                            <span class="ml-2 text-xs text-gray-300">Ctrl+A</span>
+                        </button>
                     </div>
-                    <p class="text-xs text-gray-500 mt-3">💡 Tip: Use keyboard shortcuts to work faster!</p>
+                    <p class="text-xs text-gray-500 mt-3">💡 Tip: Use keyboard shortcuts to work faster! Press Ctrl+D to return to Dashboard.</p>
                 </div>
             </div>`;
         }
