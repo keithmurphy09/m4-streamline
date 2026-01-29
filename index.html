@@ -3540,7 +3540,39 @@ function renderCalendar() {
                             ? `<button onclick="copyPaymentLink('${inv.id}')" class="px-3 py-1 bg-purple-600 text-white rounded text-sm">💳 Get Payment Link</button>` 
                             : '';
                         
-                        return `<div class="bg-white p-4 rounded-lg shadow ${borderColor}"><div class="flex justify-between mb-3"><div><h3 class="text-lg font-semibold">${inv.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p><p class="text-xs">${inv.invoice_number}</p><p class="text-xs text-gray-500">Issued: ${inv.issue_date}</p>${inv.due_date ? `<p class="text-xs text-gray-500">Due: ${inv.due_date}</p>` : ''}${inv.status === 'paid' && inv.paid_date ? `<p class="text-xs text-green-600 font-medium">✓ Paid: ${new Date(inv.paid_date).toLocaleDateString()}</p>` : ''}${statusBadge}</div><p class="text-2xl font-bold text-teal-500">$${inv.total?.toFixed(2)}</p></div><div class="flex gap-2 flex-wrap"><button onclick='openModal("invoice", ${JSON.stringify(inv).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>${inv.status === 'unpaid' ? `<button onclick="quickMarkAsPaid('${inv.id}')" class="px-3 py-1 bg-green-600 text-white rounded text-sm font-medium">💰 Mark Paid</button>` : ''}${inv.status === 'paid' ? `<button onclick="quickMarkAsUnpaid('${inv.id}')" class="px-3 py-1 bg-gray-600 text-white rounded text-sm">Mark Unpaid</button>` : ''}${paymentLinkButton}<button onclick="generatePDF('invoice', ${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Download PDF</button><button onclick="sendInvoiceEmail(${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-teal-600 text-white rounded text-sm">📧 Email</button>${client?.phone && smsSettings?.enabled ? `<button onclick="sendInvoiceSMS(${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-green-600 text-white rounded text-sm">📱 SMS</button>` : ''}<button onclick="deleteInvoice('${inv.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div></div>`; 
+                        const isSelected = selectedInvoices.includes(inv.id);
+                        
+                        return `<div class="bg-white p-4 rounded-lg shadow ${borderColor} ${isSelected ? 'ring-2 ring-blue-400' : ''}">
+                            <div class="flex gap-3">
+                                <div class="flex items-start pt-1">
+                                    <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelection('invoices', '${inv.id}')" class="w-5 h-5 text-blue-600 rounded">
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between mb-3">
+                                        <div>
+                                            <h3 class="text-lg font-semibold">${inv.title}</h3>
+                                            <p class="text-sm">${client?.name || 'Unknown'}</p>
+                                            <p class="text-xs">${inv.invoice_number}</p>
+                                            <p class="text-xs text-gray-500">Issued: ${inv.issue_date}</p>
+                                            ${inv.due_date ? `<p class="text-xs text-gray-500">Due: ${inv.due_date}</p>` : ''}
+                                            ${inv.status === 'paid' && inv.paid_date ? `<p class="text-xs text-green-600 font-medium">✓ Paid: ${new Date(inv.paid_date).toLocaleDateString()}</p>` : ''}
+                                            ${statusBadge}
+                                        </div>
+                                        <p class="text-2xl font-bold text-teal-500">$${inv.total?.toFixed(2)}</p>
+                                    </div>
+                                    <div class="flex gap-2 flex-wrap">
+                                        <button onclick='openModal("invoice", ${JSON.stringify(inv).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
+                                        ${inv.status === 'unpaid' ? `<button onclick="quickMarkAsPaid('${inv.id}')" class="px-3 py-1 bg-green-600 text-white rounded text-sm font-medium">💰 Mark Paid</button>` : ''}
+                                        ${inv.status === 'paid' ? `<button onclick="quickMarkAsUnpaid('${inv.id}')" class="px-3 py-1 bg-gray-600 text-white rounded text-sm">Mark Unpaid</button>` : ''}
+                                        ${paymentLinkButton}
+                                        <button onclick="generatePDF('invoice', ${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Download PDF</button>
+                                        <button onclick="sendInvoiceEmail(${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-teal-600 text-white rounded text-sm">📧 Email</button>
+                                        ${client?.phone && smsSettings?.enabled ? `<button onclick="sendInvoiceSMS(${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-green-600 text-white rounded text-sm">📱 SMS</button>` : ''}
+                                        <button onclick="deleteInvoice('${inv.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`; 
                     }).join('');
             }
             
@@ -3551,7 +3583,21 @@ function renderCalendar() {
             
             const searchBar = invoiceFilter !== 'monthly' ? `<input type="text" placeholder="🔍 Search invoices..." value="${invoiceSearch}" oninput="invoiceSearch=this.value; renderApp();" class="w-full px-4 py-2 border rounded-lg mb-4">` : '';
             
-            return `<div><div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-6"><h2 class="text-2xl font-bold">Invoices</h2><div class="flex flex-wrap items-center gap-3"><button onclick="exportToCSV('invoices')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><div class="text-sm flex gap-4"><div>Outstanding: <span class="font-bold text-red-600">$${unpaidTotal.toFixed(2)}</span></div><div>Paid: <span class="font-bold text-green-600">$${paidTotal.toFixed(2)}</span></div></div></div></div>${filterTabs}${searchBar}<div class="grid gap-4">${content}</div></div>`;
+            const bulkActions = selectedInvoices.length > 0 && invoiceFilter !== 'monthly' ? `
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex items-center justify-between">
+                    <span class="text-sm font-medium text-blue-900">${selectedInvoices.length} invoice${selectedInvoices.length > 1 ? 's' : ''} selected</span>
+                    <button onclick="bulkDelete('invoices')" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium">🗑️ Delete Selected</button>
+                </div>
+            ` : '';
+            
+            const selectAllCheckbox = invoiceFilter !== 'monthly' ? `
+                <div class="flex items-center gap-2 mb-4">
+                    <input type="checkbox" ${selectedInvoices.length === invoices.length && invoices.length > 0 ? 'checked' : ''} onchange="toggleSelectAll('invoices')" class="w-5 h-5 text-blue-600 rounded">
+                    <label class="text-sm font-medium text-gray-700">Select All</label>
+                </div>
+            ` : '';
+            
+            return `<div><div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-6"><h2 class="text-2xl font-bold">Invoices</h2><div class="flex flex-wrap items-center gap-3"><button onclick="exportToCSV('invoices')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><div class="text-sm flex gap-4"><div>Outstanding: <span class="font-bold text-red-600">$${unpaidTotal.toFixed(2)}</span></div><div>Paid: <span class="font-bold text-green-600">$${paidTotal.toFixed(2)}</span></div></div></div></div>${filterTabs}${searchBar}${bulkActions}${selectAllCheckbox}<div class="grid gap-4">${content}</div></div>`;
         }
         
         function renderExpenses() {
