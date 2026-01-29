@@ -571,24 +571,48 @@ For licensing inquiries, contact: [your-email@domain.com]
                 loadingMessage = 'Marking as paid...';
                 renderApp();
                 
+                // Try to update with paid_date, but fall back if column doesn't exist
+                const updateData = { status: 'paid' };
+                
+                // Check if paid_date column exists by trying to update it
                 const { data, error } = await supabaseClient
                     .from('invoices')
                     .update({ 
                         status: 'paid',
-                        paid_date: new Date().toISOString()
+                        paid_date: new Date().toISOString().split('T')[0] // Just date, not timestamp
                     })
                     .eq('id', invoiceId)
                     .select();
                 
-                if (error) throw error;
-                
-                const index = invoices.findIndex(i => i.id === invoiceId);
-                if (index !== -1 && data) invoices[index] = data[0];
+                // If error is about paid_date column not existing, try without it
+                if (error && error.message && error.message.includes('paid_date')) {
+                    const { data: data2, error: error2 } = await supabaseClient
+                        .from('invoices')
+                        .update({ status: 'paid' })
+                        .eq('id', invoiceId)
+                        .select();
+                    
+                    if (error2) throw error2;
+                    
+                    // Update local array
+                    const index = invoices.findIndex(i => i.id === invoiceId);
+                    if (index !== -1) {
+                        invoices[index] = { ...invoices[index], status: 'paid', paid_date: new Date().toISOString().split('T')[0] };
+                    }
+                } else if (error) {
+                    throw error;
+                } else {
+                    // Success with paid_date
+                    const index = invoices.findIndex(i => i.id === invoiceId);
+                    if (index !== -1 && data && data[0]) {
+                        invoices[index] = data[0];
+                    }
+                }
                 
                 showNotification('Invoice marked as paid!');
             } catch (error) {
                 console.error('Error marking paid:', error);
-                showNotification('Failed to mark as paid: ' + error.message, 'error');
+                showNotification('Failed to mark as paid. Please try again.', 'error');
             } finally {
                 isLoading = false;
                 renderApp();
