@@ -1526,6 +1526,9 @@ async function acceptQuote(quoteId, shareToken) {
             if ((event.ctrlKey || event.metaKey) && event.key === 'n') { event.preventDefault(); openModal('client'); }
             else if ((event.ctrlKey || event.metaKey) && event.key === 'q') { event.preventDefault(); openModal('quote'); }
             else if ((event.ctrlKey || event.metaKey) && event.key === 'j') { event.preventDefault(); openModal('job'); }
+            else if ((event.ctrlKey || event.metaKey) && event.key === 'e') { event.preventDefault(); openModal('expense'); }
+            else if ((event.ctrlKey || event.metaKey) && event.key === 's') { event.preventDefault(); switchTab('schedule'); }
+            else if ((event.ctrlKey || event.metaKey) && event.key === 'd') { event.preventDefault(); switchTab('dashboard'); }
         });
         
         async function confirmDeleteAccount() {
@@ -2877,10 +2880,20 @@ async function acceptQuote(quoteId, shareToken) {
                 <div class="mt-6 bg-white p-6 rounded-lg shadow">
                     <h3 class="text-lg font-bold mb-4">Quick Actions</h3>
                     <div class="flex flex-wrap gap-3">
-                        <button onclick="openModal('client')" class="px-4 py-2 bg-black text-white rounded-lg border border-teal-400 hover:bg-gray-800">+ Add Client</button>
-                        <button onclick="openModal('job')" class="px-4 py-2 bg-black text-white rounded-lg border border-teal-400 hover:bg-gray-800">+ Schedule Job</button>
-                        <button onclick="openModal('quote')" class="px-4 py-2 bg-black text-white rounded-lg border border-teal-400 hover:bg-gray-800">+ Create Quote</button>
+                        <button onclick="openModal('client')" class="px-4 py-2 bg-black text-white rounded-lg border border-teal-400 hover:bg-gray-800">
+                            + Add Client
+                            <span class="ml-2 text-xs text-gray-300">Ctrl+N</span>
+                        </button>
+                        <button onclick="openModal('job')" class="px-4 py-2 bg-black text-white rounded-lg border border-teal-400 hover:bg-gray-800">
+                            + Schedule Job
+                            <span class="ml-2 text-xs text-gray-300">Ctrl+J</span>
+                        </button>
+                        <button onclick="openModal('quote')" class="px-4 py-2 bg-black text-white rounded-lg border border-teal-400 hover:bg-gray-800">
+                            + Create Quote
+                            <span class="ml-2 text-xs text-gray-300">Ctrl+Q</span>
+                        </button>
                     </div>
+                    <p class="text-xs text-gray-500 mt-3">💡 Tip: Use keyboard shortcuts to work faster!</p>
                 </div>
             </div>`;
         }
@@ -2927,6 +2940,7 @@ async function acceptQuote(quoteId, shareToken) {
     
     const jobsList = paginatedJobs.length === 0 ? '<div class="text-center py-12 text-gray-500">No jobs found</div>' : paginatedJobs.map(job => { 
         const client = clients.find(c => c.id === job.client_id);
+        const isSelected = selectedJobs.includes(job.id);
         
         // Get assigned team members (support both old single and new multiple format)
         const assignedTeamIds = job.assigned_team_members || (job.assigned_to ? [job.assigned_to] : []);
@@ -2956,12 +2970,51 @@ async function acceptQuote(quoteId, shareToken) {
                </div>`
             : '<p class="text-sm text-gray-400 mt-2">👤 Unassigned</p>';
         
-        return `<div class="bg-white p-4 rounded-lg shadow border-l-4" style="border-color: ${workerColor}"><div class="flex flex-col sm:flex-row sm:justify-between gap-3"><div class="flex-1"><h3 class="text-lg font-semibold">${job.title}</h3><span class="text-xs ${statusColor} px-2 py-1 rounded inline-block mt-1">${statusLabel}</span><p class="text-gray-600 mt-1">${client?.name || 'Unknown'}</p>${client?.address ? `<a href="${/iPhone|iPad|iPod/.test(navigator.userAgent) ? 'maps://?q=' : 'https://maps.google.com/?q='}${encodeURIComponent(client.address)}" target="_blank" class="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1">📍 ${client.address}</a>` : ''}${teamDisplay}<div class="text-sm text-gray-500 mt-2">📅 ${new Date(job.date).toLocaleDateString()} ⏰ ${job.time}${job.duration > 1 ? ` (${job.duration} days)` : ''}</div>${job.notes ? `<p class="text-sm text-gray-700 mt-2 italic">${job.notes}</p>` : ''}${job.photos && job.photos.length > 0 ? `<div class="mt-3 flex gap-2 flex-wrap">${job.photos.map(photo => `<img src="${photo}" class="w-20 h-20 object-cover rounded border border-teal-400" />`).join('')}</div>` : ''}</div><div class="flex sm:flex-col gap-2"><button onclick='openModal("job", ${JSON.stringify(job).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button><label class="cursor-pointer px-3 py-1 bg-teal-500 text-white rounded text-sm text-center"><input type="file" accept="image/*" onchange="uploadJobPhoto(this, '${job.id}')" class="hidden" />Add Photo</label><button onclick="deleteJob('${job.id}')" class="px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button></div></div></div>`; 
+        return `<div class="bg-white p-4 rounded-lg shadow border-l-4 ${isSelected ? 'ring-2 ring-blue-400' : ''}" style="border-color: ${workerColor}">
+            <div class="flex gap-3">
+                <div class="flex items-start pt-1">
+                    <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelection('jobs', '${job.id}')" class="w-5 h-5 text-blue-600 rounded">
+                </div>
+                <div class="flex-1">
+                    <div class="flex flex-col sm:flex-row sm:justify-between gap-3">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-semibold">${job.title}</h3>
+                            <span class="text-xs ${statusColor} px-2 py-1 rounded inline-block mt-1">${statusLabel}</span>
+                            <p class="text-gray-600 mt-1">${client?.name || 'Unknown'}</p>
+                            ${client?.address ? `<a href="${/iPhone|iPad|iPod/.test(navigator.userAgent) ? 'maps://?q=' : 'https://maps.google.com/?q='}${encodeURIComponent(client.address)}" target="_blank" class="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1">📍 ${client.address}</a>` : ''}
+                            ${teamDisplay}
+                            <div class="text-sm text-gray-500 mt-2">📅 ${new Date(job.date).toLocaleDateString()} ⏰ ${job.time}${job.duration > 1 ? ` (${job.duration} days)` : ''}</div>
+                            ${job.notes ? `<p class="text-sm text-gray-700 mt-2 italic">${job.notes}</p>` : ''}
+                            ${job.photos && job.photos.length > 0 ? `<div class="mt-3 flex gap-2 flex-wrap">${job.photos.map(photo => `<img src="${photo}" class="w-20 h-20 object-cover rounded border border-teal-400" />`).join('')}</div>` : ''}
+                        </div>
+                        <div class="flex sm:flex-col gap-2">
+                            <button onclick='openModal("job", ${JSON.stringify(job).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
+                            <label class="cursor-pointer px-3 py-1 bg-teal-500 text-white rounded text-sm text-center"><input type="file" accept="image/*" onchange="uploadJobPhoto(this, '${job.id}')" class="hidden" />Add Photo</label>
+                            <button onclick="deleteJob('${job.id}')" class="px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`; 
     }).join('');
     
     const pagination = getPaginationHTML('jobs', totalJobs, currentPage.jobs);
     
-    return `<div><div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold">Schedule</h2><div class="flex flex-wrap gap-2 sm:gap-4">${viewToggle}<button onclick="exportToCSV('jobs')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><button onclick="openModal('job')" class="bg-black text-white px-3 sm:px-4 py-2 rounded-lg border border-teal-400 text-sm whitespace-nowrap">+ Schedule Job</button></div></div><input type="text" placeholder="🔍 Search jobs..." value="${jobSearch}" oninput="jobSearch=this.value; currentPage.jobs=1; renderApp();" class="w-full px-4 py-2 border rounded-lg mb-4"><div class="grid gap-4">${jobsList}</div>${pagination}</div>`;
+    const bulkActions = selectedJobs.length > 0 ? `
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex items-center justify-between">
+            <span class="text-sm font-medium text-blue-900">${selectedJobs.length} job${selectedJobs.length > 1 ? 's' : ''} selected</span>
+            <button onclick="bulkDelete('jobs')" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium">🗑️ Delete Selected</button>
+        </div>
+    ` : '';
+    
+    const selectAllCheckbox = paginatedJobs.length > 0 ? `
+        <div class="flex items-center gap-2 mb-4">
+            <input type="checkbox" ${selectedJobs.length === jobs.length && jobs.length > 0 ? 'checked' : ''} onchange="toggleSelectAll('jobs')" class="w-5 h-5 text-blue-600 rounded">
+            <label class="text-sm font-medium text-gray-700">Select All</label>
+        </div>
+    ` : '';
+    
+    return `<div><div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold">Schedule</h2><div class="flex flex-wrap gap-2 sm:gap-4">${viewToggle}<button onclick="exportToCSV('jobs')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><button onclick="openModal('job')" class="bg-black text-white px-3 sm:px-4 py-2 rounded-lg border border-teal-400 text-sm whitespace-nowrap">+ Schedule Job</button></div></div><input type="text" placeholder="🔍 Search jobs..." value="${jobSearch}" oninput="jobSearch=this.value; currentPage.jobs=1; renderApp();" class="w-full px-4 py-2 border rounded-lg mb-4">${bulkActions}${selectAllCheckbox}<div class="grid gap-4">${jobsList}</div>${pagination}</div>`;
 }
 
 function renderCalendar() {
@@ -3358,7 +3411,7 @@ function renderCalendar() {
                             ? `<button onclick="copyPaymentLink('${inv.id}')" class="px-3 py-1 bg-purple-600 text-white rounded text-sm">💳 Get Payment Link</button>` 
                             : '';
                         
-                        return `<div class="bg-white p-4 rounded-lg shadow ${borderColor}"><div class="flex justify-between mb-3"><div><h3 class="text-lg font-semibold">${inv.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p><p class="text-xs">${inv.invoice_number}</p><p class="text-xs text-gray-500">Issued: ${inv.issue_date}</p>${inv.due_date ? `<p class="text-xs text-gray-500">Due: ${inv.due_date}</p>` : ''}${statusBadge}</div><p class="text-2xl font-bold text-teal-500">$${inv.total?.toFixed(2)}</p></div><div class="flex gap-2 flex-wrap">${inv.status === 'unpaid' ? `<button onclick="quickMarkAsPaid('${inv.id}')" class="px-3 py-1 bg-green-600 text-white rounded text-sm font-medium">💰 Mark Paid</button>` : ''}${paymentLinkButton}<button onclick="generatePDF('invoice', ${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Download PDF</button><button onclick="sendInvoiceEmail(${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-teal-600 text-white rounded text-sm">📧 Email</button>${client?.phone && smsSettings?.enabled ? `<button onclick="sendInvoiceSMS(${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-green-600 text-white rounded text-sm">📱 SMS</button>` : ''}<button onclick="deleteInvoice('${inv.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div></div>`; 
+                        return `<div class="bg-white p-4 rounded-lg shadow ${borderColor}"><div class="flex justify-between mb-3"><div><h3 class="text-lg font-semibold">${inv.title}</h3><p class="text-sm">${client?.name || 'Unknown'}</p><p class="text-xs">${inv.invoice_number}</p><p class="text-xs text-gray-500">Issued: ${inv.issue_date}</p>${inv.due_date ? `<p class="text-xs text-gray-500">Due: ${inv.due_date}</p>` : ''}${inv.status === 'paid' && inv.paid_date ? `<p class="text-xs text-green-600 font-medium">✓ Paid: ${new Date(inv.paid_date).toLocaleDateString()}</p>` : ''}${statusBadge}</div><p class="text-2xl font-bold text-teal-500">$${inv.total?.toFixed(2)}</p></div><div class="flex gap-2 flex-wrap">${inv.status === 'unpaid' ? `<button onclick="quickMarkAsPaid('${inv.id}')" class="px-3 py-1 bg-green-600 text-white rounded text-sm font-medium">💰 Mark Paid</button>` : ''}${paymentLinkButton}<button onclick="generatePDF('invoice', ${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Download PDF</button><button onclick="sendInvoiceEmail(${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-teal-600 text-white rounded text-sm">📧 Email</button>${client?.phone && smsSettings?.enabled ? `<button onclick="sendInvoiceSMS(${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-green-600 text-white rounded text-sm">📱 SMS</button>` : ''}<button onclick="deleteInvoice('${inv.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div></div>`; 
                     }).join('');
             }
             
@@ -3443,6 +3496,13 @@ function renderCalendar() {
                 
                 <input type="text" placeholder="🔍 Search expenses..." value="${expenseSearch}" oninput="expenseSearch=this.value; currentPage.expenses=1; renderApp();" class="w-full px-4 py-2 border rounded-lg mb-4">
                 
+                ${selectedExpenses.length > 0 ? `
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex items-center justify-between">
+                    <span class="text-sm font-medium text-blue-900">${selectedExpenses.length} expense${selectedExpenses.length > 1 ? 's' : ''} selected</span>
+                    <button onclick="bulkDelete('expenses')" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium">🗑️ Delete Selected</button>
+                </div>
+                ` : ''}
+                
                 <!-- Expenses Table -->
                 <div class="bg-white rounded-lg shadow overflow-hidden">
                     ${paginatedExpenses.length === 0 ? 
@@ -3452,6 +3512,9 @@ function renderCalendar() {
                             <table class="w-full">
                                 <thead class="bg-black text-white">
                                     <tr>
+                                        <th class="px-4 py-3 text-center">
+                                            <input type="checkbox" ${selectedExpenses.length === totalExpensesCount && totalExpensesCount > 0 ? 'checked' : ''} onchange="toggleSelectAll('expenses')" class="w-4 h-4 text-blue-600 rounded">
+                                        </th>
                                         <th class="px-4 py-3 text-left text-sm font-semibold">Date</th>
                                         <th class="px-4 py-3 text-left text-sm font-semibold">Category</th>
                                         <th class="px-4 py-3 text-left text-sm font-semibold">Job</th>
@@ -3465,8 +3528,12 @@ function renderCalendar() {
                                     ${paginatedExpenses.sort((a, b) => new Date(b.date) - new Date(a.date)).map(exp => {
                                         const teamMember = exp.team_member_id ? teamMembers.find(tm => tm.id === exp.team_member_id) : null;
                                         const job = exp.job_id ? jobs.find(j => j.id === exp.job_id) : null;
+                                        const isSelected = selectedExpenses.includes(exp.id);
                                         return `
-                                        <tr class="hover:bg-gray-50">
+                                        <tr class="hover:bg-gray-50 ${isSelected ? 'bg-blue-50' : ''}">
+                                            <td class="px-4 py-3 text-center">
+                                                <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelection('expenses', '${exp.id}')" class="w-4 h-4 text-blue-600 rounded">
+                                            </td>
                                             <td class="px-4 py-3 text-sm text-gray-900">${new Date(exp.date).toLocaleDateString()}</td>
                                             <td class="px-4 py-3">
                                                 <span class="inline-block px-2 py-1 text-xs font-medium rounded bg-gray-100 text-gray-800">${exp.category}</span>
