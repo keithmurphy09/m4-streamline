@@ -4201,8 +4201,39 @@ function renderCalendar() {
                 const description = editingItem?.description || '';
                 const team_member_id = editingItem?.team_member_id || '';
                 const job_id_raw = editingItem?.job_id || '';
-                // Add the job_ prefix back for dropdown selection
-                const job_id = job_id_raw ? `job_${job_id_raw}` : '';
+                
+                // If job_id is null, try to extract from description
+                let job_id = '';
+                if (job_id_raw) {
+                    // Has a job_id - add prefix
+                    job_id = `job_${job_id_raw}`;
+                } else if (editingItem && description) {
+                    // Try to extract from description "[Related to: ...]"
+                    const match = description.match(/\[Related to: ([^\]]+)\]/);
+                    if (match) {
+                        const relatedText = match[1]; // e.g., "ORD-411920-32 - Construct Services (Quote)"
+                        
+                        // Try to find matching quote or job by title
+                        const matchingQuote = quotes.find(q => {
+                            const client = clients.find(c => c.id === q.client_id);
+                            const display = `${q.title}${client ? ' - ' + client.name : ''}`;
+                            return relatedText.includes(q.title) || relatedText.includes(display);
+                        });
+                        
+                        if (matchingQuote) {
+                            job_id = `quote_${matchingQuote.id}`;
+                        } else {
+                            const matchingJob = jobs.find(j => {
+                                const client = clients.find(c => c.id === j.client_id);
+                                const display = `${j.title}${client ? ' - ' + client.name : ''}`;
+                                return relatedText.includes(j.title) || relatedText.includes(display);
+                            });
+                            if (matchingJob) {
+                                job_id = `job_${matchingJob.id}`;
+                            }
+                        }
+                    }
+                }
                 const categories = ['Materials', 'Fuel', 'Equipment', 'Subcontractors', 'Office Supplies', 'Insurance', 'Marketing', 'Other'];
                 const buttonText = editingItem ? 'Update Expense' : 'Add Expense';
                 const receipt_url = editingItem?.receipt_url || '';
