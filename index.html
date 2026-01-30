@@ -1075,6 +1075,7 @@ async function acceptQuote(quoteId, shareToken) {
             
             const inv = {
                 client_id: quote.client_id,
+                quote_id: quote.id, // Link back to the quote!
                 title: quote.title + (depositPaid > 0 ? ' - Final Payment' : ''),
                 items: quote.items,
                 notes: (quote.notes || '') + (depositPaid > 0 ? `\n\nDeposit paid: $${depositPaid.toFixed(2)}` : ''),
@@ -3625,7 +3626,6 @@ function renderCalendar() {
                                         const client = clients.find(c => c.id === inv.client_id);
                                         const linkedQuote = inv.quote_id ? quotes.find(q => q.id === inv.quote_id) : null;
                                         const jobAddress = linkedQuote?.job_address || client?.address || '';
-                                        console.log('Monthly Invoice:', inv.title, 'Job address:', jobAddress);
                                         return `<div class="bg-white p-3 rounded-lg shadow border-l-4 border-green-500">
                                             <div class="flex justify-between items-start">
                                                 <div class="flex-1">
@@ -3701,8 +3701,6 @@ function renderCalendar() {
                         // Get job address from linked quote OR client
                         const linkedQuote = inv.quote_id ? quotes.find(q => q.id === inv.quote_id) : null;
                         const jobAddress = linkedQuote?.job_address || client?.address || '';
-                        
-                        console.log('Invoice:', inv.title, 'Quote ID:', inv.quote_id, 'Found quote:', linkedQuote?.title, 'Job address:', linkedQuote?.job_address, 'Client address:', client?.address, 'Final jobAddress:', jobAddress);
                         
                         return `<div class="bg-white p-4 rounded-lg shadow ${borderColor} ${isSelected ? 'ring-2 ring-blue-400' : ''}">
                             <div class="flex gap-3">
