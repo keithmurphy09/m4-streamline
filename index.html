@@ -2269,7 +2269,7 @@ async function acceptQuote(quoteId, shareToken) {
                     ${(() => {
                         // Calculate profit for each job
                         const jobProfits = jobs.map(job => {
-                            const jobExpenses = expenses.filter(e => e.job_id === `job_${job.id}`).reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+                            const jobExpenses = expenses.filter(e => e.job_id === job.id).reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
                             const jobInvoice = invoices.find(i => i.quote_id && quotes.find(q => q.id === i.quote_id && q.title === job.title && q.client_id === job.client_id));
                             const jobRevenue = jobInvoice && jobInvoice.status === 'paid' ? parseFloat(jobInvoice.total || 0) : 0;
                             const profit = jobRevenue - jobExpenses;
@@ -3213,7 +3213,7 @@ async function acceptQuote(quoteId, shareToken) {
             : '<p class="text-sm text-gray-400 mt-2">👤 Unassigned</p>';
         
         // Calculate profit/loss for this job
-        const jobExpenses = expenses.filter(e => e.job_id === `job_${job.id}`).reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+        const jobExpenses = expenses.filter(e => e.job_id === job.id).reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
         const jobInvoice = invoices.find(i => i.quote_id && quotes.find(q => q.id === i.quote_id && q.title === job.title && q.client_id === job.client_id));
         const jobRevenue = jobInvoice && jobInvoice.status === 'paid' ? parseFloat(jobInvoice.total || 0) : 0;
         const profit = jobRevenue - jobExpenses;
@@ -3985,10 +3985,15 @@ function renderCalendar() {
                     }
                 }
                 
-                // Strip the quote_ or job_ prefix from job_id before saving
+                // Only save job_id if it's an actual job (not a quote)
+                // If it's a quote, leave job_id null but keep the reference in description
                 let cleanJobId = null;
                 if (jobIdValue) {
-                    cleanJobId = jobIdValue.replace(/^(quote_|job_)/, '');
+                    if (jobIdValue.startsWith('job_')) {
+                        // It's a job - strip prefix and save
+                        cleanJobId = jobIdValue.replace('job_', '');
+                    }
+                    // If it starts with 'quote_', leave cleanJobId as null
                 }
                 
                 const expenseData = {
@@ -3997,7 +4002,7 @@ function renderCalendar() {
                     category: document.getElementById('expense_category').value,
                     description: finalDescription,
                     team_member_id: document.getElementById('team_member_id')?.value || null,
-                    job_id: cleanJobId, // Save just the UUID without prefix
+                    job_id: cleanJobId, // Save job UUID or null
                     user_id: currentUser.id
                 };
                 
@@ -4068,10 +4073,15 @@ function renderCalendar() {
                     }
                 }
                 
-                // Strip the quote_ or job_ prefix from job_id before saving
+                // Only save job_id if it's an actual job (not a quote)
+                // If it's a quote, leave job_id null but keep the reference in description
                 let cleanJobId = null;
                 if (jobIdValue) {
-                    cleanJobId = jobIdValue.replace(/^(quote_|job_)/, '');
+                    if (jobIdValue.startsWith('job_')) {
+                        // It's a job - strip prefix and save
+                        cleanJobId = jobIdValue.replace('job_', '');
+                    }
+                    // If it starts with 'quote_', leave cleanJobId as null
                 }
                 
                 const expenseData = {
@@ -4080,7 +4090,7 @@ function renderCalendar() {
                     category: document.getElementById('expense_category').value,
                     description: finalDescription,
                     team_member_id: document.getElementById('team_member_id')?.value || null,
-                    job_id: cleanJobId // Save just the UUID without prefix
+                    job_id: cleanJobId // Save job UUID or null
                 };
                 
                 // Upload new receipt if one was selected
@@ -4173,7 +4183,9 @@ function renderCalendar() {
                 const category = editingItem?.category || 'Materials';
                 const description = editingItem?.description || '';
                 const team_member_id = editingItem?.team_member_id || '';
-                const job_id = editingItem?.job_id || '';
+                const job_id_raw = editingItem?.job_id || '';
+                // Add the job_ prefix back for dropdown selection
+                const job_id = job_id_raw ? `job_${job_id_raw}` : '';
                 const categories = ['Materials', 'Fuel', 'Equipment', 'Subcontractors', 'Office Supplies', 'Insurance', 'Marketing', 'Other'];
                 const buttonText = editingItem ? 'Update Expense' : 'Add Expense';
                 const receipt_url = editingItem?.receipt_url || '';
@@ -4369,7 +4381,7 @@ function renderCalendar() {
             if (modalType === 'job_expenses') {
                 const jobId = editingItem?.jobId;
                 const jobTitle = editingItem?.jobTitle;
-                const jobExpensesList = expenses.filter(e => e.job_id === `job_${jobId}`);
+                const jobExpensesList = expenses.filter(e => e.job_id === jobId);
                 const totalExpenses = jobExpensesList.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
                 
                 form = `<div class="space-y-4">
