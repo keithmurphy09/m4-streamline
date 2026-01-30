@@ -3849,7 +3849,26 @@ function renderCalendar() {
                                 <tbody class="divide-y divide-gray-200">
                                     ${paginatedExpenses.sort((a, b) => new Date(b.date) - new Date(a.date)).map(exp => {
                                         const teamMember = exp.team_member_id ? teamMembers.find(tm => tm.id === exp.team_member_id) : null;
-                                        const job = exp.job_id ? jobs.find(j => j.id === exp.job_id) : null;
+                                        
+                                        // Get job from job_id OR extract from description
+                                        let jobDisplay = '-';
+                                        if (exp.job_id) {
+                                            const job = jobs.find(j => j.id === exp.job_id);
+                                            jobDisplay = job ? job.title : '-';
+                                        } else if (exp.description) {
+                                            // Try to extract from description "[Related to: ...]"
+                                            const match = exp.description.match(/\[Related to: ([^\]]+)\]/);
+                                            if (match) {
+                                                // Extract just the title part (before any client name or type)
+                                                let title = match[1];
+                                                // Remove " (Quote)" or " (Scheduled)" suffix if present
+                                                title = title.replace(/\s*\((?:Quote|Scheduled)\)\s*$/, '');
+                                                // If there's a " - ClientName" part, extract just the job title
+                                                const parts = title.split(' - ');
+                                                jobDisplay = parts[0] || title;
+                                            }
+                                        }
+                                        
                                         const isSelected = selectedExpenses.includes(exp.id);
                                         return `
                                         <tr class="hover:bg-gray-50 ${isSelected ? 'bg-blue-50' : ''}">
@@ -3860,7 +3879,7 @@ function renderCalendar() {
                                             <td class="px-4 py-3">
                                                 <span class="inline-block px-2 py-1 text-xs font-medium rounded bg-gray-100 text-gray-800">${exp.category}</span>
                                             </td>
-                                            <td class="px-4 py-3 text-sm text-gray-600">${job ? job.title : '-'}</td>
+                                            <td class="px-4 py-3 text-sm text-gray-600">${jobDisplay}</td>
                                             ${getAccountType() === 'business' ? `<td class="px-4 py-3 text-sm text-gray-600">${teamMember ? teamMember.name : '-'}</td>` : ''}
                                             <td class="px-4 py-3 text-sm text-gray-600">
                                                 ${exp.description || '-'}
