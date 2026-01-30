@@ -3985,13 +3985,19 @@ function renderCalendar() {
                     }
                 }
                 
+                // Strip the quote_ or job_ prefix from job_id before saving
+                let cleanJobId = null;
+                if (jobIdValue) {
+                    cleanJobId = jobIdValue.replace(/^(quote_|job_)/, '');
+                }
+                
                 const expenseData = {
                     date: document.getElementById('expense_date').value,
                     amount: parseFloat(document.getElementById('expense_amount').value),
                     category: document.getElementById('expense_category').value,
                     description: finalDescription,
                     team_member_id: document.getElementById('team_member_id')?.value || null,
-                    job_id: jobIdValue || null, // Save the actual job/quote ID
+                    job_id: cleanJobId, // Save just the UUID without prefix
                     user_id: currentUser.id
                 };
                 
@@ -4062,13 +4068,19 @@ function renderCalendar() {
                     }
                 }
                 
+                // Strip the quote_ or job_ prefix from job_id before saving
+                let cleanJobId = null;
+                if (jobIdValue) {
+                    cleanJobId = jobIdValue.replace(/^(quote_|job_)/, '');
+                }
+                
                 const expenseData = {
                     date: document.getElementById('expense_date').value,
                     amount: parseFloat(document.getElementById('expense_amount').value),
                     category: document.getElementById('expense_category').value,
                     description: finalDescription,
                     team_member_id: document.getElementById('team_member_id')?.value || null,
-                    job_id: jobIdValue || null // Save the actual job/quote ID
+                    job_id: cleanJobId // Save just the UUID without prefix
                 };
                 
                 // Upload new receipt if one was selected
