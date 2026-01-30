@@ -4086,8 +4086,10 @@ function renderCalendar() {
                 loadingMessage = 'Updating expense...';
                 renderApp();
                 
-                // If a job/quote is selected, append it to description
-                let finalDescription = description;
+                // ALWAYS remove old job reference from description first
+                let finalDescription = description.replace(/\s*\[Related to:.*?\]\s*/, '').trim();
+                
+                // If a job/quote is NOW selected, add the new reference
                 if (jobIdValue && jobIdValue !== '') {
                     const jobOptions = [];
                     quotes.forEach(q => {
@@ -4100,8 +4102,7 @@ function renderCalendar() {
                     });
                     const selectedJob = jobOptions.find(opt => opt.id === jobIdValue);
                     if (selectedJob) {
-                        // Remove old reference if it exists
-                        finalDescription = description.replace(/\s*\[Related to:.*?\]/, '');
+                        // Add the new reference
                         finalDescription = finalDescription ? `${finalDescription} [Related to: ${selectedJob.display}]` : `[Related to: ${selectedJob.display}]`;
                     }
                 }
