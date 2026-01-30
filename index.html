@@ -3959,109 +3959,147 @@ function renderCalendar() {
         }
         
         async function addExpenseWithReceipt() {
-            const jobIdValue = document.getElementById('job_id')?.value;
-            const description = document.getElementById('expense_description').value;
-            
-            // If a job/quote is selected, append it to description
-            let finalDescription = description;
-            if (jobIdValue && jobIdValue !== '') {
-                const jobOptions = [];
-                quotes.forEach(q => {
-                    const client = clients.find(c => c.id === q.client_id);
-                    jobOptions.push({ id: `quote_${q.id}`, display: `${q.title}${client ? ' - ' + client.name : ''}` });
-                });
-                jobs.forEach(j => {
-                    const client = clients.find(c => c.id === j.client_id);
-                    jobOptions.push({ id: `job_${j.id}`, display: `${j.title}${client ? ' - ' + client.name : ''}` });
-                });
-                const selectedJob = jobOptions.find(opt => opt.id === jobIdValue);
-                if (selectedJob) {
-                    finalDescription = description ? `${description} [Related to: ${selectedJob.display}]` : `[Related to: ${selectedJob.display}]`;
+            try {
+                isLoading = true;
+                loadingMessage = 'Adding expense...';
+                renderApp();
+                
+                const jobIdValue = document.getElementById('job_id')?.value;
+                const description = document.getElementById('expense_description').value;
+                
+                // If a job/quote is selected, append it to description
+                let finalDescription = description;
+                if (jobIdValue && jobIdValue !== '') {
+                    const jobOptions = [];
+                    quotes.forEach(q => {
+                        const client = clients.find(c => c.id === q.client_id);
+                        jobOptions.push({ id: `quote_${q.id}`, display: `${q.title}${client ? ' - ' + client.name : ''}` });
+                    });
+                    jobs.forEach(j => {
+                        const client = clients.find(c => c.id === j.client_id);
+                        jobOptions.push({ id: `job_${j.id}`, display: `${j.title}${client ? ' - ' + client.name : ''}` });
+                    });
+                    const selectedJob = jobOptions.find(opt => opt.id === jobIdValue);
+                    if (selectedJob) {
+                        finalDescription = description ? `${description} [Related to: ${selectedJob.display}]` : `[Related to: ${selectedJob.display}]`;
+                    }
                 }
-            }
-            
-            const expenseData = {
-                date: document.getElementById('expense_date').value,
-                amount: parseFloat(document.getElementById('expense_amount').value),
-                category: document.getElementById('expense_category').value,
-                description: finalDescription,
-                team_member_id: document.getElementById('team_member_id')?.value || null,
-                job_id: jobIdValue || null, // Save the actual job/quote ID
-                user_id: currentUser.id
-            };
-            
-            // Upload receipt if one was selected
-            if (currentReceiptFile) {
-                try {
-                    expenseData.receipt_url = await uploadReceiptToStorage(currentReceiptFile);
-                } catch (error) {
-                    alert('Failed to upload receipt. Expense will be saved without receipt.');
+                
+                const expenseData = {
+                    date: document.getElementById('expense_date').value,
+                    amount: parseFloat(document.getElementById('expense_amount').value),
+                    category: document.getElementById('expense_category').value,
+                    description: finalDescription,
+                    team_member_id: document.getElementById('team_member_id')?.value || null,
+                    job_id: jobIdValue || null, // Save the actual job/quote ID
+                    user_id: currentUser.id
+                };
+                
+                // Upload receipt if one was selected
+                if (currentReceiptFile) {
+                    try {
+                        expenseData.receipt_url = await uploadReceiptToStorage(currentReceiptFile);
+                    } catch (error) {
+                        console.error('Receipt upload error:', error);
+                        showNotification('Failed to upload receipt. Expense will be saved without receipt.', 'error');
+                    }
                 }
-            }
-            
-            const { data } = await supabaseClient.from('expenses').insert([expenseData]).select();
-            if (data) {
-                expenses.push(data[0]);
-                currentReceiptFile = null;
-                closeModal();
+                
+                const { data, error } = await supabaseClient.from('expenses').insert([expenseData]).select();
+                
+                if (error) {
+                    console.error('Insert error:', error);
+                    throw error;
+                }
+                
+                if (data) {
+                    expenses.push(data[0]);
+                    currentReceiptFile = null;
+                    showNotification('Expense added successfully!');
+                    closeModal();
+                }
+            } catch (error) {
+                console.error('Error adding expense:', error);
+                showNotification('Failed to add expense: ' + error.message, 'error');
+            } finally {
+                isLoading = false;
                 renderApp();
             }
         }
         
         async function updateExpenseWithReceipt(id) {
-            const jobIdValue = document.getElementById('job_id')?.value;
-            const description = document.getElementById('expense_description').value;
-            
-            // If a job/quote is selected, append it to description
-            let finalDescription = description;
-            if (jobIdValue && jobIdValue !== '') {
-                const jobOptions = [];
-                quotes.forEach(q => {
-                    const client = clients.find(c => c.id === q.client_id);
-                    jobOptions.push({ id: `quote_${q.id}`, display: `${q.title}${client ? ' - ' + client.name : ''}` });
-                });
-                jobs.forEach(j => {
-                    const client = clients.find(c => c.id === j.client_id);
-                    jobOptions.push({ id: `job_${j.id}`, display: `${j.title}${client ? ' - ' + client.name : ''}` });
-                });
-                const selectedJob = jobOptions.find(opt => opt.id === jobIdValue);
-                if (selectedJob) {
-                    // Remove old reference if it exists
-                    finalDescription = description.replace(/\s*\[Related to:.*?\]/, '');
-                    finalDescription = finalDescription ? `${finalDescription} [Related to: ${selectedJob.display}]` : `[Related to: ${selectedJob.display}]`;
+            try {
+                isLoading = true;
+                loadingMessage = 'Updating expense...';
+                renderApp();
+                
+                const jobIdValue = document.getElementById('job_id')?.value;
+                const description = document.getElementById('expense_description').value;
+                
+                // If a job/quote is selected, append it to description
+                let finalDescription = description;
+                if (jobIdValue && jobIdValue !== '') {
+                    const jobOptions = [];
+                    quotes.forEach(q => {
+                        const client = clients.find(c => c.id === q.client_id);
+                        jobOptions.push({ id: `quote_${q.id}`, display: `${q.title}${client ? ' - ' + client.name : ''}` });
+                    });
+                    jobs.forEach(j => {
+                        const client = clients.find(c => c.id === j.client_id);
+                        jobOptions.push({ id: `job_${j.id}`, display: `${j.title}${client ? ' - ' + client.name : ''}` });
+                    });
+                    const selectedJob = jobOptions.find(opt => opt.id === jobIdValue);
+                    if (selectedJob) {
+                        // Remove old reference if it exists
+                        finalDescription = description.replace(/\s*\[Related to:.*?\]/, '');
+                        finalDescription = finalDescription ? `${finalDescription} [Related to: ${selectedJob.display}]` : `[Related to: ${selectedJob.display}]`;
+                    }
                 }
-            }
-            
-            const expenseData = {
-                date: document.getElementById('expense_date').value,
-                amount: parseFloat(document.getElementById('expense_amount').value),
-                category: document.getElementById('expense_category').value,
-                description: finalDescription,
-                team_member_id: document.getElementById('team_member_id')?.value || null,
-                job_id: jobIdValue || null // Save the actual job/quote ID
-            };
-            
-            // Upload new receipt if one was selected
-            if (currentReceiptFile) {
-                try {
-                    expenseData.receipt_url = await uploadReceiptToStorage(currentReceiptFile);
-                } catch (error) {
-                    alert('Failed to upload receipt. Expense will be updated without new receipt.');
+                
+                const expenseData = {
+                    date: document.getElementById('expense_date').value,
+                    amount: parseFloat(document.getElementById('expense_amount').value),
+                    category: document.getElementById('expense_category').value,
+                    description: finalDescription,
+                    team_member_id: document.getElementById('team_member_id')?.value || null,
+                    job_id: jobIdValue || null // Save the actual job/quote ID
+                };
+                
+                // Upload new receipt if one was selected
+                if (currentReceiptFile) {
+                    try {
+                        expenseData.receipt_url = await uploadReceiptToStorage(currentReceiptFile);
+                    } catch (error) {
+                        console.error('Receipt upload error:', error);
+                        showNotification('Failed to upload receipt. Expense will be updated without new receipt.', 'error');
+                    }
+                } else {
+                    // Keep existing receipt URL if no new file
+                    const existingUrl = document.getElementById('receipt_url').value;
+                    if (existingUrl) {
+                        expenseData.receipt_url = existingUrl;
+                    }
                 }
-            } else {
-                // Keep existing receipt URL if no new file
-                const existingUrl = document.getElementById('receipt_url').value;
-                if (existingUrl) {
-                    expenseData.receipt_url = existingUrl;
+                
+                const { data, error } = await supabaseClient.from('expenses').update(expenseData).eq('id', id).select();
+                
+                if (error) {
+                    console.error('Update error:', error);
+                    throw error;
                 }
-            }
-            
-            const { data } = await supabaseClient.from('expenses').update(expenseData).eq('id', id).select();
-            if (data) {
-                const index = expenses.findIndex(e => e.id === id);
-                if (index !== -1) expenses[index] = data[0];
-                currentReceiptFile = null;
-                closeModal();
+                
+                if (data) {
+                    const index = expenses.findIndex(e => e.id === id);
+                    if (index !== -1) expenses[index] = data[0];
+                    currentReceiptFile = null;
+                    showNotification('Expense updated successfully!');
+                    closeModal();
+                }
+            } catch (error) {
+                console.error('Error updating expense:', error);
+                showNotification('Failed to update expense: ' + error.message, 'error');
+            } finally {
+                isLoading = false;
                 renderApp();
             }
         }
