@@ -3986,7 +3986,7 @@ function renderCalendar() {
                 category: document.getElementById('expense_category').value,
                 description: finalDescription,
                 team_member_id: document.getElementById('team_member_id')?.value || null,
-                job_id: null, // Keep as null for now since we're storing reference in description
+                job_id: jobIdValue || null, // Save the actual job/quote ID
                 user_id: currentUser.id
             };
             
@@ -4038,7 +4038,7 @@ function renderCalendar() {
                 category: document.getElementById('expense_category').value,
                 description: finalDescription,
                 team_member_id: document.getElementById('team_member_id')?.value || null,
-                job_id: null
+                job_id: jobIdValue || null // Save the actual job/quote ID
             };
             
             // Upload new receipt if one was selected
