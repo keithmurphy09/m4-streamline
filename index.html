@@ -4029,6 +4029,12 @@ function renderCalendar() {
         
         async function updateExpenseWithReceipt(id) {
             try {
+                console.log('updateExpenseWithReceipt called with:', id, 'Type:', typeof id);
+                
+                // If id is an object, extract the actual ID
+                const expenseId = typeof id === 'object' ? id.id : id;
+                console.log('Using expense ID:', expenseId);
+                
                 isLoading = true;
                 loadingMessage = 'Updating expense...';
                 renderApp();
@@ -4081,7 +4087,7 @@ function renderCalendar() {
                     }
                 }
                 
-                const { data, error } = await supabaseClient.from('expenses').update(expenseData).eq('id', id).select();
+                const { data, error } = await supabaseClient.from('expenses').update(expenseData).eq('id', expenseId).select();
                 
                 if (error) {
                     console.error('Update error:', error);
@@ -4089,7 +4095,7 @@ function renderCalendar() {
                 }
                 
                 if (data) {
-                    const index = expenses.findIndex(e => e.id === id);
+                    const index = expenses.findIndex(e => e.id === expenseId);
                     if (index !== -1) expenses[index] = data[0];
                     currentReceiptFile = null;
                     showNotification('Expense updated successfully!');
@@ -4199,7 +4205,7 @@ function renderCalendar() {
                 const receiptSection = `<div class="mb-3"><label class="block text-sm font-medium mb-1">📸 Receipt Photo (Optional)</label><input type="file" id="receipt_photo" accept="image/*" capture="environment" class="w-full px-4 py-2 border rounded" onchange="handleReceiptUpload(this)"><div id="receipt_preview" class="mt-2">${receipt_url ? `<div class="bg-gray-50 p-2 rounded flex items-center justify-between"><a href="${receipt_url}" target="_blank" class="text-teal-600 hover:underline text-sm">📎 View Receipt</a><button type="button" onclick="removeReceipt()" class="text-red-600 text-sm">Remove</button></div>` : ''}</div><input type="hidden" id="receipt_url" value="${receipt_url}"></div>`;
                 
                 const action = editingItem 
-                    ? `updateExpenseWithReceipt('${editingItem.id}')` 
+                    ? `updateExpenseWithReceipt('${editingItem?.id || editingItem}')` 
                     : `addExpenseWithReceipt()`;
                 form = `<input type="date" id="expense_date" value="${date}" class="w-full px-4 py-2 border rounded mb-3" required><input type="number" id="expense_amount" placeholder="Amount" value="${amount}" step="0.01" class="w-full px-4 py-2 border rounded mb-3" required><select id="expense_category" class="w-full px-4 py-2 border rounded mb-3">${categories.map(cat => `<option value="${cat}" ${cat === category ? 'selected' : ''}>${cat}</option>`).join('')}</select>${jobDropdown}${teamMemberDropdown}<textarea id="expense_description" placeholder="Description (e.g., Plumbing supplies for Smith job)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${description}</textarea>${receiptSection}<button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
             }
