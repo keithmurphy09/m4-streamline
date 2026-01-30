@@ -3960,12 +3960,18 @@ function renderCalendar() {
         
         async function addExpenseWithReceipt() {
             try {
+                // READ ALL FORM VALUES FIRST - before renderApp() clears them!
+                const jobIdValue = document.getElementById('job_id')?.value;
+                const description = document.getElementById('expense_description').value;
+                const dateValue = document.getElementById('expense_date').value;
+                const amountValue = parseFloat(document.getElementById('expense_amount').value);
+                const categoryValue = document.getElementById('expense_category').value;
+                const teamMemberIdValue = document.getElementById('team_member_id')?.value || null;
+                
+                // NOW show loading state
                 isLoading = true;
                 loadingMessage = 'Adding expense...';
                 renderApp();
-                
-                const jobIdValue = document.getElementById('job_id')?.value;
-                const description = document.getElementById('expense_description').value;
                 
                 // If a job/quote is selected, append it to description
                 let finalDescription = description;
@@ -3997,11 +4003,11 @@ function renderCalendar() {
                 }
                 
                 const expenseData = {
-                    date: document.getElementById('expense_date').value,
-                    amount: parseFloat(document.getElementById('expense_amount').value),
-                    category: document.getElementById('expense_category').value,
+                    date: dateValue,
+                    amount: amountValue,
+                    category: categoryValue,
                     description: finalDescription,
-                    team_member_id: document.getElementById('team_member_id')?.value || null,
+                    team_member_id: teamMemberIdValue,
                     job_id: cleanJobId, // Save job UUID or null
                     user_id: currentUser.id
                 };
@@ -4046,12 +4052,20 @@ function renderCalendar() {
                 const expenseId = typeof id === 'object' ? id.id : id;
                 console.log('Using expense ID:', expenseId);
                 
+                // READ ALL FORM VALUES FIRST - before renderApp() clears them!
+                const jobIdValue = document.getElementById('job_id')?.value;
+                console.log('Job ID from dropdown:', jobIdValue);
+                const description = document.getElementById('expense_description').value;
+                const dateValue = document.getElementById('expense_date').value;
+                const amountValue = parseFloat(document.getElementById('expense_amount').value);
+                const categoryValue = document.getElementById('expense_category').value;
+                const teamMemberIdValue = document.getElementById('team_member_id')?.value || null;
+                const existingReceiptUrl = document.getElementById('receipt_url').value;
+                
+                // NOW show loading state
                 isLoading = true;
                 loadingMessage = 'Updating expense...';
                 renderApp();
-                
-                const jobIdValue = document.getElementById('job_id')?.value;
-                const description = document.getElementById('expense_description').value;
                 
                 // If a job/quote is selected, append it to description
                 let finalDescription = description;
@@ -4080,16 +4094,20 @@ function renderCalendar() {
                     if (jobIdValue.startsWith('job_')) {
                         // It's a job - strip prefix and save
                         cleanJobId = jobIdValue.replace('job_', '');
+                        console.log('Cleaned job ID for saving:', cleanJobId);
+                    } else {
+                        console.log('Selected item is a quote, not saving to job_id');
                     }
                     // If it starts with 'quote_', leave cleanJobId as null
                 }
+                console.log('Final cleanJobId to save:', cleanJobId);
                 
                 const expenseData = {
-                    date: document.getElementById('expense_date').value,
-                    amount: parseFloat(document.getElementById('expense_amount').value),
-                    category: document.getElementById('expense_category').value,
+                    date: dateValue,
+                    amount: amountValue,
+                    category: categoryValue,
                     description: finalDescription,
-                    team_member_id: document.getElementById('team_member_id')?.value || null,
+                    team_member_id: teamMemberIdValue,
                     job_id: cleanJobId // Save job UUID or null
                 };
                 
@@ -4103,9 +4121,8 @@ function renderCalendar() {
                     }
                 } else {
                     // Keep existing receipt URL if no new file
-                    const existingUrl = document.getElementById('receipt_url').value;
-                    if (existingUrl) {
-                        expenseData.receipt_url = existingUrl;
+                    if (existingReceiptUrl) {
+                        expenseData.receipt_url = existingReceiptUrl;
                     }
                 }
                 
