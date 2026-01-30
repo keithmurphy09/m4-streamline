@@ -359,6 +359,123 @@ For licensing inquiries, contact: [your-email@domain.com]
             renderApp();
         }
         
+        // Reset converted quotes back to accepted so they can be reconverted
+        async function resetQuotesToAccepted() {
+            const quoteIds = prompt(
+                '🔄 RESET QUOTES TO RECONVERT\n\n' +
+                'Enter the quote IDs or titles (comma-separated):\n' +
+                'Example: ORD-411920-32, ORD-411920-33\n\n' +
+                'Or type "all" to reset ALL converted quotes'
+            );
+            
+            if (!quoteIds) return;
+            
+            try {
+                let quotesToReset;
+                
+                if (quoteIds.toLowerCase().trim() === 'all') {
+                    // Reset all converted quotes
+                    quotesToReset = quotes.filter(q => q.status === 'converted');
+                } else {
+                    // Parse the input
+                    const searchTerms = quoteIds.split(',').map(s => s.trim());
+                    
+                    // Find matching quotes
+                    quotesToReset = quotes.filter(q => 
+                        q.status === 'converted' &&
+                        searchTerms.some(term => 
+                            q.title.includes(term) || 
+                            q.id === term ||
+                            (q.quote_number && q.quote_number.includes(term))
+                        )
+                    );
+                }
+                
+                if (quotesToReset.length === 0) {
+                    alert('❌ No matching converted quotes found!');
+                    return;
+                }
+                
+                const confirmMsg = `Found ${quotesToReset.length} quote(s) to reset:\n\n` +
+                    quotesToReset.map(q => `• ${q.title}`).join('\n') +
+                    `\n\nReset these back to ACCEPTED status?\n(They can then be converted to invoices again)`;
+                
+                if (!confirm(confirmMsg)) return;
+                
+                // Reset each quote
+                for (const quote of quotesToReset) {
+                    await supabaseClient
+                        .from('quotes')
+                        .update({ status: 'accepted' })
+                        .eq('id', quote.id);
+                }
+                
+                await loadAllData();
+                renderApp();
+                
+                alert(`✅ Success!\n\nReset ${quotesToReset.length} quote(s) back to ACCEPTED status.\n\nYou can now convert them to invoices again!`);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Error: ' + error.message);
+            }
+        }
+        
+        // ONE-TIME FIX: Link existing invoices to their quotes
+        async function fixInvoiceQuoteLinks() {
+            console.log('🔧 Starting invoice fix...');
+            
+            // Get all invoices without quote_id
+            const { data: brokenInvoices } = await supabaseClient
+                .from('invoices')
+                .select('*')
+                .is('quote_id', null)
+                .eq('user_id', currentUser.id);
+            
+            if (!brokenInvoices || brokenInvoices.length === 0) {
+                console.log('✅ No invoices need fixing!');
+                return;
+            }
+            
+            console.log(`Found ${brokenInvoices.length} invoices without quote links`);
+            
+            let fixed = 0;
+            for (const invoice of brokenInvoices) {
+                // Try to find matching quote by title and client
+                // Remove " - Final Payment" suffix if it exists
+                const cleanTitle = invoice.title.replace(' - Final Payment', '');
+                
+                const matchingQuote = quotes.find(q => 
+                    q.title === cleanTitle && 
+                    q.client_id === invoice.client_id &&
+                    q.status === 'converted'
+                );
+                
+                if (matchingQuote) {
+                    // Update invoice with quote_id
+                    const { error } = await supabaseClient
+                        .from('invoices')
+                        .update({ quote_id: matchingQuote.id })
+                        .eq('id', invoice.id);
+                    
+                    if (!error) {
+                        console.log(`✅ Fixed: ${invoice.title} → linked to quote ${matchingQuote.title}`);
+                        fixed++;
+                    } else {
+                        console.error(`❌ Error fixing ${invoice.title}:`, error);
+                    }
+                } else {
+                    console.log(`⚠️ No matching quote found for: ${invoice.title}`);
+                }
+            }
+            
+            console.log(`\n🎉 Fixed ${fixed} out of ${brokenInvoices.length} invoices!`);
+            console.log('Reloading data...');
+            await loadAllData();
+            renderApp();
+            console.log('✅ Done! Refresh the page to see addresses.');
+        }
+        
         async function loadAllData() {
             isLoading = true;
             loadingMessage = 'Loading your data...';
