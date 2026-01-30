@@ -3625,6 +3625,7 @@ function renderCalendar() {
                                         const client = clients.find(c => c.id === inv.client_id);
                                         const linkedQuote = inv.quote_id ? quotes.find(q => q.id === inv.quote_id) : null;
                                         const jobAddress = linkedQuote?.job_address || client?.address || '';
+                                        console.log('Monthly Invoice:', inv.title, 'Job address:', jobAddress);
                                         return `<div class="bg-white p-3 rounded-lg shadow border-l-4 border-green-500">
                                             <div class="flex justify-between items-start">
                                                 <div class="flex-1">
@@ -3697,9 +3698,11 @@ function renderCalendar() {
                         
                         const isSelected = selectedInvoices.includes(inv.id);
                         
-                        // Get job address from linked quote
+                        // Get job address from linked quote OR client
                         const linkedQuote = inv.quote_id ? quotes.find(q => q.id === inv.quote_id) : null;
                         const jobAddress = linkedQuote?.job_address || client?.address || '';
+                        
+                        console.log('Invoice:', inv.title, 'Quote ID:', inv.quote_id, 'Found quote:', linkedQuote?.title, 'Job address:', linkedQuote?.job_address, 'Client address:', client?.address, 'Final jobAddress:', jobAddress);
                         
                         return `<div class="bg-white p-4 rounded-lg shadow ${borderColor} ${isSelected ? 'ring-2 ring-blue-400' : ''}">
                             <div class="flex gap-3">
@@ -3710,7 +3713,7 @@ function renderCalendar() {
                                     <div class="flex justify-between mb-3">
                                         <div>
                                             <h3 class="text-lg font-semibold">${inv.title}</h3>
-                                            <p class="text-sm">${client?.name || 'Unknown'}${jobAddress ? ` • 📍 ${jobAddress}` : ''}</p>
+                                            <p class="text-sm text-gray-600">${client?.name || 'Unknown'}${jobAddress ? ` • 📍 ${jobAddress}` : ''}</p>
                                             <p class="text-xs">${inv.invoice_number}</p>
                                             <p class="text-xs text-gray-500">Issued: ${inv.issue_date}</p>
                                             ${inv.due_date ? `<p class="text-xs text-gray-500">Due: ${inv.due_date}</p>` : ''}
