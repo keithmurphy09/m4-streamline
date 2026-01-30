@@ -3624,7 +3624,24 @@ function renderCalendar() {
         if (isConverted) {
             // Find the job that was created from this quote
             const relatedJob = jobs.find(j => j.title === q.title && j.client_id === q.client_id);
-            const jobExpenses = relatedJob ? expenses.filter(e => e.job_id === relatedJob.id).reduce((sum, e) => sum + parseFloat(e.amount || 0), 0) : 0;
+            
+            // Get expenses from TWO sources:
+            // 1. Expenses linked to the job (if scheduled)
+            let jobExpenses = relatedJob 
+                ? expenses.filter(e => e.job_id === relatedJob.id).reduce((sum, e) => sum + parseFloat(e.amount || 0), 0) 
+                : 0;
+            
+            // 2. Expenses that reference this QUOTE in description (quotes can't be saved in job_id)
+            const quoteExpenses = expenses.filter(e => {
+                // Check if description contains reference to this quote
+                if (!e.description) return false;
+                return e.description.includes(q.title) || 
+                       (q.quote_number && e.description.includes(q.quote_number));
+            }).reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+            
+            // Total expenses = job expenses + quote expenses
+            jobExpenses = jobExpenses + quoteExpenses;
+            
             const jobInvoice = invoices.find(i => i.quote_id === q.id);
             const jobRevenue = jobInvoice && jobInvoice.status === 'paid' ? parseFloat(jobInvoice.total || 0) : 0;
             const quotedAmount = parseFloat(q.total || 0);
