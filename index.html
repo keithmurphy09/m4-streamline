@@ -215,7 +215,7 @@ For licensing inquiries, contact: [your-email@domain.com]
         let selectedAccountType = 'sole_trader'; // Track which account type is selected
         
         function renderAuth() {
-            document.getElementById('app').innerHTML = `<div class="min-h-screen flex items-center justify-center bg-black"><div class="bg-white p-8 rounded-lg shadow-xl max-w-2xl w-full"><div class="text-center mb-8"><div class="text-teal-400 text-5xl font-bold mb-2">M4</div><h1 class="text-2xl font-bold text-black">Streamline</h1><p class="text-gray-600 mt-2">Business Management</p></div><div class="bg-teal-50 border-l-4 border-teal-400 p-4 mb-6 rounded"><p class="text-sm font-medium text-teal-900 mb-1">🎉 Start Your Free Trial</p><p class="text-xs text-teal-700">14 days free • Cancel anytime</p></div><div id="signup-section"><h3 class="text-lg font-bold mb-4 text-center">Choose Your Account Type</h3><div class="grid grid-cols-2 gap-4 mb-6"><div onclick="selectedAccountType='sole_trader'; renderAuth();" class="cursor-pointer p-4 border-2 rounded-lg ${selectedAccountType === 'sole_trader' ? 'border-teal-400 bg-teal-50' : 'border-gray-300 hover:border-teal-200'}"><div class="text-center"><div class="text-2xl mb-2">👤</div><h4 class="font-bold mb-1">Sole Trader</h4><p class="text-xs text-gray-600 mb-2">Perfect for individuals</p><p class="text-2xl font-bold text-teal-600">$19.99<span class="text-sm text-gray-500">/mo</span></p></div></div><div onclick="selectedAccountType='business'; renderAuth();" class="cursor-pointer p-4 border-2 rounded-lg ${selectedAccountType === 'business' ? 'border-teal-400 bg-teal-50' : 'border-gray-300 hover:border-teal-200'}"><div class="text-center"><div class="text-2xl mb-2">👥</div><h4 class="font-bold mb-1">Business</h4><p class="text-xs text-gray-600 mb-2">Teams & job assignments</p><p class="text-2xl font-bold text-teal-600">$49.99<span class="text-sm text-gray-500">/mo</span></p></div></div></div><div><input type="email" id="email" placeholder="Email" class="w-full px-4 py-3 border rounded-lg mb-3"><input type="password" id="password" placeholder="Password" class="w-full px-4 py-3 border rounded-lg mb-2"><div class="text-xs text-gray-500 mb-4 pl-1">Password must be 8+ characters with uppercase, lowercase, and number</div><button onclick="handleLogin()" class="w-full bg-black text-white px-4 py-3 rounded-lg hover:bg-gray-800 border-2 border-teal-400 mb-3">Sign In</button><button onclick="handleSignup()" class="w-full bg-white text-black px-4 py-3 rounded-lg hover:bg-gray-50 border-2 border-black">Start Free Trial - ${selectedAccountType === 'sole_trader' ? 'Sole Trader' : 'Business'}</button><div id="auth-error" class="mt-3 text-red-600 text-sm text-center"></div></div></div></div></div>`;
+            document.getElementById('app').innerHTML = `<div class="min-h-screen flex items-center justify-center bg-black"><div class="bg-white p-8 rounded-lg shadow-xl max-w-2xl w-full"><div class="text-center mb-8"><div class="text-teal-400 text-5xl font-bold mb-2">M4</div><h1 class="text-2xl font-bold text-black dark:text-white">Streamline</h1><p class="text-gray-600 dark:text-gray-300 mt-2">Business Management</p></div><div class="bg-teal-50 border-l-4 border-teal-400 p-4 mb-6 rounded"><p class="text-sm font-medium text-teal-900 mb-1">🎉 Start Your Free Trial</p><p class="text-xs text-teal-700">14 days free • Cancel anytime</p></div><div id="signup-section"><h3 class="text-lg font-bold dark:text-teal-400 mb-4 text-center">Choose Your Account Type</h3><div class="grid grid-cols-2 gap-4 mb-6"><div onclick="selectedAccountType='sole_trader'; renderAuth();" class="cursor-pointer p-4 border-2 rounded-lg ${selectedAccountType === 'sole_trader' ? 'border-teal-400 bg-teal-50' : 'border-gray-300 hover:border-teal-200'}"><div class="text-center"><div class="text-2xl mb-2">👤</div><h4 class="font-bold mb-1">Sole Trader</h4><p class="text-xs text-gray-600 dark:text-gray-300 mb-2">Perfect for individuals</p><p class="text-2xl font-bold text-teal-600">$19.99<span class="text-sm text-gray-500 dark:text-gray-400">/mo</span></p></div></div><div onclick="selectedAccountType='business'; renderAuth();" class="cursor-pointer p-4 border-2 rounded-lg ${selectedAccountType === 'business' ? 'border-teal-400 bg-teal-50' : 'border-gray-300 hover:border-teal-200'}"><div class="text-center"><div class="text-2xl mb-2">👥</div><h4 class="font-bold mb-1">Business</h4><p class="text-xs text-gray-600 dark:text-gray-300 mb-2">Teams & job assignments</p><p class="text-2xl font-bold text-teal-600">$49.99<span class="text-sm text-gray-500 dark:text-gray-400">/mo</span></p></div></div></div><div><input type="email" id="email" placeholder="Email" class="w-full px-4 py-3 border rounded-lg mb-3"><input type="password" id="password" placeholder="Password" class="w-full px-4 py-3 border rounded-lg mb-2"><div class="text-xs text-gray-500 dark:text-gray-400 mb-4 pl-1">Password must be 8+ characters with uppercase, lowercase, and number</div><button onclick="handleLogin()" class="w-full bg-black text-white px-4 py-3 rounded-lg hover:bg-gray-800 border-2 border-teal-400 mb-3">Sign In</button><button onclick="handleSignup()" class="w-full bg-white text-black px-4 py-3 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 border-2 border-black">Start Free Trial - ${selectedAccountType === 'sole_trader' ? 'Sole Trader' : 'Business'}</button><div id="auth-error" class="mt-3 text-red-600 text-sm text-center"></div></div></div></div></div>`;
         }
         
         async function handleLogin() {
@@ -602,7 +602,7 @@ For licensing inquiries, contact: [your-email@domain.com]
             
             const notification = document.createElement('div');
             notification.className = `fixed top-4 right-4 ${bgColor} border-l-4 p-4 rounded shadow-lg z-50 max-w-md animate-slide-in`;
-            notification.innerHTML = `<p class="font-medium">${icon} ${message}</p>`;
+            notification.innerHTML = `<p class="font-medium dark:text-gray-200">${icon} ${message}</p>`;
             document.body.appendChild(notification);
             
             setTimeout(() => {
@@ -1761,17 +1761,17 @@ async function acceptQuote(quoteId, shareToken) {
                     const daysLeft = Math.ceil((trialEnds - now) / (1000 * 60 * 60 * 24));
                     console.log('Days left in trial:', daysLeft);
                     if (daysLeft > 0) {
-                        trialBanner = `<div class="bg-yellow-500 text-black text-center py-2 text-sm font-medium">⏰ Trial: ${daysLeft} day${daysLeft === 1 ? '' : 's'} remaining</div>`;
+                        trialBanner = `<div class="bg-yellow-500 text-black text-center py-2 text-sm font-medium dark:text-gray-200">⏰ Trial: ${daysLeft} day${daysLeft === 1 ? '' : 's'} remaining</div>`;
                     }
                 } else if (!subscription && !isAdmin) {
                     // Fallback for users without subscription record yet
-                    trialBanner = `<div class="bg-yellow-500 text-black text-center py-2 text-sm font-medium">⏰ Trial: 14 days remaining</div>`;
+                    trialBanner = `<div class="bg-yellow-500 text-black text-center py-2 text-sm font-medium dark:text-gray-200">⏰ Trial: 14 days remaining</div>`;
                 }
             }
             
             const content = await renderContent();
             
-            document.getElementById('app').innerHTML = `<div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">${trialBanner}${isLoading ? `<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"><div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl"><div class="flex items-center gap-3"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div><span class="text-lg dark:text-white">${loadingMessage}</span></div></div></div>` : ''}<div class="bg-black text-white p-4 md:p-6 shadow-lg border-b-4 border-teal-400"><div class="max-w-7xl mx-auto flex flex-col md:grid md:grid-cols-3 gap-4 md:items-center"><div class="flex items-center gap-3 justify-center md:justify-start"><img src="final_logo.png" alt="M4 Projects Logo" class="h-20 w-20 md:h-32 md:w-32 object-contain"><div class="text-xs md:text-sm"><div class="text-xs text-teal-400">Logged in:</div><div class="font-medium text-teal-400 truncate">${currentUser.email}</div></div></div><div class="text-center"><h1 class="text-2xl md:text-3xl font-bold text-teal-400">M4 STREAMLINE</h1><p class="text-teal-400 text-xs md:text-sm italic">"streamlining your business"</p></div><div class="flex items-center justify-center md:justify-end gap-3 md:gap-4">${isAdmin ? '<span class="bg-red-600 px-2 py-1 rounded text-xs font-bold whitespace-nowrap">ADMIN</span>' : ''}${isAdmin ? `<div class="flex gap-1 bg-gray-800 rounded p-1"><button onclick="enterDemoMode('sole_trader');" class="px-2 py-1 rounded text-xs ${demoMode === 'sole_trader' ? 'bg-teal-600' : 'hover:bg-gray-700'}">Sole Trader</button><button onclick="enterDemoMode('business');" class="px-2 py-1 rounded text-xs ${demoMode === 'business' ? 'bg-teal-600' : 'hover:bg-gray-700'}">Business</button><button onclick="exitDemoMode();" class="px-2 py-1 rounded text-xs ${demoMode === null ? 'bg-teal-600' : 'hover:bg-gray-700'}">Real</button>${demoMode ? '<button onclick="initDemoData(); loadAllData(); renderApp();" class="px-2 py-1 rounded text-xs bg-yellow-600 hover:bg-yellow-700" title="Reset demo data">🔄</button>' : ''}</div>` : ''}<button onclick="toggleDarkMode()" class="px-3 py-2 md:px-4 md:py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm border border-teal-400" title="Toggle Dark Mode">${darkMode ? '☀️' : '🌙'}</button><div class="relative"><button onclick="toggleSettingsMenu()" class="px-3 py-2 md:px-4 md:py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm border border-teal-400 flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></button><div id="settings-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50"><div class="py-1"><button onclick="handleLogout()" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>Logout</button><a href="mailto:m4projectsanddesigns@gmail.com?subject=M4 Streamline Support Request" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>Contact Support</a><button onclick="downloadUserGuide()" class="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>📚 User Guide</button>${subscription?.account_type === 'sole_trader' ? '<button onclick="confirmUpgradeToBusiness()" class="w-full text-left px-4 py-2 text-sm text-teal-600 hover:bg-teal-50 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>Upgrade to Business</button>' : ''}<button onclick="confirmDeleteAccount()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>Delete Account</button></div></div></div></div></div></div><div class="bg-white dark:bg-gray-800 shadow overflow-x-auto"><div class="max-w-7xl mx-auto px-2 md:px-4"><div class="flex space-x-1 min-w-max">${['dashboard', 'schedule', 'clients', 'quotes', 'invoices', 'expenses', 'analytics', 'company'].map(tab => `<button onclick="switchTab('${tab}')" class="px-3 md:px-6 py-3 md:py-4 font-medium border-b-2 text-sm md:text-base whitespace-nowrap ${activeTab === tab ? 'border-teal-400 text-black dark:text-white' : 'border-transparent text-gray-600 dark:text-gray-400'}">${tab === 'company' ? 'Company Info' : tab.charAt(0).toUpperCase() + tab.slice(1)}</button>`).join('')}${getAccountType() === 'business' ? '<button onclick="switchTab(\'team\')" class="px-3 md:px-6 py-3 md:py-4 font-medium border-b-2 text-sm md:text-base whitespace-nowrap ' + (activeTab === 'team' ? 'border-teal-400 text-black' : 'border-transparent text-gray-600') + '">Team</button>' : ''}${isAdmin ? '<button onclick="switchTab(\'admin\')" class="px-3 md:px-6 py-3 md:py-4 font-medium border-b-2 text-sm md:text-base whitespace-nowrap ' + (activeTab === 'admin' ? 'border-teal-400 text-black' : 'border-transparent text-gray-600') + '">Admin</button>' : ''}</div></div></div><div class="max-w-7xl mx-auto p-3 md:p-6">${content}</div>${showModal ? renderModal() : ''}</div>`;
+            document.getElementById('app').innerHTML = `<div class="min-h-screen bg-gray-50 dark:bg-gray-800 dark:bg-gray-900 transition-colors">${trialBanner}${isLoading ? `<div class="fixed inset-0 bg-black bg-opacity-70 dark:bg-opacity-80 flex items-center justify-center z-50"><div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl"><div class="flex items-center gap-3"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div><span class="text-lg dark:text-white">${loadingMessage}</span></div></div></div>` : ''}<div class="bg-black text-white p-4 md:p-6 shadow-lg border-b-4 border-teal-400"><div class="max-w-7xl mx-auto flex flex-col md:grid md:grid-cols-3 gap-4 md:items-center"><div class="flex items-center gap-3 justify-center md:justify-start"><img src="final_logo.png" alt="M4 Projects Logo" class="h-20 w-20 md:h-32 md:w-32 object-contain"><div class="text-xs md:text-sm"><div class="text-xs text-teal-400">Logged in:</div><div class="font-medium text-teal-400 truncate">${currentUser.email}</div></div></div><div class="text-center"><h1 class="text-2xl md:text-3xl font-bold text-teal-400">M4 STREAMLINE</h1><p class="text-teal-400 text-xs md:text-sm italic">"streamlining your business"</p></div><div class="flex items-center justify-center md:justify-end gap-3 md:gap-4">${isAdmin ? '<span class="bg-red-600 px-2 py-1 rounded text-xs font-bold whitespace-nowrap">ADMIN</span>' : ''}${isAdmin ? `<div class="flex gap-1 bg-gray-800 rounded p-1"><button onclick="enterDemoMode('sole_trader');" class="px-2 py-1 rounded text-xs ${demoMode === 'sole_trader' ? 'bg-teal-600' : 'hover:bg-gray-700'}">Sole Trader</button><button onclick="enterDemoMode('business');" class="px-2 py-1 rounded text-xs ${demoMode === 'business' ? 'bg-teal-600' : 'hover:bg-gray-700'}">Business</button><button onclick="exitDemoMode();" class="px-2 py-1 rounded text-xs ${demoMode === null ? 'bg-teal-600' : 'hover:bg-gray-700'}">Real</button>${demoMode ? '<button onclick="initDemoData(); loadAllData(); renderApp();" class="px-2 py-1 rounded text-xs bg-yellow-600 hover:bg-yellow-700" title="Reset demo data">🔄</button>' : ''}</div>` : ''}<button onclick="toggleDarkMode()" class="px-3 py-2 md:px-4 md:py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm border border-teal-400" title="Toggle Dark Mode">${darkMode ? '☀️' : '🌙'}</button><div class="relative"><button onclick="toggleSettingsMenu()" class="px-3 py-2 md:px-4 md:py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm border border-teal-400 flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></button><div id="settings-menu" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50"><div class="py-1"><button onclick="handleLogout()" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>Logout</button><a href="mailto:m4projectsanddesigns@gmail.com?subject=M4 Streamline Support Request" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>Contact Support</a><button onclick="downloadUserGuide()" class="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>📚 User Guide</button>${subscription?.account_type === 'sole_trader' ? '<button onclick="confirmUpgradeToBusiness()" class="w-full text-left px-4 py-2 text-sm text-teal-600 hover:bg-teal-50 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>Upgrade to Business</button>' : ''}<button onclick="confirmDeleteAccount()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>Delete Account</button></div></div></div></div></div></div><div class="bg-white dark:bg-gray-800 shadow overflow-x-auto"><div class="max-w-7xl mx-auto px-2 md:px-4"><div class="flex space-x-1 min-w-max">${['dashboard', 'schedule', 'clients', 'quotes', 'invoices', 'expenses', 'analytics', 'company'].map(tab => `<button onclick="switchTab('${tab}')" class="px-3 md:px-6 py-3 md:py-4 font-medium border-b-2 text-sm md:text-base whitespace-nowrap ${activeTab === tab ? 'border-teal-400 text-black dark:text-white' : 'border-transparent text-gray-600 dark:text-gray-300 dark:text-gray-400'}">${tab === 'company' ? 'Company Info' : tab.charAt(0).toUpperCase() + tab.slice(1)}</button>`).join('')}${getAccountType() === 'business' ? '<button onclick="switchTab(\'team\')" class="px-3 md:px-6 py-3 md:py-4 font-medium border-b-2 text-sm md:text-base whitespace-nowrap ' + (activeTab === 'team' ? 'border-teal-400 text-black' : 'border-transparent text-gray-600 dark:text-gray-300') + '">Team</button>' : ''}${isAdmin ? '<button onclick="switchTab(\'admin\')" class="px-3 md:px-6 py-3 md:py-4 font-medium border-b-2 text-sm md:text-base whitespace-nowrap ' + (activeTab === 'admin' ? 'border-teal-400 text-black' : 'border-transparent text-gray-600 dark:text-gray-300') + '">Admin</button>' : ''}</div></div></div><div class="max-w-7xl mx-auto p-3 md:p-6">${content}</div>${showModal ? renderModal() : ''}</div>`;
             
             // Initialize charts if on analytics tab
             if (activeTab === 'analytics') {
@@ -2291,62 +2291,62 @@ async function acceptQuote(quoteId, shareToken) {
                 <!-- Key Metrics Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
                     <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-teal-500">
-                        <div class="text-sm text-gray-600 mb-1">Quote Win Rate</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-300 mb-1">Quote Win Rate</div>
                         <div class="text-3xl font-bold text-teal-600">${quoteWinRate}%</div>
-                        <div class="text-xs text-gray-500 mt-1">${acceptedQuotes} of ${totalQuotes} quotes accepted</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${acceptedQuotes} of ${totalQuotes} quotes accepted</div>
                     </div>
                     
                     <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-green-500">
-                        <div class="text-sm text-gray-600 mb-1">Total Revenue</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-300 mb-1">Total Revenue</div>
                         <div class="text-3xl font-bold text-green-600">$${totalRevenue.toFixed(2)}</div>
-                        <div class="text-xs text-gray-500 mt-1">${paidInvoices} paid invoices</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${paidInvoices} paid invoices</div>
                     </div>
                     
                     <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-red-500">
-                        <div class="text-sm text-gray-600 mb-1">Total Expenses</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-300 mb-1">Total Expenses</div>
                         <div class="text-3xl font-bold text-red-600">$${totalExpenses.toFixed(2)}</div>
-                        <div class="text-xs text-gray-500 mt-1">${expenses.length} expenses</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${expenses.length} expenses</div>
                     </div>
                     
                     <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-${netProfit >= 0 ? 'blue' : 'orange'}-500">
-                        <div class="text-sm text-gray-600 mb-1">Net Profit</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-300 mb-1">Net Profit</div>
                         <div class="text-3xl font-bold text-${netProfit >= 0 ? 'blue' : 'orange'}-600">$${netProfit.toFixed(2)}</div>
-                        <div class="text-xs text-gray-500 mt-1">${profitMargin}% margin</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${profitMargin}% margin</div>
                     </div>
                     
                     <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-orange-500">
-                        <div class="text-sm text-gray-600 mb-1">Outstanding</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-300 mb-1">Outstanding</div>
                         <div class="text-3xl font-bold text-orange-600">$${outstandingRevenue.toFixed(2)}</div>
-                        <div class="text-xs text-gray-500 mt-1">${unpaidInvoices} unpaid invoices</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${unpaidInvoices} unpaid invoices</div>
                     </div>
                 </div>
                 
                 <!-- Secondary Metrics -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div class="bg-white p-4 rounded-lg shadow">
-                        <div class="text-sm text-gray-600 mb-1">Avg Collection Time</div>
-                        <div class="text-2xl font-bold">${avgCollectionDays} days</div>
-                        <div class="text-xs text-gray-500 mt-1">${paidInvoicesWithDates.length} paid invoices tracked</div>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow dark:shadow-gray-700">
+                        <div class="text-sm text-gray-600 dark:text-gray-300 mb-1">Avg Collection Time</div>
+                        <div class="text-2xl font-bold dark:text-teal-400">${avgCollectionDays} days</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${paidInvoicesWithDates.length} paid invoices tracked</div>
                     </div>
                     
-                    <div class="bg-white p-4 rounded-lg shadow">
-                        <div class="text-sm text-gray-600 mb-1">Total Clients</div>
-                        <div class="text-2xl font-bold">${clients.length}</div>
-                        <div class="text-xs text-gray-500 mt-1">Active client base</div>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow dark:shadow-gray-700">
+                        <div class="text-sm text-gray-600 dark:text-gray-300 mb-1">Total Clients</div>
+                        <div class="text-2xl font-bold dark:text-teal-400">${clients.length}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Active client base</div>
                     </div>
                     
-                    <div class="bg-white p-4 rounded-lg shadow">
-                        <div class="text-sm text-gray-600 mb-1">Completed Jobs</div>
-                        <div class="text-2xl font-bold">${completedJobs}</div>
-                        <div class="text-xs text-gray-500 mt-1">${totalJobs} total jobs</div>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow dark:shadow-gray-700">
+                        <div class="text-sm text-gray-600 dark:text-gray-300 mb-1">Completed Jobs</div>
+                        <div class="text-2xl font-bold dark:text-teal-400">${completedJobs}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${totalJobs} total jobs</div>
                     </div>
                 </div>
                 
                 <!-- Charts Section -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                     <!-- Monthly Revenue Trend -->
-                    <div class="bg-white p-6 rounded-lg shadow">
-                        <h3 class="text-lg font-bold mb-4">Revenue Trend (Last 6 Months)</h3>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow dark:shadow-gray-700">
+                        <h3 class="text-lg font-bold dark:text-teal-400 mb-4">Revenue Trend (Last 6 Months)</h3>
                         <div class="space-y-2">
                             ${Object.entries(monthlyRevenue).map(([month, revenue]) => {
                                 const maxRevenue = Math.max(...Object.values(monthlyRevenue), 1);
@@ -2354,8 +2354,8 @@ async function acceptQuote(quoteId, shareToken) {
                                 return `
                                     <div>
                                         <div class="flex justify-between text-sm mb-1">
-                                            <span class="text-gray-600">${month}</span>
-                                            <span class="font-medium">$${revenue.toFixed(2)}</span>
+                                            <span class="text-gray-600 dark:text-gray-300">${month}</span>
+                                            <span class="font-medium dark:text-gray-200">$${revenue.toFixed(2)}</span>
                                         </div>
                                         <div class="w-full bg-gray-200 rounded-full h-2">
                                             <div class="bg-teal-500 h-2 rounded-full" style="width: ${percentage}%"></div>
@@ -2367,8 +2367,8 @@ async function acceptQuote(quoteId, shareToken) {
                     </div>
                     
                     <!-- Top Clients -->
-                    <div class="bg-white p-6 rounded-lg shadow">
-                        <h3 class="text-lg font-bold mb-4">Top 5 Clients by Revenue</h3>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow dark:shadow-gray-700">
+                        <h3 class="text-lg font-bold dark:text-teal-400 mb-4">Top 5 Clients by Revenue</h3>
                         ${topClients.length > 0 ? `
                             <div class="space-y-3">
                                 ${topClients.map((client, index) => `
@@ -2377,42 +2377,42 @@ async function acceptQuote(quoteId, shareToken) {
                                             <div class="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center font-bold text-teal-600">
                                                 ${index + 1}
                                             </div>
-                                            <span class="font-medium">${client.name}</span>
+                                            <span class="font-medium dark:text-gray-200">${client.name}</span>
                                         </div>
                                         <span class="text-green-600 font-bold">$${client.revenue.toFixed(2)}</span>
                                     </div>
                                 `).join('')}
                             </div>
-                        ` : '<div class="text-center text-gray-500 py-8">No client revenue data yet</div>'}
+                        ` : '<div class="text-center text-gray-500 dark:text-gray-400 py-8">No client revenue data yet</div>'}
                     </div>
                 </div>
                 
                 <!-- Conversion Funnel -->
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <h3 class="text-lg font-bold mb-4">Business Funnel</h3>
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow dark:shadow-gray-700">
+                    <h3 class="text-lg font-bold dark:text-teal-400 mb-4">Business Funnel</h3>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div class="text-center p-4 bg-blue-50 rounded">
                             <div class="text-3xl font-bold text-blue-600">${totalQuotes}</div>
-                            <div class="text-sm text-gray-600 mt-1">Quotes Sent</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">Quotes Sent</div>
                         </div>
                         <div class="text-center p-4 bg-teal-50 rounded">
                             <div class="text-3xl font-bold text-teal-600">${acceptedQuotes}</div>
-                            <div class="text-sm text-gray-600 mt-1">Quotes Accepted</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">Quotes Accepted</div>
                         </div>
                         <div class="text-center p-4 bg-purple-50 rounded">
                             <div class="text-3xl font-bold text-purple-600">${totalInvoices}</div>
-                            <div class="text-sm text-gray-600 mt-1">Invoices Sent</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">Invoices Sent</div>
                         </div>
                         <div class="text-center p-4 bg-green-50 rounded">
                             <div class="text-3xl font-bold text-green-600">${paidInvoices}</div>
-                            <div class="text-sm text-gray-600 mt-1">Invoices Paid</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">Invoices Paid</div>
                         </div>
                     </div>
                 </div>
                 
                 <!-- Most Profitable Jobs -->
                 <div class="bg-white p-6 rounded-lg shadow mb-6">
-                    <h3 class="text-lg font-bold mb-4">💰 Most Profitable Jobs</h3>
+                    <h3 class="text-lg font-bold dark:text-teal-400 mb-4">💰 Most Profitable Jobs</h3>
                     ${(() => {
                         // Calculate profit for each job
                         const jobProfits = jobs.map(job => {
@@ -2428,7 +2428,7 @@ async function acceptQuote(quoteId, shareToken) {
                         const lossJobs = jobProfits.filter(j => j.profit < 0);
                         
                         if (topProfitable.length === 0) {
-                            return '<div class="text-center text-gray-500 py-8">No job profitability data yet. Link expenses to jobs to track profit!</div>';
+                            return '<div class="text-center text-gray-500 dark:text-gray-400 py-8">No job profitability data yet. Link expenses to jobs to track profit!</div>';
                         }
                         
                         return `
@@ -2443,9 +2443,9 @@ async function acceptQuote(quoteId, shareToken) {
                                                     ${index + 1}
                                                 </div>
                                                 <div class="flex-1">
-                                                    <div class="font-semibold">${item.job.title}</div>
-                                                    <div class="text-sm text-gray-600">${client?.name || 'Unknown'} • ${new Date(item.job.date).toLocaleDateString()}</div>
-                                                    <div class="text-xs text-gray-500 mt-1">
+                                                    <div class="font-semibold dark:text-white">${item.job.title}</div>
+                                                    <div class="text-sm text-gray-600 dark:text-gray-300">${client?.name || 'Unknown'} • ${new Date(item.job.date).toLocaleDateString()}</div>
+                                                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                                         Revenue: $${item.revenue.toFixed(2)} | Expenses: $${item.expenses.toFixed(2)}
                                                     </div>
                                                 </div>
@@ -2471,7 +2471,7 @@ async function acceptQuote(quoteId, shareToken) {
                 
                 <!-- Charts Row -->
                 <div class="mb-4 flex justify-end">
-                    <select onchange="analyticsChartRange=this.value; renderApp();" class="px-4 py-2 border rounded-lg bg-white">
+                    <select onchange="analyticsChartRange=this.value; renderApp();" class="px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600-lg dark:bg-gray-700 dark:text-white dark:border-gray-600 bg-white">
                         <option value="current" ${analyticsChartRange === 'current' ? 'selected' : ''}>Current Month</option>
                         <option value="3months" ${analyticsChartRange === '3months' ? 'selected' : ''}>Last 3 Months</option>
                         <option value="6months" ${analyticsChartRange === '6months' ? 'selected' : ''}>Last 6 Months</option>
@@ -2481,16 +2481,16 @@ async function acceptQuote(quoteId, shareToken) {
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                     <!-- Revenue vs Expenses Chart -->
-                    <div class="bg-white p-6 rounded-lg shadow">
-                        <h3 class="text-lg font-bold mb-4">Revenue vs Expenses</h3>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow dark:shadow-gray-700">
+                        <h3 class="text-lg font-bold dark:text-teal-400 mb-4">Revenue vs Expenses</h3>
                         <div style="height: 300px; position: relative;">
                             <canvas id="revenueExpensesChart"></canvas>
                         </div>
                     </div>
                     
                     <!-- Expenses by Category Chart -->
-                    <div class="bg-white p-6 rounded-lg shadow">
-                        <h3 class="text-lg font-bold mb-4">Expenses by Category</h3>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow dark:shadow-gray-700">
+                        <h3 class="text-lg font-bold dark:text-teal-400 mb-4">Expenses by Category</h3>
                         <div style="height: 300px; position: relative;">
                             <canvas id="expensesCategoryChart"></canvas>
                         </div>
@@ -2707,21 +2707,21 @@ async function acceptQuote(quoteId, shareToken) {
         function renderTeam() {
             return `<div>
                 <div class="flex justify-between mb-6">
-                    <h2 class="text-2xl font-bold">Team Members</h2>
+                    <h2 class="text-2xl font-bold dark:text-teal-400">Team Members</h2>
                     <button onclick="openModal('team_member')" class="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 border border-teal-400">+ Add Team Member</button>
                 </div>
                 <div class="grid gap-4">
-                    ${teamMembers.length === 0 ? '<div class="text-center py-12 text-gray-500">No team members yet. Add your first worker!</div>' : teamMembers.map(member => `
+                    ${teamMembers.length === 0 ? '<div class="text-center py-12 text-gray-500 dark:text-gray-400">No team members yet. Add your first worker!</div>' : teamMembers.map(member => `
                         <div class="bg-white p-4 rounded-lg shadow border-l-4" style="border-color: ${member.color || '#3b82f6'}">
                             <div class="flex justify-between items-center">
                                 <div>
-                                    <h3 class="text-lg font-semibold">${member.name}</h3>
-                                    ${member.occupation ? `<p class="text-sm text-gray-600 font-medium">${member.occupation}</p>` : ''}
-                                    <p class="text-sm text-gray-600">${member.email || 'No email'}</p>
-                                    <p class="text-sm text-gray-600">${member.phone || 'No phone'}</p>
+                                    <h3 class="text-lg font-semibold dark:text-white dark:text-white">${member.name}</h3>
+                                    ${member.occupation ? `<p class="text-sm text-gray-600 dark:text-gray-300 font-medium dark:text-gray-200">${member.occupation}</p>` : ''}
+                                    <p class="text-sm text-gray-600 dark:text-gray-300">${member.email || 'No email'}</p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-300">${member.phone || 'No phone'}</p>
                                     <div class="flex items-center gap-2 mt-2">
                                         <div class="w-4 h-4 rounded" style="background-color: ${member.color || '#3b82f6'}"></div>
-                                        <span class="text-xs text-gray-500">Calendar color</span>
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">Calendar color</span>
                                     </div>
                                 </div>
                                 <div class="flex gap-2">
@@ -2801,16 +2801,16 @@ async function acceptQuote(quoteId, shareToken) {
             const accountTypeName = accountType === 'business' ? 'Business' : 'Sole Trader';
             
             document.getElementById('app').innerHTML = `
-                <div class="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+                <div class="min-h-screen bg-gray-50 dark:bg-gray-800 flex items-center justify-center p-6">
                     <div class="bg-white p-8 rounded-lg shadow-xl max-w-2xl w-full">
                         <div class="text-center mb-8">
                             <div class="text-teal-400 text-5xl font-bold mb-2">M4</div>
-                            <h1 class="text-2xl font-bold text-black">Streamline</h1>
-                            <p class="text-gray-600 mt-2">Business Management</p>
+                            <h1 class="text-2xl font-bold text-black dark:text-white">Streamline</h1>
+                            <p class="text-gray-600 dark:text-gray-300 mt-2">Business Management</p>
                         </div>
                         
                         <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6">
-                            <p class="text-yellow-700 font-medium">⏰ Your 14-day free trial has ended</p>
+                            <p class="text-yellow-700 font-medium dark:text-gray-200">⏰ Your 14-day free trial has ended</p>
                         </div>
                         
                         <div class="bg-teal-50 p-3 rounded mb-4 text-center">
@@ -2818,9 +2818,9 @@ async function acceptQuote(quoteId, shareToken) {
                         </div>
                         
                         <h2 class="text-2xl font-bold mb-4">Continue with M4 Streamline</h2>
-                        <p class="text-gray-600 mb-6">To continue using M4 Streamline, please subscribe for just <strong>$${monthlyRate.toFixed(2)}/month</strong>.</p>
+                        <p class="text-gray-600 dark:text-gray-300 mb-6">To continue using M4 Streamline, please subscribe for just <strong>$${monthlyRate.toFixed(2)}/month</strong>.</p>
                         
-                        <div class="bg-gray-50 p-6 rounded-lg mb-6">
+                        <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg mb-6">
                             <h3 class="font-bold mb-3">Payment Instructions:</h3>
                             <ol class="list-decimal list-inside space-y-2 text-sm">
                                 <li>Transfer $${monthlyRate.toFixed(2)} to the account details below</li>
@@ -2833,11 +2833,11 @@ async function acceptQuote(quoteId, shareToken) {
                         <div class="bg-teal-50 p-6 rounded-lg border border-teal-200">
                             <h3 class="font-bold mb-3 text-teal-900">Bank Details:</h3>
                             <div class="space-y-2 text-sm">
-                                <div><span class="font-medium">Account Name:</span> Keith Murphy</div>
-                                <div><span class="font-medium">BSB:</span> 063-225</div>
-                                <div><span class="font-medium">Account Number:</span> 10412509</div>
-                                <div><span class="font-medium">Amount:</span> $${monthlyRate.toFixed(2)}</div>
-                                <div><span class="font-medium">Reference:</span> ${currentUser.email}</div>
+                                <div><span class="font-medium dark:text-gray-200">Account Name:</span> Keith Murphy</div>
+                                <div><span class="font-medium dark:text-gray-200">BSB:</span> 063-225</div>
+                                <div><span class="font-medium dark:text-gray-200">Account Number:</span> 10412509</div>
+                                <div><span class="font-medium dark:text-gray-200">Amount:</span> $${monthlyRate.toFixed(2)}</div>
+                                <div><span class="font-medium dark:text-gray-200">Reference:</span> ${currentUser.email}</div>
                             </div>
                         </div>
                         
@@ -2868,23 +2868,23 @@ async function acceptQuote(quoteId, shareToken) {
                 <h2 class="text-2xl font-bold mb-6">Admin - Subscription Management</h2>
                 <div class="bg-white rounded-lg shadow overflow-hidden">
                     <table class="min-w-full">
-                        <thead class="bg-gray-50">
+                        <thead class="bg-gray-50 dark:bg-gray-800">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trial Ends</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Email</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Trial Ends</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-200">
-                            ${users.length === 0 ? '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No subscriptions found</td></tr>' : users.map(u => {
+                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                            ${users.length === 0 ? '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">No subscriptions found</td></tr>' : users.map(u => {
                                 const trialEnds = new Date(u.trial_ends_at);
                                 const daysLeft = Math.ceil((trialEnds - new Date()) / (1000 * 60 * 60 * 24));
                                 const statusColor = u.subscription_status === 'active' ? 'text-green-600' : u.subscription_status === 'trial' ? 'text-yellow-600' : 'text-red-600';
                                 
                                 return `<tr>
                                     <td class="px-6 py-4 text-sm">${u.user_email || 'Unknown'}</td>
-                                    <td class="px-6 py-4 text-sm ${statusColor} font-medium">${u.subscription_status.toUpperCase()}</td>
+                                    <td class="px-6 py-4 text-sm ${statusColor} font-medium dark:text-gray-200">${u.subscription_status.toUpperCase()}</td>
                                     <td class="px-6 py-4 text-sm">${trialEnds.toLocaleDateString()} (${daysLeft} days)</td>
                                     <td class="px-6 py-4 text-sm">
                                         ${u.subscription_status !== 'active' ? 
@@ -2944,55 +2944,55 @@ async function acceptQuote(quoteId, shareToken) {
                 
                 <!-- Company Info -->
                 <div class="bg-white p-6 rounded-lg shadow max-w-2xl mb-6">
-                    <p class="text-gray-600 mb-6">Your business information will automatically appear on all quotes and invoices.</p>
+                    <p class="text-gray-600 dark:text-gray-300 mb-6">Your business information will automatically appear on all quotes and invoices.</p>
                     
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium mb-1">Business Name</label>
-                            <input type="text" id="business_name" value="${settings.business_name || ''}" class="w-full px-4 py-2 border rounded">
+                            <label class="block text-sm font-medium mb-1 dark:text-gray-200">Business Name</label>
+                            <input type="text" id="business_name" value="${settings.business_name || ''}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
                         </div>
                         
                         <div>
-                            <label class="block text-sm font-medium mb-1">ABN</label>
-                            <input type="text" id="abn" value="${settings.abn || ''}" class="w-full px-4 py-2 border rounded">
+                            <label class="block text-sm font-medium mb-1 dark:text-gray-200">ABN</label>
+                            <input type="text" id="abn" value="${settings.abn || ''}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
                         </div>
                         
                         <div>
-                            <label class="block text-sm font-medium mb-1">Phone</label>
-                            <input type="tel" id="settings_phone" value="${settings.phone || ''}" class="w-full px-4 py-2 border rounded">
+                            <label class="block text-sm font-medium mb-1 dark:text-gray-200">Phone</label>
+                            <input type="tel" id="settings_phone" value="${settings.phone || ''}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
                         </div>
                         
                         <div>
-                            <label class="block text-sm font-medium mb-1">Email</label>
-                            <input type="email" id="settings_email" value="${settings.email || ''}" class="w-full px-4 py-2 border rounded">
+                            <label class="block text-sm font-medium mb-1 dark:text-gray-200">Email</label>
+                            <input type="email" id="settings_email" value="${settings.email || ''}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
                         </div>
                         
                         <div>
-                            <label class="block text-sm font-medium mb-1">Address</label>
-                            <textarea id="settings_address" class="w-full px-4 py-2 border rounded" rows="2">${settings.address || ''}</textarea>
+                            <label class="block text-sm font-medium mb-1 dark:text-gray-200">Address</label>
+                            <textarea id="settings_address" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" rows="2">${settings.address || ''}</textarea>
                         </div>
                         
-                        <h3 class="text-lg font-bold mt-6 mb-4">Bank Details (for invoices)</h3>
+                        <h3 class="text-lg font-bold dark:text-teal-400 mt-6 mb-4">Bank Details (for invoices)</h3>
                         
                         <div>
-                            <label class="block text-sm font-medium mb-1">Bank Name</label>
-                            <input type="text" id="bank_name" value="${settings.bank_name || ''}" class="w-full px-4 py-2 border rounded">
+                            <label class="block text-sm font-medium mb-1 dark:text-gray-200">Bank Name</label>
+                            <input type="text" id="bank_name" value="${settings.bank_name || ''}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
                         </div>
                         
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium mb-1">BSB</label>
-                                <input type="text" id="bsb" value="${settings.bsb || ''}" class="w-full px-4 py-2 border rounded">
+                                <label class="block text-sm font-medium mb-1 dark:text-gray-200">BSB</label>
+                                <input type="text" id="bsb" value="${settings.bsb || ''}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium mb-1">Account Number</label>
-                                <input type="text" id="account_number" value="${settings.account_number || ''}" class="w-full px-4 py-2 border rounded">
+                                <label class="block text-sm font-medium mb-1 dark:text-gray-200">Account Number</label>
+                                <input type="text" id="account_number" value="${settings.account_number || ''}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
                             </div>
                         </div>
                         
                         <div>
-                            <label class="block text-sm font-medium mb-1">Account Name</label>
-                            <input type="text" id="account_name" value="${settings.account_name || ''}" class="w-full px-4 py-2 border rounded">
+                            <label class="block text-sm font-medium mb-1 dark:text-gray-200">Account Name</label>
+                            <input type="text" id="account_name" value="${settings.account_name || ''}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
                         </div>
                         
                         <button onclick="saveCompanySettings()" class="w-full bg-black text-white px-4 py-3 rounded-lg border border-teal-400 hover:bg-gray-800 mt-6">Save Company Settings</button>
@@ -3001,14 +3001,14 @@ async function acceptQuote(quoteId, shareToken) {
                 
                 <!-- Stripe Payment Settings -->
                 <div class="bg-white p-6 rounded-lg shadow max-w-2xl">
-                    <h3 class="text-lg font-bold mb-2">💳 Stripe Payment Settings</h3>
-                    <p class="text-sm text-gray-600 mb-6">Enable online payments for your invoices. Get your API keys from <a href="https://dashboard.stripe.com/apikeys" target="_blank" class="text-teal-600 underline">Stripe Dashboard</a>.</p>
+                    <h3 class="text-lg font-bold dark:text-teal-400 mb-2">💳 Stripe Payment Settings</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-300 mb-6">Enable online payments for your invoices. Get your API keys from <a href="https://dashboard.stripe.com/apikeys" target="_blank" class="text-teal-600 underline">Stripe Dashboard</a>.</p>
                     
                     <div class="space-y-4">
-                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
+                        <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
                             <div>
-                                <p class="font-medium">Enable Stripe Payments</p>
-                                <p class="text-xs text-gray-600">Turn off to show bank details instead</p>
+                                <p class="font-medium dark:text-gray-200">Enable Stripe Payments</p>
+                                <p class="text-xs text-gray-600 dark:text-gray-300">Turn off to show bank details instead</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" id="stripe_enabled" ${stripe.enabled !== false ? 'checked' : ''} class="sr-only peer">
@@ -3017,15 +3017,15 @@ async function acceptQuote(quoteId, shareToken) {
                         </div>
                         
                         <div>
-                            <label class="block text-sm font-medium mb-1">Publishable Key</label>
-                            <input type="text" id="stripe_publishable_key" value="${stripe.publishable_key || ''}" placeholder="pk_test_... (optional)" class="w-full px-4 py-2 border rounded font-mono text-sm">
-                            <p class="text-xs text-gray-500 mt-1">Starts with pk_test_ or pk_live_</p>
+                            <label class="block text-sm font-medium mb-1 dark:text-gray-200">Publishable Key</label>
+                            <input type="text" id="stripe_publishable_key" value="${stripe.publishable_key || ''}" placeholder="pk_test_... (optional)" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 font-mono text-sm">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Starts with pk_test_ or pk_live_</p>
                         </div>
                         
                         <div>
-                            <label class="block text-sm font-medium mb-1">Secret Key</label>
-                            <input type="password" id="stripe_secret_key" value="${stripe.secret_key || ''}" placeholder="sk_test_... (optional)" class="w-full px-4 py-2 border rounded font-mono text-sm">
-                            <p class="text-xs text-gray-500 mt-1">Starts with sk_test_ or sk_live_</p>
+                            <label class="block text-sm font-medium mb-1 dark:text-gray-200">Secret Key</label>
+                            <input type="password" id="stripe_secret_key" value="${stripe.secret_key || ''}" placeholder="sk_test_... (optional)" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 font-mono text-sm">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Starts with sk_test_ or sk_live_</p>
                         </div>
                         
                         ${stripe.enabled !== false && stripe.publishable_key ? '<div class="bg-green-50 border border-green-200 rounded p-3 text-sm text-green-800">✓ Stripe is enabled. Clients can pay invoices online!</div>' : '<div class="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800">⚠ Stripe is disabled. Clients will see bank transfer details.</div>'}
@@ -3036,25 +3036,25 @@ async function acceptQuote(quoteId, shareToken) {
                 
                 <!-- SendGrid Email Settings -->
                 <div class="bg-white p-6 rounded-lg shadow max-w-2xl">
-                    <h3 class="text-lg font-bold mb-2">📧 Email Settings (SendGrid)</h3>
-                    <p class="text-sm text-gray-600 mb-6">Configure email delivery for quotes and invoices. Get your API key from <a href="https://app.sendgrid.com/settings/api_keys" target="_blank" class="text-teal-600 underline">SendGrid Dashboard</a>.</p>
+                    <h3 class="text-lg font-bold dark:text-teal-400 mb-2">📧 Email Settings (SendGrid)</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-300 mb-6">Configure email delivery for quotes and invoices. Get your API key from <a href="https://app.sendgrid.com/settings/api_keys" target="_blank" class="text-teal-600 underline">SendGrid Dashboard</a>.</p>
                     
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium mb-1">SendGrid API Key</label>
-                            <input type="password" id="sendgrid_api_key" value="${emailSettings?.sendgrid_api_key || ''}" placeholder="SG...." class="w-full px-4 py-2 border rounded font-mono text-sm">
-                            <p class="text-xs text-gray-500 mt-1">Starts with SG.</p>
+                            <label class="block text-sm font-medium mb-1 dark:text-gray-200">SendGrid API Key</label>
+                            <input type="password" id="sendgrid_api_key" value="${emailSettings?.sendgrid_api_key || ''}" placeholder="SG...." class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 font-mono text-sm">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Starts with SG.</p>
                         </div>
                         
                         <div>
-                            <label class="block text-sm font-medium mb-1">From Email (Verified in SendGrid)</label>
-                            <input type="email" id="sendgrid_from_email" value="${emailSettings?.from_email || companySettings?.email || ''}" placeholder="your@email.com" class="w-full px-4 py-2 border rounded">
-                            <p class="text-xs text-gray-500 mt-1">Must be verified in SendGrid</p>
+                            <label class="block text-sm font-medium mb-1 dark:text-gray-200">From Email (Verified in SendGrid)</label>
+                            <input type="email" id="sendgrid_from_email" value="${emailSettings?.from_email || companySettings?.email || ''}" placeholder="your@email.com" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Must be verified in SendGrid</p>
                         </div>
                         
                         <div>
-                            <label class="block text-sm font-medium mb-1">From Name</label>
-                            <input type="text" id="sendgrid_from_name" value="${emailSettings?.from_name || companySettings?.business_name || ''}" placeholder="Your Business Name" class="w-full px-4 py-2 border rounded">
+                            <label class="block text-sm font-medium mb-1 dark:text-gray-200">From Name</label>
+                            <input type="text" id="sendgrid_from_name" value="${emailSettings?.from_name || companySettings?.business_name || ''}" placeholder="Your Business Name" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
                         </div>
                         
                         ${emailSettings?.sendgrid_api_key ? '<div class="bg-green-50 border border-green-200 rounded p-3 text-sm text-green-800">✓ Email is configured. You can send quotes and invoices!</div>' : '<div class="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800">⚠ Add your SendGrid API key to enable email sending</div>'}
@@ -3065,14 +3065,14 @@ async function acceptQuote(quoteId, shareToken) {
                 
                 <!-- SMS Settings -->
                 <div class="bg-white p-6 rounded-lg shadow max-w-2xl">
-                    <h3 class="text-lg font-bold mb-2">📱 SMS Notifications (Twilio)</h3>
-                    <p class="text-sm text-gray-600 mb-6">Send SMS notifications to clients. Solves email delivery issues (BigPond, etc.)</p>
+                    <h3 class="text-lg font-bold dark:text-teal-400 mb-2">📱 SMS Notifications (Twilio)</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-300 mb-6">Send SMS notifications to clients. Solves email delivery issues (BigPond, etc.)</p>
                     
                     <div class="space-y-4">
-                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
+                        <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
                             <div>
-                                <p class="font-medium">Enable SMS Notifications</p>
-                                <p class="text-xs text-gray-600">Turn on to send SMS to clients</p>
+                                <p class="font-medium dark:text-gray-200">Enable SMS Notifications</p>
+                                <p class="text-xs text-gray-600 dark:text-gray-300">Turn on to send SMS to clients</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" id="sms_enabled" ${smsSettings?.enabled ? 'checked' : ''} class="sr-only peer">
@@ -3090,35 +3090,35 @@ async function acceptQuote(quoteId, shareToken) {
                         
                         <h4 class="font-semibold mt-4">Send SMS when:</h4>
                         
-                        <label class="flex items-center space-x-3 cursor-pointer p-3 hover:bg-gray-50 rounded">
+                        <label class="flex items-center space-x-3 cursor-pointer p-3 hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 rounded">
                             <input type="checkbox" id="notify_quote_sent" ${smsSettings?.notify_quote_sent !== false ? 'checked' : ''} class="w-5 h-5 text-teal-600 rounded">
                             <div>
-                                <p class="font-medium">Quote Sent</p>
-                                <p class="text-xs text-gray-600">Notify client when quote is ready</p>
+                                <p class="font-medium dark:text-gray-200">Quote Sent</p>
+                                <p class="text-xs text-gray-600 dark:text-gray-300">Notify client when quote is ready</p>
                             </div>
                         </label>
                         
-                        <label class="flex items-center space-x-3 cursor-pointer p-3 hover:bg-gray-50 rounded">
+                        <label class="flex items-center space-x-3 cursor-pointer p-3 hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 rounded">
                             <input type="checkbox" id="notify_invoice_sent" ${smsSettings?.notify_invoice_sent !== false ? 'checked' : ''} class="w-5 h-5 text-teal-600 rounded">
                             <div>
-                                <p class="font-medium">Invoice Sent</p>
-                                <p class="text-xs text-gray-600">Notify client when invoice is ready</p>
+                                <p class="font-medium dark:text-gray-200">Invoice Sent</p>
+                                <p class="text-xs text-gray-600 dark:text-gray-300">Notify client when invoice is ready</p>
                             </div>
                         </label>
                         
-                        <label class="flex items-center space-x-3 cursor-pointer p-3 hover:bg-gray-50 rounded">
+                        <label class="flex items-center space-x-3 cursor-pointer p-3 hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 rounded">
                             <input type="checkbox" id="notify_payment_received" ${smsSettings?.notify_payment_received ? 'checked' : ''} class="w-5 h-5 text-teal-600 rounded">
                             <div>
-                                <p class="font-medium">Payment Received</p>
-                                <p class="text-xs text-gray-600">Thank client when payment is received</p>
+                                <p class="font-medium dark:text-gray-200">Payment Received</p>
+                                <p class="text-xs text-gray-600 dark:text-gray-300">Thank client when payment is received</p>
                             </div>
                         </label>
                         
-                        <label class="flex items-center space-x-3 cursor-pointer p-3 hover:bg-gray-50 rounded">
+                        <label class="flex items-center space-x-3 cursor-pointer p-3 hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 rounded">
                             <input type="checkbox" id="notify_job_reminder" ${smsSettings?.notify_job_reminder ? 'checked' : ''} class="w-5 h-5 text-teal-600 rounded">
                             <div>
-                                <p class="font-medium">Job Reminder</p>
-                                <p class="text-xs text-gray-600">Remind client 1 day before scheduled job</p>
+                                <p class="font-medium dark:text-gray-200">Job Reminder</p>
+                                <p class="text-xs text-gray-600 dark:text-gray-300">Remind client 1 day before scheduled job</p>
                             </div>
                         </label>
                         
@@ -3190,63 +3190,63 @@ async function acceptQuote(quoteId, shareToken) {
                 
                 <!-- Stats Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-teal-400 cursor-pointer hover:bg-gray-50" onclick="switchTab('clients')">
-                        <div class="text-gray-600 text-sm">Total Clients</div>
+                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-teal-400 cursor-pointer hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700" onclick="switchTab('clients')">
+                        <div class="text-gray-600 dark:text-gray-300 text-sm">Total Clients</div>
                         <div class="text-3xl font-bold mt-2">${clients.length}</div>
                     </div>
-                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-blue-400 cursor-pointer hover:bg-gray-50" onclick="switchTab('schedule')">
-                        <div class="text-gray-600 text-sm">Upcoming Jobs</div>
+                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-blue-400 cursor-pointer hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700" onclick="switchTab('schedule')">
+                        <div class="text-gray-600 dark:text-gray-300 text-sm">Upcoming Jobs</div>
                         <div class="text-3xl font-bold mt-2">${upcomingJobs.length}</div>
                     </div>
-                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-yellow-400 cursor-pointer hover:bg-gray-50" onclick="switchTab('quotes')">
-                        <div class="text-gray-600 text-sm">Pending Quotes</div>
+                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-yellow-400 cursor-pointer hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700" onclick="switchTab('quotes')">
+                        <div class="text-gray-600 dark:text-gray-300 text-sm">Pending Quotes</div>
                         <div class="text-3xl font-bold mt-2">${pendingQuotes.length}</div>
                     </div>
-                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-red-400 cursor-pointer hover:bg-gray-50" onclick="switchTab('invoices')">
-                        <div class="text-gray-600 text-sm">Unpaid Invoices</div>
+                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-red-400 cursor-pointer hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700" onclick="switchTab('invoices')">
+                        <div class="text-gray-600 dark:text-gray-300 text-sm">Unpaid Invoices</div>
                         <div class="text-3xl font-bold mt-2">$${totalUnpaid.toFixed(2)}</div>
                     </div>
                 </div>
                 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- Upcoming Jobs -->
-                    <div class="bg-white p-6 rounded-lg shadow">
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow dark:shadow-gray-700">
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-lg font-bold">Upcoming Jobs</h3>
+                            <h3 class="text-lg font-bold dark:text-teal-400">Upcoming Jobs</h3>
                             <button onclick="switchTab('schedule')" class="text-teal-500 text-sm hover:underline">View All</button>
                         </div>
-                        ${upcomingJobs.length === 0 ? '<p class="text-gray-500 text-center py-4">No upcoming jobs</p>' : upcomingJobs.map(job => {
+                        ${upcomingJobs.length === 0 ? '<p class="text-gray-500 dark:text-gray-400 text-center py-4">No upcoming jobs</p>' : upcomingJobs.map(job => {
                             const client = clients.find(c => c.id === job.client_id);
                             const isTomorrow = job.date === tomorrow;
-                            return `<div class="border-l-4 ${isTomorrow ? 'border-blue-400 bg-blue-50' : 'border-teal-400'} pl-3 py-2 mb-3 cursor-pointer hover:bg-gray-50" onclick="switchTab('schedule')">
-                                <div class="font-semibold">${job.title} ${isTomorrow ? '⏰' : ''}</div>
-                                <div class="text-sm text-gray-600">${client?.name || 'Unknown'}</div>
-                                <div class="text-sm text-gray-500">${new Date(job.date).toLocaleDateString()} at ${job.time}</div>
+                            return `<div class="border-l-4 ${isTomorrow ? 'border-blue-400 bg-blue-50' : 'border-teal-400'} pl-3 py-2 mb-3 cursor-pointer hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700" onclick="switchTab('schedule')">
+                                <div class="font-semibold dark:text-white">${job.title} ${isTomorrow ? '⏰' : ''}</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-300">${client?.name || 'Unknown'}</div>
+                                <div class="text-sm text-gray-500 dark:text-gray-400">${new Date(job.date).toLocaleDateString()} at ${job.time}</div>
                             </div>`;
                         }).join('')}
                     </div>
                     
                     <!-- Recent Activity -->
-                    <div class="bg-white p-6 rounded-lg shadow">
-                        <h3 class="text-lg font-bold mb-4">Recent Activity</h3>
-                        ${acceptedQuotes.length === 0 && unpaidInvoices.length === 0 ? '<p class="text-gray-500 text-center py-4">No recent activity</p>' : `
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow dark:shadow-gray-700">
+                        <h3 class="text-lg font-bold dark:text-teal-400 mb-4">Recent Activity</h3>
+                        ${acceptedQuotes.length === 0 && unpaidInvoices.length === 0 ? '<p class="text-gray-500 dark:text-gray-400 text-center py-4">No recent activity</p>' : `
                             ${acceptedQuotes.slice(0, 3).map(q => {
                                 const client = clients.find(c => c.id === q.client_id);
-                                return `<div class="py-2 mb-2 border-b cursor-pointer hover:bg-gray-50" onclick="switchTab('quotes')">
+                                return `<div class="py-2 mb-2 border-b cursor-pointer hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700" onclick="switchTab('quotes')">
                                     <div class="flex justify-between">
                                         <span class="text-sm">✓ Quote accepted: <strong>${q.title}</strong></span>
                                     </div>
-                                    <div class="text-xs text-gray-500">${client?.name || 'Unknown'} - $${q.total.toFixed(2)}</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">${client?.name || 'Unknown'} - $${q.total.toFixed(2)}</div>
                                 </div>`;
                             }).join('')}
                             ${unpaidInvoices.slice(0, 3).map(inv => {
                                 const client = clients.find(c => c.id === inv.client_id);
                                 const isOverdue = inv.due_date && new Date(inv.due_date) < todayDate;
-                                return `<div class="py-2 mb-2 border-b cursor-pointer hover:bg-gray-50" onclick="switchTab('invoices')">
+                                return `<div class="py-2 mb-2 border-b cursor-pointer hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700" onclick="switchTab('invoices')">
                                     <div class="flex justify-between">
                                         <span class="text-sm">${isOverdue ? '🚨' : '⏳'} ${isOverdue ? 'Overdue' : 'Unpaid'}: <strong>${inv.title}</strong></span>
                                     </div>
-                                    <div class="text-xs text-gray-500">${client?.name || 'Unknown'} - $${inv.total.toFixed(2)}</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">${client?.name || 'Unknown'} - $${inv.total.toFixed(2)}</div>
                                 </div>`;
                             }).join('')}
                         `}
@@ -3255,7 +3255,7 @@ async function acceptQuote(quoteId, shareToken) {
                 
                 <!-- Quick Actions -->
                 <div class="mt-6 bg-white p-6 rounded-lg shadow">
-                    <h3 class="text-lg font-bold mb-4">Quick Actions</h3>
+                    <h3 class="text-lg font-bold dark:text-teal-400 mb-4">Quick Actions</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         <button onclick="openModal('client')" class="px-4 py-2 bg-black text-white rounded-lg border border-teal-400 hover:bg-gray-800">
                             + Add Client
@@ -3282,7 +3282,7 @@ async function acceptQuote(quoteId, shareToken) {
                             <span class="ml-2 text-xs text-gray-300">Ctrl+A</span>
                         </button>
                     </div>
-                    <p class="text-xs text-gray-500 mt-3">💡 Tip: Use keyboard shortcuts to work faster! Press Ctrl+D to return to Dashboard.</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-3">💡 Tip: Use keyboard shortcuts to work faster! Press Ctrl+D to return to Dashboard.</p>
                 </div>
             </div>`;
         }
@@ -3292,7 +3292,7 @@ async function acceptQuote(quoteId, shareToken) {
     
     // Worker filter dropdown for calendar view
     const workerFilter = getAccountType() === 'business' && teamMembers.length > 0 
-        ? `<select onchange="calendarFilter=this.value; renderApp();" class="px-3 py-2 border rounded bg-white text-sm">
+        ? `<select onchange="calendarFilter=this.value; renderApp();" class="px-3 py-2 border rounded bg-white dark:bg-gray-700 dark:text-white text-sm">
             <option value="all" ${calendarFilter === 'all' ? 'selected' : ''}>All Workers</option>
             <option value="unassigned" ${calendarFilter === 'unassigned' ? 'selected' : ''}>Unassigned</option>
             ${teamMembers.map(m => `<option value="${m.id}" ${calendarFilter === m.id ? 'selected' : ''}>${m.name}${m.occupation ? ' - ' + m.occupation : ''}</option>`).join('')}
@@ -3301,7 +3301,7 @@ async function acceptQuote(quoteId, shareToken) {
     
     if (scheduleView === 'calendar') {
         setTimeout(() => renderCalendar(), 100);
-        return `<div><div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold">Schedule</h2><div class="flex flex-wrap gap-2 sm:gap-4">${workerFilter}${viewToggle}<button onclick="openModal('job')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400 text-sm whitespace-nowrap">+ Schedule Job</button></div></div><div id="calendar" class="bg-white p-4 rounded-lg shadow"></div></div>`;
+        return `<div><div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold dark:text-teal-400">Schedule</h2><div class="flex flex-wrap gap-2 sm:gap-4">${workerFilter}${viewToggle}<button onclick="openModal('job')" class="bg-black text-white px-4 py-2 rounded-lg border border-teal-400 text-sm whitespace-nowrap">+ Schedule Job</button></div></div><div id="calendar" class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow dark:shadow-gray-700"></div></div>`;
     }
     
     // Filter jobs by search
@@ -3327,7 +3327,7 @@ async function acceptQuote(quoteId, shareToken) {
     const endIndex = startIndex + itemsPerPage;
     const paginatedJobs = filteredJobs.slice(startIndex, endIndex);
     
-    const jobsList = paginatedJobs.length === 0 ? '<div class="text-center py-12 text-gray-500">No jobs found</div>' : paginatedJobs.map(job => { 
+    const jobsList = paginatedJobs.length === 0 ? '<div class="text-center py-12 text-gray-500 dark:text-gray-400">No jobs found</div>' : paginatedJobs.map(job => { 
         const client = clients.find(c => c.id === job.client_id);
         const isSelected = selectedJobs.includes(job.id);
         
@@ -3352,7 +3352,7 @@ async function acceptQuote(quoteId, shareToken) {
         // Build team members display
         const teamDisplay = assignedWorkers.length > 0 
             ? `<div class="mt-2 max-h-20 overflow-y-auto space-y-1">
-                ${assignedWorkers.map(w => `<div class="flex items-center gap-2 text-sm font-medium text-gray-700">
+                ${assignedWorkers.map(w => `<div class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
                     <span class="w-3 h-3 rounded-full flex-shrink-0" style="background-color: ${w.color || '#14b8a6'}"></span>
                     <span>👤 ${w.name}${w.occupation ? ' - ' + w.occupation : ''}</span>
                 </div>`).join('')}
@@ -3368,12 +3368,12 @@ async function acceptQuote(quoteId, shareToken) {
                 <div class="flex-1">
                     <div class="flex flex-col sm:flex-row sm:justify-between gap-3">
                         <div class="flex-1">
-                            <h3 class="text-lg font-semibold">${job.title}</h3>
+                            <h3 class="text-lg font-semibold dark:text-white dark:text-white">${job.title}</h3>
                             <span class="text-xs ${statusColor} px-2 py-1 rounded inline-block mt-1">${statusLabel}</span>
-                            <p class="text-gray-600 mt-1">${client?.name || 'Unknown'}</p>
+                            <p class="text-gray-600 dark:text-gray-300 mt-1">${client?.name || 'Unknown'}</p>
                             ${client?.address ? `<a href="${/iPhone|iPad|iPod/.test(navigator.userAgent) ? 'maps://?q=' : 'https://maps.google.com/?q='}${encodeURIComponent(client.address)}" target="_blank" class="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1">📍 ${client.address}</a>` : ''}
                             ${teamDisplay}
-                            <div class="text-sm text-gray-500 mt-2">📅 ${new Date(job.date).toLocaleDateString()} ⏰ ${job.time}${job.duration > 1 ? ` (${job.duration} days)` : ''}</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400 mt-2">📅 ${new Date(job.date).toLocaleDateString()} ⏰ ${job.time}${job.duration > 1 ? ` (${job.duration} days)` : ''}</div>
                             ${job.notes ? `<p class="text-sm text-gray-700 mt-2 italic">${job.notes}</p>` : ''}
                             ${job.photos && job.photos.length > 0 ? `<div class="mt-3 flex gap-2 flex-wrap">${job.photos.map(photo => `<img src="${photo}" class="w-20 h-20 object-cover rounded border border-teal-400" />`).join('')}</div>` : ''}
                         </div>
@@ -3393,18 +3393,18 @@ async function acceptQuote(quoteId, shareToken) {
     const bulkActions = selectedJobs.length > 0 ? `
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex items-center justify-between">
             <span class="text-sm font-medium text-blue-900">${selectedJobs.length} job${selectedJobs.length > 1 ? 's' : ''} selected</span>
-            <button onclick="bulkDelete('jobs')" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium">🗑️ Delete Selected</button>
+            <button onclick="bulkDelete('jobs')" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium dark:text-gray-200">🗑️ Delete Selected</button>
         </div>
     ` : '';
     
     const selectAllCheckbox = paginatedJobs.length > 0 ? `
         <div class="flex items-center gap-2 mb-4">
             <input type="checkbox" ${selectedJobs.length === jobs.length && jobs.length > 0 ? 'checked' : ''} onchange="toggleSelectAll('jobs')" class="w-5 h-5 text-blue-600 rounded">
-            <label class="text-sm font-medium text-gray-700">Select All</label>
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-200">Select All</label>
         </div>
     ` : '';
     
-    return `<div><div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold">Schedule</h2><div class="flex flex-wrap gap-2 sm:gap-4">${viewToggle}<button onclick="exportToCSV('jobs')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><button onclick="openModal('job')" class="bg-black text-white px-3 sm:px-4 py-2 rounded-lg border border-teal-400 text-sm whitespace-nowrap">+ Schedule Job</button></div></div><input type="text" placeholder="🔍 Search jobs..." value="${jobSearch}" oninput="debouncedSearch('job', this.value);" class="w-full px-4 py-2 border rounded-lg mb-4">${bulkActions}${selectAllCheckbox}<div class="grid gap-4">${jobsList}</div>${pagination}</div>`;
+    return `<div><div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold dark:text-teal-400">Schedule</h2><div class="flex flex-wrap gap-2 sm:gap-4">${viewToggle}<button onclick="exportToCSV('jobs')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><button onclick="openModal('job')" class="bg-black text-white px-3 sm:px-4 py-2 rounded-lg border border-teal-400 text-sm whitespace-nowrap">+ Schedule Job</button></div></div><input type="text" placeholder="🔍 Search jobs..." value="${jobSearch}" oninput="debouncedSearch('job', this.value);" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600-lg dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-4">${bulkActions}${selectAllCheckbox}<div class="grid gap-4">${jobsList}</div>${pagination}</div>`;
 }
 
 function renderCalendar() {
@@ -3512,11 +3512,11 @@ function renderCalendar() {
             
             return `
                 <div class="flex flex-col sm:flex-row justify-between items-center gap-3 mt-6 pt-4 border-t">
-                    <div class="text-sm text-gray-600">
+                    <div class="text-sm text-gray-600 dark:text-gray-300">
                         Showing ${startItem}-${endItem} of ${totalItems}
                     </div>
                     <div class="flex gap-2">
-                        ${currentPageNum > 1 ? `<button onclick="currentPage.${section}=${currentPageNum - 1}; renderApp();" class="px-3 py-1 border rounded hover:bg-gray-100">← Previous</button>` : ''}
+                        ${currentPageNum > 1 ? `<button onclick="currentPage.${section}=${currentPageNum - 1}; renderApp();" class="px-3 py-1 border rounded hover:bg-gray-100 dark:hover:bg-gray-700">← Previous</button>` : ''}
                         ${Array.from({length: Math.min(5, totalPages)}, (_, i) => {
                             const pageNum = i + 1;
                             if (totalPages > 5 && currentPageNum > 3) {
@@ -3524,11 +3524,11 @@ function renderCalendar() {
                                 const start = Math.max(1, currentPageNum - 2);
                                 const actualPage = start + i;
                                 if (actualPage > totalPages) return '';
-                                return `<button onclick="currentPage.${section}=${actualPage}; renderApp();" class="px-3 py-1 border rounded ${actualPage === currentPageNum ? 'bg-black text-white' : 'hover:bg-gray-100'}">${actualPage}</button>`;
+                                return `<button onclick="currentPage.${section}=${actualPage}; renderApp();" class="px-3 py-1 border rounded ${actualPage === currentPageNum ? 'bg-black text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}">${actualPage}</button>`;
                             }
-                            return `<button onclick="currentPage.${section}=${pageNum}; renderApp();" class="px-3 py-1 border rounded ${pageNum === currentPageNum ? 'bg-black text-white' : 'hover:bg-gray-100'}">${pageNum}</button>`;
+                            return `<button onclick="currentPage.${section}=${pageNum}; renderApp();" class="px-3 py-1 border rounded ${pageNum === currentPageNum ? 'bg-black text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}">${pageNum}</button>`;
                         }).join('')}
-                        ${currentPageNum < totalPages ? `<button onclick="currentPage.${section}=${currentPageNum + 1}; renderApp();" class="px-3 py-1 border rounded hover:bg-gray-100">Next →</button>` : ''}
+                        ${currentPageNum < totalPages ? `<button onclick="currentPage.${section}=${currentPageNum + 1}; renderApp();" class="px-3 py-1 border rounded hover:bg-gray-100 dark:hover:bg-gray-700">Next →</button>` : ''}
                     </div>
                 </div>
             `;
@@ -3549,7 +3549,7 @@ function renderCalendar() {
             const paginatedClients = filteredClients.slice(startIndex, endIndex);
             
             const clientsList = paginatedClients.length === 0 
-                ? '<div class="text-center py-12 text-gray-500">No clients found</div>' 
+                ? '<div class="text-center py-12 text-gray-500 dark:text-gray-400">No clients found</div>' 
                 : paginatedClients.map(c => {
                     const isSelected = selectedClients.includes(c.id);
                     return `<div class="bg-white p-4 rounded-lg shadow ${isSelected ? 'ring-2 ring-blue-400' : ''}">
@@ -3560,10 +3560,10 @@ function renderCalendar() {
                             <div class="flex-1">
                                 <div class="flex flex-col sm:flex-row sm:justify-between gap-3">
                                     <div class="flex-1">
-                                        <h3 class="text-lg font-semibold">${c.name}</h3>
-                                        <p class="text-sm text-gray-600">${c.email}</p>
-                                        <p class="text-sm text-gray-600">${c.phone}</p>
-                                        ${c.address ? `<p class="text-sm text-gray-600 mt-1">📍 ${c.address}</p>` : ''}
+                                        <h3 class="text-lg font-semibold dark:text-white dark:text-white">${c.name}</h3>
+                                        <p class="text-sm text-gray-600 dark:text-gray-300">${c.email}</p>
+                                        <p class="text-sm text-gray-600 dark:text-gray-300">${c.phone}</p>
+                                        ${c.address ? `<p class="text-sm text-gray-600 dark:text-gray-300 mt-1">📍 ${c.address}</p>` : ''}
                                         ${c.notes ? `<p class="text-sm text-gray-700 italic mt-3 p-2 bg-yellow-50 border-l-4 border-yellow-400 rounded">📝 ${c.notes}</p>` : ''}
                                     </div>
                                     <div class="flex sm:flex-col gap-2">
@@ -3582,18 +3582,18 @@ function renderCalendar() {
             const bulkActions = selectedClients.length > 0 ? `
                 <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex items-center justify-between">
                     <span class="text-sm font-medium text-blue-900">${selectedClients.length} client${selectedClients.length > 1 ? 's' : ''} selected</span>
-                    <button onclick="bulkDelete('clients')" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium">🗑️ Delete Selected</button>
+                    <button onclick="bulkDelete('clients')" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium dark:text-gray-200">🗑️ Delete Selected</button>
                 </div>
             ` : '';
             
             const selectAllCheckbox = paginatedClients.length > 0 ? `
                 <div class="flex items-center gap-2 mb-4">
                     <input type="checkbox" ${selectedClients.length === clients.length && clients.length > 0 ? 'checked' : ''} onchange="toggleSelectAll('clients')" class="w-5 h-5 text-blue-600 rounded">
-                    <label class="text-sm font-medium text-gray-700">Select All</label>
+                    <label class="text-sm font-medium text-gray-700 dark:text-gray-200">Select All</label>
                 </div>
             ` : '';
             
-            return `<div><div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold">Clients</h2><div class="flex flex-wrap gap-2"><button onclick="exportToCSV('clients')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><button onclick="openModal('client')" class="bg-black text-white px-3 sm:px-4 py-2 rounded-lg border border-teal-400 text-sm whitespace-nowrap">+ Add Client</button></div></div><div class="mb-4"><input type="text" id="clientSearchInput" placeholder="Search clients..." value="${clientSearch}" oninput="debouncedSearch('client', this.value);" class="w-full px-4 py-2 border rounded-lg text-sm" /></div>${bulkActions}${selectAllCheckbox}<div id="clientsList" class="grid gap-4">${clientsList}</div>${pagination}</div>`;
+            return `<div><div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold dark:text-teal-400">Clients</h2><div class="flex flex-wrap gap-2"><button onclick="exportToCSV('clients')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><button onclick="openModal('client')" class="bg-black text-white px-3 sm:px-4 py-2 rounded-lg border border-teal-400 text-sm whitespace-nowrap">+ Add Client</button></div></div><div class="mb-4"><input type="text" id="clientSearchInput" placeholder="Search clients..." value="${clientSearch}" oninput="debouncedSearch('client', this.value);" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600-lg dark:bg-gray-700 dark:text-white dark:border-gray-600 text-sm" /></div>${bulkActions}${selectAllCheckbox}<div id="clientsList" class="grid gap-4">${clientsList}</div>${pagination}</div>`;
         }
         
         function renderClientsOnly() {
@@ -3604,7 +3604,7 @@ function renderCalendar() {
                 (c.address && c.address.toLowerCase().includes(clientSearch.toLowerCase()))
             );
             
-            const listHtml = filteredClients.length === 0 ? '<div class="text-center py-12 text-gray-500">No clients found</div>' : filteredClients.map(c => `<div class="bg-white p-4 rounded-lg shadow"><div class="flex flex-col sm:flex-row sm:justify-between gap-3"><div class="flex-1"><h3 class="text-lg font-semibold">${c.name}</h3><p class="text-sm text-gray-600">${c.email}</p><p class="text-sm text-gray-600">${c.phone}</p>${c.address ? `<p class="text-sm text-gray-600 mt-1">📍 ${c.address}</p>` : ''}${c.notes ? `<p class="text-sm text-gray-700 italic mt-3 p-2 bg-yellow-50 border-l-4 border-yellow-400 rounded">📝 ${c.notes}</p>` : ''}</div><div class="flex sm:flex-col gap-2"><button onclick='openQuoteForClient(${JSON.stringify(c).replace(/"/g, "&quot;")})' class="flex-1 sm:w-24 px-3 py-1 bg-teal-600 text-white rounded text-sm whitespace-nowrap">New Quote</button><button onclick='openModal("client", ${JSON.stringify(c).replace(/"/g, "&quot;")})' class="flex-1 sm:w-24 px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button><button onclick="deleteClient('${c.id}')" class="flex-1 sm:w-24 px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button></div></div></div>`).join('');
+            const listHtml = filteredClients.length === 0 ? '<div class="text-center py-12 text-gray-500 dark:text-gray-400">No clients found</div>' : filteredClients.map(c => `<div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow dark:shadow-gray-700"><div class="flex flex-col sm:flex-row sm:justify-between gap-3"><div class="flex-1"><h3 class="text-lg font-semibold dark:text-white dark:text-white">${c.name}</h3><p class="text-sm text-gray-600 dark:text-gray-300">${c.email}</p><p class="text-sm text-gray-600 dark:text-gray-300">${c.phone}</p>${c.address ? `<p class="text-sm text-gray-600 dark:text-gray-300 mt-1">📍 ${c.address}</p>` : ''}${c.notes ? `<p class="text-sm text-gray-700 italic mt-3 p-2 bg-yellow-50 border-l-4 border-yellow-400 rounded">📝 ${c.notes}</p>` : ''}</div><div class="flex sm:flex-col gap-2"><button onclick='openQuoteForClient(${JSON.stringify(c).replace(/"/g, "&quot;")})' class="flex-1 sm:w-24 px-3 py-1 bg-teal-600 text-white rounded text-sm whitespace-nowrap">New Quote</button><button onclick='openModal("client", ${JSON.stringify(c).replace(/"/g, "&quot;")})' class="flex-1 sm:w-24 px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button><button onclick="deleteClient('${c.id}')" class="flex-1 sm:w-24 px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button></div></div></div>`).join('');
             
             const listElement = document.getElementById('clientsList');
             if (listElement) listElement.innerHTML = listHtml;
@@ -3640,7 +3640,7 @@ function renderCalendar() {
     const endIndex = startIndex + itemsPerPage;
     const paginatedQuotes = filteredQuotes.slice(startIndex, endIndex);
     
-    const quotesList = paginatedQuotes.length === 0 ? '<div class="text-center py-12 text-gray-500">No quotes found</div>' : paginatedQuotes.map(q => { 
+    const quotesList = paginatedQuotes.length === 0 ? '<div class="text-center py-12 text-gray-500 dark:text-gray-400">No quotes found</div>' : paginatedQuotes.map(q => { 
         const client = clients.find(c => c.id === q.client_id);
         const jobAddress = q.job_address || client?.address || '';
         const isAccepted = q.accepted || q.status === 'accepted';
@@ -3680,11 +3680,11 @@ function renderCalendar() {
             if (jobRevenue > 0 || jobExpenses > 0) {
                 profitDisplay = `
                     <div class="mt-3 mb-3 p-3 rounded-lg ${profit >= 0 ? 'bg-green-50 border-l-4 border-green-500' : 'bg-red-50 border-l-4 border-red-500'}">
-                        <div class="text-xs font-semibold text-gray-600 mb-2">💰 Job Performance</div>
+                        <div class="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-2">💰 Job Performance</div>
                         <div class="grid grid-cols-2 gap-2 text-sm">
-                            <div><span class="text-gray-600">Quoted:</span> <span class="font-semibold">$${quotedAmount.toFixed(2)}</span></div>
-                            ${jobRevenue > 0 ? `<div><span class="text-gray-600">Revenue:</span> <span class="font-semibold text-green-600">$${jobRevenue.toFixed(2)}</span></div>` : '<div><span class="text-gray-600">Revenue:</span> <span class="text-gray-500">Unpaid</span></div>'}
-                            ${jobExpenses > 0 ? `<div><span class="text-gray-600">Expenses:</span> <span class="font-semibold text-red-600">$${jobExpenses.toFixed(2)}</span></div>` : ''}
+                            <div><span class="text-gray-600 dark:text-gray-300">Quoted:</span> <span class="font-semibold dark:text-white">$${quotedAmount.toFixed(2)}</span></div>
+                            ${jobRevenue > 0 ? `<div><span class="text-gray-600 dark:text-gray-300">Revenue:</span> <span class="font-semibold text-green-600">$${jobRevenue.toFixed(2)}</span></div>` : '<div><span class="text-gray-600 dark:text-gray-300">Revenue:</span> <span class="text-gray-500 dark:text-gray-400">Unpaid</span></div>'}
+                            ${jobExpenses > 0 ? `<div><span class="text-gray-600 dark:text-gray-300">Expenses:</span> <span class="font-semibold text-red-600">$${jobExpenses.toFixed(2)}</span></div>` : ''}
                         </div>
                         <div class="mt-2 flex items-center justify-between">
                             <div class="text-sm font-bold ${profit >= 0 ? 'text-green-700' : 'text-red-700'}">
@@ -3704,10 +3704,10 @@ function renderCalendar() {
                 </div>
                 <div class="flex-1">
                     <div class="flex flex-col sm:flex-row sm:justify-between gap-2 mb-3">
-                        <div><h3 class="text-lg font-semibold">${q.title}</h3><p class="text-sm">${client?.name || 'Unknown'}${jobAddress ? ` • 📍 ${jobAddress}` : ''}</p>${isAccepted ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mt-1 inline-block">✓ ACCEPTED</span>' : ''}${isConverted ? '<span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded mt-1 inline-block ml-2">✓ CONVERTED</span>' : ''}</div><p class="text-2xl font-bold text-teal-500">$${q.total?.toFixed(2)}</p>
+                        <div><h3 class="text-lg font-semibold dark:text-white dark:text-white">${q.title}</h3><p class="text-sm">${client?.name || 'Unknown'}${jobAddress ? ` • 📍 ${jobAddress}` : ''}</p>${isAccepted ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mt-1 inline-block">✓ ACCEPTED</span>' : ''}${isConverted ? '<span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded mt-1 inline-block ml-2">✓ CONVERTED</span>' : ''}</div><p class="text-2xl font-bold text-teal-500">$${q.total?.toFixed(2)}</p>
                     </div>
-                    ${q.notes ? `<p class="text-sm text-gray-600 italic mb-3">${q.notes}</p>` : ''}
-                    ${isConverted ? '<p class="text-xs text-gray-500 italic mb-3">This quote has been converted to an invoice</p>' : ''}
+                    ${q.notes ? `<p class="text-sm text-gray-600 dark:text-gray-300 italic mb-3">${q.notes}</p>` : ''}
+                    ${isConverted ? '<p class="text-xs text-gray-500 dark:text-gray-400 italic mb-3">This quote has been converted to an invoice</p>' : ''}
                     ${profitDisplay}
                     <div class="flex gap-2 flex-wrap">${isAccepted || isConverted ? `<button onclick='openJobFromQuote(${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-teal-600 text-white rounded text-sm whitespace-nowrap">📅 Schedule Job</button>` : ''}${!isAccepted && !isConverted ? `<button onclick='openModal("quote", ${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>` : ''}${!isConverted ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm whitespace-nowrap">Convert to Invoice</button>` : ''}<button onclick='generatePDF("quote", ${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm whitespace-nowrap">Download PDF</button><button onclick='sendQuoteEmail(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-purple-600 text-white rounded text-sm whitespace-nowrap">📧 Email</button>${client?.phone && smsSettings?.enabled ? `<button onclick='sendQuoteSMS(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm whitespace-nowrap">📱 SMS</button>` : ''}<label class="cursor-pointer px-3 py-1 bg-orange-600 text-white rounded text-sm whitespace-nowrap"><input type="file" accept="image/*,.pdf,.doc,.docx,.txt" onchange="uploadQuoteFile(this, '${q.id}')" class="hidden" />📎 Upload File</label><button onclick="viewQuoteFiles('${q.id}')" class="px-3 py-1 bg-gray-600 text-white rounded text-sm whitespace-nowrap">📁 View Files</button><button onclick="deleteQuote('${q.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div>
                 </div>
@@ -3720,7 +3720,7 @@ function renderCalendar() {
     const bulkActions = selectedQuotes.length > 0 ? `
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex items-center justify-between">
             <span class="text-sm font-medium text-blue-900">${selectedQuotes.length} quote${selectedQuotes.length > 1 ? 's' : ''} selected</span>
-            <button onclick="bulkDelete('quotes')" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium">
+            <button onclick="bulkDelete('quotes')" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium dark:text-gray-200">
                 🗑️ Delete Selected
             </button>
         </div>
@@ -3732,11 +3732,11 @@ function renderCalendar() {
                    ${selectedQuotes.length === quotes.length && quotes.length > 0 ? 'checked' : ''} 
                    onchange="toggleSelectAll('quotes')" 
                    class="w-5 h-5 text-blue-600 rounded">
-            <label class="text-sm font-medium text-gray-700">Select All</label>
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-200">Select All</label>
         </div>
     ` : '';
     
-    return `<div>${successNotification}<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold">Quotes</h2><div class="flex flex-wrap gap-2"><button onclick="exportToCSV('quotes')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><button onclick="openModal('quote')" class="bg-black text-white px-3 sm:px-4 py-2 rounded-lg border border-teal-400 text-sm whitespace-nowrap">+ Create Quote</button></div></div><input type="text" placeholder="🔍 Search quotes..." value="${quoteSearch}" oninput="debouncedSearch('quote', this.value);" class="w-full px-4 py-2 border rounded-lg mb-4">${bulkActions}${selectAllCheckbox}<div class="grid gap-4">${quotesList}</div>${pagination}</div>`;
+    return `<div>${successNotification}<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold dark:text-teal-400">Quotes</h2><div class="flex flex-wrap gap-2"><button onclick="exportToCSV('quotes')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><button onclick="openModal('quote')" class="bg-black text-white px-3 sm:px-4 py-2 rounded-lg border border-teal-400 text-sm whitespace-nowrap">+ Create Quote</button></div></div><input type="text" placeholder="🔍 Search quotes..." value="${quoteSearch}" oninput="debouncedSearch('quote', this.value);" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600-lg dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-4">${bulkActions}${selectAllCheckbox}<div class="grid gap-4">${quotesList}</div>${pagination}</div>`;
 }
         
         function renderInvoices() {
@@ -3770,7 +3770,7 @@ function renderCalendar() {
                 const sortedMonths = Object.keys(monthlyGroups).sort().reverse();
                 
                 content = sortedMonths.length === 0 
-                    ? '<div class="text-center py-12 text-gray-500">No paid invoices yet</div>'
+                    ? '<div class="text-center py-12 text-gray-500 dark:text-gray-400">No paid invoices yet</div>'
                     : sortedMonths.map(monthKey => {
                         const group = monthlyGroups[monthKey];
                         return `
@@ -3779,7 +3779,7 @@ function renderCalendar() {
                                     <div class="flex justify-between items-center">
                                         <h3 class="text-xl font-bold text-teal-900">${group.label}</h3>
                                         <div class="text-right">
-                                            <div class="text-sm text-gray-600">${group.invoices.length} invoice${group.invoices.length === 1 ? '' : 's'}</div>
+                                            <div class="text-sm text-gray-600 dark:text-gray-300">${group.invoices.length} invoice${group.invoices.length === 1 ? '' : 's'}</div>
                                             <div class="text-2xl font-bold text-teal-600">$${group.total.toFixed(2)}</div>
                                         </div>
                                     </div>
@@ -3792,9 +3792,9 @@ function renderCalendar() {
                                         return `<div class="bg-white p-3 rounded-lg shadow border-l-4 border-green-500">
                                             <div class="flex justify-between items-start">
                                                 <div class="flex-1">
-                                                    <h4 class="font-semibold">${inv.title}</h4>
-                                                    <p class="text-sm text-gray-600">${client?.name || 'Unknown'}${jobAddress ? ` • 📍 ${jobAddress}` : ''}</p>
-                                                    <p class="text-xs text-gray-500">${inv.invoice_number} • ${inv.issue_date}</p>
+                                                    <h4 class="font-semibold dark:text-white">${inv.title}</h4>
+                                                    <p class="text-sm text-gray-600 dark:text-gray-300">${client?.name || 'Unknown'}${jobAddress ? ` • 📍 ${jobAddress}` : ''}</p>
+                                                    <p class="text-xs text-gray-500 dark:text-gray-400">${inv.invoice_number} • ${inv.issue_date}</p>
                                                     ${inv.paid_date ? `<p class="text-xs text-green-600 font-medium mt-1">✓ Paid: ${new Date(inv.paid_date).toLocaleDateString()}</p>` : ''}
                                                 </div>
                                                 <div class="text-right">
@@ -3831,7 +3831,7 @@ function renderCalendar() {
                 }
                 
                 content = filteredInvoices.length === 0 
-                    ? `<div class="text-center py-12 text-gray-500">No ${invoiceFilter} invoices found</div>` 
+                    ? `<div class="text-center py-12 text-gray-500 dark:text-gray-400">No ${invoiceFilter} invoices found</div>` 
                     : filteredInvoices.map(inv => { 
                         const client = clients.find(c => c.id === inv.client_id);
                         let borderColor = '';
@@ -3873,19 +3873,19 @@ function renderCalendar() {
                                 <div class="flex-1">
                                     <div class="flex justify-between mb-3">
                                         <div>
-                                            <h3 class="text-lg font-semibold">${inv.title}</h3>
-                                            <p class="text-sm text-gray-600">${client?.name || 'Unknown'}${jobAddress ? ` • 📍 ${jobAddress}` : ''}</p>
+                                            <h3 class="text-lg font-semibold dark:text-white dark:text-white">${inv.title}</h3>
+                                            <p class="text-sm text-gray-600 dark:text-gray-300">${client?.name || 'Unknown'}${jobAddress ? ` • 📍 ${jobAddress}` : ''}</p>
                                             <p class="text-xs">${inv.invoice_number}</p>
-                                            <p class="text-xs text-gray-500">Issued: ${inv.issue_date}</p>
-                                            ${inv.due_date ? `<p class="text-xs text-gray-500">Due: ${inv.due_date}</p>` : ''}
-                                            ${inv.status === 'paid' && inv.paid_date ? `<p class="text-xs text-green-600 font-medium">✓ Paid: ${new Date(inv.paid_date).toLocaleDateString()}</p>` : ''}
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">Issued: ${inv.issue_date}</p>
+                                            ${inv.due_date ? `<p class="text-xs text-gray-500 dark:text-gray-400">Due: ${inv.due_date}</p>` : ''}
+                                            ${inv.status === 'paid' && inv.paid_date ? `<p class="text-xs text-green-600 font-medium dark:text-gray-200">✓ Paid: ${new Date(inv.paid_date).toLocaleDateString()}</p>` : ''}
                                             ${statusBadge}
                                         </div>
                                         <p class="text-2xl font-bold text-teal-500">$${inv.total?.toFixed(2)}</p>
                                     </div>
                                     <div class="flex gap-2 flex-wrap">
                                         <button onclick='openModal("invoice", ${JSON.stringify(inv).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
-                                        ${inv.status === 'unpaid' ? `<button onclick="quickMarkAsPaid('${inv.id}')" class="px-3 py-1 bg-green-600 text-white rounded text-sm font-medium">💰 Mark Paid</button>` : ''}
+                                        ${inv.status === 'unpaid' ? `<button onclick="quickMarkAsPaid('${inv.id}')" class="px-3 py-1 bg-green-600 text-white rounded text-sm font-medium dark:text-gray-200">💰 Mark Paid</button>` : ''}
                                         ${inv.status === 'paid' ? `<button onclick="quickMarkAsUnpaid('${inv.id}')" class="px-3 py-1 bg-gray-600 text-white rounded text-sm">Mark Unpaid</button>` : ''}
                                         ${paymentLinkButton}
                                         <button onclick="generatePDF('invoice', ${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Download PDF</button>
@@ -3904,23 +3904,23 @@ function renderCalendar() {
             
             const filterTabs = `<div class="flex flex-wrap gap-2 mb-4"><button onclick="invoiceFilter='unpaid'; renderApp();" class="px-3 sm:px-4 py-2 rounded text-sm ${invoiceFilter === 'unpaid' ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'} border">Unpaid (${invoices.filter(i => i.status === 'unpaid').length})</button><button onclick="invoiceFilter='paid'; renderApp();" class="px-3 sm:px-4 py-2 rounded text-sm ${invoiceFilter === 'paid' ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'} border">Paid (${invoices.filter(i => i.status === 'paid').length})</button><button onclick="invoiceFilter='monthly'; renderApp();" class="px-3 sm:px-4 py-2 rounded text-sm ${invoiceFilter === 'monthly' ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'} border">Monthly</button></div>`;
             
-            const searchBar = invoiceFilter !== 'monthly' ? `<input type="text" placeholder="🔍 Search invoices..." value="${invoiceSearch}" oninput="debouncedSearch('invoice', this.value, false);" class="w-full px-4 py-2 border rounded-lg mb-4">` : '';
+            const searchBar = invoiceFilter !== 'monthly' ? `<input type="text" placeholder="🔍 Search invoices..." value="${invoiceSearch}" oninput="debouncedSearch('invoice', this.value, false);" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600-lg dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-4">` : '';
             
             const bulkActions = selectedInvoices.length > 0 && invoiceFilter !== 'monthly' ? `
                 <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex items-center justify-between">
                     <span class="text-sm font-medium text-blue-900">${selectedInvoices.length} invoice${selectedInvoices.length > 1 ? 's' : ''} selected</span>
-                    <button onclick="bulkDelete('invoices')" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium">🗑️ Delete Selected</button>
+                    <button onclick="bulkDelete('invoices')" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium dark:text-gray-200">🗑️ Delete Selected</button>
                 </div>
             ` : '';
             
             const selectAllCheckbox = invoiceFilter !== 'monthly' ? `
                 <div class="flex items-center gap-2 mb-4">
                     <input type="checkbox" ${selectedInvoices.length === invoices.length && invoices.length > 0 ? 'checked' : ''} onchange="toggleSelectAll('invoices')" class="w-5 h-5 text-blue-600 rounded">
-                    <label class="text-sm font-medium text-gray-700">Select All</label>
+                    <label class="text-sm font-medium text-gray-700 dark:text-gray-200">Select All</label>
                 </div>
             ` : '';
             
-            return `<div><div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-6"><h2 class="text-2xl font-bold">Invoices</h2><div class="flex flex-wrap items-center gap-3"><button onclick="exportToCSV('invoices')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><div class="text-sm flex gap-4"><div>Outstanding: <span class="font-bold text-red-600">$${unpaidTotal.toFixed(2)}</span></div><div>Paid: <span class="font-bold text-green-600">$${paidTotal.toFixed(2)}</span></div></div></div></div>${filterTabs}${searchBar}${bulkActions}${selectAllCheckbox}<div class="grid gap-4">${content}</div></div>`;
+            return `<div><div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-6"><h2 class="text-2xl font-bold dark:text-teal-400">Invoices</h2><div class="flex flex-wrap items-center gap-3"><button onclick="exportToCSV('invoices')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><div class="text-sm flex gap-4"><div>Outstanding: <span class="font-bold text-red-600">$${unpaidTotal.toFixed(2)}</span></div><div>Paid: <span class="font-bold text-green-600">$${paidTotal.toFixed(2)}</span></div></div></div></div>${filterTabs}${searchBar}${bulkActions}${selectAllCheckbox}<div class="grid gap-4">${content}</div></div>`;
         }
         
         function renderExpenses() {
@@ -3976,13 +3976,13 @@ function renderCalendar() {
             return `<div>
                 <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-6">
                     <div>
-                        <h2 class="text-2xl font-bold">Expenses</h2>
+                        <h2 class="text-2xl font-bold dark:text-teal-400">Expenses</h2>
                         <div class="text-3xl font-bold text-red-600 mt-2">$${totalExpenses.toFixed(2)}</div>
-                        <div class="text-sm text-gray-500">${totalExpensesCount} expense${totalExpensesCount !== 1 ? 's' : ''} - ${getMonthLabel(expenseFilter)}</div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">${totalExpensesCount} expense${totalExpensesCount !== 1 ? 's' : ''} - ${getMonthLabel(expenseFilter)}</div>
                     </div>
                     <div class="flex flex-wrap gap-2 items-center">
                         ${months.length > 0 ? `
-                            <select onchange="expenseFilter=this.value; renderApp();" class="px-3 py-2 border rounded bg-white text-sm">
+                            <select onchange="expenseFilter=this.value; renderApp();" class="px-3 py-2 border rounded bg-white dark:bg-gray-700 dark:text-white text-sm">
                                 <option value="all" ${expenseFilter === 'all' ? 'selected' : ''}>All Months</option>
                                 ${months.map(m => `<option value="${m}" ${expenseFilter === m ? 'selected' : ''}>${getMonthLabel(m)}</option>`).join('')}
                             </select>
@@ -3992,37 +3992,37 @@ function renderCalendar() {
                     </div>
                 </div>
                 
-                <input type="text" placeholder="🔍 Search expenses..." value="${expenseSearch}" oninput="debouncedSearch('expense', this.value);" class="w-full px-4 py-2 border rounded-lg mb-4">
+                <input type="text" placeholder="🔍 Search expenses..." value="${expenseSearch}" oninput="debouncedSearch('expense', this.value);" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600-lg dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-4">
                 
                 ${selectedExpenses.length > 0 ? `
                 <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex items-center justify-between">
                     <span class="text-sm font-medium text-blue-900">${selectedExpenses.length} expense${selectedExpenses.length > 1 ? 's' : ''} selected</span>
-                    <button onclick="bulkDelete('expenses')" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium">🗑️ Delete Selected</button>
+                    <button onclick="bulkDelete('expenses')" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium dark:text-gray-200">🗑️ Delete Selected</button>
                 </div>
                 ` : ''}
                 
                 <!-- Expenses Table -->
                 <div class="bg-white rounded-lg shadow overflow-hidden">
                     ${paginatedExpenses.length === 0 ? 
-                        `<div class="text-center py-12 text-gray-500">${expenseSearch ? 'No expenses found' : expenseFilter === 'all' ? 'No expenses yet. Click "+ Add Expense" to get started!' : 'No expenses for this month.'}</div>` 
+                        `<div class="text-center py-12 text-gray-500 dark:text-gray-400">${expenseSearch ? 'No expenses found' : expenseFilter === 'all' ? 'No expenses yet. Click "+ Add Expense" to get started!' : 'No expenses for this month.'}</div>` 
                         : 
-                        `<div class="overflow-x-auto">
+                        `<div class="overflow-x-auto dark:bg-gray-800">
                             <table class="w-full">
                                 <thead class="bg-black text-white">
                                     <tr>
                                         <th class="px-4 py-3 text-center">
                                             <input type="checkbox" ${selectedExpenses.length === totalExpensesCount && totalExpensesCount > 0 ? 'checked' : ''} onchange="toggleSelectAll('expenses')" class="w-4 h-4 text-blue-600 rounded">
                                         </th>
-                                        <th class="px-4 py-3 text-left text-sm font-semibold">Date</th>
-                                        <th class="px-4 py-3 text-left text-sm font-semibold">Category</th>
-                                        <th class="px-4 py-3 text-left text-sm font-semibold">Job</th>
-                                        ${getAccountType() === 'business' ? '<th class="px-4 py-3 text-left text-sm font-semibold">Team Member</th>' : ''}
-                                        <th class="px-4 py-3 text-left text-sm font-semibold">Description</th>
-                                        <th class="px-4 py-3 text-right text-sm font-semibold">Amount</th>
-                                        <th class="px-4 py-3 text-center text-sm font-semibold">Actions</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold dark:text-white">Date</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold dark:text-white">Category</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold dark:text-white">Job</th>
+                                        ${getAccountType() === 'business' ? '<th class="px-4 py-3 text-left text-sm font-semibold dark:text-white">Team Member</th>' : ''}
+                                        <th class="px-4 py-3 text-left text-sm font-semibold dark:text-white">Description</th>
+                                        <th class="px-4 py-3 text-right text-sm font-semibold dark:text-white">Amount</th>
+                                        <th class="px-4 py-3 text-center text-sm font-semibold dark:text-white">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-200">
+                                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                     ${paginatedExpenses.sort((a, b) => new Date(b.date) - new Date(a.date)).map(exp => {
                                         const teamMember = exp.team_member_id ? teamMembers.find(tm => tm.id === exp.team_member_id) : null;
                                         
@@ -4047,30 +4047,30 @@ function renderCalendar() {
                                         
                                         const isSelected = selectedExpenses.includes(exp.id);
                                         return `
-                                        <tr class="hover:bg-gray-50 ${isSelected ? 'bg-blue-50' : ''}">
+                                        <tr class="hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 ${isSelected ? 'bg-blue-50' : ''}">
                                             <td class="px-4 py-3 text-center">
                                                 <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelection('expenses', '${exp.id}')" class="w-4 h-4 text-blue-600 rounded">
                                             </td>
-                                            <td class="px-4 py-3 text-sm text-gray-900">${new Date(exp.date).toLocaleDateString()}</td>
+                                            <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">${new Date(exp.date).toLocaleDateString()}</td>
                                             <td class="px-4 py-3">
                                                 <span class="inline-block px-2 py-1 text-xs font-medium rounded bg-gray-100 text-gray-800">${exp.category}</span>
                                             </td>
-                                            <td class="px-4 py-3 text-sm text-gray-600">${jobDisplay}</td>
-                                            ${getAccountType() === 'business' ? `<td class="px-4 py-3 text-sm text-gray-600">${teamMember ? teamMember.name : '-'}</td>` : ''}
-                                            <td class="px-4 py-3 text-sm text-gray-600">
+                                            <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">${jobDisplay}</td>
+                                            ${getAccountType() === 'business' ? `<td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">${teamMember ? teamMember.name : '-'}</td>` : ''}
+                                            <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
                                                 ${exp.description || '-'}
                                                 ${exp.receipt_url ? `<a href="${exp.receipt_url}" target="_blank" class="text-teal-600 hover:underline ml-2">📎</a>` : ''}
                                             </td>
                                             <td class="px-4 py-3 text-sm font-semibold text-right text-red-600">$${parseFloat(exp.amount).toFixed(2)}</td>
                                             <td class="px-4 py-3 text-center">
                                                 <div class="flex justify-center gap-2">
-                                                    <button onclick='openModal("expense", ${JSON.stringify(exp).replace(/"/g, "&quot;")})' class="text-blue-600 hover:text-blue-800 text-sm font-medium">Edit</button>
-                                                    <button onclick="deleteExpense('${exp.id}')" class="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
+                                                    <button onclick='openModal("expense", ${JSON.stringify(exp).replace(/"/g, "&quot;")})' class="text-blue-600 hover:text-blue-800 text-sm font-medium dark:text-gray-200">Edit</button>
+                                                    <button onclick="deleteExpense('${exp.id}')" class="text-red-600 hover:text-red-800 text-sm font-medium dark:text-gray-200">Delete</button>
                                                 </div>
                                             </td>
                                         </tr>
                                     `}).join('')}
-                                    <tr class="bg-gray-50 font-bold border-t-2 border-gray-300">
+                                    <tr class="bg-gray-50 dark:bg-gray-800 font-bold border-t-2 border-gray-300">
                                         <td colspan="${getAccountType() === 'business' ? '5' : '4'}" class="px-4 py-4 text-right text-sm uppercase">Total ${expenseFilter !== 'all' ? `(${getMonthLabel(expenseFilter)})` : ''}:</td>
                                         <td class="px-4 py-4 text-right text-lg text-red-600">$${totalExpenses.toFixed(2)}</td>
                                         <td></td>
@@ -4122,7 +4122,7 @@ function renderCalendar() {
             
             // Show preview
             const preview = document.getElementById('receipt_preview');
-            preview.innerHTML = `<div class="bg-gray-50 p-2 rounded text-sm text-gray-600">📸 ${file.name} ready to upload</div>`;
+            preview.innerHTML = `<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded text-sm text-gray-600 dark:text-gray-300">📸 ${file.name} ready to upload</div>`;
         }
         
         function removeReceipt() {
@@ -4460,22 +4460,22 @@ function renderCalendar() {
                 // Sort by date (most recent first)
                 jobOptions.sort((a, b) => new Date(b.date) - new Date(a.date));
                 
-                const jobDropdown = `<div><label class="block text-sm font-medium mb-1">Related Job/Quote (Optional)</label><select id="job_id" class="w-full px-4 py-2 border rounded mb-3"><option value="">No specific job</option>${jobOptions.map(opt => {
+                const jobDropdown = `<div><label class="block text-sm font-medium mb-1 dark:text-gray-200">Related Job/Quote (Optional)</label><select id="job_id" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3"><option value="">No specific job</option>${jobOptions.map(opt => {
                     return `<option value="${opt.id}" ${opt.id === job_id ? 'selected' : ''}>${opt.display}</option>`;
                 }).join('')}</select></div>`;
                 
                 // Team member dropdown for business accounts
                 const teamMemberDropdown = getAccountType() === 'business' 
-                    ? `<div><label class="block text-sm font-medium mb-1">Team Member (Optional)</label><select id="team_member_id" class="w-full px-4 py-2 border rounded mb-3"><option value="">No specific team member</option>${teamMembers.map(tm => `<option value="${tm.id}" ${tm.id === team_member_id ? 'selected' : ''}>${tm.name}${tm.occupation ? ' (' + tm.occupation + ')' : ''}</option>`).join('')}</select></div>` 
+                    ? `<div><label class="block text-sm font-medium mb-1 dark:text-gray-200">Team Member (Optional)</label><select id="team_member_id" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3"><option value="">No specific team member</option>${teamMembers.map(tm => `<option value="${tm.id}" ${tm.id === team_member_id ? 'selected' : ''}>${tm.name}${tm.occupation ? ' (' + tm.occupation + ')' : ''}</option>`).join('')}</select></div>` 
                     : '';
                 
                 // Receipt upload section
-                const receiptSection = `<div class="mb-3"><label class="block text-sm font-medium mb-1">📸 Receipt Photo (Optional)</label><input type="file" id="receipt_photo" accept="image/*" capture="environment" class="w-full px-4 py-2 border rounded" onchange="handleReceiptUpload(this)"><div id="receipt_preview" class="mt-2">${receipt_url ? `<div class="bg-gray-50 p-2 rounded flex items-center justify-between"><a href="${receipt_url}" target="_blank" class="text-teal-600 hover:underline text-sm">📎 View Receipt</a><button type="button" onclick="removeReceipt()" class="text-red-600 text-sm">Remove</button></div>` : ''}</div><input type="hidden" id="receipt_url" value="${receipt_url}"></div>`;
+                const receiptSection = `<div class="mb-3"><label class="block text-sm font-medium mb-1 dark:text-gray-200">📸 Receipt Photo (Optional)</label><input type="file" id="receipt_photo" accept="image/*" capture="environment" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" onchange="handleReceiptUpload(this)"><div id="receipt_preview" class="mt-2">${receipt_url ? `<div class="bg-gray-50 dark:bg-gray-800 p-2 rounded flex items-center justify-between"><a href="${receipt_url}" target="_blank" class="text-teal-600 hover:underline text-sm">📎 View Receipt</a><button type="button" onclick="removeReceipt()" class="text-red-600 text-sm">Remove</button></div>` : ''}</div><input type="hidden" id="receipt_url" value="${receipt_url}"></div>`;
                 
                 const action = editingItem 
                     ? `updateExpenseWithReceipt('${editingItem?.id || editingItem}')` 
                     : `addExpenseWithReceipt()`;
-                form = `<input type="date" id="expense_date" value="${date}" class="w-full px-4 py-2 border rounded mb-3" required><input type="number" id="expense_amount" placeholder="Amount" value="${amount}" step="0.01" class="w-full px-4 py-2 border rounded mb-3" required><select id="expense_category" class="w-full px-4 py-2 border rounded mb-3">${categories.map(cat => `<option value="${cat}" ${cat === category ? 'selected' : ''}>${cat}</option>`).join('')}</select>${jobDropdown}${teamMemberDropdown}<textarea id="expense_description" placeholder="Description (e.g., Plumbing supplies for Smith job)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${description}</textarea>${receiptSection}<button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
+                form = `<input type="date" id="expense_date" value="${date}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" required><input type="number" id="expense_amount" placeholder="Amount" value="${amount}" step="0.01" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" required><select id="expense_category" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3">${categories.map(cat => `<option value="${cat}" ${cat === category ? 'selected' : ''}>${cat}</option>`).join('')}</select>${jobDropdown}${teamMemberDropdown}<textarea id="expense_description" placeholder="Description (e.g., Plumbing supplies for Smith job)" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" rows="3">${description}</textarea>${receiptSection}<button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
             }
             if (modalType === 'team_member') {
                 const name = editingItem?.name || '';
@@ -4485,7 +4485,7 @@ function renderCalendar() {
                 const color = editingItem?.color || '#3b82f6';
                 const buttonText = editingItem ? 'Update Team Member' : 'Add Team Member';
                 const action = editingItem ? `updateTeamMember('${editingItem.id}')` : `addTeamMember({name:document.getElementById('name').value,email:document.getElementById('email').value,phone:document.getElementById('phone').value,occupation:document.getElementById('occupation').value,color:document.getElementById('color').value})`;
-                form = `<input type="text" id="name" placeholder="Name" value="${name}" class="w-full px-4 py-2 border rounded mb-3" required><input type="email" id="email" placeholder="Email (optional)" value="${email}" class="w-full px-4 py-2 border rounded mb-3"><input type="tel" id="phone" placeholder="Phone (optional)" value="${phone}" class="w-full px-4 py-2 border rounded mb-3"><input type="text" id="occupation" placeholder="Occupation (e.g., Painter, Electrician)" value="${occupation}" class="w-full px-4 py-2 border rounded mb-3"><div class="mb-3"><label class="block text-sm font-medium mb-2">Calendar Color</label><div class="flex items-center gap-3"><input type="color" id="color" value="${color}" class="h-10 w-20 cursor-pointer border rounded"><span class="text-sm text-gray-600">Choose a color for this team member's jobs</span></div></div><button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
+                form = `<input type="text" id="name" placeholder="Name" value="${name}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" required><input type="email" id="email" placeholder="Email (optional)" value="${email}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3"><input type="tel" id="phone" placeholder="Phone (optional)" value="${phone}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3"><input type="text" id="occupation" placeholder="Occupation (e.g., Painter, Electrician)" value="${occupation}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3"><div class="mb-3"><label class="block text-sm font-medium mb-2">Calendar Color</label><div class="flex items-center gap-3"><input type="color" id="color" value="${color}" class="h-10 w-20 cursor-pointer border rounded"><span class="text-sm text-gray-600 dark:text-gray-300">Choose a color for this team member's jobs</span></div></div><button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
             }
             if (modalType === 'client') {
                 const name = editingItem?.name || '';
@@ -4495,7 +4495,7 @@ function renderCalendar() {
                 const notes = editingItem?.notes || '';
                 const buttonText = editingItem ? 'Update Client' : 'Add Client';
                 const action = editingItem ? `updateClient('${editingItem.id}')` : `addClient({name:document.getElementById('name').value,email:document.getElementById('email').value,phone:document.getElementById('phone').value,address:document.getElementById('address').value,notes:document.getElementById('clientNotes').value})`;
-                form = `<input type="text" id="name" placeholder="Name" value="${name}" class="w-full px-4 py-2 border rounded mb-3"><input type="email" id="email" placeholder="Email" value="${email}" class="w-full px-4 py-2 border rounded mb-3"><input type="tel" id="phone" placeholder="Phone" value="${phone}" class="w-full px-4 py-2 border rounded mb-3"><input type="text" id="address" placeholder="Address" value="${address}" class="w-full px-4 py-2 border rounded mb-3"><textarea id="clientNotes" placeholder="Internal notes (only visible to you)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${notes}</textarea><button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
+                form = `<input type="text" id="name" placeholder="Name" value="${name}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3"><input type="email" id="email" placeholder="Email" value="${email}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3"><input type="tel" id="phone" placeholder="Phone" value="${phone}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3"><input type="text" id="address" placeholder="Address" value="${address}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3"><textarea id="clientNotes" placeholder="Internal notes (only visible to you)" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" rows="3">${notes}</textarea><button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
             }
             if (modalType === 'job') {
                 const clientId = editingItem?.client_id || '';
@@ -4512,17 +4512,17 @@ function renderCalendar() {
                 const workerCheckboxes = getAccountType() === 'business' && teamMembers.length > 0 
                     ? `<div class="mb-3">
                         <label class="block text-sm font-medium mb-2">Assign Team Members</label>
-                        <div class="border rounded p-3 space-y-2 max-h-48 overflow-y-auto bg-gray-50">
+                        <div class="border rounded p-3 space-y-2 max-h-48 overflow-y-auto bg-gray-50 dark:bg-gray-800">
                             ${teamMembers.map(m => {
                                 const isChecked = assignedTeam.includes(m.id);
-                                return `<label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded">
+                                return `<label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded">
                                     <input type="checkbox" value="${m.id}" ${isChecked ? 'checked' : ''} class="worker-checkbox" />
                                     <span class="flex-1">${m.name}${m.occupation ? ` - ${m.occupation}` : ''}</span>
                                     <span class="w-4 h-4 rounded-full" style="background-color: ${m.color || '#14b8a6'}"></span>
                                 </label>`;
                             }).join('')}
                         </div>
-                        <p class="text-xs text-gray-500 mt-1">💡 Select multiple team members for this job</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">💡 Select multiple team members for this job</p>
                        </div>`
                     : '';
                 
@@ -4530,7 +4530,7 @@ function renderCalendar() {
                     ? `updateJob('${editingItem.id}')` 
                     : `saveJob()`;
                     
-                form = `<select id="client_id" class="w-full px-4 py-2 border rounded mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}</select><input type="text" id="title" placeholder="Job Title" value="${title}" class="w-full px-4 py-2 border rounded mb-3"><div class="mb-3"><label class="block text-sm font-medium mb-1">Start Date</label><input type="date" id="date" value="${date}" class="w-full px-4 py-2 border rounded" required></div><div class="mb-3"><label class="block text-sm font-medium mb-1">Start Time (defaults to 6am if blank)</label><input type="time" id="time" value="${time}" class="w-full px-4 py-2 border rounded"></div><div class="mb-3"><label class="block text-sm font-medium mb-1">Duration (days)</label><input type="number" id="duration" value="${duration}" min="1" max="30" class="w-full px-4 py-2 border rounded" placeholder="1"></div>${workerCheckboxes}<select id="jobStatus" class="w-full px-4 py-2 border rounded mb-3"><option value="scheduled" ${status === 'scheduled' ? 'selected' : ''}>Scheduled</option><option value="in_progress" ${status === 'in_progress' ? 'selected' : ''}>In Progress</option><option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option></select><textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${notes}</textarea><button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
+                form = `<select id="client_id" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}</select><input type="text" id="title" placeholder="Job Title" value="${title}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3"><div class="mb-3"><label class="block text-sm font-medium mb-1 dark:text-gray-200">Start Date</label><input type="date" id="date" value="${date}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" required></div><div class="mb-3"><label class="block text-sm font-medium mb-1 dark:text-gray-200">Start Time (defaults to 6am if blank)</label><input type="time" id="time" value="${time}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600"></div><div class="mb-3"><label class="block text-sm font-medium mb-1 dark:text-gray-200">Duration (days)</label><input type="number" id="duration" value="${duration}" min="1" max="30" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="1"></div>${workerCheckboxes}<select id="jobStatus" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3"><option value="scheduled" ${status === 'scheduled' ? 'selected' : ''}>Scheduled</option><option value="in_progress" ${status === 'in_progress' ? 'selected' : ''}>In Progress</option><option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option></select><textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" rows="3">${notes}</textarea><button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
             }
             if (modalType === 'quote') {
                 const clientId = editingItem?.client_id || '';
@@ -4550,12 +4550,12 @@ function renderCalendar() {
                 }
                 // Pre-generate quote number for new quotes or show existing for editing
                 const displayQuoteNumber = isEditing ? quoteNumber : `QT-${String(quotes.length + 1).padStart(3, '0')}`;
-                const titleField = `<div class="mb-3"><label class="block text-sm font-medium mb-1">Quote/PO Number</label><input type="text" id="title" value="${displayQuoteNumber}" class="w-full px-4 py-2 border rounded" placeholder="QT-001 or PO-12345"><p class="text-xs text-gray-500 mt-1">💡 Auto-generated, but you can edit it (e.g., use customer's PO number)</p></div>`;
+                const titleField = `<div class="mb-3"><label class="block text-sm font-medium mb-1 dark:text-gray-200">Quote/PO Number</label><input type="text" id="title" value="${displayQuoteNumber}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="QT-001 or PO-12345"><p class="text-xs text-gray-500 dark:text-gray-400 mt-1">💡 Auto-generated, but you can edit it (e.g., use customer's PO number)</p></div>`;
                 
                 // Job address field with auto-fill from client
-                const addressField = `<div class="mb-3"><label class="block text-sm font-medium mb-1">Job Address</label><textarea id="job_address" placeholder="Job site address (auto-fills from client)" class="w-full px-4 py-2 border rounded" rows="2">${jobAddress}</textarea><p class="text-xs text-gray-500 mt-1">💡 Defaults to client address, edit if job is at different location</p></div>`;
+                const addressField = `<div class="mb-3"><label class="block text-sm font-medium mb-1 dark:text-gray-200">Job Address</label><textarea id="job_address" placeholder="Job site address (auto-fills from client)" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" rows="2">${jobAddress}</textarea><p class="text-xs text-gray-500 dark:text-gray-400 mt-1">💡 Defaults to client address, edit if job is at different location</p></div>`;
                 
-                form = `<select id="client_id" onchange="autoFillJobAddress()" class="w-full px-4 py-2 border rounded mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}</select>${titleField}${addressField}<div id="items-list"></div><button onclick="addQuoteItem()" class="text-teal-500 text-sm mb-3">+ Add Item</button><div id="quote-total" class="font-bold mb-3">Total: $0</div><div class="mb-3"><label class="flex items-center cursor-pointer"><input type="checkbox" id="include_gst" ${includeGst ? 'checked' : ''} onchange="updateQuoteTotal()" class="mr-2"><span class="text-sm font-medium">Include GST (10%)</span></label></div><div class="mb-3"><label class="block text-sm font-medium mb-2">Deposit Required</label><input type="hidden" id="deposit_percentage" value="${depositPercentage}"><div class="flex gap-2 flex-wrap"><button type="button" onclick="setDeposit(0)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 0 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100'}">0% (COD)</button><button type="button" onclick="setDeposit(30)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 30 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100'}">30%</button><button type="button" onclick="setDeposit(40)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 40 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100'}">40%</button><button type="button" onclick="setDeposit(50)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 50 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100'}">50%</button></div></div><div id="deposit-amount" class="text-sm text-gray-600 mb-3"></div><div class="mb-3"><label class="block text-sm font-medium mb-1">Payment Terms</label><textarea id="payment_terms" placeholder="e.g., 30% deposit, balance on completion" class="w-full px-4 py-2 border rounded" rows="2">${paymentTerms}</textarea><p class="text-xs text-gray-500 mt-1">💡 Edit to match your agreement with the client</p></div><textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded mb-3" rows="3">${notes}</textarea><button onclick="${isEditing ? `updateQuote('${editingItem.id}')` : 'saveQuote()'}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
+                form = `<select id="client_id" onchange="autoFillJobAddress()" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3"><option value="">Select Client</option>${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}</select>${titleField}${addressField}<div id="items-list"></div><button onclick="addQuoteItem()" class="text-teal-500 text-sm mb-3">+ Add Item</button><div id="quote-total" class="font-bold mb-3">Total: $0</div><div class="mb-3"><label class="flex items-center cursor-pointer"><input type="checkbox" id="include_gst" ${includeGst ? 'checked' : ''} onchange="updateQuoteTotal()" class="mr-2"><span class="text-sm font-medium dark:text-gray-200">Include GST (10%)</span></label></div><div class="mb-3"><label class="block text-sm font-medium mb-2">Deposit Required</label><input type="hidden" id="deposit_percentage" value="${depositPercentage}"><div class="flex gap-2 flex-wrap"><button type="button" onclick="setDeposit(0)" class="px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 text-sm ${depositPercentage === 0 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}">0% (COD)</button><button type="button" onclick="setDeposit(30)" class="px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 text-sm ${depositPercentage === 30 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}">30%</button><button type="button" onclick="setDeposit(40)" class="px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 text-sm ${depositPercentage === 40 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}">40%</button><button type="button" onclick="setDeposit(50)" class="px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 text-sm ${depositPercentage === 50 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}">50%</button></div></div><div id="deposit-amount" class="text-sm text-gray-600 dark:text-gray-300 mb-3"></div><div class="mb-3"><label class="block text-sm font-medium mb-1 dark:text-gray-200">Payment Terms</label><textarea id="payment_terms" placeholder="e.g., 30% deposit, balance on completion" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" rows="2">${paymentTerms}</textarea><p class="text-xs text-gray-500 dark:text-gray-400 mt-1">💡 Edit to match your agreement with the client</p></div><textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" rows="3">${notes}</textarea><button onclick="${isEditing ? `updateQuote('${editingItem.id}')` : 'saveQuote()'}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>`;
             }
             if (modalType === 'invoice') {
                 const title = editingItem?.title || '';
@@ -4567,31 +4567,31 @@ function renderCalendar() {
                 
                 form = `
                     <div class="mb-3">
-                        <label class="block text-sm font-medium mb-1">Invoice Number</label>
-                        <input type="text" id="invoice_number" value="${invoiceNumber}" class="w-full px-4 py-2 border rounded" readonly>
+                        <label class="block text-sm font-medium mb-1 dark:text-gray-200">Invoice Number</label>
+                        <input type="text" id="invoice_number" value="${invoiceNumber}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" readonly>
                     </div>
                     <div class="mb-3">
-                        <label class="block text-sm font-medium mb-1">Title</label>
-                        <input type="text" id="title" value="${title}" class="w-full px-4 py-2 border rounded">
+                        <label class="block text-sm font-medium mb-1 dark:text-gray-200">Title</label>
+                        <input type="text" id="title" value="${title}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
                     </div>
                     <div class="mb-3">
-                        <label class="block text-sm font-medium mb-1">Issue Date</label>
-                        <input type="date" id="issue_date" value="${issueDate}" class="w-full px-4 py-2 border rounded">
+                        <label class="block text-sm font-medium mb-1 dark:text-gray-200">Issue Date</label>
+                        <input type="date" id="issue_date" value="${issueDate}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
                     </div>
                     <div class="mb-3">
-                        <label class="block text-sm font-medium mb-1">Due Date</label>
-                        <input type="date" id="due_date" value="${dueDate}" class="w-full px-4 py-2 border rounded">
+                        <label class="block text-sm font-medium mb-1 dark:text-gray-200">Due Date</label>
+                        <input type="date" id="due_date" value="${dueDate}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
                     </div>
                     <div class="mb-3">
-                        <label class="block text-sm font-medium mb-1">Status</label>
-                        <select id="status" class="w-full px-4 py-2 border rounded">
+                        <label class="block text-sm font-medium mb-1 dark:text-gray-200">Status</label>
+                        <select id="status" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
                             <option value="unpaid" ${status === 'unpaid' ? 'selected' : ''}>Unpaid</option>
                             <option value="paid" ${status === 'paid' ? 'selected' : ''}>Paid</option>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="block text-sm font-medium mb-1">Notes</label>
-                        <textarea id="notes" class="w-full px-4 py-2 border rounded" rows="3">${notes}</textarea>
+                        <label class="block text-sm font-medium mb-1 dark:text-gray-200">Notes</label>
+                        <textarea id="notes" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" rows="3">${notes}</textarea>
                     </div>
                     <button onclick="updateInvoiceDetails('${editingItem.id}')" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">Update Invoice</button>
                 `;
@@ -4600,7 +4600,7 @@ function renderCalendar() {
                 const files = editingItem?.files || [];
                 const quoteId = editingItem?.quoteId;
                 form = `<div class="space-y-4">
-                    ${files.length === 0 ? '<p class="text-gray-500 text-center py-8">No files attached yet</p>' : ''}
+                    ${files.length === 0 ? '<p class="text-gray-500 dark:text-gray-400 text-center py-8">No files attached yet</p>' : ''}
                     ${files.map(file => {
                         const fileSize = (file.file_size / 1024).toFixed(1) + ' KB';
                         const uploadDate = new Date(file.uploaded_at).toLocaleDateString();
@@ -4611,7 +4611,7 @@ function renderCalendar() {
                                 ${isImage ? `<img src="${file.file_url}" class="w-16 h-16 object-cover rounded" />` : `<div class="w-16 h-16 bg-gray-100 rounded flex items-center justify-center"><span class="text-2xl">📄</span></div>`}
                                 <div class="flex-1 min-w-0">
                                     <p class="font-medium truncate">${file.file_name}</p>
-                                    <p class="text-xs text-gray-500">${fileSize} • ${uploadDate}</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">${fileSize} • ${uploadDate}</p>
                                 </div>
                             </div>
                             <div class="flex gap-2">
@@ -4630,24 +4630,24 @@ function renderCalendar() {
                 
                 form = `<div class="space-y-4">
                     <div class="bg-blue-50 p-3 rounded border-l-4 border-blue-500">
-                        <p class="text-sm font-medium">Job: <span class="font-bold">${jobTitle}</span></p>
+                        <p class="text-sm font-medium dark:text-gray-200">Job: <span class="font-bold">${jobTitle}</span></p>
                         <p class="text-sm">Total Expenses: <span class="font-bold text-red-600">$${totalExpenses.toFixed(2)}</span></p>
                     </div>
-                    ${jobExpensesList.length === 0 ? '<p class="text-gray-500 text-center py-8">No expenses recorded for this job yet</p>' : ''}
+                    ${jobExpensesList.length === 0 ? '<p class="text-gray-500 dark:text-gray-400 text-center py-8">No expenses recorded for this job yet</p>' : ''}
                     <div class="space-y-3">
                         ${jobExpensesList.sort((a, b) => new Date(b.date) - new Date(a.date)).map(exp => {
                             const teamMember = exp.team_member_id ? teamMembers.find(tm => tm.id === exp.team_member_id) : null;
                             return `<div class="border rounded p-3">
                                 <div class="flex justify-between items-start mb-2">
                                     <div class="flex-1">
-                                        <p class="font-semibold">${exp.category}</p>
-                                        <p class="text-sm text-gray-600">${exp.description || 'No description'}</p>
-                                        ${teamMember ? `<p class="text-xs text-gray-500 mt-1">👤 ${teamMember.name}</p>` : ''}
-                                        <p class="text-xs text-gray-500 mt-1">📅 ${new Date(exp.date).toLocaleDateString()}</p>
+                                        <p class="font-semibold dark:text-white">${exp.category}</p>
+                                        <p class="text-sm text-gray-600 dark:text-gray-300">${exp.description || 'No description'}</p>
+                                        ${teamMember ? `<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">👤 ${teamMember.name}</p>` : ''}
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">📅 ${new Date(exp.date).toLocaleDateString()}</p>
                                         ${exp.receipt_url ? `<a href="${exp.receipt_url}" target="_blank" class="text-xs text-blue-600 hover:underline mt-1 inline-block">📎 View Receipt</a>` : ''}
                                     </div>
                                     <div class="text-right">
-                                        <p class="text-lg font-bold text-red-600">$${parseFloat(exp.amount).toFixed(2)}</p>
+                                        <p class="text-lg font-bold dark:text-teal-400 text-red-600">$${parseFloat(exp.amount).toFixed(2)}</p>
                                         <button onclick="closeModal(); openModal('expense', ${JSON.stringify(exp).replace(/"/g, '&quot;')})" class="text-xs text-blue-600 hover:underline mt-1">Edit</button>
                                     </div>
                                 </div>
@@ -4659,7 +4659,7 @@ function renderCalendar() {
                     </button>
                 </div>`;
             }
-            return `<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto" onclick="if(event.target===this)closeModal()"><div class="bg-white rounded-lg p-4 sm:p-6 max-w-2xl w-full my-4 max-h-[90vh] overflow-y-auto"><div class="flex justify-between mb-4"><h3 class="text-lg sm:text-xl font-bold">${editingItem ? 'Edit ' + modalType : modalType}</h3><button onclick="closeModal()" class="text-2xl leading-none">×</button></div>${form}</div></div>`;
+            return `<div class="fixed inset-0 bg-black bg-opacity-70 dark:bg-opacity-80 flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto" onclick="if(event.target===this)closeModal()"><div class="bg-white rounded-lg p-4 sm:p-6 max-w-2xl w-full my-4 max-h-[90vh] overflow-y-auto"><div class="flex justify-between mb-4"><h3 class="text-lg sm:text-xl font-bold">${editingItem ? 'Edit ' + modalType : modalType}</h3><button onclick="closeModal()" class="text-2xl leading-none">×</button></div>${form}</div></div>`;
         }
         
         let quoteItems = [];
@@ -4673,9 +4673,9 @@ function renderCalendar() {
             buttons.forEach(btn => {
                 const btnPercentage = parseInt(btn.textContent);
                 if (btnPercentage === percentage || (percentage === 0 && btn.textContent.includes('COD'))) {
-                    btn.className = 'px-4 py-2 border rounded text-sm bg-black text-white border-teal-400';
+                    btn.className = 'px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 text-sm bg-black text-white border-teal-400';
                 } else {
-                    btn.className = 'px-4 py-2 border rounded text-sm bg-white text-black border-gray-300 hover:bg-gray-100';
+                    btn.className = 'px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 text-sm bg-white text-black border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700';
                 }
             });
             
