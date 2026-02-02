@@ -3331,6 +3331,10 @@ async function acceptQuote(quoteId, shareToken) {
         const client = clients.find(c => c.id === job.client_id);
         const isSelected = selectedJobs.includes(job.id);
         
+        // Get job address from quote (priority) or client
+        const relatedQuote = quotes.find(q => q.title === job.title && q.client_id === job.client_id);
+        const jobAddress = relatedQuote?.job_address || client?.address || '';
+        
         // Get assigned team members (support both old single and new multiple format)
         const assignedTeamIds = job.assigned_team_members || (job.assigned_to ? [job.assigned_to] : []);
         const assignedWorkers = assignedTeamIds.map(id => teamMembers.find(m => m.id === id)).filter(w => w);
@@ -3371,7 +3375,7 @@ async function acceptQuote(quoteId, shareToken) {
                             <h3 class="text-lg font-semibold dark:text-white dark:text-white">${job.title}</h3>
                             <span class="text-xs ${statusColor} px-2 py-1 rounded inline-block mt-1">${statusLabel}</span>
                             <p class="text-gray-600 dark:text-gray-300 mt-1">${client?.name || 'Unknown'}</p>
-                            ${client?.address ? `<a href="${/iPhone|iPad|iPod/.test(navigator.userAgent) ? 'maps://?q=' : 'https://maps.google.com/?q='}${encodeURIComponent(client.address)}" target="_blank" class="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1">📍 ${client.address}</a>` : ''}
+                            ${jobAddress ? `<a href="${/iPhone|iPad|iPod/.test(navigator.userAgent) ? 'maps://?q=' : 'https://maps.google.com/?q='}${encodeURIComponent(jobAddress)}" target="_blank" class="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1">📍 ${jobAddress}</a>` : ''}
                             ${teamDisplay}
                             <div class="text-sm text-gray-500 dark:text-gray-400 mt-2">📅 ${new Date(job.date).toLocaleDateString()} ⏰ ${job.time}${job.duration > 1 ? ` (${job.duration} days)` : ''}</div>
                             ${job.notes ? `<p class="text-sm text-gray-700 mt-2 italic">${job.notes}</p>` : ''}
@@ -3634,6 +3638,13 @@ function renderCalendar() {
         );
     });
     
+    // Sort by created_at (newest first)
+    filteredQuotes.sort((a, b) => {
+        const dateA = new Date(a.created_at || 0);
+        const dateB = new Date(b.created_at || 0);
+        return dateB - dateA; // Descending order
+    });
+    
     // Pagination
     const totalQuotes = filteredQuotes.length;
     const startIndex = (currentPage.quotes - 1) * itemsPerPage;
@@ -3829,6 +3840,13 @@ function renderCalendar() {
                         );
                     });
                 }
+                
+                // Sort by created_at (newest first)
+                filteredInvoices.sort((a, b) => {
+                    const dateA = new Date(a.created_at || 0);
+                    const dateB = new Date(b.created_at || 0);
+                    return dateB - dateA; // Descending order
+                });
                 
                 content = filteredInvoices.length === 0 
                     ? `<div class="text-center py-12 text-gray-500 dark:text-gray-400">No ${invoiceFilter} invoices found</div>` 
