@@ -378,12 +378,6 @@ function initAddressAutocomplete(inputId) {
         return;
     }
     
-    // Check if already initialized
-    if (initializedFields.has(inputId)) {
-        console.log(`⚠️ Field ${inputId} already initialized, skipping`);
-        return;
-    }
-    
     // Wait for Google Maps to load (with retries)
     if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
         console.log(`⏳ Google Maps not ready yet for ${inputId}, retrying in 500ms...`);
@@ -412,7 +406,6 @@ function initAddressAutocomplete(inputId) {
         });
         
         // Mark as initialized
-        initializedFields.add(inputId);
         console.log(`🎉 Autocomplete successfully initialized for ${inputId}`);
         
     } catch (error) {
