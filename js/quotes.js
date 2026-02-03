@@ -88,7 +88,7 @@ function renderQuotes() {
             }
         }
         
-        return `<div class="bg-white p-4 rounded-lg shadow ${isAccepted ? 'border-l-4 border-green-500' : ''} ${isConverted ? 'border-l-4 border-gray-400' : ''} ${isNewQuote ? 'ring-2 ring-green-400' : ''} ${isSelected ? 'ring-2 ring-blue-400' : ''}">
+        return `<div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow ${isAccepted ? 'border-l-4 border-green-500' : ''} ${isConverted ? 'border-l-4 border-gray-400' : ''} ${isNewQuote ? 'ring-2 ring-green-400' : ''} ${isSelected ? 'ring-2 ring-blue-400' : ''}">
             <div class="flex gap-3">
                 <div class="flex items-start pt-1">
                     <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelection('quotes', '${q.id}')" class="w-5 h-5 text-blue-600 rounded">
