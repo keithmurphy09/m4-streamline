@@ -13,6 +13,9 @@ function openModal(type, item = null) {
     if (type === 'quote') quoteItems = item?.items || [{ description: '', quantity: 1, price: 0 }];
     renderApp();
     if (type === 'quote') setTimeout(renderQuoteItems, 100);
+    
+    // Initialize address autocomplete for any address fields
+    initAllAddressAutocomplete();
 }
 
 function closeModal() {
