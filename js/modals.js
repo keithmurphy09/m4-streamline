@@ -124,6 +124,11 @@ function renderModal() {
             </select>
             <input type="text" id="title" placeholder="Job Title *" value="${jobTitle}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" required>
             <div class="mb-3">
+                <label class="block text-sm font-medium mb-1 dark:text-gray-200">Job Site Address</label>
+                <input type="text" id="job_address" placeholder="Job site address (start typing for suggestions)" value="${editingItem?.job_address || ''}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" onchange="autoFillJobAddress()">
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">💡 Auto-fills from client address</p>
+            </div>
+            <div class="mb-3">
                 <label class="block text-sm font-medium mb-1 dark:text-gray-200">Start Date *</label>
                 <input type="date" id="date" value="${date}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" required>
             </div>
@@ -177,7 +182,7 @@ function renderModal() {
             </div>
             <div class="mb-3">
                 <label class="block text-sm font-medium mb-1 dark:text-gray-200">Job Address</label>
-                <textarea id="job_address" placeholder="Job site address" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" rows="2">${jobAddress}</textarea>
+                <input type="text" id="job_address" placeholder="Job site address (start typing for suggestions)" value="${jobAddress}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">💡 Defaults to client address</p>
             </div>
             <div id="items-list"></div>
