@@ -50,7 +50,7 @@ function renderInvoices() {
                                 const client = clients.find(c => c.id === inv.client_id);
                                 const linkedQuote = inv.quote_id ? quotes.find(q => q.id === inv.quote_id) : null;
                                 const jobAddress = linkedQuote?.job_address || client?.address || '';
-                                return `<div class="bg-white p-3 rounded-lg shadow border-l-4 border-green-500">
+                                return `<div class="bg-white dark:bg-gray-800 p-3 rounded-lg shadow border-l-4 border-green-500">
                                     <div class="flex justify-between items-start">
                                         <div class="flex-1">
                                             <h4 class="font-semibold dark:text-white">${inv.title}</h4>
@@ -129,7 +129,7 @@ function renderInvoices() {
                 const linkedQuote = inv.quote_id ? quotes.find(q => q.id === inv.quote_id) : null;
                 const jobAddress = linkedQuote?.job_address || client?.address || '';
                 
-                return `<div class="bg-white p-4 rounded-lg shadow ${borderColor} ${isSelected ? 'ring-2 ring-blue-400' : ''}">
+                return `<div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow ${borderColor} ${isSelected ? 'ring-2 ring-blue-400' : ''}">
                     <div class="flex gap-3">
                         <div class="flex items-start pt-1">
                             <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelection('invoices', '${inv.id}')" class="w-5 h-5 text-blue-600 rounded">
@@ -166,7 +166,7 @@ function renderInvoices() {
     const unpaidTotal = invoices.filter(i => i.status === 'unpaid').reduce((s, i) => s + parseFloat(i.total || 0), 0);
     const paidTotal = invoices.filter(i => i.status === 'paid').reduce((s, i) => s + parseFloat(i.total || 0), 0);
     
-    const filterTabs = `<div class="flex flex-wrap gap-2 mb-4"><button onclick="invoiceFilter='unpaid'; renderApp();" class="px-3 sm:px-4 py-2 rounded text-sm ${invoiceFilter === 'unpaid' ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'} border">Unpaid (${invoices.filter(i => i.status === 'unpaid').length})</button><button onclick="invoiceFilter='paid'; renderApp();" class="px-3 sm:px-4 py-2 rounded text-sm ${invoiceFilter === 'paid' ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'} border">Paid (${invoices.filter(i => i.status === 'paid').length})</button><button onclick="invoiceFilter='monthly'; renderApp();" class="px-3 sm:px-4 py-2 rounded text-sm ${invoiceFilter === 'monthly' ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'} border">Monthly</button></div>`;
+    const filterTabs = `<div class="flex flex-wrap gap-2 mb-4"><button onclick="invoiceFilter='unpaid'; renderApp();" class="px-3 sm:px-4 py-2 rounded text-sm ${invoiceFilter === 'unpaid' ? 'bg-black text-white border-teal-400' : 'bg-white dark:bg-gray-700 text-black dark:text-white border-gray-300 dark:border-gray-600'} border">Unpaid (${invoices.filter(i => i.status === 'unpaid').length})</button><button onclick="invoiceFilter='paid'; renderApp();" class="px-3 sm:px-4 py-2 rounded text-sm ${invoiceFilter === 'paid' ? 'bg-black text-white border-teal-400' : 'bg-white dark:bg-gray-700 text-black dark:text-white border-gray-300 dark:border-gray-600'} border">Paid (${invoices.filter(i => i.status === 'paid').length})</button><button onclick="invoiceFilter='monthly'; renderApp();" class="px-3 sm:px-4 py-2 rounded text-sm ${invoiceFilter === 'monthly' ? 'bg-black text-white border-teal-400' : 'bg-white dark:bg-gray-700 text-black dark:text-white border-gray-300 dark:border-gray-600'} border">Monthly</button></div>`;
     
     const searchBar = invoiceFilter !== 'monthly' ? `<input type="text" placeholder="🔍 Search invoices..." value="${invoiceSearch}" oninput="debouncedSearch('invoice', this.value, false);" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600-lg dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-4">` : '';
     
