@@ -15,7 +15,10 @@ function openModal(type, item = null) {
     if (type === 'quote') setTimeout(renderQuoteItems, 100);
     
     // Initialize address autocomplete for any address fields
-    setTimeout(() => initAllAddressAutocomplete(), 300);
+    if (type === 'quote' || type === 'job') {
+    setTimeout(() => initAllAddressAutocomplete(), 500);
+} else {
+    setTimeout(() => initAllAddressAutocomplete(), 100);
 }
 
 function closeModal() {
