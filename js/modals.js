@@ -14,11 +14,12 @@ function openModal(type, item = null) {
     renderApp();
     if (type === 'quote') setTimeout(renderQuoteItems, 100);
     
-    // Initialize address autocomplete for any address fields
+    // Initialize autocomplete with delay
     if (type === 'quote' || type === 'job') {
-    setTimeout(() => initAllAddressAutocomplete(), 500);
-} else {
-    setTimeout(() => initAllAddressAutocomplete(), 100);}
+        setTimeout(() => initAllAddressAutocomplete(), 500);
+    } else {
+        setTimeout(() => initAllAddressAutocomplete(), 100);
+    }
 }
 
 function closeModal() {
