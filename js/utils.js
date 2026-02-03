@@ -322,4 +322,10 @@ function downloadUserGuide() {
     window.open('https://raw.githubusercontent.com/keithmurphy09/m4-streamline/main/docs/Streamline_User_Guide.pdf', '_blank');
 }
 
+// Account Type Helper
+function getAccountType() {
+    if (isAdmin && demoMode) return demoMode;
+    return subscription?.account_type || 'sole_trader';
+}
+
 console.log('✅ Utils loaded');
