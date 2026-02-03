@@ -14,12 +14,8 @@ function openModal(type, item = null) {
     renderApp();
     if (type === 'quote') setTimeout(renderQuoteItems, 100);
     
-    // Initialize autocomplete with delay
-    if (type === 'quote' || type === 'job') {
-        setTimeout(() => initAllAddressAutocomplete(), 500);
-    } else {
-        setTimeout(() => initAllAddressAutocomplete(), 100);
-    }
+    // Initialize address autocomplete for any address fields
+    initAllAddressAutocomplete();
 }
 
 function closeModal() {
@@ -36,6 +32,9 @@ function openQuoteForClient(client) {
     showModal = true;
     renderApp();
     setTimeout(renderQuoteItems, 100);
+    
+    // Initialize autocomplete with delay for quote modal
+    setTimeout(() => initAllAddressAutocomplete(), 500);
 }
 
 function openJobFromQuote(quote) {
@@ -50,6 +49,9 @@ function openJobFromQuote(quote) {
     modalType = 'job';
     showModal = true;
     renderApp();
+    
+    // Initialize autocomplete with delay for job modal
+    setTimeout(() => initAllAddressAutocomplete(), 500);
 }
 
 function viewJobExpenses(jobId, jobTitle) {
