@@ -394,6 +394,7 @@ function saveJob() {
     const duration = parseInt(document.getElementById('duration').value) || 1;
     const notes = document.getElementById('notes')?.value.trim() || '';
     const status = document.getElementById('jobStatus')?.value || 'scheduled';
+    const jobAddress = document.getElementById('job_address')?.value.trim() || '';
     
     if (!clientId || !title || !date) {
         showNotification('Please fill in all required fields', 'error');
@@ -410,6 +411,7 @@ function saveJob() {
         duration,
         notes,
         status,
+        job_address: jobAddress,
         assigned_team_members: assignedTeamMembers
     });
 }
@@ -441,6 +443,7 @@ async function updateJob(id) {
     const duration = parseInt(document.getElementById('duration').value) || 1;
     const notes = document.getElementById('notes')?.value.trim() || '';
     const status = document.getElementById('jobStatus')?.value || 'scheduled';
+    const jobAddress = document.getElementById('job_address')?.value.trim() || '';
     
     if (!clientId || !title || !date) {
         showNotification('Please fill in all required fields', 'error');
@@ -460,6 +463,7 @@ async function updateJob(id) {
                 duration,
                 notes,
                 status,
+                job_address: jobAddress,
                 assigned_team_members: assignedTeamMembers
             })
             .eq('id', id);
@@ -476,6 +480,7 @@ async function updateJob(id) {
                 duration,
                 notes,
                 status,
+                job_address: jobAddress,
                 assigned_team_members: assignedTeamMembers
             });
         }
