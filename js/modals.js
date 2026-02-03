@@ -18,7 +18,7 @@ function openModal(type, item = null) {
     if (type === 'quote' || type === 'job') {
     setTimeout(() => initAllAddressAutocomplete(), 500);
 } else {
-    setTimeout(() => initAllAddressAutocomplete(), 100);
+    setTimeout(() => initAllAddressAutocomplete(), 100);}
 }
 
 function closeModal() {
