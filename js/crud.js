@@ -19,7 +19,7 @@ async function addClient() {
     }
     
     try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('clients')
             .insert([{ user_id: currentUser.id, name, email, phone, address, notes }])
             .select();
@@ -49,7 +49,7 @@ async function updateClient(id) {
     }
     
     try {
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('clients')
             .update({ name, email, phone, address, notes })
             .eq('id', id);
@@ -131,7 +131,7 @@ function saveQuote() {
 
 async function addQuote(quote) {
     try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('quotes')
             .insert([{ ...quote, user_id: currentUser.id }])
             .select();
@@ -167,7 +167,7 @@ async function updateQuote(id) {
     const total = subtotal + gst;
     
     try {
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('quotes')
             .update({
                 title,
@@ -240,7 +240,7 @@ async function convertToInvoice(quote) {
         const dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
         
         // Create invoice
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('invoices')
             .insert([{
                 user_id: currentUser.id,
@@ -264,7 +264,7 @@ async function convertToInvoice(quote) {
         if (error) throw error;
         
         // Update quote status
-        await supabase
+        await supabaseClient
             .from('quotes')
             .update({ status: 'converted' })
             .eq('id', quote.id);
@@ -292,7 +292,7 @@ async function updateInvoiceDetails(id) {
     const notes = document.getElementById('notes')?.value.trim() || '';
     
     try {
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('invoices')
             .update({ title, issue_date: issueDate, due_date: dueDate, notes })
             .eq('id', id);
@@ -318,7 +318,7 @@ async function quickMarkAsPaid(id) {
     
     try {
         const paidDate = new Date().toISOString().split('T')[0];
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('invoices')
             .update({ status: 'paid', paid_date: paidDate })
             .eq('id', id);
@@ -343,7 +343,7 @@ async function quickMarkAsUnpaid(id) {
     if (!confirm('Mark this invoice as unpaid?')) return;
     
     try {
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('invoices')
             .update({ status: 'unpaid', paid_date: null })
             .eq('id', id);
@@ -416,7 +416,7 @@ function saveJob() {
 
 async function addJob(job) {
     try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('jobs')
             .insert([{ ...job, user_id: currentUser.id }])
             .select();
@@ -450,7 +450,7 @@ async function updateJob(id) {
     const assignedTeamMembers = Array.from(document.querySelectorAll('.worker-checkbox:checked')).map(cb => cb.value);
     
     try {
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('jobs')
             .update({
                 client_id: clientId,
@@ -550,7 +550,7 @@ function saveExpense() {
 
 async function addExpense(expense) {
     try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('expenses')
             .insert([{ ...expense, user_id: currentUser.id }])
             .select();
@@ -595,7 +595,7 @@ async function updateExpense(id) {
     }
     
     try {
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('expenses')
             .update({
                 date,
