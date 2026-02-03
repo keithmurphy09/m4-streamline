@@ -365,40 +365,69 @@ function confirmUpgradeToBusiness() {
 // Google Maps API Key - User should replace with their own
 const GOOGLE_MAPS_API_KEY = 'YOUR_GOOGLE_MAPS_API_KEY_HERE';
 
+// Track which fields have been initialized to prevent duplicates
+const initializedFields = new Set();
+
 // Initialize autocomplete on address field
 function initAddressAutocomplete(inputId) {
+    console.log(`🔍 Attempting to init autocomplete for: ${inputId}`);
+    
     const input = document.getElementById(inputId);
-    if (!input) return;
+    if (!input) {
+        console.log(`❌ Field ${inputId} not found in DOM`);
+        return;
+    }
+    
+    // Check if already initialized
+    if (initializedFields.has(inputId)) {
+        console.log(`⚠️ Field ${inputId} already initialized, skipping`);
+        return;
+    }
     
     // Wait for Google Maps to load (with retries)
     if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
-        console.log('Google Maps not ready yet, retrying in 500ms...');
+        console.log(`⏳ Google Maps not ready yet for ${inputId}, retrying in 500ms...`);
         setTimeout(() => initAddressAutocomplete(inputId), 500);
         return;
     }
     
-    // Create autocomplete instance
-    const autocomplete = new google.maps.places.Autocomplete(input, {
-        componentRestrictions: { country: 'au' }, // Restrict to Australia
-        fields: ['formatted_address', 'geometry', 'name'],
-        types: ['address']
-    });
+    console.log(`✅ Google Maps ready! Creating autocomplete for ${inputId}`);
     
-    // When user selects an address
-    autocomplete.addListener('place_changed', () => {
-        const place = autocomplete.getPlace();
-        if (place.formatted_address) {
-            input.value = place.formatted_address;
-        }
-    });
-    
-    console.log(`✅ Autocomplete initialized for ${inputId}`);
+    try {
+        // Create autocomplete instance
+        const autocomplete = new google.maps.places.Autocomplete(input, {
+            componentRestrictions: { country: 'au' }, // Restrict to Australia
+            fields: ['formatted_address', 'geometry', 'name'],
+            types: ['address']
+        });
+        
+        // When user selects an address
+        autocomplete.addListener('place_changed', () => {
+            const place = autocomplete.getPlace();
+            console.log('📍 Place selected:', place);
+            if (place.formatted_address) {
+                input.value = place.formatted_address;
+                console.log('✅ Address filled:', place.formatted_address);
+            }
+        });
+        
+        // Mark as initialized
+        initializedFields.add(inputId);
+        console.log(`🎉 Autocomplete successfully initialized for ${inputId}`);
+        
+    } catch (error) {
+        console.error(`❌ Error creating autocomplete for ${inputId}:`, error);
+    }
 }
 
 // Initialize all address fields in current modal
 function initAllAddressAutocomplete() {
+    console.log('🚀 initAllAddressAutocomplete called');
+    
     // Wait a bit for modal to render
     setTimeout(() => {
+        console.log('🔍 Looking for address fields...');
+        
         // Try to initialize all common address field IDs
         const addressFields = [
             'client_address',
@@ -406,13 +435,23 @@ function initAllAddressAutocomplete() {
             'quote_address'
         ];
         
+        let foundFields = 0;
         addressFields.forEach(fieldId => {
             const field = document.getElementById(fieldId);
             if (field) {
+                foundFields++;
+                console.log(`✅ Found field: ${fieldId}`);
                 initAddressAutocomplete(fieldId);
+            } else {
+                console.log(`⚠️ Field not found: ${fieldId}`);
             }
         });
-    }, 200); // Increased from 100ms to 200ms
+        
+        if (foundFields === 0) {
+            console.log('❌ No address fields found in modal');
+        }
+        
+    }, 300); // Increased delay to ensure modal is fully rendered
 }
 
 console.log('✅ Utils loaded');
