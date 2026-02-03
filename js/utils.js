@@ -367,14 +367,15 @@ const GOOGLE_MAPS_API_KEY = 'YOUR_GOOGLE_MAPS_API_KEY_HERE';
 
 // Initialize autocomplete on address field
 function initAddressAutocomplete(inputId) {
-    // Wait for Google Maps to load
-    if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
-        console.log('Google Maps not loaded yet, will try autocomplete when available');
-        return;
-    }
-    
     const input = document.getElementById(inputId);
     if (!input) return;
+    
+    // Wait for Google Maps to load (with retries)
+    if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
+        console.log('Google Maps not ready yet, retrying in 500ms...');
+        setTimeout(() => initAddressAutocomplete(inputId), 500);
+        return;
+    }
     
     // Create autocomplete instance
     const autocomplete = new google.maps.places.Autocomplete(input, {
@@ -411,7 +412,7 @@ function initAllAddressAutocomplete() {
                 initAddressAutocomplete(fieldId);
             }
         });
-    }, 100);
+    }, 200); // Increased from 100ms to 200ms
 }
 
 console.log('✅ Utils loaded');
