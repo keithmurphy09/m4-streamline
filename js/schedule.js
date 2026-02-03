@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════
 
 function renderSchedule() {
-    const viewToggle = `<div class="flex gap-2"><button onclick="scheduleView='list'; renderApp();" class="px-3 py-2 rounded text-sm ${scheduleView === 'list' ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'} border">List</button><button onclick="scheduleView='calendar'; renderApp();" class="px-3 py-2 rounded text-sm ${scheduleView === 'calendar' ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'} border">Calendar</button></div>`;
+    const viewToggle = `<div class="flex gap-2"><button onclick="scheduleView='list'; renderApp();" class="px-3 py-2 rounded text-sm ${scheduleView === 'list' ? 'bg-black text-white border-teal-400' : 'bg-white dark:bg-gray-700 text-black dark:text-white border-gray-300 dark:border-gray-600'} border">List</button><button onclick="scheduleView='calendar'; renderApp();" class="px-3 py-2 rounded text-sm ${scheduleView === 'calendar' ? 'bg-black text-white border-teal-400' : 'bg-white dark:bg-gray-700 text-black dark:text-white border-gray-300 dark:border-gray-600'} border">Calendar</button></div>`;
     
     const workerFilter = getAccountType() === 'business' && teamMembers.length > 0 
         ? `<select onchange="calendarFilter=this.value; renderApp();" class="px-3 py-2 border rounded bg-white dark:bg-gray-700 dark:text-white text-sm">
@@ -73,7 +73,7 @@ function renderSchedule() {
             : '<p class="text-sm text-gray-400 mt-2">👤 Unassigned</p>';
         
         
-        return `<div class="bg-white p-4 rounded-lg shadow border-l-4 ${isSelected ? 'ring-2 ring-blue-400' : ''}" style="border-color: ${workerColor}";>
+        return `<div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow border-l-4 ${isSelected ? 'ring-2 ring-blue-400' : ''}" style="border-color: ${workerColor}";>
             <div class="flex gap-3">
                 <div class="flex items-start pt-1">
                     <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelection('jobs', '${job.id}')" class="w-5 h-5 text-blue-600 rounded">
