@@ -2,6 +2,18 @@
 // M4 STREAMLINE - Quotes Module
 // ═══════════════════════════════════════════════════════════════════
 
+// Helper functions
+function formatCurrency(amount) {
+    return '$' + parseFloat(amount || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    const options = { month: 'short', day: 'numeric', year: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+}
+
 function renderQuotes() {
     const successNotification = lastCreatedQuote ? `<div class="bg-green-50 border-l-4 border-green-500 p-4 mb-4"><div class="flex justify-between items-center"><div><p class="text-sm text-green-700"><strong>✓ Quote Created!</strong> ${lastCreatedQuote.title} has been created successfully.</p></div></div></div>` : '';
     
@@ -88,18 +100,55 @@ function renderQuotes() {
             }
         }
         
-        return `<div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow ${isAccepted ? 'border-l-4 border-green-500' : ''} ${isConverted ? 'border-l-4 border-gray-400' : ''} ${isNewQuote ? 'ring-2 ring-green-400' : ''} ${isSelected ? 'ring-2 ring-blue-400' : ''}">
-            <div class="flex gap-3">
-                <div class="flex items-start pt-1">
-                    <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelection('quotes', '${q.id}')" class="w-5 h-5 text-blue-600 rounded">
-                </div>
-                <div class="flex-1">
-                    <div class="flex flex-col sm:flex-row sm:justify-between gap-2 mb-3">
-                        <div><h3 class="text-lg font-semibold dark:text-white dark:text-white">${q.title}</h3><p class="text-sm">${client?.name || 'Unknown'}${jobAddress ? ` • 📍 ${jobAddress}` : ''}</p>${isAccepted ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mt-1 inline-block">✓ ACCEPTED</span>' : ''}${isConverted ? '<span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded mt-1 inline-block ml-2">✓ CONVERTED</span>' : ''}</div><p class="text-2xl font-bold text-teal-500">$${q.total?.toFixed(2)}</p>
+        return `<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all duration-200 ${isSelected ? 'ring-2 ring-teal-400' : ''} overflow-hidden">
+            <div class="p-6">
+                <div class="flex gap-4">
+                    <div class="flex items-start pt-1">
+                        <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelection('quotes', '${q.id}')" class="w-5 h-5 text-teal-600 rounded border-gray-300 focus:ring-teal-500">
                     </div>
-                    ${q.notes ? `<p class="text-sm text-gray-600 dark:text-gray-300 italic mb-3">${q.notes}</p>` : ''}
-                    ${profitDisplay}
-                    <div class="flex gap-2 flex-wrap">${isAccepted || isConverted ? `<button onclick='openJobFromQuote(${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-teal-600 text-white rounded text-sm whitespace-nowrap">📅 Schedule Job</button>` : ''}${!isAccepted && !isConverted ? `<button onclick='openModal("quote", ${JSON.stringify(q).replace(/"/g, "&quot;")})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>` : ''}${!isConverted ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm whitespace-nowrap">Convert to Invoice</button>` : ''}<button onclick='generatePDF("quote", ${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-blue-600 text-white rounded text-sm whitespace-nowrap">Download PDF</button><button onclick='sendQuoteEmail(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-purple-600 text-white rounded text-sm whitespace-nowrap">📧 Email</button>${client?.phone && smsSettings?.enabled ? `<button onclick='sendQuoteSMS(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="px-3 py-1 bg-green-600 text-white rounded text-sm whitespace-nowrap">📱 SMS</button>` : ''}<label class="cursor-pointer px-3 py-1 bg-orange-600 text-white rounded text-sm whitespace-nowrap"><input type="file" accept="image/*,.pdf,.doc,.docx,.txt" onchange="uploadQuoteFile(this, '${q.id}')" class="hidden" />📎 Upload File</label><button onclick="viewQuoteFiles('${q.id}')" class="px-3 py-1 bg-gray-600 text-white rounded text-sm whitespace-nowrap">📁 View Files</button><button onclick="deleteQuote('${q.id}')" class="px-3 py-1 text-red-600 border rounded text-sm">Delete</button></div>
+                    <div class="flex-1">
+                        <!-- Header -->
+                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-4">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-2">
+                                    ${isAccepted ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-teal-50 text-teal-700 border border-teal-200">ACCEPTED</span>' : ''}
+                                    ${isConverted ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">CONVERTED</span>' : ''}
+                                    <span class="text-xs text-gray-400">${q.quote_number || q.title}</span>
+                                </div>
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">${q.title}</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">${client?.name || 'Unknown'}</p>
+                                ${jobAddress ? `<p class="text-xs text-gray-400 mt-1">${jobAddress}</p>` : ''}
+                            </div>
+                            <div class="text-right">
+                                <div class="text-3xl font-bold text-gray-900 dark:text-white">${formatCurrency(q.total)}</div>
+                                <div class="text-xs text-gray-400 mt-1">Created ${formatDate(q.created_at)}</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Notes -->
+                        ${q.notes ? `<div class="mb-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-600">
+                            <p class="text-sm text-gray-600 dark:text-gray-300">${q.notes}</p>
+                        </div>` : ''}
+                        
+                        <!-- Profit Display -->
+                        ${profitDisplay}
+                        
+                        <!-- Actions -->
+                        <div class="flex flex-wrap gap-2 pt-4 border-t border-gray-100 dark:border-gray-700">
+                            ${isAccepted || isConverted ? `<button onclick='openJobFromQuote(${JSON.stringify(q).replace(/"/g, "&quot;")})' class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors">Schedule Job</button>` : ''}
+                            ${!isAccepted && !isConverted ? `<button onclick='openModal("quote", ${JSON.stringify(q).replace(/"/g, "&quot;")})' class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors">Edit</button>` : ''}
+                            ${!isConverted ? `<button onclick='convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="inline-flex items-center px-4 py-2 text-sm font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-lg transition-colors">Convert to Invoice</button>` : ''}
+                            <button onclick='generatePDF("quote", ${JSON.stringify(q).replace(/"/g, '&quot;')})' class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors">Download PDF</button>
+                            <button onclick='sendQuoteEmail(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors">Email</button>
+                            ${client?.phone && smsSettings?.enabled ? `<button onclick='sendQuoteSMS(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors">SMS</button>` : ''}
+                            <label class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors cursor-pointer">
+                                <input type="file" accept="image/*,.pdf,.doc,.docx,.txt" onchange="uploadQuoteFile(this, '${q.id}')" class="hidden" />
+                                Upload File
+                            </label>
+                            <button onclick="viewQuoteFiles('${q.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors">View Files</button>
+                            <button onclick="deleteQuote('${q.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 bg-white dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors ml-auto">Delete</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>`; 
@@ -108,25 +157,64 @@ function renderQuotes() {
     const pagination = getPaginationHTML('quotes', totalQuotes, currentPage.quotes);
     
     const bulkActions = selectedQuotes.length > 0 ? `
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex items-center justify-between">
-            <span class="text-sm font-medium text-blue-900">${selectedQuotes.length} quote${selectedQuotes.length > 1 ? 's' : ''} selected</span>
-            <button onclick="bulkDelete('quotes')" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium dark:text-gray-200">
-                🗑️ Delete Selected
+        <div class="bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-xl p-4 mb-6 flex items-center justify-between">
+            <span class="text-sm font-medium text-gray-900 dark:text-white">
+                <span class="font-semibold text-teal-700 dark:text-teal-400">${selectedQuotes.length}</span> quote${selectedQuotes.length > 1 ? 's' : ''} selected
+            </span>
+            <button onclick="bulkDelete('quotes')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 bg-white dark:bg-gray-800 hover:bg-red-50 dark:hover:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg transition-colors">
+                Delete Selected
             </button>
         </div>
     ` : '';
     
     const selectAllCheckbox = paginatedQuotes.length > 0 ? `
-        <div class="flex items-center gap-2 mb-4">
+        <div class="flex items-center gap-2 mb-6">
             <input type="checkbox" 
                    ${selectedQuotes.length === quotes.length && quotes.length > 0 ? 'checked' : ''} 
                    onchange="toggleSelectAll('quotes')" 
-                   class="w-5 h-5 text-blue-600 rounded">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-200">Select All</label>
+                   class="w-5 h-5 text-teal-600 rounded border-gray-300 focus:ring-teal-500">
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-200">Select All Quotes</label>
         </div>
     ` : '';
     
-    return `<div>${successNotification}<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold dark:text-teal-400">Quotes</h2><div class="flex flex-wrap gap-2"><button onclick="exportToCSV('quotes')" class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 text-sm whitespace-nowrap">Export CSV</button><button onclick="openModal('quote')" class="bg-black text-white px-3 sm:px-4 py-2 rounded-lg border border-teal-400 text-sm whitespace-nowrap">+ Create Quote</button></div></div><input type="text" placeholder="🔍 Search quotes..." value="${quoteSearch}" oninput="debouncedSearch('quote', this.value);" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600-lg dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-4">${bulkActions}${selectAllCheckbox}<div class="grid gap-4">${quotesList}</div>${pagination}</div>`;
+    return `<div>
+        ${successNotification}
+        
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-8">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Quotes</h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage and track all your project quotes</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="exportToCSV('quotes')" class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors">
+                    Export CSV
+                </button>
+                <button onclick="openModal('quote')" class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-white bg-black hover:bg-gray-900 border border-teal-400 rounded-lg transition-colors shadow-sm">
+                    Create Quote
+                </button>
+            </div>
+        </div>
+        
+        <!-- Search -->
+        <div class="mb-6">
+            <input type="text" 
+                   placeholder="Search quotes by title, client, or amount..." 
+                   value="${quoteSearch}" 
+                   oninput="debouncedSearch('quote', this.value);" 
+                   class="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all">
+        </div>
+        
+        ${bulkActions}
+        ${selectAllCheckbox}
+        
+        <!-- Quotes List -->
+        <div class="space-y-4">
+            ${quotesList}
+        </div>
+        
+        ${pagination}
+    </div>`;
 }
 
 console.log('✅ Quotes module loaded');
