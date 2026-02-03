@@ -358,4 +358,60 @@ function confirmUpgradeToBusiness() {
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// GOOGLE PLACES AUTOCOMPLETE
+// ═══════════════════════════════════════════════════════════════════
+
+// Google Maps API Key - User should replace with their own
+const GOOGLE_MAPS_API_KEY = 'YOUR_GOOGLE_MAPS_API_KEY_HERE';
+
+// Initialize autocomplete on address field
+function initAddressAutocomplete(inputId) {
+    // Wait for Google Maps to load
+    if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
+        console.log('Google Maps not loaded yet, will try autocomplete when available');
+        return;
+    }
+    
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    
+    // Create autocomplete instance
+    const autocomplete = new google.maps.places.Autocomplete(input, {
+        componentRestrictions: { country: 'au' }, // Restrict to Australia
+        fields: ['formatted_address', 'geometry', 'name'],
+        types: ['address']
+    });
+    
+    // When user selects an address
+    autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+        if (place.formatted_address) {
+            input.value = place.formatted_address;
+        }
+    });
+    
+    console.log(`✅ Autocomplete initialized for ${inputId}`);
+}
+
+// Initialize all address fields in current modal
+function initAllAddressAutocomplete() {
+    // Wait a bit for modal to render
+    setTimeout(() => {
+        // Try to initialize all common address field IDs
+        const addressFields = [
+            'client_address',
+            'job_address',
+            'quote_address'
+        ];
+        
+        addressFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                initAddressAutocomplete(fieldId);
+            }
+        });
+    }, 100);
+}
+
 console.log('✅ Utils loaded');
