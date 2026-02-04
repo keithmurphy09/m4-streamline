@@ -227,13 +227,22 @@ function renderQuoteDetail() {
     }
     
     // Calculate profit/loss - find related job and expenses
-    // Try multiple matching strategies
+    // Debug: Let's find all possible connections
     let relatedJob = null;
     let totalExpenses = 0;
     let linkedExpensesList = [];
+    let debugInfo = {
+        quoteTitle: q.title,
+        quoteClientId: q.client_id,
+        matchingJobs: [],
+        allExpenses: expenses.length,
+        expensesWithJobId: expenses.filter(e => e.job_id).length
+    };
     
     // Strategy 1: Find job by exact title and client match
-    relatedJob = jobs.find(j => j.title === q.title && j.client_id === q.client_id);
+    const jobsByExactMatch = jobs.filter(j => j.title === q.title && j.client_id === q.client_id);
+    debugInfo.matchingJobs = jobsByExactMatch.map(j => ({ id: j.id, title: j.title }));
+    relatedJob = jobsByExactMatch[0];
     
     // Strategy 2: If no exact match, try case-insensitive title match
     if (!relatedJob) {
@@ -241,6 +250,11 @@ function renderQuoteDetail() {
             j.title?.toLowerCase() === q.title?.toLowerCase() && 
             j.client_id === q.client_id
         );
+        if (relatedJob) {
+            debugInfo.matchedBy = 'case-insensitive';
+        }
+    } else {
+        debugInfo.matchedBy = 'exact match';
     }
     
     // Strategy 3: Check if quote has been converted and has invoice with job
@@ -254,24 +268,56 @@ function renderQuoteDetail() {
                 j.invoice_id === relatedInvoice.id ||
                 (j.title === relatedInvoice.title && j.client_id === relatedInvoice.client_id)
             );
+            if (relatedJob) {
+                debugInfo.matchedBy = 'via invoice';
+            }
         }
     }
     
-    // Get expenses from related job
+    // Get expenses from related job - CHECK ALL POSSIBLE FIELD NAMES
     if (relatedJob) {
-        const jobExpenses = expenses.filter(e => e.job_id === relatedJob.id);
+        debugInfo.relatedJobId = relatedJob.id;
+        debugInfo.relatedJobTitle = relatedJob.title;
+        
+        // Check expenses with job_id field
+        const jobExpenses = expenses.filter(e => 
+            e.job_id === relatedJob.id || 
+            e.jobId === relatedJob.id ||  // Alternative field name
+            e.linked_job_id === relatedJob.id  // Another possible field
+        );
+        
+        debugInfo.expensesFound = jobExpenses.length;
+        debugInfo.expenseDetails = jobExpenses.map(e => ({
+            id: e.id,
+            amount: e.amount,
+            description: e.description,
+            job_id: e.job_id,
+            jobId: e.jobId
+        }));
+        
         linkedExpensesList.push(...jobExpenses);
         totalExpenses += jobExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+    } else {
+        debugInfo.noJobFound = true;
     }
     
     // Also check for expenses directly linked to quote
-    const directQuoteExpenses = expenses.filter(e => e.quote_id === q.id);
-    linkedExpensesList.push(...directQuoteExpenses);
-    totalExpenses += directQuoteExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+    const directQuoteExpenses = expenses.filter(e => 
+        e.quote_id === q.id || 
+        e.quoteId === q.id
+    );
+    if (directQuoteExpenses.length > 0) {
+        debugInfo.directQuoteExpenses = directQuoteExpenses.length;
+        linkedExpensesList.push(...directQuoteExpenses);
+        totalExpenses += directQuoteExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+    }
     
     // Remove duplicates (in case same expense is linked both ways)
     linkedExpensesList = Array.from(new Set(linkedExpensesList.map(e => e.id)))
         .map(id => linkedExpensesList.find(e => e.id === id));
+    
+    // Log debug info to console
+    console.log('🔍 Quote Expense Linking Debug:', debugInfo);
     
     const revenue = parseFloat(q.total || 0);
     const profit = revenue - totalExpenses;
@@ -365,8 +411,48 @@ function renderQuoteDetail() {
             </div>
             ${linkedExpensesList.length === 0 && relatedJob ? `
             <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-sm text-gray-600 dark:text-gray-400">
-                <p class="mb-2">No expenses linked to this quote yet.</p>
-                <p class="text-xs">Tip: When adding expenses, select the related job to track costs.</p>
+                <p class="mb-2">✅ Job found but no expenses linked yet.</p>
+                <p class="text-xs mb-2">Job: <strong>"${debugInfo.relatedJobTitle}"</strong></p>
+                <p class="text-xs">Tip: When adding expenses, select this job to track costs.</p>
+                <details class="mt-3 text-xs">
+                    <summary class="cursor-pointer text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300">🔍 Show Debug Info</summary>
+                    <div class="mt-2 p-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600 font-mono space-y-1">
+                        <div><strong>Quote:</strong> "${debugInfo.quoteTitle}"</div>
+                        <div><strong>Related Job:</strong> "${debugInfo.relatedJobTitle}"</div>
+                        <div><strong>Job ID:</strong> ${debugInfo.relatedJobId}</div>
+                        <div class="border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">
+                            <strong>System Info:</strong>
+                        </div>
+                        <div>• Total Expenses: ${debugInfo.allExpenses}</div>
+                        <div>• With job_id: ${debugInfo.expensesWithJobId}</div>
+                        <div>• Found for this job: ${debugInfo.expensesFound || 0}</div>
+                        <div class="text-yellow-600 dark:text-yellow-400 mt-2">
+                            ℹ️ If expenses exist but show 0, check they're assigned to the correct job in the Expenses tab.
+                        </div>
+                    </div>
+                </details>
+            </div>
+            ` : linkedExpensesList.length === 0 && !relatedJob ? `
+            <div class="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg text-sm">
+                <p class="font-medium text-yellow-800 dark:text-yellow-400 mb-2">⚠️ No job found for this quote</p>
+                <p class="text-xs text-yellow-700 dark:text-yellow-500 mb-2">Schedule a job first to start tracking expenses and profit.</p>
+                <details class="mt-3 text-xs">
+                    <summary class="cursor-pointer text-yellow-800 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-300">🔍 Show Debug Info</summary>
+                    <div class="mt-2 p-3 bg-white dark:bg-gray-800 rounded border border-yellow-200 dark:border-yellow-800 font-mono space-y-1">
+                        <div><strong>Quote Title:</strong> "${debugInfo.quoteTitle}"</div>
+                        <div><strong>Client ID:</strong> ${debugInfo.quoteClientId}</div>
+                        <div><strong>Jobs Found:</strong> ${debugInfo.matchingJobs.length}</div>
+                        ${debugInfo.matchingJobs.length > 0 ? `
+                        <div><strong>Matching Jobs:</strong> ${debugInfo.matchingJobs.map(j => j.title).join(', ')}</div>
+                        ` : '<div class="text-red-600 dark:text-red-400">❌ No jobs with matching title & client</div>'}
+                        <div class="border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">
+                            <strong>To link expenses:</strong>
+                        </div>
+                        <div>1. Click "Schedule Job" below</div>
+                        <div>2. When adding expenses, select that job</div>
+                        <div>3. Expenses will appear here automatically</div>
+                    </div>
+                </details>
             </div>
             ` : ''}
             ${totalExpenses > 0 || relatedJob ? `
