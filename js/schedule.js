@@ -232,6 +232,78 @@ function toggleJobActions(jobId) {
     });
 }
 
+async function updateJobStatus(jobId, newStatus) {
+    try {
+        const { data, error } = await supabase
+            .from('jobs')
+            .update({ status: newStatus })
+            .eq('id', jobId);
+        
+        if (error) throw error;
+        
+        // Update local state
+        const job = jobs.find(j => j.id === jobId);
+        if (job) job.status = newStatus;
+        
+        renderApp();
+        showToast(`Job marked as ${newStatus.replace('_', ' ')}`, 'success');
+    } catch (error) {
+        console.error('Error updating job status:', error);
+        showToast('Failed to update job status', 'error');
+    }
+}
+
+async function uploadJobPhoto(input, jobId) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+        showToast('Please upload an image file', 'error');
+        return;
+    }
+    
+    try {
+        // Upload to Supabase Storage
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${jobId}-${Date.now()}.${fileExt}`;
+        const filePath = `job-photos/${fileName}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('job-photos')
+            .upload(filePath, file);
+        
+        if (uploadError) throw uploadError;
+        
+        // Get public URL
+        const { data: urlData } = supabase.storage
+            .from('job-photos')
+            .getPublicUrl(filePath);
+        
+        const photoUrl = urlData.publicUrl;
+        
+        // Update job with new photo
+        const job = jobs.find(j => j.id === jobId);
+        const currentPhotos = job?.photos || [];
+        const updatedPhotos = [...currentPhotos, photoUrl];
+        
+        const { error: updateError } = await supabase
+            .from('jobs')
+            .update({ photos: updatedPhotos })
+            .eq('id', jobId);
+        
+        if (updateError) throw updateError;
+        
+        // Update local state
+        if (job) job.photos = updatedPhotos;
+        
+        renderApp();
+        showToast('Photo uploaded successfully', 'success');
+    } catch (error) {
+        console.error('Error uploading photo:', error);
+        showToast('Failed to upload photo', 'error');
+    }
+}
+
 function renderJobDetail() {
     const job = selectedJobForDetail;
     if (!job) {
@@ -397,6 +469,93 @@ function renderJobDetail() {
             </div>
         </div>
     </div>`;
+}
+
+function renderCalendar() {
+    const calendarEl = document.getElementById('calendar');
+    if (!calendarEl) return;
+    
+    calendarEl.innerHTML = '';
+    
+    let filteredJobs = jobs;
+    if (calendarFilter !== 'all') {
+        if (calendarFilter === 'unassigned') {
+            filteredJobs = jobs.filter(job => !job.assigned_to && (!job.assigned_team_members || job.assigned_team_members.length === 0));
+        } else {
+            filteredJobs = jobs.filter(job => {
+                const teamIds = job.assigned_team_members || (job.assigned_to ? [job.assigned_to] : []);
+                return teamIds.includes(calendarFilter);
+            });
+        }
+    }
+    
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek'
+        },
+        events: filteredJobs.flatMap(job => {
+            const client = clients.find(c => c.id === job.client_id);
+            
+            const assignedTeamIds = job.assigned_team_members || (job.assigned_to ? [job.assigned_to] : []);
+            const assignedWorkers = assignedTeamIds.map(id => teamMembers.find(m => m.id === id)).filter(w => w);
+            
+            const duration = parseInt(job.duration) || 1;
+            
+            let eventTitle = '';
+            if (assignedWorkers.length > 0) {
+                eventTitle = assignedWorkers.map(w => `● ${w.name}`).join('\n') + '\n';
+            }
+            eventTitle += job.title;
+            if (client) {
+                eventTitle += '\n' + client.name;
+            }
+            
+            const events = [];
+            for (let i = 0; i < duration; i++) {
+                const [year, month, day] = job.date.split('-').map(Number);
+                const eventDate = new Date(year, month - 1, day + i);
+                const eventDateString = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}-${String(eventDate.getDate()).padStart(2, '0')}`;
+                
+                const borderColor = assignedWorkers[0]?.color || '#14b8a6';
+                
+                events.push({
+                    title: eventTitle,
+                    start: eventDateString,
+                    allDay: true,
+                    backgroundColor: '#ffffff',
+                    borderColor: borderColor,
+                    textColor: '#000000',
+                    extendedProps: {
+                        jobId: job.id,
+                        jobTitle: job.title,
+                        clientName: client?.name,
+                        workers: assignedWorkers,
+                        duration: duration,
+                        dayNumber: i + 1
+                    }
+                });
+            }
+            
+            return events;
+        }),
+        eventClick: function(info) {
+            const job = jobs.find(j => j.id === info.event.extendedProps.jobId);
+            if (job) {
+                const workers = info.event.extendedProps.workers || [];
+                const workerNames = workers.length > 0 
+                    ? workers.map(w => w.name + (w.occupation ? ` (${w.occupation})` : '')).join('\n')
+                    : 'Unassigned';
+                const duration = job.duration || 1;
+                const durationText = duration > 1 ? `\nDuration: ${duration} days` : '';
+                alert('Job: ' + job.title + '\nClient: ' + info.event.extendedProps.clientName + '\n\nTeam Members:\n' + workerNames + '\n\nDate: ' + new Date(job.date).toLocaleDateString() + '\nTime: ' + job.time + durationText);
+            }
+        }
+    });
+    
+    calendar.render();
 }
 
 console.log('✅ Schedule module loaded (Professional Table View)');
