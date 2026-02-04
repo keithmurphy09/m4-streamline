@@ -473,8 +473,13 @@ async function generatePDF(type, item) {
         console.log('📄 PDF Generation - Logo URL:', logoUrl);
         
         try {
-            // Load and add logo
+            // Load and convert logo to base64
             const img = new Image();
+            
+            // Only set crossOrigin for external URLs (Supabase)
+            if (logoUrl.startsWith('http')) {
+                img.crossOrigin = 'anonymous';
+            }
             
             await new Promise((resolve, reject) => {
                 img.onload = () => {
@@ -484,26 +489,37 @@ async function generatePDF(type, item) {
                         src: img.src
                     });
                     
-                    // Add logo (max width 40mm, max height 25mm)
-                    const maxWidth = 40;
-                    const maxHeight = 25;
-                    let width = img.width;
-                    let height = img.height;
-                    
-                    // Scale to fit
-                    if (width > maxWidth || height > maxHeight) {
-                        const ratio = Math.min(maxWidth / width, maxHeight / height);
-                        width *= ratio;
-                        height *= ratio;
-                    }
-                    
-                    console.log('📐 Logo scaled to:', width, 'x', height);
-                    
                     try {
-                        doc.addImage(img, 'PNG', 15, yPos, width, height);
-                        console.log('✅ Logo added to PDF');
-                    } catch (addError) {
-                        console.error('❌ Failed to add logo to PDF:', addError);
+                        // Convert to base64 via canvas
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        const base64 = canvas.toDataURL('image/png');
+                        console.log('🔄 Logo converted to base64, length:', base64.length);
+                        
+                        // Calculate dimensions for PDF (max width 40mm, max height 25mm)
+                        const maxWidth = 40;
+                        const maxHeight = 25;
+                        let pdfWidth = 40; // mm
+                        let pdfHeight = (img.height / img.width) * 40; // maintain aspect ratio
+                        
+                        // Scale down if too tall
+                        if (pdfHeight > maxHeight) {
+                            pdfHeight = maxHeight;
+                            pdfWidth = (img.width / img.height) * maxHeight;
+                        }
+                        
+                        console.log('📐 Logo size in PDF:', pdfWidth, 'x', pdfHeight, 'mm');
+                        
+                        // Add to PDF
+                        doc.addImage(base64, 'PNG', 15, yPos, pdfWidth, pdfHeight);
+                        console.log('✅ Logo successfully added to PDF at position (15,', yPos, ')');
+                        
+                    } catch (canvasError) {
+                        console.error('❌ Canvas conversion failed:', canvasError);
+                        throw canvasError;
                     }
                     
                     resolve();
@@ -514,12 +530,11 @@ async function generatePDF(type, item) {
                     reject(error);
                 };
                 
-                // Set src last (after event handlers)
                 img.src = logoUrl;
                 console.log('⏳ Loading logo from:', logoUrl);
             });
             
-            yPos += 30;
+            yPos += 35; // Increase spacing after logo
         } catch (error) {
             console.error('❌ Error in logo loading process:', error);
             console.log('⚠️ Continuing PDF generation without logo');
@@ -735,12 +750,15 @@ async function sendQuoteEmail(quote) {
     
     const fromName = emailSettings.from_name;
     
+    // Use custom logo if available, otherwise M4 logo
+    const logoUrl = companySettings?.logo_url || 'https://i.imgur.com/dF4xRDK.jpeg';
+    
     const htmlContent = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="text-align: center; margin-bottom: 30px; padding: 20px; background: #f9fafb; border-radius: 8px;">
-                <img src="https://i.imgur.com/dF4xRDK.jpeg" alt="M4 Logo" style="width: 80px; height: 80px; margin-bottom: 10px;">
-                <h1 style="color: #14b8a6; margin: 10px 0; font-size: 24px;">M4 STREAMLINE</h1>
-                <p style="color: #14b8a6; font-style: italic; font-size: 14px; margin: 0;">"streamlining your business"</p>
+                <img src="${logoUrl}" alt="Company Logo" style="max-width: 150px; max-height: 100px; margin-bottom: 10px; object-fit: contain;">
+                <h1 style="color: #14b8a6; margin: 10px 0; font-size: 24px;">${companySettings?.business_name || 'M4 STREAMLINE'}</h1>
+                ${!companySettings?.business_name ? '<p style="color: #14b8a6; font-style: italic; font-size: 14px; margin: 0;">"streamlining your business"</p>' : ''}
             </div>
             <p>Hello ${client.name},</p>
             <p>${fromName} has sent you a quote for: <strong>${quote.title}</strong></p>
@@ -803,6 +821,10 @@ async function sendInvoiceEmail(invoice) {
     const baseUrl = window.location.href.split('?')[0].replace('index.html', '');
     const fromName = emailSettings.from_name;
     
+    // Use custom logo if available, otherwise fallback to M4 logo
+    const logoUrl = companySettings?.logo_url || 'https://i.imgur.com/dF4xRDK.jpeg';
+    const companyName = companySettings?.business_name || 'M4 STREAMLINE';
+    
     let paymentButton = '';
     if (invoice.status === 'unpaid' && stripeSettings?.publishable_key) {
         const paymentLink = baseUrl + 'payment.html?invoice=' + invoice.id;
@@ -815,9 +837,9 @@ async function sendInvoiceEmail(invoice) {
     const htmlContent = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="text-align: center; margin-bottom: 30px; padding: 20px; background: #f9fafb; border-radius: 8px;">
-                <img src="https://i.imgur.com/dF4xRDK.jpeg" alt="M4 Logo" style="width: 80px; height: 80px; margin-bottom: 10px;">
-                <h1 style="color: #14b8a6; margin: 10px 0; font-size: 24px;">M4 STREAMLINE</h1>
-                <p style="color: #14b8a6; font-style: italic; font-size: 14px; margin: 0;">"streamlining your business"</p>
+                <img src="${logoUrl}" alt="Company Logo" style="max-width: 150px; max-height: 100px; margin-bottom: 10px; object-fit: contain;">
+                <h1 style="color: #14b8a6; margin: 10px 0; font-size: 24px;">${companyName}</h1>
+                ${!companySettings?.business_name ? '<p style="color: #14b8a6; font-style: italic; font-size: 14px; margin: 0;">"streamlining your business"</p>' : ''}
             </div>
             <p>Hello ${client.name},</p>
             <p>Your invoice is ready.</p>
