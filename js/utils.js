@@ -688,4 +688,21 @@ async function generatePDF(type, item) {
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// EMAIL FUNCTIONS (Placeholder - requires email service setup)
+// ═══════════════════════════════════════════════════════════════════
+
+function sendQuoteEmail(quote) {
+    showNotification('📧 Email functionality coming soon! For now, download the PDF and send manually.', 'info');
+    console.log('Quote to email:', quote);
+    // TODO: Implement email sending via email service
+    // Options: SendGrid, Mailgun, Resend, or Supabase Edge Function
+}
+
+function sendInvoiceEmail(invoice) {
+    showNotification('📧 Email functionality coming soon! For now, download the PDF and send manually.', 'info');
+    console.log('Invoice to email:', invoice);
+    // TODO: Implement email sending via email service
+}
+
 console.log('✅ Utils loaded');
