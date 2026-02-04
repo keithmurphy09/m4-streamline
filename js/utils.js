@@ -378,6 +378,12 @@ function initAddressAutocomplete(inputId) {
         return;
     }
     
+    // Check if already initialized
+    if (initializedFields.has(inputId)) {
+        console.log(`⚠️ Field ${inputId} already initialized, skipping`);
+        return;
+    }
+    
     // Wait for Google Maps to load (with retries)
     if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
         console.log(`⏳ Google Maps not ready yet for ${inputId}, retrying in 500ms...`);
@@ -406,6 +412,7 @@ function initAddressAutocomplete(inputId) {
         });
         
         // Mark as initialized
+        initializedFields.add(inputId);
         console.log(`🎉 Autocomplete successfully initialized for ${inputId}`);
         
     } catch (error) {
@@ -445,6 +452,240 @@ function initAllAddressAutocomplete() {
         }
         
     }, 300); // Increased delay to ensure modal is fully rendered
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PDF GENERATION WITH CUSTOM LOGO SUPPORT
+// ═══════════════════════════════════════════════════════════════════
+
+async function generatePDF(type, item) {
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        const settings = companySettings || {};
+        const client = clients.find(c => c.id === item.client_id);
+        
+        let yPos = 20;
+        
+        // Add logo (custom or M4 default)
+        const logoUrl = settings.logo_url || 'final_logo.png';
+        
+        try {
+            // Load and add logo
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            
+            await new Promise((resolve, reject) => {
+                img.onload = () => {
+                    // Add logo (max width 40mm, max height 25mm)
+                    const maxWidth = 40;
+                    const maxHeight = 25;
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    // Scale to fit
+                    if (width > maxWidth || height > maxHeight) {
+                        const ratio = Math.min(maxWidth / width, maxHeight / height);
+                        width *= ratio;
+                        height *= ratio;
+                    }
+                    
+                    doc.addImage(img, 'PNG', 15, yPos, width, height);
+                    resolve();
+                };
+                img.onerror = reject;
+                img.src = logoUrl;
+            });
+            
+            yPos += 30;
+        } catch (error) {
+            console.error('Error loading logo:', error);
+            // Continue without logo
+        }
+        
+        // Company details (right side)
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'bold');
+        const rightX = 140;
+        let rightY = 20;
+        
+        if (settings.business_name) {
+            doc.text(settings.business_name, rightX, rightY);
+            rightY += 5;
+        }
+        
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(9);
+        
+        if (settings.abn) {
+            doc.text(`ABN: ${settings.abn}`, rightX, rightY);
+            rightY += 5;
+        }
+        if (settings.phone) {
+            doc.text(settings.phone, rightX, rightY);
+            rightY += 5;
+        }
+        if (settings.email) {
+            doc.text(settings.email, rightX, rightY);
+            rightY += 5;
+        }
+        if (settings.address) {
+            const addressLines = doc.splitTextToSize(settings.address, 60);
+            doc.text(addressLines, rightX, rightY);
+            rightY += addressLines.length * 5;
+        }
+        
+        // Document title
+        yPos = Math.max(yPos, rightY + 10);
+        doc.setFontSize(20);
+        doc.setFont(undefined, 'bold');
+        doc.text(type === 'quote' ? 'QUOTE' : 'INVOICE', 15, yPos);
+        
+        // Document number and date
+        yPos += 10;
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        
+        const docNumber = type === 'quote' 
+            ? (item.quote_number || `QT-${item.id.slice(0, 6)}`)
+            : (item.invoice_number || `INV-${item.id.slice(0, 6)}`);
+        
+        doc.text(`${type === 'quote' ? 'Quote' : 'Invoice'} #: ${docNumber}`, 15, yPos);
+        yPos += 6;
+        
+        const date = new Date(item.created_at || Date.now()).toLocaleDateString();
+        doc.text(`Date: ${date}`, 15, yPos);
+        yPos += 6;
+        
+        if (type === 'invoice' && item.due_date) {
+            doc.text(`Due Date: ${new Date(item.due_date).toLocaleDateString()}`, 15, yPos);
+            yPos += 6;
+        }
+        
+        // Client details
+        yPos += 5;
+        doc.setFont(undefined, 'bold');
+        doc.text('BILL TO:', 15, yPos);
+        yPos += 6;
+        
+        doc.setFont(undefined, 'normal');
+        if (client) {
+            doc.text(client.name, 15, yPos);
+            yPos += 5;
+            if (client.email) {
+                doc.text(client.email, 15, yPos);
+                yPos += 5;
+            }
+            if (client.phone) {
+                doc.text(client.phone, 15, yPos);
+                yPos += 5;
+            }
+            if (client.address) {
+                const clientAddressLines = doc.splitTextToSize(client.address, 80);
+                doc.text(clientAddressLines, 15, yPos);
+                yPos += clientAddressLines.length * 5;
+            }
+        }
+        
+        // Line items table
+        yPos += 10;
+        doc.setFont(undefined, 'bold');
+        doc.setFillColor(240, 240, 240);
+        doc.rect(15, yPos - 5, 180, 8, 'F');
+        doc.text('Description', 20, yPos);
+        doc.text('Quantity', 110, yPos);
+        doc.text('Price', 140, yPos);
+        doc.text('Amount', 170, yPos);
+        
+        yPos += 8;
+        doc.setFont(undefined, 'normal');
+        
+        // Add line items
+        const lineItems = item.line_items || [];
+        lineItems.forEach((lineItem) => {
+            if (yPos > 270) {
+                doc.addPage();
+                yPos = 20;
+            }
+            
+            const description = doc.splitTextToSize(lineItem.description || '', 80);
+            doc.text(description, 20, yPos);
+            doc.text(String(lineItem.quantity || 1), 110, yPos);
+            doc.text(`$${parseFloat(lineItem.price || 0).toFixed(2)}`, 140, yPos);
+            doc.text(`$${parseFloat(lineItem.amount || 0).toFixed(2)}`, 170, yPos);
+            
+            yPos += Math.max(description.length * 5, 6);
+        });
+        
+        // Totals
+        yPos += 5;
+        doc.line(15, yPos, 195, yPos);
+        yPos += 8;
+        
+        doc.setFont(undefined, 'bold');
+        doc.setFontSize(12);
+        doc.text('TOTAL:', 140, yPos);
+        doc.text(`$${parseFloat(item.total || 0).toFixed(2)}`, 170, yPos);
+        
+        // Invoice-specific: Payment status
+        if (type === 'invoice') {
+            yPos += 10;
+            doc.setFontSize(10);
+            const status = item.status === 'paid' ? 'PAID' : 'UNPAID';
+            const statusColor = item.status === 'paid' ? [34, 197, 94] : [239, 68, 68];
+            doc.setTextColor(...statusColor);
+            doc.text(`Status: ${status}`, 15, yPos);
+            doc.setTextColor(0, 0, 0);
+            
+            // Bank details
+            if (settings.bank_name && item.status !== 'paid') {
+                yPos += 10;
+                doc.setFont(undefined, 'bold');
+                doc.text('Payment Details:', 15, yPos);
+                yPos += 6;
+                doc.setFont(undefined, 'normal');
+                
+                doc.text(`Bank: ${settings.bank_name}`, 15, yPos);
+                yPos += 5;
+                if (settings.bsb) {
+                    doc.text(`BSB: ${settings.bsb}`, 15, yPos);
+                    yPos += 5;
+                }
+                if (settings.account_number) {
+                    doc.text(`Account: ${settings.account_number}`, 15, yPos);
+                    yPos += 5;
+                }
+                if (settings.account_name) {
+                    doc.text(`Name: ${settings.account_name}`, 15, yPos);
+                }
+            }
+        }
+        
+        // Notes
+        if (item.notes) {
+            yPos += 10;
+            if (yPos > 250) {
+                doc.addPage();
+                yPos = 20;
+            }
+            doc.setFont(undefined, 'bold');
+            doc.text('Notes:', 15, yPos);
+            yPos += 6;
+            doc.setFont(undefined, 'normal');
+            const notesLines = doc.splitTextToSize(item.notes, 180);
+            doc.text(notesLines, 15, yPos);
+        }
+        
+        // Save PDF
+        const fileName = `${type}_${docNumber}_${date.replace(/\//g, '-')}.pdf`;
+        doc.save(fileName);
+        
+        showNotification(`✅ PDF generated: ${fileName}`, 'success');
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        showNotification('Failed to generate PDF', 'error');
+    }
 }
 
 console.log('✅ Utils loaded');
