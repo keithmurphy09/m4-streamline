@@ -130,18 +130,9 @@ async function renderApp() {
                                     Dashboard
                                 </button>
                                 
-                                <!-- Accounts Dropdown -->
-                                <div class="relative group">
-                                    <button class="px-4 py-2 text-sm font-medium ${activeTab === 'analytics' ? 'text-teal-400 bg-gray-900' : 'text-white hover:bg-gray-900'} rounded transition-colors flex items-center gap-1">
-                                        Accounts
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                        </svg>
-                                    </button>
-                                    <div class="hidden group-hover:block absolute top-full left-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
-                                        <button onclick="switchTab('analytics')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'analytics' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Analytics</button>
-                                    </div>
-                                </div>
+                                <button onclick="switchTab('schedule')" class="px-4 py-2 text-sm font-medium ${activeTab === 'schedule' ? 'text-teal-400 bg-gray-900' : 'text-white hover:bg-gray-900'} rounded transition-colors">
+                                    Schedule
+                                </button>
                                 
                                 <!-- Customers Dropdown -->
                                 <div class="relative group">
@@ -158,24 +149,24 @@ async function renderApp() {
                                     </div>
                                 </div>
                                 
-                                <!-- Jobs Dropdown -->
+                                <!-- Accounts Dropdown -->
                                 <div class="relative group">
-                                    <button class="px-4 py-2 text-sm font-medium ${['schedule', 'expenses'].includes(activeTab) ? 'text-teal-400 bg-gray-900' : 'text-white hover:bg-gray-900'} rounded transition-colors flex items-center gap-1">
-                                        Jobs
+                                    <button class="px-4 py-2 text-sm font-medium ${['analytics', 'expenses'].includes(activeTab) ? 'text-teal-400 bg-gray-900' : 'text-white hover:bg-gray-900'} rounded transition-colors flex items-center gap-1">
+                                        Accounts
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                         </svg>
                                     </button>
                                     <div class="hidden group-hover:block absolute top-full left-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
-                                        <button onclick="switchTab('schedule')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'schedule' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Schedule</button>
+                                        <button onclick="switchTab('analytics')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'analytics' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Analytics</button>
                                         <button onclick="switchTab('expenses')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'expenses' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Expenses</button>
                                     </div>
                                 </div>
                                 
-                                <!-- Settings Dropdown -->
+                                <!-- Company Dropdown -->
                                 <div class="relative group">
                                     <button class="px-4 py-2 text-sm font-medium ${['company', 'team', 'admin'].includes(activeTab) ? 'text-teal-400 bg-gray-900' : 'text-white hover:bg-gray-900'} rounded transition-colors flex items-center gap-1">
-                                        Settings
+                                        Company
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                         </svg>
