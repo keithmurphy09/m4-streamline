@@ -256,6 +256,7 @@ async function convertToInvoice(quote) {
                 client_id: quote.client_id,
                 quote_id: quote.id,
                 title: quote.title,
+                job_address: quote.job_address,
                 invoice_number: invoiceNumber,
                 total: quote.total,
                 subtotal: quote.subtotal,
