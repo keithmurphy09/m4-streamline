@@ -1,888 +1,255 @@
 // ═══════════════════════════════════════════════════════════════════
-// M4 STREAMLINE - Utility Functions
+// M4 STREAMLINE - Authentication Module
 // ═══════════════════════════════════════════════════════════════════
 
-// Search Debouncing
-function debouncedSearch(searchType, value, resetPage = true) {
-    if (searchType === 'client') clientSearch = value;
-    else if (searchType === 'quote') quoteSearch = value;
-    else if (searchType === 'invoice') invoiceSearch = value;
-    else if (searchType === 'job') jobSearch = value;
-    else if (searchType === 'expense') expenseSearch = value;
+async function checkAuth() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const quoteToken = urlParams.get('quote');
     
-    clearTimeout(searchDebounceTimer);
+    if (quoteToken) {
+        window.location.href = 'quote-viewer.html?quote=' + quoteToken;
+        return;
+    }
     
-    searchDebounceTimer = setTimeout(() => {
-        if (resetPage) {
-            if (searchType === 'client') currentPage.clients = 1;
-            else if (searchType === 'quote') currentPage.quotes = 1;
-            else if (searchType === 'invoice') currentPage.invoices = 1;
-            else if (searchType === 'job') currentPage.jobs = 1;
-            else if (searchType === 'expense') currentPage.expenses = 1;
-        }
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const access_token = hashParams.get('access_token');
+    const refresh_token = hashParams.get('refresh_token');
+    
+    if (access_token && refresh_token) {
+        await supabaseClient.auth.setSession({
+            access_token,
+            refresh_token
+        });
+        window.location.hash = '';
+        window.location.href = window.location.pathname;
+        return;
+    }
+    
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session) {
+        currentUser = session.user;
+        await loadAllData();
+        setupSessionTimeout();
         renderApp();
-    }, 300);
-}
-
-// Session Management
-function resetSessionTimeout() {
-    clearTimeout(sessionTimeout);
-    if (currentUser) {
-        sessionTimeout = setTimeout(() => {
-            alert('Your session has expired due to inactivity. Please log in again.');
-            handleLogout();
-        }, SESSION_TIMEOUT_MS);
-    }
-}
-
-function setupSessionTimeout() {
-    let activityEvents = ['mousemove', 'keypress', 'click', 'scroll', 'touchstart'];
-    activityEvents.forEach(event => {
-        document.addEventListener(event, resetSessionTimeout, { passive: true });
-    });
-    resetSessionTimeout();
-}
-
-// Account Type Helper
-function getAccountType() {
-    if (isAdmin && demoMode) return demoMode;
-    return subscription?.account_type || 'sole_trader';
-}
-
-// Dark Mode
-function toggleSettingsMenu() {
-    const menu = document.getElementById('settings-menu');
-    if (menu) {
-        menu.classList.toggle('hidden');
-    }
-}
-
-function toggleDarkMode() {
-    darkMode = !darkMode;
-    localStorage.setItem('darkMode', darkMode);
-    applyDarkMode();
-}
-
-function applyDarkMode() {
-    const isDark = localStorage.getItem('darkMode') === 'true';
-    if (isDark) {
-        document.documentElement.classList.add('dark');
     } else {
-        document.documentElement.classList.remove('dark');
-    }
-    // Update global variable if it exists
-    if (typeof darkMode !== 'undefined') {
-        darkMode = isDark;
+        renderAuth();
     }
 }
 
-// Notifications
-function showNotification(message, type = 'success') {
-    const icon = type === 'success' ? '✅' : '❌';
-    const bgColor = type === 'success' ? 'bg-green-50 border-green-500 text-green-700' : 'bg-red-50 border-red-500 text-red-700';
+function renderAuth() {
+    document.getElementById('app').innerHTML = `<div class="min-h-screen flex items-center justify-center bg-black"><div class="bg-white p-8 rounded-lg shadow-xl max-w-2xl w-full"><div class="text-center mb-8"><div class="text-teal-400 text-5xl font-bold mb-2">M4</div><h1 class="text-2xl font-bold text-black dark:text-white">Streamline</h1><p class="text-gray-600 dark:text-gray-300 mt-2">Business Management</p></div><div id="signup-section"><h3 class="text-lg font-bold dark:text-teal-400 mb-4 text-center">Choose Your Account Type</h3><div class="grid grid-cols-2 gap-4 mb-6"><div onclick="selectedAccountType='sole_trader'; renderAuth();" class="cursor-pointer p-4 border-2 rounded-lg ${selectedAccountType === 'sole_trader' ? 'border-teal-400 bg-teal-50' : 'border-gray-300 hover:border-teal-200'}"><div class="text-center"><div class="text-2xl mb-2">👤</div><h4 class="font-bold mb-1">Sole Trader</h4><p class="text-xs text-gray-600 dark:text-gray-300 mb-2">Perfect for individuals</p><p class="text-2xl font-bold text-teal-600">$49.95<span class="text-sm text-gray-500 dark:text-gray-400">/mo</span></p></div></div><div onclick="selectedAccountType='business'; renderAuth();" class="cursor-pointer p-4 border-2 rounded-lg ${selectedAccountType === 'business' ? 'border-teal-400 bg-teal-50' : 'border-gray-300 hover:border-teal-200'}"><div class="text-center"><div class="text-2xl mb-2">👥</div><h4 class="font-bold mb-1">Business</h4><p class="text-xs text-gray-600 dark:text-gray-300 mb-2">Teams & job assignments</p><p class="text-2xl font-bold text-teal-600">$89.95<span class="text-sm text-gray-500 dark:text-gray-400">/mo</span></p></div></div></div><div><input type="email" id="email" placeholder="Email" class="w-full px-4 py-3 border rounded-lg mb-3" autocomplete="email"><div class="relative mb-2"><input type="password" id="password" placeholder="Password" class="w-full px-4 py-3 border rounded-lg pr-24" autocomplete="current-password"><button type="button" onclick="const p = document.getElementById('password'); p.type = p.type === 'password' ? 'text' : 'password'; this.textContent = p.type === 'password' ? 'View' : 'Hide';" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-600 hover:text-gray-800 underline">View</button></div><div class="text-xs text-gray-500 dark:text-gray-400 mb-4 pl-1">Password must be 8+ characters with uppercase, lowercase, and number</div><button type="button" id="login-btn" onclick="handleLogin()" class="w-full bg-black text-white px-4 py-3 rounded-lg hover:bg-gray-800 border-2 border-teal-400 mb-3 font-medium touch-manipulation active:opacity-75">Sign In</button><button type="button" onclick="handleSignup()" class="w-full bg-white text-black px-4 py-3 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 border-2 border-black mb-1 font-medium touch-manipulation active:opacity-75">Start 14-Day Free Trial - ${selectedAccountType === 'sole_trader' ? 'Sole Trader' : 'Business'}</button><p class="text-xs text-gray-500 dark:text-gray-400 text-center mb-3">Cancel anytime • No credit card required</p><div id="auth-error" class="mt-3 text-red-600 text-sm text-center"></div></div></div></div></div>`;
     
-    const notification = document.createElement('div');
-    notification.className = `fixed top-4 right-4 ${bgColor} border-l-4 p-4 rounded shadow-lg z-50 max-w-md animate-slide-in`;
-    notification.innerHTML = `<p class="font-medium dark:text-gray-200">${icon} ${message}</p>`;
-    document.body.appendChild(notification);
-    
+    // Add Enter key support
     setTimeout(() => {
-        notification.style.opacity = '0';
-        notification.style.transition = 'opacity 0.3s';
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        
+        if (emailInput && passwordInput) {
+            const handleEnter = (e) => {
+                if (e.key === 'Enter') {
+                    handleLogin();
+                }
+            };
+            emailInput.addEventListener('keypress', handleEnter);
+            passwordInput.addEventListener('keypress', handleEnter);
+        }
+    }, 100);
 }
 
-// Selection Management
-function toggleSelection(type, id) {
-    const selectedArray = type === 'quotes' ? selectedQuotes : 
-                          type === 'invoices' ? selectedInvoices :
-                          type === 'jobs' ? selectedJobs :
-                          type === 'expenses' ? selectedExpenses :
-                          selectedClients;
+async function handleLogin() {
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const errorDiv = document.getElementById('auth-error');
+    const loginBtn = document.getElementById('login-btn');
     
-    const index = selectedArray.indexOf(id);
-    if (index > -1) {
-        selectedArray.splice(index, 1);
-    } else {
-        selectedArray.push(id);
+    // Get values
+    const email = emailInput?.value?.trim();
+    const password = passwordInput?.value;
+    
+    // Clear previous errors
+    if (errorDiv) {
+        errorDiv.textContent = '';
+        errorDiv.className = 'mt-3 text-red-600 text-sm text-center';
     }
-    renderApp();
-}
-
-function toggleSelectAll(type) {
-    const selectedArray = type === 'quotes' ? selectedQuotes : 
-                          type === 'invoices' ? selectedInvoices :
-                          type === 'jobs' ? selectedJobs :
-                          type === 'expenses' ? selectedExpenses :
-                          selectedClients;
     
-    const allItems = type === 'quotes' ? quotes : 
-                     type === 'invoices' ? invoices :
-                     type === 'jobs' ? jobs :
-                     type === 'expenses' ? expenses :
-                     clients;
-    
-    if (selectedArray.length === allItems.length) {
-        selectedArray.length = 0;
-    } else {
-        selectedArray.length = 0;
-        allItems.forEach(item => selectedArray.push(item.id));
-    }
-    renderApp();
-}
-
-// Bulk Delete
-async function bulkDelete(type) {
-    const selectedArray = type === 'quotes' ? selectedQuotes : 
-                          type === 'invoices' ? selectedInvoices :
-                          type === 'jobs' ? selectedJobs :
-                          type === 'expenses' ? selectedExpenses :
-                          selectedClients;
-    
-    if (selectedArray.length === 0) {
-        showNotification('No items selected', 'error');
+    // Validate inputs
+    if (!email || !password) {
+        if (errorDiv) {
+            errorDiv.textContent = 'Please enter both email and password';
+            errorDiv.className = 'mt-3 text-red-600 text-sm text-center font-medium p-3 bg-red-50 rounded-lg';
+        }
         return;
     }
     
-    const count = selectedArray.length;
-    const itemType = type.slice(0, -1);
-    
-    if (!confirm(`Delete ${count} ${count === 1 ? itemType : type}? This cannot be undone.`)) {
-        return;
+    // Show loading state
+    if (loginBtn) {
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'Signing in...';
+        loginBtn.style.opacity = '0.7';
     }
     
     try {
-        isLoading = true;
-        loadingMessage = `Deleting ${count} ${count === 1 ? itemType : type}...`;
-        renderApp();
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ 
+            email: email, 
+            password: password 
+        });
         
-        const tableName = type === 'jobs' ? 'jobs' : 
-                          type === 'quotes' ? 'quotes' :
-                          type === 'invoices' ? 'invoices' :
-                          type === 'expenses' ? 'expenses' :
-                          'clients';
-        
-        const { error } = await supabaseClient
-            .from(tableName)
-            .delete()
-            .in('id', selectedArray);
-        
-        if (error) throw error;
-        
-        if (type === 'quotes') {
-            quotes = quotes.filter(q => !selectedArray.includes(q.id));
-            selectedQuotes = [];
-        } else if (type === 'invoices') {
-            invoices = invoices.filter(i => !selectedArray.includes(i.id));
-            selectedInvoices = [];
-        } else if (type === 'jobs') {
-            jobs = jobs.filter(j => !selectedArray.includes(j.id));
-            selectedJobs = [];
-        } else if (type === 'expenses') {
-            expenses = expenses.filter(e => !selectedArray.includes(e.id));
-            selectedExpenses = [];
-        } else if (type === 'clients') {
-            clients = clients.filter(c => !selectedArray.includes(c.id));
-            selectedClients = [];
+        if (error) {
+            console.error('Login error:', error);
+            if (errorDiv) {
+                errorDiv.textContent = error.message || 'Login failed. Please check your credentials.';
+                errorDiv.className = 'mt-3 text-red-600 text-sm text-center font-medium p-3 bg-red-50 rounded-lg';
+            }
+        } else {
+            currentUser = data.user;
+            await loadAllData();
+            renderApp();
+            return; // Success - don't reset button
+        }
+    } catch (err) {
+        console.error('Login exception:', err);
+        if (errorDiv) {
+            errorDiv.textContent = 'An error occurred. Please try again.';
+            errorDiv.className = 'mt-3 text-red-600 text-sm text-center font-medium p-3 bg-red-50 rounded-lg';
+        }
+    }
+    
+    // Reset button only if we didn't succeed
+    if (loginBtn) {
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Sign In';
+        loginBtn.style.opacity = '1';
+    }
+}
+
+async function handleSignup() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const errorDiv = document.getElementById('auth-error');
+    
+    if (password.length < 8) {
+        errorDiv.textContent = 'Password must be at least 8 characters long';
+        errorDiv.className = 'mt-3 text-red-600 text-sm text-center';
+        return;
+    }
+    if (!/[A-Z]/.test(password)) {
+        errorDiv.textContent = 'Password must contain at least one uppercase letter';
+        errorDiv.className = 'mt-3 text-red-600 text-sm text-center';
+        return;
+    }
+    if (!/[a-z]/.test(password)) {
+        errorDiv.textContent = 'Password must contain at least one lowercase letter';
+        errorDiv.className = 'mt-3 text-red-600 text-sm text-center';
+        return;
+    }
+    if (!/[0-9]/.test(password)) {
+        errorDiv.textContent = 'Password must contain at least one number';
+        errorDiv.className = 'mt-3 text-red-600 text-sm text-center';
+        return;
+    }
+    
+    const { data, error } = await supabaseClient.auth.signUp({ email, password });
+    if (error) {
+        errorDiv.textContent = error.message;
+        errorDiv.className = 'mt-3 text-red-600 text-sm text-center';
+    } else { 
+        errorDiv.textContent = 'Success! Please check your email to verify your account before logging in.'; 
+        errorDiv.className = 'mt-3 text-green-600 text-sm text-center'; 
+    }
+}
+
+async function handleLogout() { 
+    clearTimeout(sessionTimeout);
+    await supabaseClient.auth.signOut(); 
+    currentUser = null;
+    activeTab = 'dashboard';
+    localStorage.setItem('activeTab', 'dashboard');
+    renderAuth(); 
+}
+
+async function loadAllData() {
+    isLoading = true;
+    loadingMessage = 'Loading your data...';
+    if (typeof renderApp === 'function') renderApp();
+    
+    try {
+        if (useDemoData) {
+            clients = demoClients;
+            jobs = demoJobs;
+            quotes = demoQuotes;
+            invoices = demoInvoices;
+            expenses = demoExpenses;
+            teamMembers = demoTeamMembers;
+            return;
         }
         
-        showNotification(`${count} ${count === 1 ? itemType : type} deleted successfully!`);
+        const [c, j, q, i, e, s, sub, admin, team, stripe, pay, email, sms] = await Promise.all([
+            supabaseClient.from('clients').select('*'), 
+            supabaseClient.from('jobs').select('*'), 
+            supabaseClient.from('quotes').select('*'), 
+            supabaseClient.from('invoices').select('*'),
+            supabaseClient.from('expenses').select('*'),
+            supabaseClient.from('company_settings').select('*').eq('user_id', currentUser.id).single(),
+            supabaseClient.from('subscriptions').select('*').eq('user_id', currentUser.id).single(),
+            supabaseClient.from('admin_users').select('*').eq('user_id', currentUser.id).single(),
+            supabaseClient.from('team_members').select('*').eq('account_owner_id', currentUser.id),
+            supabaseClient.from('stripe_settings').select('*').eq('user_id', currentUser.id).single(),
+            supabaseClient.from('payments').select('*'),
+            supabaseClient.from('email_settings').select('*').eq('user_id', currentUser.id).single(),
+            supabaseClient.from('sms_settings').select('*').eq('user_id', currentUser.id).single()
+        ]);
+        
+        clients = c.data || []; 
+        jobs = j.data || []; 
+        quotes = q.data || []; 
+        invoices = i.data || [];
+        expenses = e.data || [];
+        companySettings = s.data || null;
+        subscription = sub.data || null;
+        isAdmin = admin.data?.is_admin || false;
+        teamMembers = team.data || [];
+        stripeSettings = stripe.data || null;
+        payments = pay.data || [];
+        emailSettings = email.data || null;
+        smsSettings = sms.data || null;
+        
+        if (!subscription) {
+            const { data: trialCheck } = await supabaseClient
+                .from('trial_emails')
+                .select('email')
+                .eq('email', currentUser.email.toLowerCase())
+                .single();
+            
+            const accountType = selectedAccountType || 'sole_trader';
+            const monthlyRate = accountType === 'business' ? 89.95 : 49.95;
+            
+            if (trialCheck) {
+                const { data } = await supabaseClient.from('subscriptions').insert([{
+                    user_id: currentUser.id,
+                    trial_ends_at: new Date(Date.now() - 1000).toISOString(),
+                    subscription_status: 'trial',
+                    account_type: accountType,
+                    monthly_rate: monthlyRate
+                }]).select().single();
+                subscription = data;
+            } else {
+                const { data } = await supabaseClient.from('subscriptions').insert([{
+                    user_id: currentUser.id,
+                    trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+                    subscription_status: 'trial',
+                    account_type: accountType,
+                    monthly_rate: monthlyRate
+                }]).select().single();
+                subscription = data;
+            }
+        }
     } catch (error) {
-        console.error('Bulk delete error:', error);
-        showNotification(`Failed to delete ${type}: ` + error.message, 'error');
+        console.error('Error loading data:', error);
+        alert('⚠️ Error loading data: ' + error.message);
     } finally {
         isLoading = false;
-        renderApp();
+        loadingMessage = 'Loading...';
     }
 }
 
-// Pagination
-function getPaginationHTML(section, totalItems, currentPageNum) {
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-    if (totalPages <= 1) return '';
-    
-    const startItem = (currentPageNum - 1) * itemsPerPage + 1;
-    const endItem = Math.min(currentPageNum * itemsPerPage, totalItems);
-    
-    return `
-        <div class="flex flex-col sm:flex-row justify-between items-center gap-3 mt-6 pt-4 border-t">
-            <div class="text-sm text-gray-600 dark:text-gray-300">
-                Showing ${startItem}-${endItem} of ${totalItems}
-            </div>
-            <div class="flex gap-2">
-                ${currentPageNum > 1 ? `<button onclick="currentPage.${section}=${currentPageNum - 1}; renderApp();" class="px-3 py-1 border rounded hover:bg-gray-100 dark:hover:bg-gray-700">← Previous</button>` : ''}
-                ${Array.from({length: Math.min(5, totalPages)}, (_, i) => {
-                    const pageNum = i + 1;
-                    if (totalPages > 5 && currentPageNum > 3) {
-                        const start = Math.max(1, currentPageNum - 2);
-                        const actualPage = start + i;
-                        if (actualPage > totalPages) return '';
-                        return `<button onclick="currentPage.${section}=${actualPage}; renderApp();" class="px-3 py-1 border rounded ${actualPage === currentPageNum ? 'bg-black text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}">${actualPage}</button>`;
-                    }
-                    return `<button onclick="currentPage.${section}=${pageNum}; renderApp();" class="px-3 py-1 border rounded ${pageNum === currentPageNum ? 'bg-black text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}">${pageNum}</button>`;
-                }).join('')}
-                ${currentPageNum < totalPages ? `<button onclick="currentPage.${section}=${currentPageNum + 1}; renderApp();" class="px-3 py-1 border rounded hover:bg-gray-100 dark:hover:bg-gray-700">Next →</button>` : ''}
-            </div>
-        </div>
-    `;
-}
-
-// CSV Export
-function exportToCSV(type) {
-    let data = [];
-    let filename = '';
-    let headers = [];
-    
-    if (type === 'clients') {
-        headers = ['Name', 'Email', 'Phone', 'Address', 'Notes'];
-        const filtered = clients.filter(c => 
-            c.name.toLowerCase().includes(clientSearch.toLowerCase()) ||
-            c.email.toLowerCase().includes(clientSearch.toLowerCase()) ||
-            c.phone.includes(clientSearch) ||
-            (c.address && c.address.toLowerCase().includes(clientSearch.toLowerCase()))
-        );
-        data = filtered.map(c => [c.name, c.email, c.phone, c.address || '', c.notes || '']);
-        filename = clientSearch ? `clients_filtered_${clientSearch}.csv` : 'clients.csv';
-    } else if (type === 'jobs') {
-        headers = ['Client', 'Title', 'Date', 'Time', 'Status', 'Notes'];
-        const filtered = jobs.filter(job => {
-            if (!jobSearch) return true;
-            const client = clients.find(c => c.id === job.client_id);
-            const searchLower = jobSearch.toLowerCase();
-            return (job.title.toLowerCase().includes(searchLower) || (client?.name || '').toLowerCase().includes(searchLower));
-        });
-        data = filtered.map(j => {
-            const client = clients.find(c => c.id === j.client_id);
-            return [client?.name || 'Unknown', j.title, j.date, j.time, j.status || 'scheduled', j.notes || ''];
-        });
-        filename = jobSearch ? `jobs_filtered_${jobSearch}.csv` : 'jobs.csv';
-    } else if (type === 'quotes') {
-        headers = ['Client', 'Title', 'Date', 'Total', 'Status', 'Accepted'];
-        const filtered = quotes.filter(q => {
-            if (!quoteSearch) return true;
-            const client = clients.find(c => c.id === q.client_id);
-            const searchLower = quoteSearch.toLowerCase();
-            return (q.title.toLowerCase().includes(searchLower) || (client?.name || '').toLowerCase().includes(searchLower));
-        });
-        data = filtered.map(q => {
-            const client = clients.find(c => c.id === q.client_id);
-            return [client?.name || 'Unknown', q.title, q.date, q.total, q.status, q.accepted ? 'Yes' : 'No'];
-        });
-        filename = quoteSearch ? `quotes_filtered_${quoteSearch}.csv` : 'quotes.csv';
-    } else if (type === 'invoices') {
-        headers = ['Client', 'Invoice #', 'Title', 'Issue Date', 'Due Date', 'Total', 'Status'];
-        const filtered = invoices.filter(i => {
-            if (!invoiceSearch) return true;
-            const client = clients.find(c => c.id === i.client_id);
-            const searchLower = invoiceSearch.toLowerCase();
-            return (i.title.toLowerCase().includes(searchLower) || (client?.name || '').toLowerCase().includes(searchLower));
-        });
-        data = filtered.map(i => {
-            const client = clients.find(c => c.id === i.client_id);
-            return [client?.name || 'Unknown', i.invoice_number, i.title, i.issue_date, i.due_date || '', i.total, i.status];
-        });
-        filename = invoiceSearch ? `invoices_filtered_${invoiceSearch}.csv` : 'invoices.csv';
-    } else if (type === 'expenses') {
-        headers = ['Date', 'Amount', 'Category', 'Description'];
-        const filtered = expenses.filter(exp => {
-            if (!expenseSearch) return true;
-            const searchLower = expenseSearch.toLowerCase();
-            return ((exp.description || '').toLowerCase().includes(searchLower) || (exp.category || '').toLowerCase().includes(searchLower));
-        });
-        data = filtered.map(e => [e.date, e.amount, e.category, e.description || '']);
-        filename = expenseSearch ? `expenses_filtered_${expenseSearch}.csv` : 'expenses.csv';
-    }
-    
-    if (data.length === 0) {
-        showNotification('No data to export', 'error');
-        return;
-    }
-    
-    let csvContent = headers.join(',') + '\n';
-    data.forEach(row => {
-        csvContent += row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',') + '\n';
-    });
-    
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    window.URL.revokeObjectURL(url);
-}
-
-// Download User Guide
-function downloadUserGuide() {
-    const menu = document.getElementById('settings-menu');
-    if (menu) {
-        menu.classList.add('hidden');
-    }
-    window.open('https://raw.githubusercontent.com/keithmurphy09/m4-streamline/main/docs/Streamline_User_Guide.pdf', '_blank');
-}
-
-// Account Type Helper
-function getAccountType() {
-    if (isAdmin && demoMode) return demoMode;
-    return subscription?.account_type || 'sole_trader';
-}
-
-// Demo Mode Functions (Admin Only)
-function enterDemoMode(type) {
-    if (!isAdmin) return;
-    demoMode = type;
-    useDemoData = true;
-    initDemoData();
-    loadAllData();
-    renderApp();
-}
-
-function exitDemoMode() {
-    if (!isAdmin) return;
-    demoMode = null;
-    useDemoData = false;
-    loadAllData();
-    renderApp();
-}
-
-function initDemoData() {
-    // Demo data is loaded in auth.js when useDemoData = true
-    // This function is here for future demo data setup if needed
-    console.log('✅ Demo mode enabled:', demoMode);
-}
-
-// Upgrade to Business
-function confirmUpgradeToBusiness() {
-    if (confirm('Upgrade to Business tier for $89.95/month?\n\nBusiness features include:\n• Unlimited team members\n• Team expense tracking\n• Advanced analytics\n• Priority support\n\nWould you like to proceed?')) {
-        // Open email to support for manual upgrade
-        window.location.href = 'mailto:m4projectsanddesigns@gmail.com?subject=Business%20Tier%20Upgrade%20Request&body=Hi%2C%0A%0AI%20would%20like%20to%20upgrade%20to%20the%20Business%20tier.%0A%0AMy%20account%20email%3A%20' + encodeURIComponent(currentUser.email);
-    }
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// GOOGLE PLACES AUTOCOMPLETE
-// ═══════════════════════════════════════════════════════════════════
-
-// Google Maps API Key - User should replace with their own
-const GOOGLE_MAPS_API_KEY = 'YOUR_GOOGLE_MAPS_API_KEY_HERE';
-
-// Track which fields have been initialized to prevent duplicates
-const initializedFields = new Set();
-
-// Initialize autocomplete on address field
-function initAddressAutocomplete(inputId) {
-    console.log(`🔍 Attempting to init autocomplete for: ${inputId}`);
-    
-    const input = document.getElementById(inputId);
-    if (!input) {
-        console.log(`❌ Field ${inputId} not found in DOM`);
-        return;
-    }
-    
-    // Check if already initialized
-    if (initializedFields.has(inputId)) {
-        console.log(`⚠️ Field ${inputId} already initialized, skipping`);
-        return;
-    }
-    
-    // Wait for Google Maps to load (with retries)
-    if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
-        console.log(`⏳ Google Maps not ready yet for ${inputId}, retrying in 500ms...`);
-        setTimeout(() => initAddressAutocomplete(inputId), 500);
-        return;
-    }
-    
-    console.log(`✅ Google Maps ready! Creating autocomplete for ${inputId}`);
-    
-    try {
-        // Create autocomplete instance
-        const autocomplete = new google.maps.places.Autocomplete(input, {
-            componentRestrictions: { country: 'au' }, // Restrict to Australia
-            fields: ['formatted_address', 'geometry', 'name'],
-            types: ['address']
-        });
-        
-        // When user selects an address
-        autocomplete.addListener('place_changed', () => {
-            const place = autocomplete.getPlace();
-            console.log('📍 Place selected:', place);
-            if (place.formatted_address) {
-                input.value = place.formatted_address;
-                console.log('✅ Address filled:', place.formatted_address);
-            }
-        });
-        
-        // Mark as initialized
-        initializedFields.add(inputId);
-        console.log(`🎉 Autocomplete successfully initialized for ${inputId}`);
-        
-    } catch (error) {
-        console.error(`❌ Error creating autocomplete for ${inputId}:`, error);
-    }
-}
-
-// Initialize all address fields in current modal
-function initAllAddressAutocomplete() {
-    console.log('🚀 initAllAddressAutocomplete called');
-    
-    // Wait a bit for modal to render
-    setTimeout(() => {
-        console.log('🔍 Looking for address fields...');
-        
-        // Try to initialize all common address field IDs
-        const addressFields = [
-            'client_address',
-            'job_address',
-            'quote_address'
-        ];
-        
-        let foundFields = 0;
-        addressFields.forEach(fieldId => {
-            const field = document.getElementById(fieldId);
-            if (field) {
-                foundFields++;
-                console.log(`✅ Found field: ${fieldId}`);
-                initAddressAutocomplete(fieldId);
-            } else {
-                console.log(`⚠️ Field not found: ${fieldId}`);
-            }
-        });
-        
-        if (foundFields === 0) {
-            console.log('❌ No address fields found in modal');
-        }
-        
-    }, 300); // Increased delay to ensure modal is fully rendered
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// PDF GENERATION WITH CUSTOM LOGO SUPPORT
-// ═══════════════════════════════════════════════════════════════════
-
-async function generatePDF(type, item) {
-    try {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        
-        const settings = companySettings || {};
-        const client = clients.find(c => c.id === item.client_id);
-        
-        let yPos = 20;
-        
-        // Add logo (custom or M4 default)
-        const logoUrl = settings.logo_url || 'final_logo.png';
-        console.log('📄 PDF Generation - Logo URL:', logoUrl);
-        
-        try {
-            // Load and convert logo to base64
-            const img = new Image();
-            
-            // Only set crossOrigin for external URLs (Supabase)
-            if (logoUrl.startsWith('http')) {
-                img.crossOrigin = 'anonymous';
-            }
-            
-            await new Promise((resolve, reject) => {
-                img.onload = () => {
-                    console.log('✅ Logo loaded successfully:', {
-                        width: img.width,
-                        height: img.height,
-                        src: img.src
-                    });
-                    
-                    try {
-                        // Convert to base64 via canvas
-                        const canvas = document.createElement('canvas');
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0);
-                        const base64 = canvas.toDataURL('image/png');
-                        console.log('🔄 Logo converted to base64, length:', base64.length);
-                        
-                        // Calculate dimensions for PDF (max width 40mm, max height 25mm)
-                        const maxWidth = 40;
-                        const maxHeight = 25;
-                        let pdfWidth = 40; // mm
-                        let pdfHeight = (img.height / img.width) * 40; // maintain aspect ratio
-                        
-                        // Scale down if too tall
-                        if (pdfHeight > maxHeight) {
-                            pdfHeight = maxHeight;
-                            pdfWidth = (img.width / img.height) * maxHeight;
-                        }
-                        
-                        console.log('📐 Logo size in PDF:', pdfWidth, 'x', pdfHeight, 'mm');
-                        
-                        // Add to PDF
-                        doc.addImage(base64, 'PNG', 15, yPos, pdfWidth, pdfHeight);
-                        console.log('✅ Logo successfully added to PDF at position (15,', yPos, ')');
-                        
-                    } catch (canvasError) {
-                        console.error('❌ Canvas conversion failed:', canvasError);
-                        throw canvasError;
-                    }
-                    
-                    resolve();
-                };
-                
-                img.onerror = (error) => {
-                    console.error('❌ Failed to load logo image:', logoUrl, error);
-                    reject(error);
-                };
-                
-                img.src = logoUrl;
-                console.log('⏳ Loading logo from:', logoUrl);
-            });
-            
-            yPos += 35; // Increase spacing after logo
-        } catch (error) {
-            console.error('❌ Error in logo loading process:', error);
-            console.log('⚠️ Continuing PDF generation without logo');
-            // Continue without logo
-        }
-        
-        // Company details (right side)
-        doc.setFontSize(10);
-        doc.setFont(undefined, 'bold');
-        const rightX = 140;
-        let rightY = 20;
-        
-        if (settings.business_name) {
-            doc.text(settings.business_name, rightX, rightY);
-            rightY += 5;
-        }
-        
-        doc.setFont(undefined, 'normal');
-        doc.setFontSize(9);
-        
-        if (settings.abn) {
-            doc.text(`ABN: ${settings.abn}`, rightX, rightY);
-            rightY += 5;
-        }
-        if (settings.phone) {
-            doc.text(settings.phone, rightX, rightY);
-            rightY += 5;
-        }
-        if (settings.email) {
-            doc.text(settings.email, rightX, rightY);
-            rightY += 5;
-        }
-        if (settings.address) {
-            const addressLines = doc.splitTextToSize(settings.address, 60);
-            doc.text(addressLines, rightX, rightY);
-            rightY += addressLines.length * 5;
-        }
-        
-        // Document title
-        yPos = Math.max(yPos, rightY + 10);
-        doc.setFontSize(20);
-        doc.setFont(undefined, 'bold');
-        doc.text(type === 'quote' ? 'QUOTE' : 'INVOICE', 15, yPos);
-        
-        // Document number and date
-        yPos += 10;
-        doc.setFontSize(10);
-        doc.setFont(undefined, 'normal');
-        
-        const docNumber = type === 'quote' 
-            ? (item.quote_number || `QT-${item.id.slice(0, 6)}`)
-            : (item.invoice_number || `INV-${item.id.slice(0, 6)}`);
-        
-        doc.text(`${type === 'quote' ? 'Quote' : 'Invoice'} #: ${docNumber}`, 15, yPos);
-        yPos += 6;
-        
-        const date = new Date(item.created_at || Date.now()).toLocaleDateString();
-        doc.text(`Date: ${date}`, 15, yPos);
-        yPos += 6;
-        
-        if (type === 'invoice' && item.due_date) {
-            doc.text(`Due Date: ${new Date(item.due_date).toLocaleDateString()}`, 15, yPos);
-            yPos += 6;
-        }
-        
-        // Client details
-        yPos += 5;
-        doc.setFont(undefined, 'bold');
-        doc.text('BILL TO:', 15, yPos);
-        yPos += 6;
-        
-        doc.setFont(undefined, 'normal');
-        if (client) {
-            doc.text(client.name, 15, yPos);
-            yPos += 5;
-            if (client.email) {
-                doc.text(client.email, 15, yPos);
-                yPos += 5;
-            }
-            if (client.phone) {
-                doc.text(client.phone, 15, yPos);
-                yPos += 5;
-            }
-            if (client.address) {
-                const clientAddressLines = doc.splitTextToSize(client.address, 80);
-                doc.text(clientAddressLines, 15, yPos);
-                yPos += clientAddressLines.length * 5;
-            }
-        }
-        
-        // Line items table
-        yPos += 10;
-        doc.setFont(undefined, 'bold');
-        doc.setFillColor(240, 240, 240);
-        doc.rect(15, yPos - 5, 180, 8, 'F');
-        doc.text('Description', 20, yPos);
-        doc.text('Quantity', 110, yPos);
-        doc.text('Price', 140, yPos);
-        doc.text('Amount', 170, yPos);
-        
-        yPos += 8;
-        doc.setFont(undefined, 'normal');
-        
-        // Add line items
-        const lineItems = item.line_items || [];
-        lineItems.forEach((lineItem) => {
-            if (yPos > 270) {
-                doc.addPage();
-                yPos = 20;
-            }
-            
-            const description = doc.splitTextToSize(lineItem.description || '', 80);
-            doc.text(description, 20, yPos);
-            doc.text(String(lineItem.quantity || 1), 110, yPos);
-            doc.text(`$${parseFloat(lineItem.price || 0).toFixed(2)}`, 140, yPos);
-            doc.text(`$${parseFloat(lineItem.amount || 0).toFixed(2)}`, 170, yPos);
-            
-            yPos += Math.max(description.length * 5, 6);
-        });
-        
-        // Totals
-        yPos += 5;
-        doc.line(15, yPos, 195, yPos);
-        yPos += 8;
-        
-        doc.setFont(undefined, 'bold');
-        doc.setFontSize(12);
-        doc.text('TOTAL:', 140, yPos);
-        doc.text(`$${parseFloat(item.total || 0).toFixed(2)}`, 170, yPos);
-        
-        // Invoice-specific: Payment status
-        if (type === 'invoice') {
-            yPos += 10;
-            doc.setFontSize(10);
-            const status = item.status === 'paid' ? 'PAID' : 'UNPAID';
-            const statusColor = item.status === 'paid' ? [34, 197, 94] : [239, 68, 68];
-            doc.setTextColor(...statusColor);
-            doc.text(`Status: ${status}`, 15, yPos);
-            doc.setTextColor(0, 0, 0);
-            
-            // Bank details
-            if (settings.bank_name && item.status !== 'paid') {
-                yPos += 10;
-                doc.setFont(undefined, 'bold');
-                doc.text('Payment Details:', 15, yPos);
-                yPos += 6;
-                doc.setFont(undefined, 'normal');
-                
-                doc.text(`Bank: ${settings.bank_name}`, 15, yPos);
-                yPos += 5;
-                if (settings.bsb) {
-                    doc.text(`BSB: ${settings.bsb}`, 15, yPos);
-                    yPos += 5;
-                }
-                if (settings.account_number) {
-                    doc.text(`Account: ${settings.account_number}`, 15, yPos);
-                    yPos += 5;
-                }
-                if (settings.account_name) {
-                    doc.text(`Name: ${settings.account_name}`, 15, yPos);
-                }
-            }
-        }
-        
-        // Notes
-        if (item.notes) {
-            yPos += 10;
-            if (yPos > 250) {
-                doc.addPage();
-                yPos = 20;
-            }
-            doc.setFont(undefined, 'bold');
-            doc.text('Notes:', 15, yPos);
-            yPos += 6;
-            doc.setFont(undefined, 'normal');
-            const notesLines = doc.splitTextToSize(item.notes, 180);
-            doc.text(notesLines, 15, yPos);
-        }
-        
-        // Save PDF
-        const fileName = `${type}_${docNumber}_${date.replace(/\//g, '-')}.pdf`;
-        doc.save(fileName);
-        
-        showNotification(`✅ PDF generated: ${fileName}`, 'success');
-    } catch (error) {
-        console.error('Error generating PDF:', error);
-        showNotification('Failed to generate PDF', 'error');
-    }
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// EMAIL FUNCTIONS
-// ═══════════════════════════════════════════════════════════════════
-
-async function sendQuoteEmail(quote) {
-    const client = clients.find(c => c.id === quote.client_id);
-    if (!client || !client.email) {
-        alert('Client email not found!');
-        return;
-    }
-    
-    if (!emailSettings || !emailSettings.sendgrid_api_key) {
-        alert('⚠️ Email not configured! Please add your SendGrid settings in Company Info.');
-        return;
-    }
-    
-    const currentUrl = window.location.href.split('?')[0].split('#')[0];
-    const baseUrl = currentUrl.replace(/\/[^\/]*$/, '/');
-    const shareLink = baseUrl + 'quote-viewer.html?quote=' + quote.share_token;
-    
-    console.log('Generated share link:', shareLink);
-    console.log('Sending to:', client.email);
-    
-    const fromName = emailSettings.from_name;
-    
-    // Use custom logo if available, otherwise M4 logo
-    const logoUrl = companySettings?.logo_url || 'https://i.imgur.com/dF4xRDK.jpeg';
-    
-    const htmlContent = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="text-align: center; margin-bottom: 30px; padding: 20px; background: #f9fafb; border-radius: 8px;">
-                <img src="${logoUrl}" alt="Company Logo" style="max-width: 150px; max-height: 100px; margin-bottom: 10px; object-fit: contain;">
-                <h1 style="color: #14b8a6; margin: 10px 0; font-size: 24px;">${companySettings?.business_name || 'M4 STREAMLINE'}</h1>
-                ${!companySettings?.business_name ? '<p style="color: #14b8a6; font-style: italic; font-size: 14px; margin: 0;">"streamlining your business"</p>' : ''}
-            </div>
-            <p>Hello ${client.name},</p>
-            <p>${fromName} has sent you a quote for: <strong>${quote.title}</strong></p>
-            <p>Total Amount: <strong>$${quote.total.toFixed(2)}</strong></p>
-            <p>Please click the link below to view and download your quote.</p>
-            <p style="margin: 30px 0;">
-                <a href="${shareLink}" style="background-color: #14b8a6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">View Your Quote</a>
-            </p>
-            <p>Or copy and paste this link into your browser:</p>
-            <p style="color: #14b8a6; word-break: break-all;">${shareLink}</p>
-            <p>Best regards,<br>${fromName}</p>
-        </div>
-    `;
-    
-    try {
-        console.log('Calling Edge Function...');
-        
-        const response = await fetch('https://xviustrrsuhidzbcpgow.supabase.co/functions/v1/send-email', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aXVzdHJyc3VoaWR6YmNwZ293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3ODk1NDgsImV4cCI6MjA4NDM2NTU0OH0.CEcc50c1K2Qnh6rXt_1-_w30LzHvDniGLbqWhdOolRY'
-            },
-            body: JSON.stringify({
-                user_id: currentUser.id,
-                to_email: client.email,
-                to_name: client.name,
-                subject: `Quote from ${fromName}: ${quote.title}`,
-                html_content: htmlContent
-            })
-        });
-        
-        const result = await response.json();
-        console.log('Edge Function response:', result);
-        
-        if (response.ok && result.success) {
-            alert('✅ Email sent successfully to ' + client.email + '!\n\nQuote link: ' + shareLink);
-        } else {
-            console.error('Email send error:', result);
-            alert('⚠️ Email may not have sent: ' + (result.error || 'Unknown error') + '\n\nManually send this link:\n' + shareLink);
-        }
-    } catch (error) {
-        console.error('Email error:', error);
-        alert('❌ Failed to send email: ' + error.message + '\n\nManually send this link:\n' + shareLink);
-    }
-}
-
-async function sendInvoiceEmail(invoice) {
-    const client = clients.find(c => c.id === invoice.client_id);
-    if (!client || !client.email) {
-        alert('Client email not found!');
-        return;
-    }
-    
-    if (!emailSettings || !emailSettings.sendgrid_api_key) {
-        alert('⚠️ Email not configured! Please add your SendGrid settings in Company Info.');
-        return;
-    }
-    
-    const baseUrl = window.location.href.split('?')[0].replace('index.html', '');
-    const fromName = emailSettings.from_name;
-    
-    // Use custom logo if available, otherwise fallback to M4 logo
-    const logoUrl = companySettings?.logo_url || 'https://i.imgur.com/dF4xRDK.jpeg';
-    const companyName = companySettings?.business_name || 'M4 STREAMLINE';
-    
-    let paymentButton = '';
-    if (invoice.status === 'unpaid' && stripeSettings?.publishable_key) {
-        const paymentLink = baseUrl + 'payment.html?invoice=' + invoice.id;
-        paymentButton = `<p style="margin: 30px 0;">
-            <a href="${paymentLink}" style="background-color: #14b8a6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">View Invoice & Pay Online</a>
-        </p>
-        <p>Or copy and paste this link: <span style="color: #14b8a6;">${paymentLink}</span></p>`;
-    }
-    
-    const htmlContent = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="text-align: center; margin-bottom: 30px; padding: 20px; background: #f9fafb; border-radius: 8px;">
-                <img src="${logoUrl}" alt="Company Logo" style="max-width: 150px; max-height: 100px; margin-bottom: 10px; object-fit: contain;">
-                <h1 style="color: #14b8a6; margin: 10px 0; font-size: 24px;">${companyName}</h1>
-                ${!companySettings?.business_name ? '<p style="color: #14b8a6; font-style: italic; font-size: 14px; margin: 0;">"streamlining your business"</p>' : ''}
-            </div>
-            <p>Hello ${client.name},</p>
-            <p>Your invoice is ready.</p>
-            <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <p style="margin: 5px 0;"><strong>Invoice #:</strong> ${invoice.invoice_number}</p>
-                <p style="margin: 5px 0;"><strong>Amount Due:</strong> $${invoice.total.toFixed(2)}</p>
-                ${invoice.due_date ? `<p style="margin: 5px 0;"><strong>Due Date:</strong> ${invoice.due_date}</p>` : ''}
-            </div>
-            ${paymentButton}
-            <p>Best regards,<br>${fromName}</p>
-        </div>
-    `;
-    
-    try {
-        const response = await fetch('https://xviustrrsuhidzbcpgow.supabase.co/functions/v1/send-email', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aXVzdHJyc3VoaWR6YmNwZ293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3ODk1NDgsImV4cCI6MjA4NDM2NTU0OH0.CEcc50c1K2Qnh6rXt_1-_w30LzHvDniGLbqWhdOolRY'
-            },
-            body: JSON.stringify({
-                user_id: currentUser.id,
-                to_email: client.email,
-                to_name: client.name,
-                subject: `Invoice from ${fromName} - ${invoice.invoice_number}`,
-                html_content: htmlContent
-            })
-        });
-        
-        const result = await response.json();
-        
-        if (response.ok && result.success) {
-            alert('✅ Email sent successfully to ' + client.email + '!');
-        } else {
-            console.error('Email send error:', result);
-            alert('⚠️ Email may not have sent: ' + (result.error || 'Unknown error'));
-        }
-    } catch (error) {
-        console.error('Email error:', error);
-        alert('❌ Failed to send email: ' + error.message);
-    }
-}
-
-console.log('✅ Utils loaded');
+console.log('✅ Auth loaded');
