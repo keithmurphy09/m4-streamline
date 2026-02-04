@@ -689,20 +689,154 @@ async function generatePDF(type, item) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// EMAIL FUNCTIONS (Placeholder - requires email service setup)
+// EMAIL FUNCTIONS
 // ═══════════════════════════════════════════════════════════════════
 
-function sendQuoteEmail(quote) {
-    showNotification('📧 Email functionality coming soon! For now, download the PDF and send manually.', 'info');
-    console.log('Quote to email:', quote);
-    // TODO: Implement email sending via email service
-    // Options: SendGrid, Mailgun, Resend, or Supabase Edge Function
+async function sendQuoteEmail(quote) {
+    const client = clients.find(c => c.id === quote.client_id);
+    if (!client || !client.email) {
+        alert('Client email not found!');
+        return;
+    }
+    
+    if (!emailSettings || !emailSettings.sendgrid_api_key) {
+        alert('⚠️ Email not configured! Please add your SendGrid settings in Company Info.');
+        return;
+    }
+    
+    const currentUrl = window.location.href.split('?')[0].split('#')[0];
+    const baseUrl = currentUrl.replace(/\/[^\/]*$/, '/');
+    const shareLink = baseUrl + 'quote-viewer.html?quote=' + quote.share_token;
+    
+    console.log('Generated share link:', shareLink);
+    console.log('Sending to:', client.email);
+    
+    const fromName = emailSettings.from_name;
+    
+    const htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="text-align: center; margin-bottom: 30px; padding: 20px; background: #f9fafb; border-radius: 8px;">
+                <img src="https://i.imgur.com/dF4xRDK.jpeg" alt="M4 Logo" style="width: 80px; height: 80px; margin-bottom: 10px;">
+                <h1 style="color: #14b8a6; margin: 10px 0; font-size: 24px;">M4 STREAMLINE</h1>
+                <p style="color: #14b8a6; font-style: italic; font-size: 14px; margin: 0;">"streamlining your business"</p>
+            </div>
+            <p>Hello ${client.name},</p>
+            <p>${fromName} has sent you a quote for: <strong>${quote.title}</strong></p>
+            <p>Total Amount: <strong>$${quote.total.toFixed(2)}</strong></p>
+            <p>Please click the link below to view and download your quote.</p>
+            <p style="margin: 30px 0;">
+                <a href="${shareLink}" style="background-color: #14b8a6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">View Your Quote</a>
+            </p>
+            <p>Or copy and paste this link into your browser:</p>
+            <p style="color: #14b8a6; word-break: break-all;">${shareLink}</p>
+            <p>Best regards,<br>${fromName}</p>
+        </div>
+    `;
+    
+    try {
+        console.log('Calling Edge Function...');
+        
+        const response = await fetch('https://xviustrrsuhidzbcpgow.supabase.co/functions/v1/send-email', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aXVzdHJyc3VoaWR6YmNwZ293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3ODk1NDgsImV4cCI6MjA4NDM2NTU0OH0.CEcc50c1K2Qnh6rXt_1-_w30LzHvDniGLbqWhdOolRY'
+            },
+            body: JSON.stringify({
+                user_id: currentUser.id,
+                to_email: client.email,
+                to_name: client.name,
+                subject: `Quote from ${fromName}: ${quote.title}`,
+                html_content: htmlContent
+            })
+        });
+        
+        const result = await response.json();
+        console.log('Edge Function response:', result);
+        
+        if (response.ok && result.success) {
+            alert('✅ Email sent successfully to ' + client.email + '!\n\nQuote link: ' + shareLink);
+        } else {
+            console.error('Email send error:', result);
+            alert('⚠️ Email may not have sent: ' + (result.error || 'Unknown error') + '\n\nManually send this link:\n' + shareLink);
+        }
+    } catch (error) {
+        console.error('Email error:', error);
+        alert('❌ Failed to send email: ' + error.message + '\n\nManually send this link:\n' + shareLink);
+    }
 }
 
-function sendInvoiceEmail(invoice) {
-    showNotification('📧 Email functionality coming soon! For now, download the PDF and send manually.', 'info');
-    console.log('Invoice to email:', invoice);
-    // TODO: Implement email sending via email service
+async function sendInvoiceEmail(invoice) {
+    const client = clients.find(c => c.id === invoice.client_id);
+    if (!client || !client.email) {
+        alert('Client email not found!');
+        return;
+    }
+    
+    if (!emailSettings || !emailSettings.sendgrid_api_key) {
+        alert('⚠️ Email not configured! Please add your SendGrid settings in Company Info.');
+        return;
+    }
+    
+    const baseUrl = window.location.href.split('?')[0].replace('index.html', '');
+    const fromName = emailSettings.from_name;
+    
+    let paymentButton = '';
+    if (invoice.status === 'unpaid' && stripeSettings?.publishable_key) {
+        const paymentLink = baseUrl + 'payment.html?invoice=' + invoice.id;
+        paymentButton = `<p style="margin: 30px 0;">
+            <a href="${paymentLink}" style="background-color: #14b8a6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">View Invoice & Pay Online</a>
+        </p>
+        <p>Or copy and paste this link: <span style="color: #14b8a6;">${paymentLink}</span></p>`;
+    }
+    
+    const htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="text-align: center; margin-bottom: 30px; padding: 20px; background: #f9fafb; border-radius: 8px;">
+                <img src="https://i.imgur.com/dF4xRDK.jpeg" alt="M4 Logo" style="width: 80px; height: 80px; margin-bottom: 10px;">
+                <h1 style="color: #14b8a6; margin: 10px 0; font-size: 24px;">M4 STREAMLINE</h1>
+                <p style="color: #14b8a6; font-style: italic; font-size: 14px; margin: 0;">"streamlining your business"</p>
+            </div>
+            <p>Hello ${client.name},</p>
+            <p>Your invoice is ready.</p>
+            <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <p style="margin: 5px 0;"><strong>Invoice #:</strong> ${invoice.invoice_number}</p>
+                <p style="margin: 5px 0;"><strong>Amount Due:</strong> $${invoice.total.toFixed(2)}</p>
+                ${invoice.due_date ? `<p style="margin: 5px 0;"><strong>Due Date:</strong> ${invoice.due_date}</p>` : ''}
+            </div>
+            ${paymentButton}
+            <p>Best regards,<br>${fromName}</p>
+        </div>
+    `;
+    
+    try {
+        const response = await fetch('https://xviustrrsuhidzbcpgow.supabase.co/functions/v1/send-email', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aXVzdHJyc3VoaWR6YmNwZ293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3ODk1NDgsImV4cCI6MjA4NDM2NTU0OH0.CEcc50c1K2Qnh6rXt_1-_w30LzHvDniGLbqWhdOolRY'
+            },
+            body: JSON.stringify({
+                user_id: currentUser.id,
+                to_email: client.email,
+                to_name: client.name,
+                subject: `Invoice from ${fromName} - ${invoice.invoice_number}`,
+                html_content: htmlContent
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            alert('✅ Email sent successfully to ' + client.email + '!');
+        } else {
+            console.error('Email send error:', result);
+            alert('⚠️ Email may not have sent: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Email error:', error);
+        alert('❌ Failed to send email: ' + error.message);
+    }
 }
 
 console.log('✅ Utils loaded');
