@@ -470,14 +470,20 @@ async function generatePDF(type, item) {
         
         // Add logo (custom or M4 default)
         const logoUrl = settings.logo_url || 'final_logo.png';
+        console.log('📄 PDF Generation - Logo URL:', logoUrl);
         
         try {
             // Load and add logo
             const img = new Image();
-            img.crossOrigin = 'anonymous';
             
             await new Promise((resolve, reject) => {
                 img.onload = () => {
+                    console.log('✅ Logo loaded successfully:', {
+                        width: img.width,
+                        height: img.height,
+                        src: img.src
+                    });
+                    
                     // Add logo (max width 40mm, max height 25mm)
                     const maxWidth = 40;
                     const maxHeight = 25;
@@ -491,16 +497,32 @@ async function generatePDF(type, item) {
                         height *= ratio;
                     }
                     
-                    doc.addImage(img, 'PNG', 15, yPos, width, height);
+                    console.log('📐 Logo scaled to:', width, 'x', height);
+                    
+                    try {
+                        doc.addImage(img, 'PNG', 15, yPos, width, height);
+                        console.log('✅ Logo added to PDF');
+                    } catch (addError) {
+                        console.error('❌ Failed to add logo to PDF:', addError);
+                    }
+                    
                     resolve();
                 };
-                img.onerror = reject;
+                
+                img.onerror = (error) => {
+                    console.error('❌ Failed to load logo image:', logoUrl, error);
+                    reject(error);
+                };
+                
+                // Set src last (after event handlers)
                 img.src = logoUrl;
+                console.log('⏳ Loading logo from:', logoUrl);
             });
             
             yPos += 30;
         } catch (error) {
-            console.error('Error loading logo:', error);
+            console.error('❌ Error in logo loading process:', error);
+            console.log('⚠️ Continuing PDF generation without logo');
             // Continue without logo
         }
         
