@@ -279,24 +279,44 @@ function renderQuoteDetail() {
         debugInfo.relatedJobId = relatedJob.id;
         debugInfo.relatedJobTitle = relatedJob.title;
         
-        // Check expenses with job_id field
+        // Method 1: Check expenses with job_id field
         const jobExpenses = expenses.filter(e => 
             e.job_id === relatedJob.id || 
             e.jobId === relatedJob.id ||  // Alternative field name
             e.linked_job_id === relatedJob.id  // Another possible field
         );
         
-        debugInfo.expensesFound = jobExpenses.length;
-        debugInfo.expenseDetails = jobExpenses.map(e => ({
+        // Method 2: FALLBACK - Check description text for job title or quote number
+        const quoteNumber = q.quote_number || q.title;
+        const textMatchedExpenses = expenses.filter(e => {
+            const description = (e.description || '').toLowerCase();
+            const notes = (e.notes || '').toLowerCase();
+            const searchText = description + ' ' + notes;
+            
+            // Check if description mentions the job title, quote number, or quote title
+            return searchText.includes(relatedJob.title.toLowerCase()) ||
+                   searchText.includes(quoteNumber.toLowerCase()) ||
+                   searchText.includes(q.title.toLowerCase());
+        });
+        
+        // Combine both methods and remove duplicates
+        const allFoundExpenses = [...jobExpenses, ...textMatchedExpenses];
+        const uniqueExpenses = Array.from(new Set(allFoundExpenses.map(e => e.id)))
+            .map(id => allFoundExpenses.find(e => e.id === id));
+        
+        debugInfo.expensesFound = uniqueExpenses.length;
+        debugInfo.foundByJobId = jobExpenses.length;
+        debugInfo.foundByTextMatch = textMatchedExpenses.length;
+        debugInfo.expenseDetails = uniqueExpenses.map(e => ({
             id: e.id,
             amount: e.amount,
             description: e.description,
             job_id: e.job_id,
-            jobId: e.jobId
+            matchMethod: jobExpenses.includes(e) ? 'job_id' : 'text'
         }));
         
-        linkedExpensesList.push(...jobExpenses);
-        totalExpenses += jobExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+        linkedExpensesList.push(...uniqueExpenses);
+        totalExpenses += uniqueExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
     } else {
         debugInfo.noJobFound = true;
     }
@@ -317,7 +337,14 @@ function renderQuoteDetail() {
         .map(id => linkedExpensesList.find(e => e.id === id));
     
     // Log debug info to console
-    console.log('🔍 Quote Expense Linking Debug:', debugInfo);
+    console.log('🔍 Quote Expense Linking Debug:', {
+        ...debugInfo,
+        matchingSummary: {
+            byJobId: debugInfo.foundByJobId || 0,
+            byTextMatch: debugInfo.foundByTextMatch || 0,
+            total: debugInfo.expensesFound || 0
+        }
+    });
     
     const revenue = parseFloat(q.total || 0);
     const profit = revenue - totalExpenses;
@@ -425,9 +452,19 @@ function renderQuoteDetail() {
                         </div>
                         <div>• Total Expenses: ${debugInfo.allExpenses}</div>
                         <div>• With job_id: ${debugInfo.expensesWithJobId}</div>
-                        <div>• Found for this job: ${debugInfo.expensesFound || 0}</div>
-                        <div class="text-yellow-600 dark:text-yellow-400 mt-2">
-                            ℹ️ If expenses exist but show 0, check they're assigned to the correct job in the Expenses tab.
+                        <div>• Found by job_id field: ${debugInfo.foundByJobId || 0}</div>
+                        <div>• Found by text match: ${debugInfo.foundByTextMatch || 0}</div>
+                        <div>• <strong>Total found: ${debugInfo.expensesFound || 0}</strong></div>
+                        ${debugInfo.expenseDetails && debugInfo.expenseDetails.length > 0 ? `
+                        <div class="border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">
+                            <strong>Expenses found:</strong>
+                        </div>
+                        ${debugInfo.expenseDetails.map(e => `
+                        <div>• $${parseFloat(e.amount || 0).toFixed(2)} - ${e.description?.substring(0, 30)}... (via ${e.matchMethod})</div>
+                        `).join('')}
+                        ` : ''}
+                        <div class="text-teal-600 dark:text-teal-400 mt-2">
+                            ℹ️ Text matching searches expense descriptions for job/quote references.
                         </div>
                     </div>
                 </details>
