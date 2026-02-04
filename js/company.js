@@ -447,13 +447,27 @@ async function uploadCompanyLogo(input) {
         // Upload to Supabase Storage
         const fileExt = file.name.split('.').pop();
         const fileName = `logo-${currentUser.id}-${Date.now()}.${fileExt}`;
-        const filePath = `company-logos/${fileName}`;
+        const filePath = fileName; // Changed: don't include folder in path
+        
+        console.log('📤 Uploading file:', fileName);
         
         const { data: uploadData, error: uploadError } = await supabaseClient.storage
             .from('company-logos')
             .upload(filePath, file);
         
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+            console.error('❌ Storage upload error:', uploadError);
+            
+            // Check if bucket exists
+            if (uploadError.message?.includes('Bucket not found') || uploadError.statusCode === 404) {
+                showNotification('❌ Storage bucket "company-logos" not found. Please create it in Supabase Dashboard.', 'error');
+                return;
+            }
+            
+            throw uploadError;
+        }
+        
+        console.log('✅ File uploaded:', uploadData);
         
         // Get public URL
         const { data: urlData } = supabaseClient.storage
@@ -461,41 +475,89 @@ async function uploadCompanyLogo(input) {
             .getPublicUrl(filePath);
         
         const logoUrl = urlData.publicUrl;
+        console.log('🔗 Logo URL:', logoUrl);
         
         // Update company settings with logo URL
-        const settingsToUpdate = {
-            ...companySettings,
-            logo_url: logoUrl,
-            user_id: currentUser.id
-        };
-        
         if (companySettings?.id) {
-            // Update existing
-            const { error: updateError } = await supabaseClient
+            // Update existing record
+            console.log('📝 Updating existing settings, ID:', companySettings.id);
+            
+            const { data: updateData, error: updateError } = await supabaseClient
                 .from('company_settings')
                 .update({ logo_url: logoUrl })
-                .eq('id', companySettings.id);
-            
-            if (updateError) throw updateError;
-        } else {
-            // Insert new
-            const { data, error: insertError } = await supabaseClient
-                .from('company_settings')
-                .insert([settingsToUpdate])
+                .eq('id', companySettings.id)
                 .select();
             
-            if (insertError) throw insertError;
-            companySettings = data[0];
+            if (updateError) {
+                console.error('❌ Update error:', updateError);
+                
+                // Check if column exists
+                if (updateError.message?.includes('column') && updateError.message?.includes('logo_url')) {
+                    showNotification('❌ Database error: logo_url column missing. Run: ALTER TABLE company_settings ADD COLUMN logo_url TEXT;', 'error');
+                    return;
+                }
+                
+                throw updateError;
+            }
+            
+            console.log('✅ Settings updated:', updateData);
+            if (updateData && updateData[0]) {
+                companySettings = updateData[0];
+            }
+        } else {
+            // Insert new record
+            console.log('📝 Creating new settings record');
+            
+            const newSettings = {
+                user_id: currentUser.id,
+                logo_url: logoUrl,
+                business_name: '',
+                abn: '',
+                phone: '',
+                email: '',
+                address: ''
+            };
+            
+            const { data: insertData, error: insertError } = await supabaseClient
+                .from('company_settings')
+                .insert([newSettings])
+                .select();
+            
+            if (insertError) {
+                console.error('❌ Insert error:', insertError);
+                
+                // Check if column exists
+                if (insertError.message?.includes('column') && insertError.message?.includes('logo_url')) {
+                    showNotification('❌ Database error: logo_url column missing. Run: ALTER TABLE company_settings ADD COLUMN logo_url TEXT;', 'error');
+                    return;
+                }
+                
+                throw insertError;
+            }
+            
+            console.log('✅ Settings created:', insertData);
+            if (insertData && insertData[0]) {
+                companySettings = insertData[0];
+            }
         }
         
         // Update local state
-        if (companySettings) companySettings.logo_url = logoUrl;
+        if (companySettings) {
+            companySettings.logo_url = logoUrl;
+        }
         
         showNotification('✅ Logo uploaded successfully!', 'success');
         renderApp();
     } catch (error) {
-        console.error('Error uploading logo:', error);
-        showNotification('Failed to upload logo. Please try again.', 'error');
+        console.error('❌ Error uploading logo:', error);
+        console.error('Error details:', {
+            message: error.message,
+            code: error.code,
+            statusCode: error.statusCode,
+            details: error.details
+        });
+        
+        showNotification(`Failed to upload logo: ${error.message || 'Unknown error'}`, 'error');
     }
     
     // Reset input
