@@ -36,11 +36,13 @@ function renderInvoicesTable() {
         if (!matchesStatus) return false;
         
         const client = clients.find(c => c.id === inv.client_id);
+        const relatedQuote = quotes.find(q => q.id === inv.quote_id);
         const searchTerm = invoiceSearch.toLowerCase();
         return inv.title.toLowerCase().includes(searchTerm) ||
                inv.invoice_number?.toLowerCase().includes(searchTerm) ||
                client?.name.toLowerCase().includes(searchTerm) ||
                inv.job_address?.toLowerCase().includes(searchTerm) ||
+               relatedQuote?.job_address?.toLowerCase().includes(searchTerm) ||
                client?.address?.toLowerCase().includes(searchTerm) ||
                inv.total?.toString().includes(searchTerm);
     });
@@ -58,6 +60,8 @@ function renderInvoicesTable() {
         ? '<tr><td colspan="8" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">No invoices found</td></tr>'
         : paginatedInvoices.map(inv => {
             const client = clients.find(c => c.id === inv.client_id);
+            const relatedQuote = quotes.find(q => q.id === inv.quote_id);
+            const jobAddress = inv.job_address || relatedQuote?.job_address || client?.address || '';
             const isSelected = selectedInvoices.includes(inv.id);
             const isPaid = inv.status === 'paid';
             const isOverdue = inv.status === 'unpaid' && inv.due_date && new Date(inv.due_date) < new Date();
@@ -80,7 +84,7 @@ function renderInvoicesTable() {
                 </td>
                 <td class="px-6 py-4">
                     <div class="text-sm font-medium text-gray-900 dark:text-white">${client?.name || 'Unknown'}</div>
-                    <div class="text-xs text-gray-400 dark:text-gray-500">${inv.job_address || client?.address || ''}</div>
+                    <div class="text-xs text-gray-400 dark:text-gray-500">${jobAddress}</div>
                 </td>
                 <td class="px-6 py-4">
                     <div class="text-sm text-gray-900 dark:text-white">${inv.title}</div>
