@@ -232,12 +232,21 @@ function renderQuoteDetail() {
     let totalExpenses = 0;
     let linkedExpensesList = [];
     let debugInfo = {
+        quoteId: q.id,
         quoteTitle: q.title,
+        quoteNumber: q.quote_number,
         quoteClientId: q.client_id,
         matchingJobs: [],
         allExpenses: expenses.length,
         expensesWithJobId: expenses.filter(e => e.job_id).length
     };
+    
+    console.log('📊 QUOTE INFO:', {
+        id: q.id,
+        title: q.title,
+        quote_number: q.quote_number,
+        client_id: q.client_id
+    });
     
     // Strategy 1: Find job by exact title and client match
     const jobsByExactMatch = jobs.filter(j => j.title === q.title && j.client_id === q.client_id);
@@ -286,17 +295,24 @@ function renderQuoteDetail() {
             e.linked_job_id === relatedJob.id  // Another possible field
         );
         
-        // Method 2: FALLBACK - Check description text for job title or quote number
+        // Method 2: FALLBACK - Check description text for quote/job references
         const quoteNumber = q.quote_number || q.title;
         const textMatchedExpenses = expenses.filter(e => {
             const description = (e.description || '').toLowerCase();
             const notes = (e.notes || '').toLowerCase();
             const searchText = description + ' ' + notes;
             
-            // Check if description mentions the job title, quote number, or quote title
-            return searchText.includes(relatedJob.title.toLowerCase()) ||
-                   searchText.includes(quoteNumber.toLowerCase()) ||
-                   searchText.includes(q.title.toLowerCase());
+            // Check if description mentions:
+            // 1. The quote number (e.g., "QT-007" or "ORD-411920-32")
+            // 2. The job title
+            // 3. The quote title
+            const quoteNumLower = quoteNumber.toLowerCase();
+            const quoteTitleLower = q.title.toLowerCase();
+            const jobTitleLower = relatedJob.title.toLowerCase();
+            
+            return searchText.includes(quoteNumLower) ||
+                   searchText.includes(quoteTitleLower) ||
+                   searchText.includes(jobTitleLower);
         });
         
         // Combine both methods and remove duplicates
@@ -307,6 +323,7 @@ function renderQuoteDetail() {
         debugInfo.expensesFound = uniqueExpenses.length;
         debugInfo.foundByJobId = jobExpenses.length;
         debugInfo.foundByTextMatch = textMatchedExpenses.length;
+        debugInfo.quoteNumber = quoteNumber;
         debugInfo.expenseDetails = uniqueExpenses.map(e => ({
             id: e.id,
             amount: e.amount,
@@ -319,6 +336,56 @@ function renderQuoteDetail() {
         totalExpenses += uniqueExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
     } else {
         debugInfo.noJobFound = true;
+        debugInfo.quoteNumber = q.quote_number || q.title;
+        
+        // EMERGENCY FALLBACK: If no job found, try matching expenses by quote number directly
+        const quoteNumber = q.quote_number || q.title;
+        console.log('🔍 NO JOB FOUND - Searching expenses for quote:', quoteNumber);
+        console.log('🔍 Total expenses to search:', expenses.length);
+        
+        const directQuoteMatch = expenses.filter(e => {
+            const description = (e.description || '').toLowerCase();
+            const notes = (e.notes || '').toLowerCase();
+            const searchText = description + ' ' + notes;
+            const quoteNumLower = quoteNumber.toLowerCase();
+            
+            const matches = searchText.includes(quoteNumLower);
+            
+            if (matches) {
+                console.log('✅ MATCH FOUND:', {
+                    amount: e.amount,
+                    description: e.description?.substring(0, 80),
+                    searchedFor: quoteNumLower,
+                    foundIn: searchText.substring(0, 100)
+                });
+            }
+            
+            return matches;
+        });
+        
+        console.log('🔍 Expenses found without job:', directQuoteMatch.length);
+        
+        if (directQuoteMatch.length > 0) {
+            debugInfo.foundWithoutJob = directQuoteMatch.length;
+            debugInfo.expenseDetails = directQuoteMatch.map(e => ({
+                id: e.id,
+                amount: e.amount,
+                description: e.description,
+                matchMethod: 'quote-number-fallback'
+            }));
+            
+            linkedExpensesList.push(...directQuoteMatch);
+            totalExpenses += directQuoteMatch.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+        } else {
+            console.log('❌ NO EXPENSES FOUND - Debugging first 3 expenses:');
+            expenses.slice(0, 3).forEach(e => {
+                console.log({
+                    description: e.description,
+                    lowercaseDesc: (e.description || '').toLowerCase(),
+                    searchingFor: quoteNumber.toLowerCase()
+                });
+            });
+        }
     }
     
     // Also check for expenses directly linked to quote
