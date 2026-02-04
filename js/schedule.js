@@ -328,8 +328,34 @@ function renderJobDetail() {
     }
     
     // Calculate job expenses
-    const jobExpenses = expenses.filter(e => e.job_id === job.id);
+    // Method 1: Direct job_id match
+    const directJobExpenses = expenses.filter(e => e.job_id === job.id);
+    
+    // Method 2: FALLBACK - Text matching in descriptions
+    const textMatchedExpenses = expenses.filter(e => {
+        const description = (e.description || '').toLowerCase();
+        const notes = (e.notes || '').toLowerCase();
+        const searchText = description + ' ' + notes;
+        
+        // Check if description mentions the job title
+        return searchText.includes(job.title.toLowerCase());
+    });
+    
+    // Combine both methods and remove duplicates
+    const allJobExpenses = [...directJobExpenses, ...textMatchedExpenses];
+    const jobExpenses = Array.from(new Set(allJobExpenses.map(e => e.id)))
+        .map(id => allJobExpenses.find(e => e.id === id));
+    
     const totalExpenses = jobExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+    
+    console.log('🔍 Job Expense Matching:', {
+        jobTitle: job.title,
+        jobId: job.id,
+        foundByJobId: directJobExpenses.length,
+        foundByTextMatch: textMatchedExpenses.length,
+        totalFound: jobExpenses.length,
+        totalAmount: totalExpenses
+    });
     
     // Get quote value if available
     const relatedQuote = quotes.find(q => 
