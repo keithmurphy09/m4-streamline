@@ -225,6 +225,12 @@ async function deleteQuote(id) {
         const index = quotes.findIndex(q => q.id === id);
         if (index > -1) quotes.splice(index, 1);
         
+        // Reset view mode and go back to list
+        if (typeof quoteViewMode !== 'undefined') {
+            quoteViewMode = 'table';
+            selectedQuoteForDetail = null;
+        }
+        
         showNotification('Quote deleted successfully!', 'success');
         renderApp();
     } catch (error) {
@@ -376,6 +382,12 @@ async function deleteInvoice(id) {
         
         const index = invoices.findIndex(i => i.id === id);
         if (index > -1) invoices.splice(index, 1);
+        
+        // Reset view mode and go back to list
+        if (typeof invoiceViewMode !== 'undefined') {
+            invoiceViewMode = 'table';
+            selectedInvoiceForDetail = null;
+        }
         
         showNotification('Invoice deleted successfully!', 'success');
         renderApp();
