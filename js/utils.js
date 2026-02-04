@@ -347,14 +347,16 @@ function exitDemoMode() {
 }
 
 function initDemoData() {
-    // This would initialize demo data - placeholder for now
-    console.log('Demo data initialized for:', demoMode);
+    // Demo data is loaded in auth.js when useDemoData = true
+    // This function is here for future demo data setup if needed
+    console.log('✅ Demo mode enabled:', demoMode);
 }
 
 // Upgrade to Business
 function confirmUpgradeToBusiness() {
-    if (confirm('Upgrade to Business tier for $49/month?\n\nBusiness features include:\n• Unlimited team members\n• Team expense tracking\n• Advanced analytics\n• Priority support')) {
-        alert('🚧 Upgrade feature coming soon!\n\nFor now, please contact support to upgrade:\nm4projectsanddesigns@gmail.com');
+    if (confirm('Upgrade to Business tier for $89.95/month?\n\nBusiness features include:\n• Unlimited team members\n• Team expense tracking\n• Advanced analytics\n• Priority support\n\nWould you like to proceed?')) {
+        // Open email to support for manual upgrade
+        window.location.href = 'mailto:m4projectsanddesigns@gmail.com?subject=Business%20Tier%20Upgrade%20Request&body=Hi%2C%0A%0AI%20would%20like%20to%20upgrade%20to%20the%20Business%20tier.%0A%0AMy%20account%20email%3A%20' + encodeURIComponent(currentUser.email);
     }
 }
 
