@@ -131,9 +131,12 @@ function saveQuote() {
 
 async function addQuote(quote) {
     try {
+        // Generate a unique share token for the quote viewer link
+        const shareToken = 'qt_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        
         const { data, error } = await supabaseClient
             .from('quotes')
-            .insert([{ ...quote, user_id: currentUser.id }])
+            .insert([{ ...quote, user_id: currentUser.id, share_token: shareToken }])
             .select();
             
         if (error) throw error;
