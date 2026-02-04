@@ -42,6 +42,34 @@ function renderCompany() {
                         <textarea id="settings_address" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" rows="2">${settings.address || ''}</textarea>
                     </div>
                     
+                    <h3 class="text-lg font-bold dark:text-teal-400 mt-6 mb-4">🎨 Company Logo</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">Upload your company logo to appear on quotes and invoices. Recommended size: 500x500px or larger.</p>
+                    <p class="text-xs text-teal-600 dark:text-teal-400 mb-4">💡 If no logo is uploaded, the M4 Streamline logo will be used as default.</p>
+                    
+                    <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6">
+                        <div class="mb-4">
+                            <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                ${settings.logo_url ? 'Your Logo:' : 'Current Logo (Default):'}
+                            </p>
+                            <img src="${settings.logo_url || 'final_logo.png'}" alt="Company Logo" class="h-32 w-auto object-contain border border-gray-200 dark:border-gray-700 rounded p-2 bg-white dark:bg-gray-800">
+                            ${!settings.logo_url ? '<p class="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">M4 Streamline Logo (Default)</p>' : ''}
+                        </div>
+                        
+                        <div class="flex gap-2">
+                            <label class="flex-1 cursor-pointer">
+                                <input type="file" accept="image/*" onchange="uploadCompanyLogo(this)" class="hidden" id="logo-upload-input">
+                                <div class="w-full px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-center font-medium transition-colors">
+                                    ${settings.logo_url ? 'Change Logo' : 'Upload Custom Logo'}
+                                </div>
+                            </label>
+                            ${settings.logo_url ? `
+                                <button onclick="removeCompanyLogo()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors">
+                                    Remove
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
                     <h3 class="text-lg font-bold dark:text-teal-400 mt-6 mb-4">Bank Details (for invoices)</h3>
                     
                     <div>
@@ -395,6 +423,109 @@ async function saveSMSSettings() {
     } catch (error) {
         console.error('Error saving SMS settings:', error);
         showNotification('Error saving SMS settings', 'error');
+    }
+}
+
+async function uploadCompanyLogo(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+        showNotification('Please upload an image file', 'error');
+        return;
+    }
+    
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        showNotification('Image must be less than 5MB', 'error');
+        return;
+    }
+    
+    try {
+        showNotification('Uploading logo...', 'info');
+        
+        // Upload to Supabase Storage
+        const fileExt = file.name.split('.').pop();
+        const fileName = `logo-${currentUser.id}-${Date.now()}.${fileExt}`;
+        const filePath = `company-logos/${fileName}`;
+        
+        const { data: uploadData, error: uploadError } = await supabaseClient.storage
+            .from('company-logos')
+            .upload(filePath, file);
+        
+        if (uploadError) throw uploadError;
+        
+        // Get public URL
+        const { data: urlData } = supabaseClient.storage
+            .from('company-logos')
+            .getPublicUrl(filePath);
+        
+        const logoUrl = urlData.publicUrl;
+        
+        // Update company settings with logo URL
+        const settingsToUpdate = {
+            ...companySettings,
+            logo_url: logoUrl,
+            user_id: currentUser.id
+        };
+        
+        if (companySettings?.id) {
+            // Update existing
+            const { error: updateError } = await supabaseClient
+                .from('company_settings')
+                .update({ logo_url: logoUrl })
+                .eq('id', companySettings.id);
+            
+            if (updateError) throw updateError;
+        } else {
+            // Insert new
+            const { data, error: insertError } = await supabaseClient
+                .from('company_settings')
+                .insert([settingsToUpdate])
+                .select();
+            
+            if (insertError) throw insertError;
+            companySettings = data[0];
+        }
+        
+        // Update local state
+        if (companySettings) companySettings.logo_url = logoUrl;
+        
+        showNotification('✅ Logo uploaded successfully!', 'success');
+        renderApp();
+    } catch (error) {
+        console.error('Error uploading logo:', error);
+        showNotification('Failed to upload logo. Please try again.', 'error');
+    }
+    
+    // Reset input
+    input.value = '';
+}
+
+async function removeCompanyLogo() {
+    if (!confirm('Are you sure you want to remove your company logo?')) {
+        return;
+    }
+    
+    try {
+        // Remove from company settings
+        if (companySettings?.id) {
+            const { error } = await supabaseClient
+                .from('company_settings')
+                .update({ logo_url: null })
+                .eq('id', companySettings.id);
+            
+            if (error) throw error;
+        }
+        
+        // Update local state
+        if (companySettings) companySettings.logo_url = null;
+        
+        showNotification('✅ Logo removed', 'success');
+        renderApp();
+    } catch (error) {
+        console.error('Error removing logo:', error);
+        showNotification('Failed to remove logo', 'error');
     }
 }
 
