@@ -158,9 +158,10 @@ function renderInvoicesTable() {
             <!-- Search and Filter -->
             <div class="flex gap-3">
                 <input type="text" 
+                       id="invoice-search-input"
                        placeholder="Search invoices by number, client, or description..." 
                        value="${invoiceSearch}" 
-                       oninput="debouncedSearch('invoice', this.value, false);" 
+                       oninput="invoiceSearch = this.value; clearTimeout(window.invoiceSearchTimer); window.invoiceSearchTimer = setTimeout(() => { renderApp(); setTimeout(() => document.getElementById('invoice-search-input')?.focus(), 0); }, 300);" 
                        class="flex-1 px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all">
                 <button onclick="exportToCSV('invoices')" class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors">
                     Export CSV
