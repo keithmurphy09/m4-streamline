@@ -312,7 +312,11 @@ function renderJobDetail() {
     }
     
     const client = clients.find(c => c.id === job.client_id);
-    const relatedQuote = quotes.find(q => q.title === job.title && q.client_id === job.client_id);
+    // Find related quote with case-insensitive fallback
+    const relatedQuote = quotes.find(q => 
+        (q.title === job.title && q.client_id === job.client_id) ||
+        (q.title?.toLowerCase() === job.title?.toLowerCase() && q.client_id === job.client_id)
+    );
     const jobAddress = relatedQuote?.job_address || job.job_address || client?.address || '';
     
     const assignedTeamIds = job.assigned_team_members || (job.assigned_to ? [job.assigned_to] : []);
@@ -357,11 +361,7 @@ function renderJobDetail() {
         totalAmount: totalExpenses
     });
     
-    // Get quote value if available
-    const relatedQuote = quotes.find(q => 
-        (q.title === job.title && q.client_id === job.client_id) ||
-        (q.title?.toLowerCase() === job.title?.toLowerCase() && q.client_id === job.client_id)
-    );
+    // Calculate financials using already-declared relatedQuote
     const quoteValue = relatedQuote ? parseFloat(relatedQuote.total || 0) : 0;
     const profit = quoteValue - totalExpenses;
     const profitMargin = quoteValue > 0 ? ((profit / quoteValue) * 100).toFixed(1) : 0;
