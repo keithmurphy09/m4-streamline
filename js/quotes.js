@@ -147,9 +147,10 @@ function renderQuotesTable() {
             <!-- Search and Filter -->
             <div class="flex gap-3">
                 <input type="text" 
+                       id="quote-search-input"
                        placeholder="Search quotes by number, client, or description..." 
                        value="${quoteSearch}" 
-                       oninput="debouncedSearch('quote', this.value);" 
+                       oninput="quoteSearch = this.value; clearTimeout(window.quoteSearchTimer); window.quoteSearchTimer = setTimeout(() => { currentPage.quotes = 1; renderApp(); setTimeout(() => document.getElementById('quote-search-input')?.focus(), 0); }, 300);" 
                        class="flex-1 px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all">
                 <button onclick="exportToCSV('quotes')" class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors">
                     Export CSV
