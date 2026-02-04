@@ -332,6 +332,10 @@ function renderJobDetail() {
     const totalExpenses = jobExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
     
     // Get quote value if available
+    const relatedQuote = quotes.find(q => 
+        (q.title === job.title && q.client_id === job.client_id) ||
+        (q.title?.toLowerCase() === job.title?.toLowerCase() && q.client_id === job.client_id)
+    );
     const quoteValue = relatedQuote ? parseFloat(relatedQuote.total || 0) : 0;
     const profit = quoteValue - totalExpenses;
     const profitMargin = quoteValue > 0 ? ((profit / quoteValue) * 100).toFixed(1) : 0;
@@ -348,6 +352,21 @@ function renderJobDetail() {
                     <span class="text-sm text-gray-600 dark:text-gray-400">Job Expenses:</span>
                     <span class="text-sm font-medium text-red-600 dark:text-red-400">${formatCurrency(totalExpenses)}</span>
                 </div>
+                ${jobExpenses.length > 0 ? `
+                <div class="mt-2 mb-2 pl-4">
+                    <details class="text-xs text-gray-500 dark:text-gray-400">
+                        <summary class="cursor-pointer hover:text-gray-700 dark:hover:text-gray-300">Show ${jobExpenses.length} expense${jobExpenses.length > 1 ? 's' : ''}</summary>
+                        <div class="mt-2 space-y-1 pl-2">
+                            ${jobExpenses.map(e => `
+                                <div class="flex justify-between py-1">
+                                    <span>${e.description || e.category}</span>
+                                    <span class="font-medium">${formatCurrency(e.amount)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </details>
+                </div>
+                ` : ''}
                 <div class="flex justify-between py-3 ${profit >= 0 ? 'bg-teal-50 dark:bg-teal-900/20' : 'bg-red-50 dark:bg-red-900/20'} px-4 rounded-lg">
                     <span class="text-sm font-semibold text-gray-900 dark:text-white">Net Profit:</span>
                     <div class="text-right">
@@ -356,11 +375,15 @@ function renderJobDetail() {
                     </div>
                 </div>
             </div>
-            ${totalExpenses > 0 ? `
-            <button onclick="switchTab('expenses')" class="mt-4 w-full px-4 py-2 text-sm font-medium text-teal-700 dark:text-teal-400 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg transition-colors">
-                View Expense Breakdown
-            </button>
+            ${jobExpenses.length === 0 ? `
+            <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-sm text-gray-600 dark:text-gray-400">
+                <p class="mb-2">No expenses linked to this job yet.</p>
+                <p class="text-xs">Tip: When adding expenses, select this job to track costs.</p>
+            </div>
             ` : ''}
+            <button onclick="switchTab('expenses')" class="mt-4 w-full px-4 py-2 text-sm font-medium text-teal-700 dark:text-teal-400 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg transition-colors">
+                ${jobExpenses.length > 0 ? 'View All Expenses' : 'Add Expenses'}
+            </button>
         </div>
     ` : '';
     
