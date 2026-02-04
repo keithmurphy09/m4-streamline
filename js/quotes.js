@@ -226,21 +226,52 @@ function renderQuoteDetail() {
         statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600">PENDING</span>';
     }
     
-    // Calculate profit/loss - find related job by matching title and client
-    const relatedJob = jobs.find(j => j.title === q.title && j.client_id === q.client_id);
+    // Calculate profit/loss - find related job and expenses
+    // Try multiple matching strategies
+    let relatedJob = null;
     let totalExpenses = 0;
+    let linkedExpensesList = [];
     
+    // Strategy 1: Find job by exact title and client match
+    relatedJob = jobs.find(j => j.title === q.title && j.client_id === q.client_id);
+    
+    // Strategy 2: If no exact match, try case-insensitive title match
+    if (!relatedJob) {
+        relatedJob = jobs.find(j => 
+            j.title?.toLowerCase() === q.title?.toLowerCase() && 
+            j.client_id === q.client_id
+        );
+    }
+    
+    // Strategy 3: Check if quote has been converted and has invoice with job
+    if (!relatedJob && q.status === 'converted') {
+        const relatedInvoice = invoices.find(inv => 
+            inv.quote_id === q.id || 
+            (inv.title === q.title && inv.client_id === q.client_id)
+        );
+        if (relatedInvoice) {
+            relatedJob = jobs.find(j => 
+                j.invoice_id === relatedInvoice.id ||
+                (j.title === relatedInvoice.title && j.client_id === relatedInvoice.client_id)
+            );
+        }
+    }
+    
+    // Get expenses from related job
     if (relatedJob) {
-        // Get expenses linked to the job
-        totalExpenses = expenses.filter(e => e.job_id === relatedJob.id)
-            .reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+        const jobExpenses = expenses.filter(e => e.job_id === relatedJob.id);
+        linkedExpensesList.push(...jobExpenses);
+        totalExpenses += jobExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
     }
     
     // Also check for expenses directly linked to quote
-    const quoteExpenses = expenses.filter(e => e.quote_id === q.id)
-        .reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+    const directQuoteExpenses = expenses.filter(e => e.quote_id === q.id);
+    linkedExpensesList.push(...directQuoteExpenses);
+    totalExpenses += directQuoteExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
     
-    totalExpenses += quoteExpenses;
+    // Remove duplicates (in case same expense is linked both ways)
+    linkedExpensesList = Array.from(new Set(linkedExpensesList.map(e => e.id)))
+        .map(id => linkedExpensesList.find(e => e.id === id));
     
     const revenue = parseFloat(q.total || 0);
     const profit = revenue - totalExpenses;
@@ -309,6 +340,21 @@ function renderQuoteDetail() {
                     <span class="text-sm text-gray-600 dark:text-gray-400">Total Expenses:</span>
                     <span class="text-sm font-medium text-red-600 dark:text-red-400">${formatCurrency(totalExpenses)}</span>
                 </div>
+                ${linkedExpensesList.length > 0 ? `
+                <div class="mt-2 mb-2 pl-4">
+                    <details class="text-xs text-gray-500 dark:text-gray-400">
+                        <summary class="cursor-pointer hover:text-gray-700 dark:hover:text-gray-300">Show ${linkedExpensesList.length} expense${linkedExpensesList.length > 1 ? 's' : ''}</summary>
+                        <div class="mt-2 space-y-1 pl-2">
+                            ${linkedExpensesList.map(e => `
+                                <div class="flex justify-between py-1">
+                                    <span>${e.description || e.category}</span>
+                                    <span class="font-medium">${formatCurrency(e.amount)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </details>
+                </div>
+                ` : ''}
                 <div class="flex justify-between py-3 ${profit >= 0 ? 'bg-teal-50 dark:bg-teal-900/20' : 'bg-red-50 dark:bg-red-900/20'} px-4 rounded-lg">
                     <span class="text-sm font-semibold text-gray-900 dark:text-white">Net Profit:</span>
                     <div class="text-right">
@@ -317,9 +363,15 @@ function renderQuoteDetail() {
                     </div>
                 </div>
             </div>
-            ${totalExpenses > 0 && relatedJob ? `
+            ${linkedExpensesList.length === 0 && relatedJob ? `
+            <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-sm text-gray-600 dark:text-gray-400">
+                <p class="mb-2">No expenses linked to this quote yet.</p>
+                <p class="text-xs">Tip: When adding expenses, select the related job to track costs.</p>
+            </div>
+            ` : ''}
+            ${totalExpenses > 0 || relatedJob ? `
             <button onclick="switchTab('expenses')" class="mt-4 w-full px-4 py-2 text-sm font-medium text-teal-700 dark:text-teal-400 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg transition-colors">
-                View Expense Breakdown
+                ${linkedExpensesList.length > 0 ? 'View All Expenses' : 'Add Expenses'}
             </button>
             ` : ''}
         </div>
@@ -428,6 +480,22 @@ function renderQuoteDetail() {
                 ${q.notes ? `<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
                     <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">Notes</h3>
                     <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">${q.notes}</p>
+                </div>` : ''}
+                
+                <!-- Job Linking Status -->
+                ${relatedJob ? `<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+                    <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">Related Job</h3>
+                    <button onclick="switchTab('schedule'); openJobDetail(${JSON.stringify(relatedJob).replace(/"/g, '&quot;')})" class="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
+                        <div class="text-sm font-medium text-teal-600 dark:text-teal-400">${relatedJob.title}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">${formatDate(relatedJob.date)} at ${relatedJob.time || '09:00'}</div>
+                        ${linkedExpensesList.length > 0 ? `<div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${linkedExpensesList.length} expense${linkedExpensesList.length > 1 ? 's' : ''} linked</div>` : ''}
+                    </button>
+                </div>` : !isConverted ? `<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+                    <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">No Job Yet</h3>
+                    <p class="text-xs text-gray-600 dark:text-gray-400 mb-3">Schedule a job for this quote to track expenses and profit.</p>
+                    <button onclick='openJobFromQuote(${JSON.stringify(q).replace(/"/g, "&quot;")})' class="w-full px-3 py-2 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors">
+                        Schedule Job
+                    </button>
                 </div>` : ''}
                 
                 <!-- Activity -->
