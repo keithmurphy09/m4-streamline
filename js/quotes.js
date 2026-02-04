@@ -62,8 +62,8 @@ function renderQuotesTable() {
         : paginatedQuotes.map(q => {
             const client = clients.find(c => c.id === q.client_id);
             const isSelected = selectedQuotes.includes(q.id);
-            const isAccepted = q.status === 'accepted';
-            const isConverted = !!q.converted_to_invoice;
+            const isAccepted = q.accepted || q.status === 'accepted';
+            const isConverted = q.status === 'converted';
             
             let statusBadge = '';
             if (isConverted) {
@@ -213,8 +213,8 @@ function renderQuoteDetail() {
     }
     
     const client = clients.find(c => c.id === q.client_id);
-    const isAccepted = q.status === 'accepted';
-    const isConverted = !!q.converted_to_invoice;
+    const isAccepted = q.accepted || q.status === 'accepted';
+    const isConverted = q.status === 'converted';
     
     let statusBadge = '';
     if (isConverted) {
@@ -225,9 +225,22 @@ function renderQuoteDetail() {
         statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600">PENDING</span>';
     }
     
-    // Calculate profit/loss if we have expense data
-    const linkedExpenses = expenses.filter(e => e.quote_id === q.id);
-    const totalExpenses = linkedExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+    // Calculate profit/loss - find related job by matching title and client
+    const relatedJob = jobs.find(j => j.title === q.title && j.client_id === q.client_id);
+    let totalExpenses = 0;
+    
+    if (relatedJob) {
+        // Get expenses linked to the job
+        totalExpenses = expenses.filter(e => e.job_id === relatedJob.id)
+            .reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+    }
+    
+    // Also check for expenses directly linked to quote
+    const quoteExpenses = expenses.filter(e => e.quote_id === q.id)
+        .reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+    
+    totalExpenses += quoteExpenses;
+    
     const revenue = parseFloat(q.total || 0);
     const profit = revenue - totalExpenses;
     const profitMargin = revenue > 0 ? ((profit / revenue) * 100).toFixed(1) : 0;
@@ -277,19 +290,25 @@ function renderQuoteDetail() {
         </div>
     ` : '';
     
-    const profitLossSection = linkedExpenses.length > 0 ? `
+    const profitLossSection = `
         <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Profit & Loss</h3>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Profit & Loss Analysis</h3>
             <div class="space-y-3">
                 <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                     <span class="text-sm text-gray-600 dark:text-gray-400">Quoted Amount:</span>
                     <span class="text-sm font-medium text-gray-900 dark:text-white">${formatCurrency(revenue)}</span>
                 </div>
+                ${isConverted || relatedJob ? `
+                <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                    <span class="text-sm text-gray-600 dark:text-gray-400">Revenue (Paid):</span>
+                    <span class="text-sm font-medium text-teal-600 dark:text-teal-400">${formatCurrency(revenue)}</span>
+                </div>
+                ` : ''}
                 <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                     <span class="text-sm text-gray-600 dark:text-gray-400">Total Expenses:</span>
                     <span class="text-sm font-medium text-red-600 dark:text-red-400">${formatCurrency(totalExpenses)}</span>
                 </div>
-                <div class="flex justify-between py-3 bg-teal-50 dark:bg-teal-900/20 px-4 rounded-lg">
+                <div class="flex justify-between py-3 ${profit >= 0 ? 'bg-teal-50 dark:bg-teal-900/20' : 'bg-red-50 dark:bg-red-900/20'} px-4 rounded-lg">
                     <span class="text-sm font-semibold text-gray-900 dark:text-white">Net Profit:</span>
                     <div class="text-right">
                         <span class="text-lg font-bold ${profit >= 0 ? 'text-teal-700 dark:text-teal-400' : 'text-red-700 dark:text-red-400'}">${formatCurrency(profit)}</span>
@@ -297,8 +316,13 @@ function renderQuoteDetail() {
                     </div>
                 </div>
             </div>
+            ${totalExpenses > 0 && relatedJob ? `
+            <button onclick="switchTab('expenses')" class="mt-4 w-full px-4 py-2 text-sm font-medium text-teal-700 dark:text-teal-400 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg transition-colors">
+                View Expense Breakdown
+            </button>
+            ` : ''}
         </div>
-    ` : '';
+    `;
     
     const activityTimeline = `
         <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
