@@ -279,7 +279,7 @@ function renderModal() {
             }
         }
         
-        const categories = ['Materials', 'Fuel', 'Equipment', 'Subcontractors', 'Office Supplies', 'Insurance', 'Marketing', 'Other'];
+        const categories = ['Labour', 'Materials', 'Fuel', 'Equipment', 'Subcontractors', 'Office Supplies', 'Insurance', 'Marketing', 'Other'];
         const buttonText = editingItem ? 'Update Expense' : 'Add Expense';
         const action = editingItem ? `updateExpense('${editingItem.id}')` : `saveExpense()`;
         
