@@ -209,6 +209,22 @@ function toggleSettingsMenu() {
 async function switchTab(tab) {
     activeTab = tab;
     localStorage.setItem('activeTab', tab);
+    
+    // Reset view modes when switching tabs to always show main/table view
+    if (tab === 'quotes' && typeof quoteViewMode !== 'undefined') {
+        quoteViewMode = 'table';
+        selectedQuoteForDetail = null;
+    }
+    if (tab === 'invoices' && typeof invoiceViewMode !== 'undefined') {
+        invoiceViewMode = 'table';
+        selectedInvoiceForDetail = null;
+    }
+    if (tab === 'schedule' && typeof jobViewMode !== 'undefined') {
+        jobViewMode = 'table';
+        selectedJobForDetail = null;
+        scheduleView = 'list'; // Also reset calendar view
+    }
+    
     renderApp();
 }
 
