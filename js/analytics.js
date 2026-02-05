@@ -377,13 +377,17 @@ function renderAnalytics() {
     `;
 }
 
-// Initialize charts after render
-setTimeout(() => {
+// Initialize charts after rendering
+function initializeCharts() {
+    // Only run if we're on analytics tab
+    if (activeTab !== 'analytics') return;
+    
+    // Check if chart canvases exist
     if (document.getElementById('revenueExpensesChart')) {
         initRevenueExpensesChart();
         initExpensesCategoryChart();
     }
-}, 100);
+}
 
 function initRevenueExpensesChart() {
     const canvas = document.getElementById('revenueExpensesChart');
