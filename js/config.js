@@ -50,7 +50,7 @@ let scheduleView = 'list';
 let calendarFilter = 'all';
 let invoiceFilter = 'unpaid';
 let expenseFilter = 'all';
-let analyticsChartRange = '6months'; // Show last 6 months by default
+let analyticsChartRange = 'current'; // Show current month by default
 
 // Search State
 let clientSearch = '';
