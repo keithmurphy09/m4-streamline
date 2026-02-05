@@ -1,130 +1,333 @@
 // ═══════════════════════════════════════════════════════════════════
-// M4 STREAMLINE - Analytics Module (COMPLETE WITH CHARTS)
+// M4 STREAMLINE - Enhanced Analytics Module
 // ═══════════════════════════════════════════════════════════════════
 
 // Chart instances (global to prevent re-initialization)
 let revenueExpensesChartInstance = null;
 let expensesCategoryChartInstance = null;
+let profitabilityChartInstance = null;
+
+// Analytics filter state
+if (typeof analyticsChartRange === 'undefined') {
+    var analyticsChartRange = 'current';
+}
+if (typeof analyticsComparisonPeriod === 'undefined') {
+    var analyticsComparisonPeriod = 'none'; // 'none', 'previous', 'year'
+}
+
+// Helper: Get date range based on filter
+function getAnalyticsDateRange(rangeType) {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    switch(rangeType) {
+        case 'current':
+            return {
+                start: new Date(currentYear, currentMonth, 1),
+                end: new Date(currentYear, currentMonth + 1, 0, 23, 59, 59),
+                label: now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+            };
+        case '3months':
+            return {
+                start: new Date(currentYear, currentMonth - 2, 1),
+                end: new Date(currentYear, currentMonth + 1, 0, 23, 59, 59),
+                label: 'Last 3 Months'
+            };
+        case '6months':
+            return {
+                start: new Date(currentYear, currentMonth - 5, 1),
+                end: new Date(currentYear, currentMonth + 1, 0, 23, 59, 59),
+                label: 'Last 6 Months'
+            };
+        case '12months':
+            return {
+                start: new Date(currentYear, currentMonth - 11, 1),
+                end: new Date(currentYear, currentMonth + 1, 0, 23, 59, 59),
+                label: 'Last 12 Months'
+            };
+        case 'all':
+        default:
+            return {
+                start: new Date(2020, 0, 1),
+                end: now,
+                label: 'All Time'
+            };
+    }
+}
+
+// Helper: Get comparison period
+function getComparisonDateRange(baseRange) {
+    if (analyticsComparisonPeriod === 'none') return null;
+    
+    const baseStart = new Date(baseRange.start);
+    const baseEnd = new Date(baseRange.end);
+    const duration = baseEnd - baseStart;
+    
+    if (analyticsComparisonPeriod === 'previous') {
+        return {
+            start: new Date(baseStart.getTime() - duration),
+            end: new Date(baseEnd.getTime() - duration),
+            label: 'Previous Period'
+        };
+    } else if (analyticsComparisonPeriod === 'year') {
+        return {
+            start: new Date(baseStart.getFullYear() - 1, baseStart.getMonth(), baseStart.getDate()),
+            end: new Date(baseEnd.getFullYear() - 1, baseEnd.getMonth(), baseEnd.getDate()),
+            label: 'Same Period Last Year'
+        };
+    }
+    return null;
+}
+
+// Helper: Filter data by date range
+function filterByDateRange(items, dateField, range) {
+    return items.filter(item => {
+        const itemDate = new Date(item[dateField]);
+        return itemDate >= range.start && itemDate <= range.end;
+    });
+}
+
+// Helper: Calculate metrics for period
+function calculatePeriodMetrics(range) {
+    const periodInvoices = filterByDateRange(invoices, 'issue_date', range);
+    const periodExpenses = filterByDateRange(expenses, 'date', range);
+    const periodQuotes = filterByDateRange(quotes, 'created_at', range);
+    
+    const paidInvoices = periodInvoices.filter(inv => inv.status === 'paid');
+    const revenue = paidInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
+    const expenseTotal = periodExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+    const profit = revenue - expenseTotal;
+    const margin = revenue > 0 ? ((profit / revenue) * 100) : 0;
+    
+    const acceptedQuotes = periodQuotes.filter(q => q.status === 'accepted' || q.accepted).length;
+    const conversionRate = periodQuotes.length > 0 ? ((acceptedQuotes / periodQuotes.length) * 100) : 0;
+    
+    return {
+        revenue,
+        expenses: expenseTotal,
+        profit,
+        margin,
+        invoiceCount: periodInvoices.length,
+        paidCount: paidInvoices.length,
+        quoteCount: periodQuotes.length,
+        acceptedCount: acceptedQuotes,
+        conversionRate,
+        avgInvoiceValue: paidInvoices.length > 0 ? revenue / paidInvoices.length : 0
+    };
+}
+
+// Helper: Calculate trend
+function calculateTrend(current, comparison) {
+    if (!comparison || comparison === 0) return { percent: 0, direction: 'neutral' };
+    const percent = ((current - comparison) / comparison * 100);
+    return {
+        percent: Math.abs(percent).toFixed(1),
+        direction: percent > 0 ? 'up' : percent < 0 ? 'down' : 'neutral'
+    };
+}
 
 function renderAnalytics() {
-    // Calculate key metrics
-    const totalQuotes = quotes.length;
-    const acceptedQuotes = quotes.filter(q => q.status === 'accepted' || q.accepted).length;
-    const quoteWinRate = totalQuotes > 0 ? ((acceptedQuotes / totalQuotes) * 100).toFixed(1) : 0;
+    // Get date ranges
+    const currentRange = getAnalyticsDateRange(analyticsChartRange);
+    const comparisonRange = getComparisonDateRange(currentRange);
     
-    const totalRevenue = invoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + (inv.total || 0), 0);
-    const paidInvoices = invoices.filter(inv => inv.status === 'paid').length;
-    const unpaidInvoices = invoices.filter(inv => inv.status === 'unpaid').length;
-    const outstandingRevenue = invoices.filter(inv => inv.status === 'unpaid').reduce((sum, inv) => sum + (inv.total || 0), 0);
+    // Calculate current metrics
+    const current = calculatePeriodMetrics(currentRange);
     
-    const totalExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
-    const netProfit = totalRevenue - totalExpenses;
-    const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : 0;
+    // Calculate comparison metrics if enabled
+    let comparison = null;
+    let trends = {};
+    if (comparisonRange) {
+        comparison = calculatePeriodMetrics(comparisonRange);
+        trends = {
+            revenue: calculateTrend(current.revenue, comparison.revenue),
+            expenses: calculateTrend(current.expenses, comparison.expenses),
+            profit: calculateTrend(current.profit, comparison.profit),
+            conversion: calculateTrend(current.conversionRate, comparison.conversionRate)
+        };
+    }
     
-    // Top clients by revenue
-    const clientRevenue = {};
-    invoices.filter(inv => inv.status === 'paid').forEach(inv => {
+    // Calculate profitability per client
+    const clientProfitability = {};
+    const periodInvoices = filterByDateRange(invoices.filter(inv => inv.status === 'paid'), 'issue_date', currentRange);
+    
+    periodInvoices.forEach(inv => {
         const clientId = inv.client_id;
-        if (!clientRevenue[clientId]) clientRevenue[clientId] = 0;
-        clientRevenue[clientId] += inv.total || 0;
+        if (!clientProfitability[clientId]) {
+            clientProfitability[clientId] = { revenue: 0, expenses: 0, profit: 0, jobs: 0 };
+        }
+        clientProfitability[clientId].revenue += inv.total || 0;
+        clientProfitability[clientId].jobs++;
+        
+        // Find related job expenses
+        const relatedJob = jobs.find(j => j.title === inv.title && j.client_id === inv.client_id);
+        if (relatedJob) {
+            const jobExpenses = expenses.filter(e => 
+                (e.job_id === relatedJob.id || e.jobId === relatedJob.id) ||
+                (e.description?.toLowerCase().includes(relatedJob.title?.toLowerCase()))
+            );
+            const expenseTotal = jobExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+            clientProfitability[clientId].expenses += expenseTotal;
+        }
     });
-    const topClients = Object.entries(clientRevenue)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .map(([clientId, revenue]) => {
+    
+    // Calculate profit and margin
+    Object.keys(clientProfitability).forEach(clientId => {
+        const data = clientProfitability[clientId];
+        data.profit = data.revenue - data.expenses;
+        data.margin = data.revenue > 0 ? ((data.profit / data.revenue) * 100) : 0;
+    });
+    
+    // Sort by profit
+    const topProfitableClients = Object.entries(clientProfitability)
+        .map(([clientId, data]) => {
             const client = clients.find(c => c.id === clientId);
-            return { name: client?.name || 'Unknown', revenue };
-        });
+            return { ...data, clientId, name: client?.name || 'Unknown' };
+        })
+        .sort((a, b) => b.profit - a.profit)
+        .slice(0, 5);
+    
+    // Render trend indicator
+    const renderTrend = (trend, invertColors = false) => {
+        if (!trend || trend.direction === 'neutral') return '';
+        const isPositive = invertColors ? trend.direction === 'down' : trend.direction === 'up';
+        const color = isPositive ? 'text-green-600' : 'text-red-600';
+        const arrow = trend.direction === 'up' ? '↑' : '↓';
+        return `<span class="${color} text-sm font-medium ml-2">${arrow} ${trend.percent}%</span>`;
+    };
     
     return `
         <div>
-            <h2 class="text-2xl font-bold mb-6 dark:text-white">📊 Analytics & Insights</h2>
+            <!-- Header with Filters -->
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+                <h2 class="text-2xl font-bold dark:text-white">📊 Analytics & Insights</h2>
+                
+                <div class="flex gap-3 flex-wrap">
+                    <!-- Period Selector -->
+                    <select onchange="analyticsChartRange=this.value; renderApp();" class="px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 bg-white text-sm">
+                        <option value="current" ${analyticsChartRange === 'current' ? 'selected' : ''}>This Month</option>
+                        <option value="3months" ${analyticsChartRange === '3months' ? 'selected' : ''}>Last 3 Months</option>
+                        <option value="6months" ${analyticsChartRange === '6months' ? 'selected' : ''}>Last 6 Months</option>
+                        <option value="12months" ${analyticsChartRange === '12months' ? 'selected' : ''}>Last 12 Months</option>
+                        <option value="all" ${analyticsChartRange === 'all' ? 'selected' : ''}>All Time</option>
+                    </select>
+                    
+                    <!-- Comparison Selector -->
+                    <select onchange="analyticsComparisonPeriod=this.value; renderApp();" class="px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 bg-white text-sm">
+                        <option value="none" ${analyticsComparisonPeriod === 'none' ? 'selected' : ''}>No Comparison</option>
+                        <option value="previous" ${analyticsComparisonPeriod === 'previous' ? 'selected' : ''}>vs Previous Period</option>
+                        <option value="year" ${analyticsComparisonPeriod === 'year' ? 'selected' : ''}>vs Last Year</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Period Label -->
+            <div class="mb-4">
+                <div class="text-sm text-gray-600 dark:text-gray-400">
+                    Showing data for: <span class="font-semibold text-gray-900 dark:text-white">${currentRange.label}</span>
+                    ${comparisonRange ? `<span class="ml-2">compared to ${comparisonRange.label}</span>` : ''}
+                </div>
+            </div>
             
             <!-- Key Metrics Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border-l-4 border-teal-500">
-                    <div class="text-sm text-gray-600 dark:text-gray-300 mb-1">Quote Win Rate</div>
-                    <div class="text-3xl font-bold text-teal-600">${quoteWinRate}%</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${acceptedQuotes} of ${totalQuotes} quotes</div>
-                </div>
-                
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border-l-4 border-green-500">
-                    <div class="text-sm text-gray-600 dark:text-gray-300 mb-1">Total Revenue</div>
-                    <div class="text-3xl font-bold text-green-600">$${totalRevenue.toFixed(2)}</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${paidInvoices} paid invoices</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-300 mb-1">Revenue</div>
+                    <div class="text-3xl font-bold text-green-600">
+                        $${current.revenue.toFixed(2)}
+                        ${trends.revenue ? renderTrend(trends.revenue) : ''}
+                    </div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${current.paidCount} paid invoices</div>
                 </div>
                 
                 <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border-l-4 border-red-500">
-                    <div class="text-sm text-gray-600 dark:text-gray-300 mb-1">Total Expenses</div>
-                    <div class="text-3xl font-bold text-red-600">$${totalExpenses.toFixed(2)}</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${expenses.length} expenses</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-300 mb-1">Expenses</div>
+                    <div class="text-3xl font-bold text-red-600">
+                        $${current.expenses.toFixed(2)}
+                        ${trends.expenses ? renderTrend(trends.expenses, true) : ''}
+                    </div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Total spending</div>
                 </div>
                 
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border-l-4 border-${netProfit >= 0 ? 'blue' : 'orange'}-500">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border-l-4 border-${current.profit >= 0 ? 'blue' : 'orange'}-500">
                     <div class="text-sm text-gray-600 dark:text-gray-300 mb-1">Net Profit</div>
-                    <div class="text-3xl font-bold text-${netProfit >= 0 ? 'blue' : 'orange'}-600">$${netProfit.toFixed(2)}</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${profitMargin}% margin</div>
+                    <div class="text-3xl font-bold text-${current.profit >= 0 ? 'blue' : 'orange'}-600">
+                        $${current.profit.toFixed(2)}
+                        ${trends.profit ? renderTrend(trends.profit) : ''}
+                    </div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${current.margin.toFixed(1)}% margin</div>
                 </div>
                 
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border-l-4 border-orange-500">
-                    <div class="text-sm text-gray-600 dark:text-gray-300 mb-1">Outstanding</div>
-                    <div class="text-3xl font-bold text-orange-600">$${outstandingRevenue.toFixed(2)}</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${unpaidInvoices} unpaid</div>
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border-l-4 border-teal-500">
+                    <div class="text-sm text-gray-600 dark:text-gray-300 mb-1">Quote Win Rate</div>
+                    <div class="text-3xl font-bold text-teal-600">
+                        ${current.conversionRate.toFixed(1)}%
+                        ${trends.conversion ? renderTrend(trends.conversion) : ''}
+                    </div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${current.acceptedCount} of ${current.quoteCount} accepted</div>
                 </div>
             </div>
             
-            <!-- Business Funnel -->
-            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
-                <h3 class="text-lg font-bold dark:text-white mb-4">Business Funnel</h3>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div class="text-center p-4 bg-blue-50 dark:bg-blue-900 rounded">
-                        <div class="text-3xl font-bold text-blue-600">${totalQuotes}</div>
-                        <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">Quotes Sent</div>
+            <!-- Quick Insights Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 p-5 rounded-lg border border-purple-200 dark:border-purple-800">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-sm text-purple-700 dark:text-purple-300 font-medium mb-1">Avg Invoice Value</div>
+                            <div class="text-2xl font-bold text-purple-900 dark:text-purple-100">$${current.avgInvoiceValue.toFixed(2)}</div>
+                        </div>
+                        <div class="text-4xl opacity-50">💰</div>
                     </div>
-                    <div class="text-center p-4 bg-teal-50 dark:bg-teal-900 rounded">
-                        <div class="text-3xl font-bold text-teal-600">${acceptedQuotes}</div>
-                        <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">Quotes Accepted</div>
+                </div>
+                
+                <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 p-5 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-sm text-indigo-700 dark:text-indigo-300 font-medium mb-1">Total Jobs</div>
+                            <div class="text-2xl font-bold text-indigo-900 dark:text-indigo-100">${current.paidCount}</div>
+                        </div>
+                        <div class="text-4xl opacity-50">📋</div>
                     </div>
-                    <div class="text-center p-4 bg-purple-50 dark:bg-purple-900 rounded">
-                        <div class="text-3xl font-bold text-purple-600">${invoices.length}</div>
-                        <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">Invoices Sent</div>
-                    </div>
-                    <div class="text-center p-4 bg-green-50 dark:bg-green-900 rounded">
-                        <div class="text-3xl font-bold text-green-600">${paidInvoices}</div>
-                        <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">Invoices Paid</div>
+                </div>
+                
+                <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 p-5 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-sm text-emerald-700 dark:text-emerald-300 font-medium mb-1">Profit per Job</div>
+                            <div class="text-2xl font-bold text-emerald-900 dark:text-emerald-100">$${current.paidCount > 0 ? (current.profit / current.paidCount).toFixed(2) : '0.00'}</div>
+                        </div>
+                        <div class="text-4xl opacity-50">📈</div>
                     </div>
                 </div>
             </div>
             
-            <!-- Top Clients -->
+            <!-- Most Profitable Clients -->
             <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
-                <h3 class="text-lg font-bold dark:text-white mb-4">Top 5 Clients by Revenue</h3>
-                ${topClients.length > 0 ? `
+                <h3 class="text-lg font-bold dark:text-white mb-4">💎 Most Profitable Clients (${currentRange.label})</h3>
+                ${topProfitableClients.length > 0 ? `
                     <div class="space-y-3">
-                        ${topClients.map((client, index) => `
-                            <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-teal-100 dark:bg-teal-900 flex items-center justify-center font-bold text-teal-600">
+                        ${topProfitableClients.map((client, index) => `
+                            <div class="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 rounded-lg hover:shadow-md transition-shadow">
+                                <div class="flex items-center gap-4 flex-1">
+                                    <div class="w-10 h-10 rounded-full ${index === 0 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' : index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-500' : index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600' : 'bg-teal-100 dark:bg-teal-900'} flex items-center justify-center font-bold text-white shadow-md">
                                         ${index + 1}
                                     </div>
-                                    <span class="font-medium dark:text-white">${client.name}</span>
+                                    <div class="flex-1">
+                                        <div class="font-semibold dark:text-white">${client.name}</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">${client.jobs} job${client.jobs !== 1 ? 's' : ''} • ${client.margin.toFixed(1)}% margin</div>
+                                    </div>
                                 </div>
-                                <span class="text-green-600 font-bold">$${client.revenue.toFixed(2)}</span>
+                                <div class="text-right">
+                                    <div class="text-lg font-bold ${client.profit >= 0 ? 'text-green-600' : 'text-red-600'}">
+                                        $${client.profit.toFixed(2)}
+                                    </div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">$${client.revenue.toFixed(2)} revenue</div>
+                                </div>
                             </div>
                         `).join('')}
                     </div>
-                ` : '<div class="text-center text-gray-500 dark:text-gray-400 py-8">No revenue data yet</div>'}
-            </div>
-            
-            <!-- Chart Range Selector -->
-            <div class="mb-4 flex justify-end">
-                <select onchange="analyticsChartRange=this.value; renderApp();" class="px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 bg-white">
-                    <option value="current" ${analyticsChartRange === 'current' ? 'selected' : ''}>Current Month</option>
-                    <option value="3months" ${analyticsChartRange === '3months' ? 'selected' : ''}>Last 3 Months</option>
-                    <option value="6months" ${analyticsChartRange === '6months' ? 'selected' : ''}>Last 6 Months</option>
-                    <option value="12months" ${analyticsChartRange === '12months' ? 'selected' : ''}>Last 12 Months</option>
-                    <option value="all" ${analyticsChartRange === 'all' ? 'selected' : ''}>All Time</option>
-                </select>
+                ` : '<div class="text-center text-gray-500 dark:text-gray-400 py-12">No profitability data for this period</div>'}
             </div>
             
             <!-- Charts Row -->
@@ -146,225 +349,195 @@ function renderAnalytics() {
                 </div>
             </div>
             
-            <!-- Summary Stats -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-                    <div class="text-sm text-gray-600 dark:text-gray-300 mb-1">Total Clients</div>
-                    <div class="text-2xl font-bold dark:text-teal-400">${clients.length}</div>
-                </div>
-                
-                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-                    <div class="text-sm text-gray-600 dark:text-gray-300 mb-1">Total Jobs</div>
-                    <div class="text-2xl font-bold dark:text-teal-400">${jobs.length}</div>
-                </div>
-                
-                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-                    <div class="text-sm text-gray-600 dark:text-gray-300 mb-1">Avg Quote Value</div>
-                    <div class="text-2xl font-bold dark:text-teal-400">$${totalQuotes > 0 ? (quotes.reduce((sum, q) => sum + (q.total || 0), 0) / totalQuotes).toFixed(2) : '0.00'}</div>
+            <!-- Business Funnel -->
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                <h3 class="text-lg font-bold dark:text-white mb-4">📊 Business Funnel (${currentRange.label})</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 rounded-lg border border-blue-200 dark:border-blue-700">
+                        <div class="text-4xl font-bold text-blue-600 dark:text-blue-400">${current.quoteCount}</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-300 mt-2 font-medium">Quotes Sent</div>
+                    </div>
+                    <div class="text-center p-6 bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900/30 dark:to-teal-800/30 rounded-lg border border-teal-200 dark:border-teal-700">
+                        <div class="text-4xl font-bold text-teal-600 dark:text-teal-400">${current.acceptedCount}</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-300 mt-2 font-medium">Quotes Accepted</div>
+                        <div class="text-xs text-teal-600 dark:text-teal-400 mt-1">${current.conversionRate.toFixed(0)}% rate</div>
+                    </div>
+                    <div class="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 rounded-lg border border-purple-200 dark:border-purple-700">
+                        <div class="text-4xl font-bold text-purple-600 dark:text-purple-400">${current.invoiceCount}</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-300 mt-2 font-medium">Invoices Sent</div>
+                    </div>
+                    <div class="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 rounded-lg border border-green-200 dark:border-green-700">
+                        <div class="text-4xl font-bold text-green-600 dark:text-green-400">${current.paidCount}</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-300 mt-2 font-medium">Invoices Paid</div>
+                        <div class="text-xs text-green-600 dark:text-green-400 mt-1">$${current.revenue.toFixed(0)}</div>
+                    </div>
                 </div>
             </div>
         </div>
     `;
 }
 
-// Initialize charts after rendering
-function initializeCharts() {
-    // Only run if we're on analytics tab
-    if (activeTab !== 'analytics') return;
+// Initialize charts after render
+setTimeout(() => {
+    if (document.getElementById('revenueExpensesChart')) {
+        initRevenueExpensesChart();
+        initExpensesCategoryChart();
+    }
+}, 100);
+
+function initRevenueExpensesChart() {
+    const canvas = document.getElementById('revenueExpensesChart');
+    if (!canvas) return;
     
-    // Destroy existing charts to prevent jumping/duplication
+    const ctx = canvas.getContext('2d');
     if (revenueExpensesChartInstance) {
         revenueExpensesChartInstance.destroy();
-        revenueExpensesChartInstance = null;
-    }
-    if (expensesCategoryChartInstance) {
-        expensesCategoryChartInstance.destroy();
-        expensesCategoryChartInstance = null;
     }
     
-    // Determine how many months to show based on filter
-    let monthsToShow;
-    switch(analyticsChartRange) {
-        case 'current':
-            monthsToShow = 0; // Just current month
-            break;
-        case '3months':
-            monthsToShow = 2; // Current + 2 previous
-            break;
-        case '6months':
-            monthsToShow = 5; // Current + 5 previous
-            break;
-        case '12months':
-            monthsToShow = 11; // Current + 11 previous
-            break;
-        case 'all':
-            // Calculate all months that have data
-            const allDates = [
-                ...invoices.filter(i => i.paid_date).map(i => new Date(i.paid_date)),
-                ...expenses.map(e => new Date(e.date))
-            ];
-            if (allDates.length === 0) {
-                monthsToShow = 5; // Default to 6 months if no data
-            } else {
-                const oldestDate = new Date(Math.min(...allDates));
-                const now = new Date();
-                monthsToShow = (now.getFullYear() - oldestDate.getFullYear()) * 12 + (now.getMonth() - oldestDate.getMonth());
-            }
-            break;
-        default:
-            monthsToShow = 0;
-    }
+    const range = getAnalyticsDateRange(analyticsChartRange);
+    const monthsToShow = analyticsChartRange === 'current' ? 1 : 
+                        analyticsChartRange === '3months' ? 3 :
+                        analyticsChartRange === '6months' ? 6 : 12;
     
-    // Calculate monthly expenses
-    const monthlyExpenses = {};
+    const labels = [];
+    const revenueData = [];
+    const expensesData = [];
+    
     const now = new Date();
-    for (let i = monthsToShow; i >= 0; i--) {
-        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-        monthlyExpenses[key] = 0;
+    for (let i = monthsToShow - 1; i >= 0; i--) {
+        const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+        
+        labels.push(monthDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }));
+        
+        const monthInvoices = invoices.filter(inv => {
+            const invDate = new Date(inv.issue_date);
+            return inv.status === 'paid' && invDate >= monthDate && invDate <= monthEnd;
+        });
+        const monthExpenses = expenses.filter(exp => {
+            const expDate = new Date(exp.date);
+            return expDate >= monthDate && expDate <= monthEnd;
+        });
+        
+        revenueData.push(monthInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0));
+        expensesData.push(monthExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0));
     }
-    expenses.forEach(exp => {
-        const expDate = new Date(exp.date);
-        const key = expDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-        if (monthlyExpenses[key] !== undefined) {
-            monthlyExpenses[key] += parseFloat(exp.amount || 0);
-        }
-    });
     
-    // Calculate monthly revenue
-    const monthlyRevenue = {};
-    for (let i = monthsToShow; i >= 0; i--) {
-        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-        monthlyRevenue[key] = 0;
-    }
-    invoices.filter(inv => inv.status === 'paid' && inv.paid_date).forEach(inv => {
-        const paidDate = new Date(inv.paid_date);
-        const key = paidDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-        if (monthlyRevenue[key] !== undefined) {
-            monthlyRevenue[key] += inv.total || 0;
-        }
-    });
-    
-    const months = Object.keys(monthlyRevenue);
-    const revenueData = Object.values(monthlyRevenue);
-    const expensesData = Object.values(monthlyExpenses);
-    
-    // Revenue vs Expenses Line Chart
-    const ctx1 = document.getElementById('revenueExpensesChart');
-    if (ctx1) {
-        revenueExpensesChartInstance = new Chart(ctx1, {
-            type: 'line',
-            data: {
-                labels: months,
-                datasets: [
-                    {
-                        label: 'Revenue',
-                        data: revenueData,
-                        borderColor: 'rgb(16, 185, 129)',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        borderWidth: 3,
-                        tension: 0.4,
-                        fill: true
-                    },
-                    {
-                        label: 'Expenses',
-                        data: expensesData,
-                        borderColor: 'rgb(239, 68, 68)',
-                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                        borderWidth: 3,
-                        tension: 0.4,
-                        fill: true
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: false, // DISABLE ANIMATIONS - prevents sliding
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.dataset.label + ': $' + context.parsed.y.toFixed(2);
-                            }
-                        }
-                    }
+    revenueExpensesChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Revenue',
+                    data: revenueData,
+                    backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                    borderColor: 'rgba(34, 197, 94, 1)',
+                    borderWidth: 2
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return '$' + value.toLocaleString();
-                            }
+                {
+                    label: 'Expenses',
+                    data: expensesData,
+                    backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                    borderColor: 'rgba(239, 68, 68, 1)',
+                    borderWidth: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': $' + context.parsed.y.toFixed(2);
                         }
                     }
                 }
-            }
-        });
-    }
-    
-    // Expenses by Category Pie Chart
-    const expensesByCategory = {};
-    expenses.forEach(exp => {
-        const category = exp.category || 'Other';
-        if (!expensesByCategory[category]) expensesByCategory[category] = 0;
-        expensesByCategory[category] += parseFloat(exp.amount || 0);
-    });
-    
-    const categories = Object.keys(expensesByCategory);
-    const categoryAmounts = Object.values(expensesByCategory);
-    const colors = [
-        'rgb(59, 130, 246)',
-        'rgb(239, 68, 68)',
-        'rgb(16, 185, 129)',
-        'rgb(245, 158, 11)',
-        'rgb(139, 92, 246)',
-        'rgb(236, 72, 153)',
-        'rgb(20, 184, 166)',
-        'rgb(249, 115, 22)'
-    ];
-    
-    const ctx2 = document.getElementById('expensesCategoryChart');
-    if (ctx2 && categories.length > 0) {
-        expensesCategoryChartInstance = new Chart(ctx2, {
-            type: 'doughnut',
-            data: {
-                labels: categories,
-                datasets: [{
-                    data: categoryAmounts,
-                    backgroundColor: colors.slice(0, categories.length),
-                    borderWidth: 2,
-                    borderColor: '#fff'
-                }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: false, // DISABLE ANIMATIONS - prevents sliding
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'right'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = ((context.parsed / total) * 100).toFixed(1);
-                                return context.label + ': $' + context.parsed.toFixed(2) + ' (' + percentage + '%)';
-                            }
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toFixed(0);
                         }
                     }
                 }
             }
-        });
-    }
+        }
+    });
 }
 
-console.log('✅ Analytics module loaded (COMPLETE WITH CHARTS)');
+function initExpensesCategoryChart() {
+    const canvas = document.getElementById('expensesCategoryChart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (expensesCategoryChartInstance) {
+        expensesCategoryChartInstance.destroy();
+    }
+    
+    const range = getAnalyticsDateRange(analyticsChartRange);
+    const periodExpenses = filterByDateRange(expenses, 'date', range);
+    
+    const categoryTotals = {};
+    periodExpenses.forEach(exp => {
+        const category = exp.category || 'Other';
+        if (!categoryTotals[category]) categoryTotals[category] = 0;
+        categoryTotals[category] += parseFloat(exp.amount || 0);
+    });
+    
+    const categories = Object.keys(categoryTotals).sort((a, b) => categoryTotals[b] - categoryTotals[a]);
+    const amounts = categories.map(cat => categoryTotals[cat]);
+    
+    const colors = [
+        'rgba(59, 130, 246, 0.8)',  // Blue
+        'rgba(239, 68, 68, 0.8)',   // Red
+        'rgba(34, 197, 94, 0.8)',   // Green
+        'rgba(251, 191, 36, 0.8)',  // Yellow
+        'rgba(168, 85, 247, 0.8)',  // Purple
+        'rgba(236, 72, 153, 0.8)',  // Pink
+        'rgba(20, 184, 166, 0.8)',  // Teal
+        'rgba(249, 115, 22, 0.8)'   // Orange
+    ];
+    
+    expensesCategoryChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: categories,
+            datasets: [{
+                data: amounts,
+                backgroundColor: colors,
+                borderColor: '#fff',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'right'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percent = ((context.parsed / total) * 100).toFixed(1);
+                            return context.label + ': $' + context.parsed.toFixed(2) + ' (' + percent + '%)';
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+console.log('✅ Enhanced Analytics module loaded');
