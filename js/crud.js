@@ -571,9 +571,33 @@ function saveExpense() {
 
 async function addExpense(expense) {
     try {
+        let receipt_url = null;
+        
+        // Upload receipt if provided
+        if (currentExpenseReceipt) {
+            const fileExt = currentExpenseReceipt.name.split('.').pop();
+            const fileName = `${currentUser.id}/${Date.now()}.${fileExt}`;
+            
+            const { data: uploadData, error: uploadError } = await supabaseClient.storage
+                .from('expense-receipts')
+                .upload(fileName, currentExpenseReceipt);
+            
+            if (uploadError) {
+                console.error('Receipt upload error:', uploadError);
+                showNotification('Warning: Receipt upload failed, expense saved without receipt', 'error');
+            } else {
+                const { data: urlData } = supabaseClient.storage
+                    .from('expense-receipts')
+                    .getPublicUrl(fileName);
+                receipt_url = urlData.publicUrl;
+            }
+            
+            currentExpenseReceipt = null;
+        }
+        
         const { data, error } = await supabaseClient
             .from('expenses')
-            .insert([{ ...expense, user_id: currentUser.id }])
+            .insert([{ ...expense, user_id: currentUser.id, receipt_url }])
             .select();
             
         if (error) throw error;
