@@ -37,89 +37,16 @@ async function checkAuth() {
 }
 
 function renderAuth() {
-    document.getElementById('app').innerHTML = `<div class="min-h-screen flex items-center justify-center bg-black"><div class="bg-white p-8 rounded-lg shadow-xl max-w-2xl w-full"><div class="text-center mb-8"><div class="text-teal-400 text-5xl font-bold mb-2">M4</div><h1 class="text-2xl font-bold text-black dark:text-white">Streamline</h1><p class="text-gray-600 dark:text-gray-300 mt-2">Business Management</p></div><div id="signup-section"><h3 class="text-lg font-bold dark:text-teal-400 mb-4 text-center">Choose Your Account Type</h3><div class="grid grid-cols-2 gap-4 mb-6"><div onclick="selectedAccountType='sole_trader'; renderAuth();" class="cursor-pointer p-4 border-2 rounded-lg ${selectedAccountType === 'sole_trader' ? 'border-teal-400 bg-teal-50' : 'border-gray-300 hover:border-teal-200'}"><div class="text-center"><div class="text-2xl mb-2">👤</div><h4 class="font-bold mb-1">Sole Trader</h4><p class="text-xs text-gray-600 dark:text-gray-300 mb-2">Perfect for individuals</p><p class="text-2xl font-bold text-teal-600">$49.95<span class="text-sm text-gray-500 dark:text-gray-400">/mo</span></p></div></div><div onclick="selectedAccountType='business'; renderAuth();" class="cursor-pointer p-4 border-2 rounded-lg ${selectedAccountType === 'business' ? 'border-teal-400 bg-teal-50' : 'border-gray-300 hover:border-teal-200'}"><div class="text-center"><div class="text-2xl mb-2">👥</div><h4 class="font-bold mb-1">Business</h4><p class="text-xs text-gray-600 dark:text-gray-300 mb-2">Teams & job assignments</p><p class="text-2xl font-bold text-teal-600">$89.95<span class="text-sm text-gray-500 dark:text-gray-400">/mo</span></p></div></div></div><div><input type="email" id="email" placeholder="Email" class="w-full px-4 py-3 border rounded-lg mb-3" autocomplete="email"><div class="relative mb-2"><input type="password" id="password" placeholder="Password" class="w-full px-4 py-3 border rounded-lg pr-24" autocomplete="current-password"><button type="button" onclick="const p = document.getElementById('password'); p.type = p.type === 'password' ? 'text' : 'password'; this.textContent = p.type === 'password' ? 'View' : 'Hide';" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-600 hover:text-gray-800 underline">View</button></div><div class="text-xs text-gray-500 dark:text-gray-400 mb-4 pl-1">Password must be 8+ characters with uppercase, lowercase, and number</div><button type="button" id="login-btn" onclick="handleLogin()" class="w-full bg-black text-white px-4 py-3 rounded-lg hover:bg-gray-800 border-2 border-teal-400 mb-3 font-medium touch-manipulation active:opacity-75">Sign In</button><button type="button" onclick="handleSignup()" class="w-full bg-white text-black px-4 py-3 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 border-2 border-black mb-1 font-medium touch-manipulation active:opacity-75">Start 14-Day Free Trial - ${selectedAccountType === 'sole_trader' ? 'Sole Trader' : 'Business'}</button><p class="text-xs text-gray-500 dark:text-gray-400 text-center mb-3">Cancel anytime • No credit card required</p><div id="auth-error" class="mt-3 text-red-600 text-sm text-center"></div></div></div></div></div>`;
-    
-    // Add Enter key support
-    setTimeout(() => {
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
-        
-        if (emailInput && passwordInput) {
-            const handleEnter = (e) => {
-                if (e.key === 'Enter') {
-                    handleLogin();
-                }
-            };
-            emailInput.addEventListener('keypress', handleEnter);
-            passwordInput.addEventListener('keypress', handleEnter);
-        }
-    }, 100);
+    document.getElementById('app').innerHTML = `<div class="min-h-screen flex items-center justify-center bg-black"><div class="bg-white p-8 rounded-lg shadow-xl max-w-2xl w-full"><div class="text-center mb-8"><div class="text-teal-400 text-5xl font-bold mb-2">M4</div><h1 class="text-2xl font-bold text-black dark:text-white">Streamline</h1><p class="text-gray-600 dark:text-gray-300 mt-2">Business Management</p></div><div class="bg-teal-50 border-l-4 border-teal-400 p-4 mb-6 rounded"><p class="text-sm font-medium text-teal-900 mb-1">🎉 Start Your Free Trial</p><p class="text-xs text-teal-700">14 days free • Cancel anytime</p></div><div id="signup-section"><h3 class="text-lg font-bold dark:text-teal-400 mb-4 text-center">Choose Your Account Type</h3><div class="grid grid-cols-2 gap-4 mb-6"><div onclick="selectedAccountType='sole_trader'; renderAuth();" class="cursor-pointer p-4 border-2 rounded-lg ${selectedAccountType === 'sole_trader' ? 'border-teal-400 bg-teal-50' : 'border-gray-300 hover:border-teal-200'}"><div class="text-center"><div class="text-2xl mb-2">👤</div><h4 class="font-bold mb-1">Sole Trader</h4><p class="text-xs text-gray-600 dark:text-gray-300 mb-2">Perfect for individuals</p><p class="text-2xl font-bold text-teal-600">$19.99<span class="text-sm text-gray-500 dark:text-gray-400">/mo</span></p></div></div><div onclick="selectedAccountType='business'; renderAuth();" class="cursor-pointer p-4 border-2 rounded-lg ${selectedAccountType === 'business' ? 'border-teal-400 bg-teal-50' : 'border-gray-300 hover:border-teal-200'}"><div class="text-center"><div class="text-2xl mb-2">👥</div><h4 class="font-bold mb-1">Business</h4><p class="text-xs text-gray-600 dark:text-gray-300 mb-2">Teams & job assignments</p><p class="text-2xl font-bold text-teal-600">$49.99<span class="text-sm text-gray-500 dark:text-gray-400">/mo</span></p></div></div></div><div><input type="email" id="email" placeholder="Email" class="w-full px-4 py-3 border rounded-lg mb-3"><input type="password" id="password" placeholder="Password" class="w-full px-4 py-3 border rounded-lg mb-2"><div class="text-xs text-gray-500 dark:text-gray-400 mb-4 pl-1">Password must be 8+ characters with uppercase, lowercase, and number</div><button onclick="handleLogin()" class="w-full bg-black text-white px-4 py-3 rounded-lg hover:bg-gray-800 border-2 border-teal-400 mb-3">Sign In</button><button onclick="handleSignup()" class="w-full bg-white text-black px-4 py-3 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 border-2 border-black">Start Free Trial - ${selectedAccountType === 'sole_trader' ? 'Sole Trader' : 'Business'}</button><div id="auth-error" class="mt-3 text-red-600 text-sm text-center"></div></div></div></div></div>`;
 }
 
 async function handleLogin() {
-    const emailInput = document.getElementById('email');
-    const passwordInput = document.getElementById('password');
-    const errorDiv = document.getElementById('auth-error');
-    const loginBtn = document.getElementById('login-btn');
-    
-    // Get values
-    const email = emailInput?.value?.trim();
-    const password = passwordInput?.value;
-    
-    // Clear previous errors
-    if (errorDiv) {
-        errorDiv.textContent = '';
-        errorDiv.className = 'mt-3 text-red-600 text-sm text-center';
-    }
-    
-    // Validate inputs
-    if (!email || !password) {
-        if (errorDiv) {
-            errorDiv.textContent = 'Please enter both email and password';
-            errorDiv.className = 'mt-3 text-red-600 text-sm text-center font-medium p-3 bg-red-50 rounded-lg';
-        }
-        return;
-    }
-    
-    // Show loading state
-    if (loginBtn) {
-        loginBtn.disabled = true;
-        loginBtn.textContent = 'Signing in...';
-        loginBtn.style.opacity = '0.7';
-    }
-    
-    try {
-        const { data, error } = await supabaseClient.auth.signInWithPassword({ 
-            email: email, 
-            password: password 
-        });
-        
-        if (error) {
-            console.error('Login error:', error);
-            if (errorDiv) {
-                errorDiv.textContent = error.message || 'Login failed. Please check your credentials.';
-                errorDiv.className = 'mt-3 text-red-600 text-sm text-center font-medium p-3 bg-red-50 rounded-lg';
-            }
-        } else {
-            currentUser = data.user;
-            await loadAllData();
-            renderApp();
-            return; // Success - don't reset button
-        }
-    } catch (err) {
-        console.error('Login exception:', err);
-        if (errorDiv) {
-            errorDiv.textContent = 'An error occurred. Please try again.';
-            errorDiv.className = 'mt-3 text-red-600 text-sm text-center font-medium p-3 bg-red-50 rounded-lg';
-        }
-    }
-    
-    // Reset button only if we didn't succeed
-    if (loginBtn) {
-        loginBtn.disabled = false;
-        loginBtn.textContent = 'Sign In';
-        loginBtn.style.opacity = '1';
-    }
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ 
+        email: document.getElementById('email').value, 
+        password: document.getElementById('password').value 
+    });
+    if (error) document.getElementById('auth-error').textContent = error.message;
+    else { currentUser = data.user; await loadAllData(); renderApp(); }
 }
 
 async function handleSignup() {
@@ -183,7 +110,7 @@ async function loadAllData() {
             return;
         }
         
-        const [c, j, q, i, e, s, sub, admin, team, stripe, pay, email, sms] = await Promise.all([
+        const [c, j, q, i, e, s, sub, admin, team, stripe, pay, email, sms, recurring] = await Promise.all([
             supabaseClient.from('clients').select('*'), 
             supabaseClient.from('jobs').select('*'), 
             supabaseClient.from('quotes').select('*'), 
@@ -196,7 +123,8 @@ async function loadAllData() {
             supabaseClient.from('stripe_settings').select('*').eq('user_id', currentUser.id).single(),
             supabaseClient.from('payments').select('*'),
             supabaseClient.from('email_settings').select('*').eq('user_id', currentUser.id).single(),
-            supabaseClient.from('sms_settings').select('*').eq('user_id', currentUser.id).single()
+            supabaseClient.from('sms_settings').select('*').eq('user_id', currentUser.id).single(),
+            supabaseClient.from('recurring_invoices').select('*')
         ]);
         
         clients = c.data || []; 
@@ -212,6 +140,7 @@ async function loadAllData() {
         payments = pay.data || [];
         emailSettings = email.data || null;
         smsSettings = sms.data || null;
+        recurringInvoices = recurring.data || [];
         
         if (!subscription) {
             const { data: trialCheck } = await supabaseClient
@@ -221,7 +150,7 @@ async function loadAllData() {
                 .single();
             
             const accountType = selectedAccountType || 'sole_trader';
-            const monthlyRate = accountType === 'business' ? 89.95 : 49.95;
+            const monthlyRate = accountType === 'business' ? 49.99 : 19.99;
             
             if (trialCheck) {
                 const { data } = await supabaseClient.from('subscriptions').insert([{
