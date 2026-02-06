@@ -66,7 +66,7 @@ function renderExpenses() {
             </div>
         </div>
         
-        <input type="text" id="expense-search-input" placeholder="🔍 Search expenses..." value="${expenseSearch}" oninput="expenseSearch = this.value; clearTimeout(window.expenseSearchTimer); window.expenseSearchTimer = setTimeout(() => { currentPage.expenses = 1; renderApp(); setTimeout(() => document.getElementById('expense-search-input')?.focus(), 0); }, 300);" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600-lg dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-4">
+        <input type="text" placeholder="🔍 Search expenses..." value="${expenseSearch}" oninput="debouncedSearch('expense', this.value);" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600-lg dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-4">
         
         ${selectedExpenses.length > 0 ? `
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex items-center justify-between">
