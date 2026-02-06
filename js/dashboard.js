@@ -329,13 +329,13 @@ function generateActivityTimeline() {
     
     // Quote acceptances (last 7 days only)
     quotes.filter(q => {
-        if (!q.accepted && q.status !== 'accepted') return false;
-        const activityDate = new Date(q.updated_at || q.created_at);
-        return activityDate >= sevenDaysAgo;
+        if ((!q.accepted && q.status !== 'accepted') || !q.accepted_date) return false;
+        const acceptedDate = new Date(q.accepted_date);
+        return acceptedDate >= sevenDaysAgo;
     }).forEach(q => {
         const client = clients.find(c => c.id === q.client_id);
         activities.push({
-            date: new Date(q.updated_at || q.created_at),
+            date: new Date(q.accepted_date),
             type: 'quote_accepted',
             icon: '✅',
             color: 'green',
