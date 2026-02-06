@@ -26,11 +26,6 @@ function renderInvoices() {
 }
 
 function renderInvoicesTable() {
-    // Recurring view (special case)
-    if (invoiceFilter === 'recurring') {
-        return renderRecurringInvoices();
-    }
-    
     // Monthly view (special case)
     if (invoiceFilter === 'monthly') {
         return renderMonthlyInvoices();
@@ -147,9 +142,6 @@ function renderInvoicesTable() {
             </button>
             <button onclick="invoiceFilter='monthly'; currentPage.invoices=1; renderApp();" class="px-4 py-2 rounded-lg text-sm font-medium ${invoiceFilter === 'monthly' ? 'bg-black text-white border-teal-400' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600'} border transition-colors">
                 Monthly View
-            </button>
-            <button onclick="invoiceFilter='recurring'; currentPage.invoices=1; renderApp();" class="px-4 py-2 rounded-lg text-sm font-medium ${invoiceFilter === 'recurring' ? 'bg-black text-white border-teal-400' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600'} border transition-colors">
-                Recurring (${(recurringInvoices || []).filter(r => r.status === 'active').length})
             </button>
         </div>
     `;
@@ -432,13 +424,20 @@ function renderInvoiceDetail() {
                 <div class="text-right">
                     <div class="text-4xl font-bold text-gray-900 dark:text-white">${formatCurrency(inv.total)}</div>
                     <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">Total Amount</p>
+                    ${inv.amount_paid > 0 ? `
+                        <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                            <div class="text-sm text-gray-600 dark:text-gray-400">Paid: <span class="font-semibold text-teal-600 dark:text-teal-400">${formatCurrency(inv.amount_paid)}</span></div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">Balance: <span class="font-semibold ${inv.balance_due > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-gray-900 dark:text-white'}">${formatCurrency(inv.balance_due || (inv.total - inv.amount_paid))}</span></div>
+                        </div>
+                    ` : ''}
                 </div>
             </div>
             
             <!-- Actions -->
             <div class="flex flex-wrap gap-2 pt-4 border-t border-gray-100 dark:border-gray-700">
                 ${!isPaid ? `<button onclick='openModal("invoice", ${JSON.stringify(inv).replace(/"/g, "&quot;")})' class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors">Edit Invoice</button>` : ''}
-                ${!isPaid ? `<button onclick="markPaid('${inv.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors">Mark as Paid</button>` : `<button onclick="markUnpaid('${inv.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 border border-orange-200 dark:border-orange-800 rounded-lg transition-colors">Mark as Unpaid</button>`}
+                ${!isPaid ? `<button onclick="recordPayment('${inv.id}', ${inv.total}, ${inv.amount_paid || 0})" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">Record Payment</button>` : ''}
+                ${!isPaid ? `<button onclick="markPaid('${inv.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors">Mark Fully Paid</button>` : `<button onclick="markUnpaid('${inv.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 border border-orange-200 dark:border-orange-800 rounded-lg transition-colors">Mark as Unpaid</button>`}
                 <button onclick='generatePDF("invoice", ${JSON.stringify(inv).replace(/"/g, '&quot;')})' class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors">Download PDF</button>
                 <button onclick='sendInvoiceEmail(${JSON.stringify(inv).replace(/"/g, '&quot;')})' class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors">Email Invoice</button>
                 <button onclick="deleteInvoice('${inv.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 bg-white dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors ml-auto">Delete</button>
@@ -497,6 +496,54 @@ function renderInvoiceDetail() {
             </div>
         </div>
     </div>`;
+}
+
+// Record payment function
+async function recordPayment(invoiceId, total, amountPaid) {
+    const balance = total - amountPaid;
+    const paymentAmount = prompt(`Record payment amount (Balance due: $${balance.toFixed(2)}):`);
+    
+    if (!paymentAmount) return;
+    
+    const amount = parseFloat(paymentAmount);
+    if (isNaN(amount) || amount <= 0) {
+        alert('Please enter a valid amount');
+        return;
+    }
+    
+    const newAmountPaid = amountPaid + amount;
+    const newBalance = total - newAmountPaid;
+    const isFullyPaid = newBalance <= 0.01;
+    
+    try {
+        isLoading = true;
+        loadingMessage = 'Recording payment...';
+        renderApp();
+        
+        const { data, error} = await supabaseClient
+            .from('invoices')
+            .update({
+                amount_paid: newAmountPaid,
+                balance_due: newBalance,
+                status: isFullyPaid ? 'paid' : 'unpaid',
+                paid_date: isFullyPaid ? new Date().toISOString().split('T')[0] : null
+            })
+            .eq('id', invoiceId)
+            .select();
+        
+        if (error) throw error;
+        
+        const index = invoices.findIndex(i => i.id === invoiceId);
+        if (index !== -1) invoices[index] = data[0];
+        
+        showNotification(`Payment of $${amount.toFixed(2)} recorded successfully!`, 'success');
+    } catch (error) {
+        console.error('Error recording payment:', error);
+        showNotification('Failed to record payment: ' + error.message, 'error');
+    } finally {
+        isLoading = false;
+        renderApp();
+    }
 }
 
 console.log('✅ Invoices module loaded (Professional Table View)');
