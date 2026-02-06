@@ -14,20 +14,14 @@ function openModal(type, item = null) {
     renderApp();
     if (type === 'quote') setTimeout(renderQuoteItems, 100);
     
-    // Initialize address autocomplete for any address fields - with delay for modal rendering
-    setTimeout(() => initAllAddressAutocomplete(), 500);
+    // Initialize address autocomplete for any address fields
+    initAllAddressAutocomplete();
 }
 
 function closeModal() {
     showModal = false;
     editingItem = null;
     modalType = '';
-    
-    // Clear Google Maps autocomplete tracking
-    if (typeof clearInitializedFields === 'function') {
-        clearInitializedFields();
-    }
-    
     renderApp();
 }
 
@@ -285,7 +279,7 @@ function renderModal() {
             }
         }
         
-        const categories = ['Materials', 'Fuel', 'Equipment', 'Subcontractors', 'Office Supplies', 'Insurance', 'Marketing', 'Other'];
+        const categories = ['Labour', 'Materials', 'Fuel', 'Equipment', 'Subcontractors', 'Office Supplies', 'Insurance', 'Marketing', 'Other'];
         const buttonText = editingItem ? 'Update Expense' : 'Add Expense';
         const action = editingItem ? `updateExpense('${editingItem.id}')` : `saveExpense()`;
         
@@ -345,6 +339,12 @@ function renderModal() {
             <div class="mb-3">
                 <label class="block text-sm font-medium mb-1 dark:text-gray-200">Description</label>
                 <textarea id="description" placeholder="Expense description" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" rows="3">${description}</textarea>
+            </div>
+            <div class="mb-3">
+                <label class="block text-sm font-medium mb-1 dark:text-gray-200">Receipt/Photo (Optional)</label>
+                <input type="file" id="expense_receipt" accept="image/*,.pdf" onchange="handleExpenseReceiptUpload(this)" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Upload receipt image or PDF</p>
+                ${editingItem?.receipt_url ? `<p class="text-xs text-teal-600 mt-2">✓ Receipt already uploaded</p>` : ''}
             </div>
             <button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>
         `;
