@@ -192,7 +192,7 @@
                             ${quote.deposit_percentage > 0 ? `
                                 <div style="display: flex; justify-content: space-between; margin-top: 12px; margin-bottom: 8px;">
                                     <span style="font-size: 16px; font-weight: bold; color: #f97316;">DEPOSIT REQUIRED:</span>
-                                    <span style="font-size: 16px; font-weight: bold; color: #f97316;">$${parseFloat(quote.deposit_amount).toFixed(2)}</span>
+                                    <span style="font-size: 16px; font-weight: bold; color: #f97316;">$${(parseFloat(quote.total) * (parseFloat(quote.deposit_percentage) / 100)).toFixed(2)}</span>
                                 </div>
                                 <div style="text-align: right; font-size: 11px; color: #666; font-style: italic; margin-bottom: 8px;">
                                     (${quote.deposit_percentage}% of total)
@@ -203,7 +203,7 @@
                                             <span style="font-size: 14px; color: #666;">Balance on completion:</span>
                                             <span style="font-size: 10px; color: #999; font-style: italic; margin-top: 2px;">(Unless specified otherwise)</span>
                                         </div>
-                                        <span style="font-size: 14px; font-weight: 500;">$${(parseFloat(quote.total) - parseFloat(quote.deposit_amount)).toFixed(2)}</span>
+                                        <span style="font-size: 14px; font-weight: 500;">$${(parseFloat(quote.total) - (parseFloat(quote.total) * (parseFloat(quote.deposit_percentage) / 100))).toFixed(2)}</span>
                                     </div>
                                 </div>
                             ` : `
@@ -217,14 +217,14 @@
                         <div class="total">Total: $${parseFloat(quote.total).toFixed(2)}</div>
                         ${quote.deposit_percentage > 0 ? `
                             <div style="margin-top: 15px; padding: 15px; background: #fff7ed; border-radius: 8px; border: 2px solid #f97316;">
-                                <div style="font-size: 16px; font-weight: bold; color: #f97316; margin-bottom: 5px; text-align: right;">DEPOSIT REQUIRED: $${parseFloat(quote.deposit_amount).toFixed(2)}</div>
+                                <div style="font-size: 16px; font-weight: bold; color: #f97316; margin-bottom: 5px; text-align: right;">DEPOSIT REQUIRED: $${(parseFloat(quote.total) * (parseFloat(quote.deposit_percentage) / 100)).toFixed(2)}</div>
                                 <div style="font-size: 11px; color: #666; font-style: italic; margin-bottom: 8px; text-align: right;">(${quote.deposit_percentage}% of total)</div>
                                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2px;">
                                     <div>
                                         <div style="font-size: 14px; color: #666;">Balance on completion:</div>
                                         <div style="font-size: 10px; color: #999; font-style: italic; margin-top: 2px;">(Unless specified otherwise)</div>
                                     </div>
-                                    <div style="font-size: 14px; font-weight: 500; color: #666;">$${(parseFloat(quote.total) - parseFloat(quote.deposit_amount)).toFixed(2)}</div>
+                                    <div style="font-size: 14px; font-weight: 500; color: #666;">$${(parseFloat(quote.total) - (parseFloat(quote.total) * (parseFloat(quote.deposit_percentage) / 100))).toFixed(2)}</div>
                                 </div>
                             </div>
                         ` : `
@@ -328,41 +328,71 @@
                 });
                 
                 // Check if deposit needs to be paid
+                console.log('Checking deposit:', currentQuote.deposit_amount, currentQuote.deposit_percentage);
+                
                 if (currentQuote.deposit_amount && currentQuote.deposit_amount > 0) {
+                    console.log('Has deposit - redirecting to payment');
                     messageDiv.innerHTML = '<p style="color: #10b981; font-weight: bold; font-size: 18px;">✓ Quote Accepted!</p><p style="margin-top: 10px;">Redirecting to deposit payment...</p>';
                     
                     // Create a deposit invoice and redirect to payment
                     setTimeout(async () => {
-                        // Generate invoice number
-                        const invoiceNumber = `INV-DEP-${Date.now()}`;
-                        
-                        // Create deposit invoice
-                        const depositInvoice = {
-                            client_id: currentQuote.client_id,
-                            title: currentQuote.title + ' - Deposit',
-                            items: [{
-                                description: `Deposit (${currentQuote.deposit_percentage}%)`,
-                                quantity: 1,
-                                price: currentQuote.deposit_amount
-                            }],
-                            notes: `Deposit for quote: ${currentQuote.title}\nRemaining balance: $${(currentQuote.total - currentQuote.deposit_amount).toFixed(2)}`,
-                            subtotal: currentQuote.deposit_amount,
-                            gst: 0,
-                            total: currentQuote.deposit_amount,
-                            invoice_number: invoiceNumber,
-                            status: 'unpaid',
-                            issue_date: new Date().toISOString().split('T')[0],
-                            due_date: new Date().toISOString().split('T')[0],
-                            user_id: currentQuote.user_id
-                        };
-                        
-                        const { data: invoiceData } = await supabaseClient
-                            .from('invoices')
-                            .insert([depositInvoice])
-                            .select();
-                        
-                        if (invoiceData && invoiceData[0]) {
-                            // Redirect to payment page
+                        try {
+                            // Generate invoice number
+                            const invoiceNumber = `INV-DEP-${Date.now()}`;
+                            
+                            console.log('Creating deposit invoice:', invoiceNumber);
+                            
+                            // Create deposit invoice
+                            const depositInvoice = {
+                                client_id: currentQuote.client_id,
+                                title: currentQuote.title + ' - Deposit',
+                                items: [{
+                                    description: `Deposit (${currentQuote.deposit_percentage}%)`,
+                                    quantity: 1,
+                                    price: currentQuote.deposit_amount
+                                }],
+                                notes: `Deposit for quote: ${currentQuote.title}\nRemaining balance: $${(currentQuote.total - currentQuote.deposit_amount).toFixed(2)}`,
+                                subtotal: currentQuote.deposit_amount,
+                                gst: 0,
+                                total: currentQuote.deposit_amount,
+                                invoice_number: invoiceNumber,
+                                status: 'unpaid',
+                                issue_date: new Date().toISOString().split('T')[0],
+                                due_date: new Date().toISOString().split('T')[0],
+                                user_id: currentQuote.user_id
+                            };
+                            
+                            console.log('Inserting invoice:', depositInvoice);
+                            
+                            const { data: invoiceData, error: invoiceError } = await supabaseClient
+                                .from('invoices')
+                                .insert([depositInvoice])
+                                .select();
+                            
+                            if (invoiceError) {
+                                console.error('Invoice creation error:', invoiceError);
+                                messageDiv.innerHTML = '<p style="color: red;">Error creating deposit invoice: ' + invoiceError.message + '</p>';
+                                return;
+                            }
+                            
+                            console.log('Invoice created:', invoiceData);
+                            
+                            if (invoiceData && invoiceData[0]) {
+                                console.log('Redirecting to payment page');
+                                // Redirect to payment page
+                                window.location.href = `payment.html?invoice=${invoiceData[0].id}`;
+                            } else {
+                                console.error('No invoice data returned');
+                                messageDiv.innerHTML = '<p style="color: red;">Error: No invoice created</p>';
+                            }
+                        } catch (error) {
+                            console.error('Error in deposit flow:', error);
+                            messageDiv.innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+                        }
+                    }, 1500);
+                } else {
+                    console.log('No deposit - showing success only');
+                    // No deposit - just show success
                             window.location.href = `payment.html?invoice=${invoiceData[0].id}`;
                         }
                     }, 1500);
