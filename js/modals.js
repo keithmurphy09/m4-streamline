@@ -14,8 +14,8 @@ function openModal(type, item = null) {
     renderApp();
     if (type === 'quote') setTimeout(renderQuoteItems, 100);
     
-    // Initialize address autocomplete for any address fields
-    initAllAddressAutocomplete();
+    // Initialize address autocomplete for any address fields - with delay for modal rendering
+    setTimeout(() => initAllAddressAutocomplete(), 500);
 }
 
 function closeModal() {
