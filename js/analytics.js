@@ -91,8 +91,10 @@ function calculatePeriodMetrics(range) {
     const periodExpenses = filterByDateRange(expenses, 'date', range);
     const periodQuotes = filterByDateRange(quotes, 'created_at', range);
     
-    const paidInvoices = periodInvoices.filter(inv => inv.status === 'paid');
-    const revenue = paidInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
+    // Use paid_date for revenue calculations instead of issue_date
+    const paidInvoices = invoices.filter(inv => inv.status === 'paid' && inv.paid_date);
+    const paidInvoicesInPeriod = filterByDateRange(paidInvoices, 'paid_date', range);
+    const revenue = paidInvoicesInPeriod.reduce((sum, inv) => sum + (inv.total || 0), 0);
     const expenseTotal = periodExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
     const profit = revenue - expenseTotal;
     const margin = revenue > 0 ? ((profit / revenue) * 100) : 0;
@@ -147,7 +149,8 @@ function renderAnalytics() {
     
     // Calculate profitability per client
     const clientProfitability = {};
-    const periodInvoices = filterByDateRange(invoices.filter(inv => inv.status === 'paid'), 'issue_date', currentRange);
+    const paidInvoices = invoices.filter(inv => inv.status === 'paid' && inv.paid_date);
+    const periodInvoices = filterByDateRange(paidInvoices, 'paid_date', currentRange);
     
     periodInvoices.forEach(inv => {
         const clientId = inv.client_id;
@@ -412,8 +415,9 @@ function initRevenueExpensesChart() {
         labels.push(monthDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }));
         
         const monthInvoices = invoices.filter(inv => {
-            const invDate = new Date(inv.issue_date);
-            return inv.status === 'paid' && invDate >= monthDate && invDate <= monthEnd;
+            if (inv.status !== 'paid' || !inv.paid_date) return false;
+            const invDate = new Date(inv.paid_date);
+            return invDate >= monthDate && invDate <= monthEnd;
         });
         const monthExpenses = expenses.filter(exp => {
             const expDate = new Date(exp.date);
