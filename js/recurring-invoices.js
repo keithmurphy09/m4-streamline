@@ -7,8 +7,25 @@ function renderRecurringInvoices() {
     const activeRecurring = (recurringInvoices || []).filter(r => r.status === 'active');
     const pausedRecurring = (recurringInvoices || []).filter(r => r.status === 'paused');
     
+    // Add filter tabs for navigation
+    const filterTabs = `
+        <div class="flex flex-wrap gap-2 mb-6">
+            <button onclick="invoiceFilter='unpaid'; currentPage.invoices=1; renderApp();" class="px-4 py-2 rounded-lg text-sm font-medium bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600 border transition-colors">
+                ← Back to Unpaid
+            </button>
+            <button onclick="invoiceFilter='paid'; currentPage.invoices=1; renderApp();" class="px-4 py-2 rounded-lg text-sm font-medium bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600 border transition-colors">
+                Paid Invoices
+            </button>
+            <button onclick="invoiceFilter='monthly'; currentPage.invoices=1; renderApp();" class="px-4 py-2 rounded-lg text-sm font-medium bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600 border transition-colors">
+                Monthly View
+            </button>
+        </div>
+    `;
+    
     return `
         <div class="space-y-6">
+            ${filterTabs}
+            
             <!-- Header -->
             <div class="flex justify-between items-center">
                 <div>
