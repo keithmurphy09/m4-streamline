@@ -320,10 +320,19 @@ function renderDashboard() {
 function generateActivityTimeline() {
     const activities = [];
     
+    // Define 7 days ago cutoff
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+    
     // Collect all activities with timestamps
     
-    // Quote acceptances
-    quotes.filter(q => q.accepted || q.status === 'accepted').forEach(q => {
+    // Quote acceptances (last 7 days only)
+    quotes.filter(q => {
+        if (!q.accepted && q.status !== 'accepted') return false;
+        const activityDate = new Date(q.updated_at || q.created_at);
+        return activityDate >= sevenDaysAgo;
+    }).forEach(q => {
         const client = clients.find(c => c.id === q.client_id);
         activities.push({
             date: new Date(q.updated_at || q.created_at),
@@ -336,8 +345,12 @@ function generateActivityTimeline() {
         });
     });
     
-    // Invoice payments
-    invoices.filter(i => i.status === 'paid' && i.paid_date).forEach(inv => {
+    // Invoice payments (last 7 days only)
+    invoices.filter(i => {
+        if (i.status !== 'paid' || !i.paid_date) return false;
+        const paidDate = new Date(i.paid_date);
+        return paidDate >= sevenDaysAgo;
+    }).forEach(inv => {
         const client = clients.find(c => c.id === inv.client_id);
         activities.push({
             date: new Date(inv.paid_date),
@@ -396,10 +409,10 @@ function generateActivityTimeline() {
     });
     
     // New quotes created (last 7 days)
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
-    quotes.filter(q => new Date(q.created_at) >= sevenDaysAgo && !q.accepted && q.status === 'pending').forEach(q => {
+    quotes.filter(q => {
+        const createdDate = new Date(q.created_at);
+        return createdDate >= sevenDaysAgo && !q.accepted && q.status === 'pending';
+    }).forEach(q => {
         const client = clients.find(c => c.id === q.client_id);
         activities.push({
             date: new Date(q.created_at),
