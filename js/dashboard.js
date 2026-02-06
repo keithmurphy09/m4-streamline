@@ -388,26 +388,6 @@ function generateActivityTimeline() {
         }
     });
     
-    // Overdue invoices
-    invoices.filter(i => i.status === 'unpaid' && i.due_date).forEach(inv => {
-        const dueDate = new Date(inv.due_date);
-        dueDate.setHours(0, 0, 0, 0);
-        
-        if (dueDate < today) {
-            const client = clients.find(c => c.id === inv.client_id);
-            const daysOverdue = Math.ceil((today - dueDate) / (1000 * 60 * 60 * 24));
-            activities.push({
-                date: dueDate,
-                type: 'invoice_overdue',
-                icon: '⚠️',
-                color: 'red',
-                title: `Invoice Overdue (${daysOverdue}d)`,
-                description: `${client?.name || 'Client'} - ${inv.invoice_number || 'Invoice'}`,
-                amount: inv.total
-            });
-        }
-    });
-    
     // New quotes created (last 7 days)
     quotes.filter(q => {
         const createdDate = new Date(q.created_at);
