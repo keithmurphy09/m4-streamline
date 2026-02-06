@@ -189,4 +189,11 @@ function renderCashFlow() {
     </div>`;
 }
 
+// Initialize cash flow chart (placeholder for now - can be expanded later)
+function initializeCashFlowChart() {
+    // This function is called by app.js when the cash flow tab loads
+    // For now, it's just a placeholder since we don't have a chart yet
+    console.log('Cash flow chart initialization called');
+}
+
 console.log('✅ Cash Flow module loaded');
