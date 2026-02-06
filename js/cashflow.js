@@ -74,14 +74,13 @@ function renderCashFlow() {
     
     return `<div>
         <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-            <h2 class="text-2xl font-bold dark:text-white">💸 Cash Flow</h2>
+            <h2 class="text-2xl font-bold dark:text-white">Cash Flow</h2>
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div class="bg-gradient-to-br ${currentBalance >= 0 ? 'from-green-50 to-green-100' : 'from-red-50 to-red-100'} p-6 rounded-lg border ${currentBalance >= 0 ? 'border-green-200' : 'border-red-200'} shadow-sm">
                 <div class="flex items-center justify-between mb-2">
                     <div class="text-sm font-medium ${currentBalance >= 0 ? 'text-green-700' : 'text-red-700'}">Current Balance</div>
-                    <div class="text-2xl">${currentBalance >= 0 ? '💰' : '⚠️'}</div>
                 </div>
                 <div class="text-3xl font-bold ${currentBalance >= 0 ? 'text-green-900' : 'text-red-900'}">$${currentBalance.toFixed(2)}</div>
                 <div class="text-xs ${currentBalance >= 0 ? 'text-green-600' : 'text-red-600'} mt-2">Revenue - Expenses</div>
@@ -90,7 +89,7 @@ function renderCashFlow() {
             <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-lg border border-blue-200 shadow-sm">
                 <div class="flex items-center justify-between mb-2">
                     <div class="text-sm font-medium text-blue-700">Money Owed</div>
-                    <div class="text-2xl">📥</div>
+                    
                 </div>
                 <div class="text-3xl font-bold text-blue-900">$${moneyOwedToYou.toFixed(2)}</div>
                 <div class="text-xs text-blue-600 mt-2">${unpaidInvoices.length} unpaid invoices</div>
@@ -99,7 +98,7 @@ function renderCashFlow() {
             <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-lg border border-purple-200 shadow-sm">
                 <div class="flex items-center justify-between mb-2">
                     <div class="text-sm font-medium text-purple-700">Cash Runway</div>
-                    <div class="text-2xl">🏃</div>
+                    
                 </div>
                 <div class="text-3xl font-bold text-purple-900">${runway >= 0 ? runway.toFixed(1) : '0.0'} mo</div>
                 <div class="text-xs text-purple-600 mt-2">At current burn rate</div>
@@ -108,7 +107,7 @@ function renderCashFlow() {
             <div class="bg-gradient-to-br from-teal-50 to-teal-100 p-6 rounded-lg border border-teal-200 shadow-sm">
                 <div class="flex items-center justify-between mb-2">
                     <div class="text-sm font-medium text-teal-700">Expected In 30 Days</div>
-                    <div class="text-2xl">📈</div>
+                    
                 </div>
                 <div class="text-3xl font-bold text-teal-900">$${expectedIn30Days.toFixed(2)}</div>
                 <div class="text-xs text-teal-600 mt-2">Based on due dates</div>
@@ -116,7 +115,7 @@ function renderCashFlow() {
         </div>
         
         <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
-            <h3 class="text-lg font-bold dark:text-white mb-4">📊 Accounts Receivable Aging</h3>
+            <h3 class="text-lg font-bold dark:text-white mb-4">Accounts Receivable Aging</h3>
             
             <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
                 <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
@@ -187,13 +186,6 @@ function renderCashFlow() {
             </div>
         </div>
     </div>`;
-}
-
-// Initialize cash flow chart (placeholder for now - can be expanded later)
-function initializeCashFlowChart() {
-    // This function is called by app.js when the cash flow tab loads
-    // For now, it's just a placeholder since we don't have a chart yet
-    console.log('Cash flow chart initialization called');
 }
 
 console.log('✅ Cash Flow module loaded');
