@@ -200,6 +200,11 @@ async function renderApp() {
         </div>
     `;
     
+    // Initialize dashboard charts
+    if (activeTab === 'dashboard') {
+        setTimeout(() => initializeDashboardCharts(), 100);
+    }
+    
     // Initialize charts if on analytics tab
     if (activeTab === 'analytics') {
         setTimeout(() => initializeCharts(), 100);
