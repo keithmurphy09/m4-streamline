@@ -3,7 +3,6 @@
 // ═════════════════════════════════════════════════════════════════
 
 let dashboardRevenueChartInstance = null;
-let dashboardExpenseChartInstance = null;
 
 function renderDashboard() {
     const today = new Date().toISOString().split('T')[0];
@@ -34,12 +33,12 @@ function renderDashboard() {
     // Last 30 days revenue
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const recentRevenue = invoices.filter(i => i.status === 'paid' && new Date(i.issue_date) >= thirtyDaysAgo).reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
+    const recentRevenue = invoices.filter(i => i.status === 'paid' && i.paid_date && new Date(i.paid_date) >= thirtyDaysAgo).reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
     
     // Revenue growth
     const sixtyDaysAgo = new Date();
     sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
-    const previousMonthRevenue = invoices.filter(i => i.status === 'paid' && new Date(i.issue_date) >= sixtyDaysAgo && new Date(i.issue_date) < thirtyDaysAgo).reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
+    const previousMonthRevenue = invoices.filter(i => i.status === 'paid' && i.paid_date && new Date(i.paid_date) >= sixtyDaysAgo && new Date(i.paid_date) < thirtyDaysAgo).reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
     const revenueGrowth = previousMonthRevenue > 0 ? (((recentRevenue - previousMonthRevenue) / previousMonthRevenue) * 100).toFixed(1) : 0;
     
     // Active jobs count
@@ -200,9 +199,9 @@ function renderDashboard() {
             
             <!-- Expense Breakdown Chart -->
             <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Expense Breakdown</h3>
-                <div class="relative h-64">
-                    <canvas id="dashboardExpenseChart"></canvas>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h3>
+                <div class="space-y-3 max-h-64 overflow-y-auto">
+                    ${generateActivityTimeline()}
                 </div>
             </div>
             
@@ -317,6 +316,164 @@ function renderDashboard() {
     </div>`;
 }
 
+// Generate activity timeline
+function generateActivityTimeline() {
+    const activities = [];
+    
+    // Collect all activities with timestamps
+    
+    // Quote acceptances
+    quotes.filter(q => q.accepted || q.status === 'accepted').forEach(q => {
+        const client = clients.find(c => c.id === q.client_id);
+        activities.push({
+            date: new Date(q.updated_at || q.created_at),
+            type: 'quote_accepted',
+            icon: '✅',
+            color: 'green',
+            title: 'Quote Accepted',
+            description: `${client?.name || 'Client'} accepted quote for ${q.title}`,
+            amount: q.total
+        });
+    });
+    
+    // Invoice payments
+    invoices.filter(i => i.status === 'paid' && i.paid_date).forEach(inv => {
+        const client = clients.find(c => c.id === inv.client_id);
+        activities.push({
+            date: new Date(inv.paid_date),
+            type: 'invoice_paid',
+            icon: '💰',
+            color: 'teal',
+            title: 'Invoice Paid',
+            description: `${client?.name || 'Client'} paid ${inv.invoice_number || 'invoice'}`,
+            amount: inv.total
+        });
+    });
+    
+    // Upcoming invoice due dates (next 7 days)
+    const sevenDaysFromNow = new Date();
+    sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    invoices.filter(i => i.status === 'unpaid' && i.due_date).forEach(inv => {
+        const dueDate = new Date(inv.due_date);
+        dueDate.setHours(0, 0, 0, 0);
+        
+        if (dueDate >= today && dueDate <= sevenDaysFromNow) {
+            const client = clients.find(c => c.id === inv.client_id);
+            const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+            activities.push({
+                date: dueDate,
+                type: 'invoice_due',
+                icon: '📅',
+                color: 'orange',
+                title: `Invoice Due ${daysUntil === 0 ? 'Today' : daysUntil === 1 ? 'Tomorrow' : 'in ' + daysUntil + ' days'}`,
+                description: `${client?.name || 'Client'} - ${inv.invoice_number || 'Invoice'}`,
+                amount: inv.total
+            });
+        }
+    });
+    
+    // Overdue invoices
+    invoices.filter(i => i.status === 'unpaid' && i.due_date).forEach(inv => {
+        const dueDate = new Date(inv.due_date);
+        dueDate.setHours(0, 0, 0, 0);
+        
+        if (dueDate < today) {
+            const client = clients.find(c => c.id === inv.client_id);
+            const daysOverdue = Math.ceil((today - dueDate) / (1000 * 60 * 60 * 24));
+            activities.push({
+                date: dueDate,
+                type: 'invoice_overdue',
+                icon: '⚠️',
+                color: 'red',
+                title: `Invoice Overdue (${daysOverdue}d)`,
+                description: `${client?.name || 'Client'} - ${inv.invoice_number || 'Invoice'}`,
+                amount: inv.total
+            });
+        }
+    });
+    
+    // New quotes created (last 7 days)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    quotes.filter(q => new Date(q.created_at) >= sevenDaysAgo && !q.accepted && q.status === 'pending').forEach(q => {
+        const client = clients.find(c => c.id === q.client_id);
+        activities.push({
+            date: new Date(q.created_at),
+            type: 'quote_created',
+            icon: '📝',
+            color: 'blue',
+            title: 'Quote Sent',
+            description: `Sent quote to ${client?.name || 'Client'} for ${q.title}`,
+            amount: q.total
+        });
+    });
+    
+    // Sort by date (most recent first)
+    activities.sort((a, b) => b.date - a.date);
+    
+    // Take top 10
+    const recentActivities = activities.slice(0, 10);
+    
+    if (recentActivities.length === 0) {
+        return '<div class="text-center py-8 text-gray-500 dark:text-gray-400 text-sm">No recent activity</div>';
+    }
+    
+    return recentActivities.map(activity => {
+        const colorClasses = {
+            green: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400',
+            teal: 'bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400',
+            orange: 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400',
+            red: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
+            blue: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+        };
+        
+        const relativeTime = getRelativeTime(activity.date);
+        
+        return `
+            <div class="flex gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                <div class="flex-shrink-0">
+                    <div class="w-10 h-10 ${colorClasses[activity.color]} rounded-lg flex items-center justify-center text-lg">
+                        ${activity.icon}
+                    </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-medium text-gray-900 dark:text-white">${activity.title}</div>
+                            <div class="text-xs text-gray-600 dark:text-gray-400 truncate">${activity.description}</div>
+                            <div class="text-xs text-gray-400 dark:text-gray-500 mt-1">${relativeTime}</div>
+                        </div>
+                        ${activity.amount ? `<div class="text-sm font-semibold text-gray-900 dark:text-white whitespace-nowrap">$${activity.amount.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</div>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Helper function for relative time
+function getRelativeTime(date) {
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    if (diffDays < 0) {
+        const futureDays = Math.abs(diffDays);
+        return `In ${futureDays} day${futureDays > 1 ? 's' : ''}`;
+    }
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 // Initialize dashboard charts
 function initializeDashboardCharts() {
     console.log('🎨 Initializing dashboard charts...');
@@ -335,7 +492,7 @@ function initializeDashboardCharts() {
         const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
         
         const revenue = invoices
-            .filter(inv => inv.status === 'paid' && new Date(inv.issue_date) >= monthStart && new Date(inv.issue_date) <= monthEnd)
+            .filter(inv => inv.status === 'paid' && inv.paid_date && new Date(inv.paid_date) >= monthStart && new Date(inv.paid_date) <= monthEnd)
             .reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
         
         monthlyRevenue.push(revenue);
@@ -395,82 +552,6 @@ function initializeDashboardCharts() {
             }
         });
         console.log('✅ Revenue chart created!');
-    }
-    
-    // Expense Breakdown Chart
-    const categories = {};
-    expenses.forEach(exp => {
-        const cat = exp.category || 'Other';
-        categories[cat] = (categories[cat] || 0) + parseFloat(exp.amount || 0);
-    });
-    
-    const expenseLabels = Object.keys(categories);
-    const expenseData = Object.values(categories);
-    
-    console.log('📊 Expense chart data:', expenseLabels, expenseData);
-    
-    // Use sample categories if no real data exists
-    const hasExpenseData = expenseData.some(v => v > 0);
-    if (!hasExpenseData || expenseLabels.length === 0) {
-        console.log('⚠️ No expense data, showing empty state');
-        expenseLabels.push('No expenses yet');
-        expenseData.push(1);
-    }
-    
-    const colors = [
-        'rgb(20, 184, 166)',
-        'rgb(59, 130, 246)',
-        'rgb(249, 115, 22)',
-        'rgb(236, 72, 153)',
-        'rgb(139, 92, 246)',
-        'rgb(34, 197, 94)',
-        'rgb(234, 179, 8)'
-    ];
-    
-    const expenseCtx = document.getElementById('dashboardExpenseChart');
-    if (expenseCtx) {
-        if (dashboardExpenseChartInstance) {
-            dashboardExpenseChartInstance.destroy();
-        }
-        
-        dashboardExpenseChartInstance = new Chart(expenseCtx, {
-            type: 'doughnut',
-            data: {
-                labels: expenseLabels,
-                datasets: [{
-                    data: expenseData,
-                    backgroundColor: colors,
-                    borderWidth: 2,
-                    borderColor: '#fff'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'right',
-                        labels: {
-                            boxWidth: 12,
-                            padding: 10,
-                            font: { size: 11 }
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = '$' + context.parsed.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = ((context.parsed / total) * 100).toFixed(1);
-                                return label + ': ' + value + ' (' + percentage + '%)';
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        console.log('✅ Expense chart created!');
     }
 }
 
