@@ -28,6 +28,7 @@ let invoices = [];
 let expenses = [];
 let teamMembers = [];
 let payments = [];
+let recurringInvoices = [];
 
 // Settings
 let stripeSettings = null;
