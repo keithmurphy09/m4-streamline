@@ -92,6 +92,7 @@ function renderInvoicesTable() {
                 <td class="px-6 py-4">
                     <div class="text-sm text-gray-600 dark:text-gray-400">${formatDate(inv.issue_date || inv.created_at)}</div>
                     ${inv.due_date ? `<div class="text-xs text-gray-400 dark:text-gray-500">Due ${formatDate(inv.due_date)}</div>` : ''}
+                    ${isPaid && inv.paid_date ? `<div class="text-xs text-teal-600 dark:text-teal-400 font-medium mt-1 cursor-pointer hover:underline" onclick="event.stopPropagation(); editPaidDate('${inv.id}', '${inv.paid_date}')">Paid ${formatDate(inv.paid_date)}</div>` : ''}
                 </td>
                 <td class="px-6 py-4">
                     ${statusBadge}
@@ -489,6 +490,48 @@ function renderInvoiceDetail() {
             </div>
         </div>
     </div>`;
+}
+
+// Edit paid date function
+async function editPaidDate(invoiceId, currentDate) {
+    const newDate = prompt('Enter new paid date (YYYY-MM-DD):', currentDate);
+    
+    if (!newDate) return; // User cancelled
+    
+    // Validate date format
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(newDate)) {
+        alert('Invalid date format. Please use YYYY-MM-DD');
+        return;
+    }
+    
+    try {
+        isLoading = true;
+        loadingMessage = 'Updating paid date...';
+        renderApp();
+        
+        const { data, error } = await supabaseClient
+            .from('invoices')
+            .update({ paid_date: newDate })
+            .eq('id', invoiceId)
+            .select();
+        
+        if (error) throw error;
+        
+        if (data) {
+            const index = invoices.findIndex(i => i.id === invoiceId);
+            if (index !== -1) {
+                invoices[index] = data[0];
+            }
+            showNotification('Paid date updated successfully!', 'success');
+        }
+    } catch (error) {
+        console.error('Error updating paid date:', error);
+        showNotification('Failed to update paid date: ' + error.message, 'error');
+    } finally {
+        isLoading = false;
+        renderApp();
+    }
 }
 
 console.log('✅ Invoices module loaded (Professional Table View)');
