@@ -1,8 +1,9 @@
 // ═══════════════════════════════════════════════════════════════════
-// M4 STREAMLINE - Professional Dashboard Module (Xero-inspired)
-// ═══════════════════════════════════════════════════════════════════
+// M4 STREAMLINE - Professional Dashboard (Based on Mockup)
+// ═════════════════════════════════════════════════════════════════
 
 let dashboardRevenueChartInstance = null;
+let dashboardExpenseChartInstance = null;
 
 function renderDashboard() {
     const today = new Date().toISOString().split('T')[0];
@@ -10,7 +11,8 @@ function renderDashboard() {
     const upcomingJobs = jobs.filter(j => j.date >= today).sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 5);
     const tomorrowJobs = jobs.filter(j => j.date === tomorrow);
     const pendingQuotes = quotes.filter(q => q.status === 'pending' && !q.accepted);
-    const unpaidInvoices = invoices.filter(i => i.status === 'unpaid');
+    const acceptedQuotes = quotes.filter(q => q.accepted || q.status === 'accepted');
+    const unpaidInvoices = invoices.filter(i => i.status === 'unpaid').slice(0, 4);
     
     const todayDate = new Date();
     todayDate.setHours(0,0,0,0);
@@ -23,25 +25,47 @@ function renderDashboard() {
     });
     
     // Financial calculations
-    const totalUnpaid = unpaidInvoices.reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
+    const totalUnpaid = invoices.filter(i => i.status === 'unpaid').reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
     const totalRevenue = invoices.filter(i => i.status === 'paid').reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
     const totalExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
     const netProfit = totalRevenue - totalExpenses;
+    const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : 0;
     
-    // Last 30 days stats
+    // Last 30 days revenue
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const recentRevenue = invoices.filter(i => i.status === 'paid' && new Date(i.issue_date) >= thirtyDaysAgo).reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
     
-    return `<div class="max-w-7xl">
-        <!-- Header -->
-        <div class="mb-8">
-            <h1 class="text-2xl font-semibold text-gray-900 dark:text-white mb-1">Dashboard</h1>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Welcome back, here's your business overview</p>
+    // Revenue growth
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+    const previousMonthRevenue = invoices.filter(i => i.status === 'paid' && new Date(i.issue_date) >= sixtyDaysAgo && new Date(i.issue_date) < thirtyDaysAgo).reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
+    const revenueGrowth = previousMonthRevenue > 0 ? (((recentRevenue - previousMonthRevenue) / previousMonthRevenue) * 100).toFixed(1) : 0;
+    
+    // Active jobs count
+    const activeJobs = jobs.filter(j => j.date >= today).length;
+    
+    // Current date display
+    const now = new Date();
+    const dayName = now.toLocaleDateString('en-US', { weekday: 'long' });
+    const dateString = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    
+    return `<div class="max-w-7xl mx-auto space-y-6">
+        
+        <!-- Page Header -->
+        <div class="flex justify-between items-start">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Your business at a glance</p>
+            </div>
+            <div class="text-right">
+                <div class="text-sm text-gray-500 dark:text-gray-400">${dayName}</div>
+                <div class="text-lg font-semibold text-gray-900 dark:text-white">${dateString}</div>
+            </div>
         </div>
         
         ${!companySettings?.business_name && !companySettings?.phone ? `
-        <div class="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 mb-6">
+        <div class="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-4">
             <div class="flex items-start gap-3">
                 <svg class="w-5 h-5 text-orange-600 dark:text-orange-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
@@ -54,204 +78,250 @@ function renderDashboard() {
         </div>
         ` : ''}
         
-        <!-- Critical Alerts (Xero-style) -->
-        ${tomorrowJobs.length > 0 ? `
-        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors" onclick="switchTab('schedule')">
+        ${!localStorage.getItem('userGuideDismissed') ? `
+        <div id="userGuideBanner" class="bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-xl p-4">
             <div class="flex items-start gap-3">
-                <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                <svg class="w-5 h-5 text-teal-600 dark:text-teal-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/>
                 </svg>
                 <div class="flex-1">
-                    <p class="text-sm font-medium text-blue-900 dark:text-blue-200">${tomorrowJobs.length} job${tomorrowJobs.length > 1 ? 's' : ''} scheduled for tomorrow</p>
-                    <p class="text-sm text-blue-700 dark:text-blue-300 mt-1">${tomorrowJobs.map(j => j.title).join(', ')}</p>
+                    <p class="text-sm font-medium text-teal-900 dark:text-teal-200">New to M4 Streamline?</p>
+                    <p class="text-sm text-teal-700 dark:text-teal-300 mt-1">Check out our comprehensive <button onclick="dismissUserGuide(); downloadUserGuide();" class="underline font-medium hover:text-teal-900 dark:hover:text-teal-100">User Guide</button> for a complete walkthrough.</p>
                 </div>
+                <button onclick="dismissUserGuide()" class="text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
             </div>
         </div>
         ` : ''}
         
-        ${overdueInvoices.length > 0 ? `
-        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors" onclick="switchTab('invoices')">
-            <div class="flex items-start gap-3">
-                <svg class="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                </svg>
-                <div class="flex-1">
-                    <p class="text-sm font-medium text-red-900 dark:text-red-200">${overdueInvoices.length} overdue invoice${overdueInvoices.length > 1 ? 's' : ''}</p>
-                    <p class="text-sm text-red-700 dark:text-red-300 mt-1">$${overdueInvoices.reduce((s,i) => s + parseFloat(i.total || 0), 0).toFixed(2)} outstanding</p>
-                </div>
-            </div>
-        </div>
-        ` : ''}
-        
-        <!-- Financial Summary Cards (Xero-style clean) -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Revenue</span>
-                    <span class="text-green-600 dark:text-green-400">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+        <!-- Key Metrics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <!-- Total Revenue -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 hover:shadow-md transition-shadow cursor-pointer" onclick="switchTab('analytics')">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 bg-teal-100 dark:bg-teal-900/30 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-teal-600 dark:text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                    </span>
+                    </div>
+                    ${revenueGrowth != 0 ? `
+                    <div class="flex items-center gap-1 text-xs font-medium ${revenueGrowth > 0 ? 'text-teal-600 dark:text-teal-400' : 'text-red-600 dark:text-red-400'}">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${revenueGrowth > 0 ? 'M5 10l7-7m0 0l7 7m-7-7v18' : 'M19 14l-7 7m0 0l-7-7m7 7V3'}"></path>
+                        </svg>
+                        ${Math.abs(revenueGrowth)}%
+                    </div>
+                    ` : ''}
                 </div>
-                <div class="text-3xl font-semibold text-gray-900 dark:text-white mb-2">$${totalRevenue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">+$${recentRevenue.toFixed(2)} in last 30 days</div>
+                <div>
+                    <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Total Revenue</div>
+                    <div class="text-2xl font-bold text-gray-900 dark:text-white">$${totalRevenue.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">$${recentRevenue.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})} this month</div>
+                </div>
             </div>
             
-            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Expenses</span>
-                    <span class="text-red-600 dark:text-red-400">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"/>
+            <!-- Net Profit -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 hover:shadow-md transition-shadow cursor-pointer" onclick="switchTab('analytics')">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                         </svg>
-                    </span>
+                    </div>
+                    <div class="text-xs font-medium ${netProfit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">
+                        ${profitMargin}% margin
+                    </div>
                 </div>
-                <div class="text-3xl font-semibold text-gray-900 dark:text-white mb-2">$${totalExpenses.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">View breakdown in Expenses</div>
+                <div>
+                    <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Net Profit</div>
+                    <div class="text-2xl font-bold ${netProfit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">$${Math.abs(netProfit).toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">$${totalExpenses.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})} expenses</div>
+                </div>
             </div>
             
-            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Net Profit</span>
-                    <span class="${netProfit >= 0 ? 'text-teal-600 dark:text-teal-400' : 'text-red-600 dark:text-red-400'}">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            <!-- Outstanding Invoices -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 hover:shadow-md transition-shadow cursor-pointer" onclick="switchTab('invoices')">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
-                    </span>
+                    </div>
+                    ${overdueInvoices.length > 0 ? `
+                    <div class="text-xs font-medium text-red-600 dark:text-red-400">
+                        ${overdueInvoices.length} overdue
+                    </div>
+                    ` : ''}
                 </div>
-                <div class="text-3xl font-semibold ${netProfit >= 0 ? 'text-gray-900 dark:text-white' : 'text-red-600 dark:text-red-400'} mb-2">${netProfit >= 0 ? '$' : '-$'}${Math.abs(netProfit).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">Revenue minus expenses</div>
+                <div>
+                    <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Outstanding</div>
+                    <div class="text-2xl font-bold text-gray-900 dark:text-white">$${totalUnpaid.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${invoices.filter(i => i.status === 'unpaid').length} unpaid invoices</div>
+                </div>
             </div>
+            
+            <!-- Active Jobs -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 hover:shadow-md transition-shadow cursor-pointer" onclick="switchTab('schedule')">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    ${pendingQuotes.length > 0 ? `
+                    <div class="text-xs font-medium text-blue-600 dark:text-blue-400">
+                        ${pendingQuotes.length} pending
+                    </div>
+                    ` : ''}
+                </div>
+                <div>
+                    <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Active Jobs</div>
+                    <div class="text-2xl font-bold text-gray-900 dark:text-white">${activeJobs}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${acceptedQuotes.length} accepted quotes</div>
+                </div>
+            </div>
+            
         </div>
         
-        <!-- Two Column Layout -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <!-- Revenue Chart -->
-            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
-                <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-base font-semibold text-gray-900 dark:text-white">Revenue Trend</h3>
-                    <span class="text-xs text-gray-500 dark:text-gray-400">Last 6 months</span>
-                </div>
-                <div class="h-64">
+        <!-- Charts Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <!-- Revenue Trend Chart -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Revenue Trend</h3>
+                <div class="relative h-64">
                     <canvas id="dashboardRevenueChart"></canvas>
                 </div>
             </div>
             
-            <!-- Quick Stats -->
-            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
-                <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-6">Quick Stats</h3>
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 -mx-3 px-3 rounded transition-colors" onclick="switchTab('clients')">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-teal-100 dark:bg-teal-900/30 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-teal-600 dark:text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <div class="text-sm text-gray-500 dark:text-gray-400">Total Clients</div>
-                                <div class="text-lg font-semibold text-gray-900 dark:text-white">${clients.length}</div>
-                            </div>
-                        </div>
-                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                        </svg>
-                    </div>
-                    
-                    <div class="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 -mx-3 px-3 rounded transition-colors" onclick="switchTab('invoices')">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <div class="text-sm text-gray-500 dark:text-gray-400">Unpaid Invoices</div>
-                                <div class="text-lg font-semibold text-gray-900 dark:text-white">$${totalUnpaid.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                            </div>
-                        </div>
-                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                        </svg>
-                    </div>
-                    
-                    <div class="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 -mx-3 px-3 rounded transition-colors" onclick="switchTab('quotes')">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <div class="text-sm text-gray-500 dark:text-gray-400">Pending Quotes</div>
-                                <div class="text-lg font-semibold text-gray-900 dark:text-white">${pendingQuotes.length}</div>
-                            </div>
-                        </div>
-                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                        </svg>
-                    </div>
-                    
-                    <div class="flex items-center justify-between py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 -mx-3 px-3 rounded transition-colors" onclick="switchTab('schedule')">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <div class="text-sm text-gray-500 dark:text-gray-400">Upcoming Jobs</div>
-                                <div class="text-lg font-semibold text-gray-900 dark:text-white">${upcomingJobs.length}</div>
-                            </div>
-                        </div>
-                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                        </svg>
+            <!-- Expense Breakdown Chart -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Expense Breakdown</h3>
+                <div class="relative h-64">
+                    <canvas id="dashboardExpenseChart"></canvas>
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- Bottom Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <!-- Upcoming Jobs -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div class="p-6 border-b border-gray-100 dark:border-gray-700">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Upcoming Jobs</h3>
+                        <button onclick="switchTab('schedule')" class="text-sm text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium">
+                            View All →
+                        </button>
                     </div>
                 </div>
+                <div class="divide-y divide-gray-100 dark:divide-gray-700">
+                    ${upcomingJobs.length === 0 ? `
+                        <div class="p-8 text-center text-gray-500 dark:text-gray-400 text-sm">
+                            No upcoming jobs scheduled
+                        </div>
+                    ` : upcomingJobs.map(job => {
+                        const client = clients.find(c => c.id === job.client_id);
+                        const jobDate = new Date(job.date);
+                        const daysUntil = Math.ceil((jobDate - new Date()) / (1000 * 60 * 60 * 24));
+                        return `
+                        <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer" onclick="switchTab('schedule')">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white">${job.title}</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${client?.name || 'Unknown'}</div>
+                                </div>
+                                <div class="text-right ml-4">
+                                    <div class="text-xs font-medium text-gray-900 dark:text-white">${jobDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})}</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">${daysUntil === 0 ? 'Today' : daysUntil === 1 ? 'Tomorrow' : daysUntil + ' days'}</div>
+                                </div>
+                            </div>
+                        </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+            
+            <!-- Outstanding Invoices -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div class="p-6 border-b border-gray-100 dark:border-gray-700">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Outstanding Invoices</h3>
+                        <button onclick="switchTab('invoices')" class="text-sm text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium">
+                            View All →
+                        </button>
+                    </div>
+                </div>
+                <div class="divide-y divide-gray-100 dark:divide-gray-700">
+                    ${unpaidInvoices.length === 0 ? `
+                        <div class="p-8 text-center text-gray-500 dark:text-gray-400 text-sm">
+                            No outstanding invoices
+                        </div>
+                    ` : unpaidInvoices.map(inv => {
+                        const client = clients.find(c => c.id === inv.client_id);
+                        const dueDate = inv.due_date ? new Date(inv.due_date) : null;
+                        const isOverdue = dueDate && dueDate < todayDate;
+                        const daysOverdue = isOverdue ? Math.ceil((todayDate - dueDate) / (1000 * 60 * 60 * 24)) : 0;
+                        return `
+                        <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer" onclick="switchTab('invoices')">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white">${inv.invoice_number || 'INV-' + inv.id.slice(0,6)}</div>
+                                        ${isOverdue ? `
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                                            ${daysOverdue}d overdue
+                                        </span>
+                                        ` : ''}
+                                    </div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${client?.name || 'Unknown'}</div>
+                                </div>
+                                <div class="text-right ml-4">
+                                    <div class="text-sm font-semibold text-gray-900 dark:text-white">$${(inv.total || 0).toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">Due ${dueDate ? dueDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric'}) : 'N/A'}</div>
+                                </div>
+                            </div>
+                        </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="bg-gradient-to-r from-teal-500 to-teal-600 rounded-xl shadow-lg p-6">
+            <h3 class="text-lg font-semibold text-white mb-4">Quick Actions</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <button onclick="openModal('quote')" class="bg-white/10 hover:bg-white/20 backdrop-blur text-white px-4 py-3 rounded-lg font-medium transition-colors text-sm">
+                    + Create Quote
+                </button>
+                <button onclick="openModal('invoice')" class="bg-white/10 hover:bg-white/20 backdrop-blur text-white px-4 py-3 rounded-lg font-medium transition-colors text-sm">
+                    + Create Invoice
+                </button>
+                <button onclick="openModal('job')" class="bg-white/10 hover:bg-white/20 backdrop-blur text-white px-4 py-3 rounded-lg font-medium transition-colors text-sm">
+                    + Schedule Job
+                </button>
+                <button onclick="openModal('expense')" class="bg-white/10 hover:bg-white/20 backdrop-blur text-white px-4 py-3 rounded-lg font-medium transition-colors text-sm">
+                    + Add Expense
+                </button>
             </div>
         </div>
         
-        <!-- Upcoming Jobs List (Simplified) -->
-        ${upcomingJobs.length > 0 ? `
-        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-base font-semibold text-gray-900 dark:text-white">Upcoming Jobs</h3>
-                    <button onclick="switchTab('schedule')" class="text-sm text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium">View all</button>
-                </div>
-            </div>
-            <div class="divide-y divide-gray-200 dark:divide-gray-700">
-                ${upcomingJobs.map(job => {
-                    const client = clients.find(c => c.id === job.client_id);
-                    const jobDate = new Date(job.date);
-                    const isTomorrow = job.date === tomorrow;
-                    return `<div class="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors" onclick="switchTab('schedule')">
-                        <div class="flex items-center justify-between">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-2">
-                                    <div class="font-medium text-gray-900 dark:text-white">${job.title}</div>
-                                    ${isTomorrow ? '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">Tomorrow</span>' : ''}
-                                </div>
-                                <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">${client?.name || 'Unknown'}</div>
-                            </div>
-                            <div class="text-right ml-4">
-                                <div class="text-sm text-gray-900 dark:text-white">${jobDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}</div>
-                                <div class="text-sm text-gray-500 dark:text-gray-400">${job.time}</div>
-                            </div>
-                        </div>
-                    </div>`;
-                }).join('')}
-            </div>
-        </div>
-        ` : ''}
     </div>`;
 }
 
-// Initialize dashboard charts (Xero-style minimal)
+// Initialize dashboard charts
 function initializeDashboardCharts() {
-    const now = new Date();
+    console.log('🎨 Initializing dashboard charts...');
+    
+    // Revenue Trend Chart
     const monthLabels = [];
     const monthlyRevenue = [];
     
@@ -285,67 +355,110 @@ function initializeDashboardCharts() {
                     label: 'Revenue',
                     data: monthlyRevenue,
                     borderColor: 'rgb(20, 184, 166)',
-                    backgroundColor: 'rgba(20, 184, 166, 0.05)',
-                    borderWidth: 2,
-                    tension: 0.3,
+                    backgroundColor: 'rgba(20, 184, 166, 0.1)',
+                    tension: 0.4,
                     fill: true,
                     pointRadius: 4,
-                    pointBackgroundColor: 'rgb(20, 184, 166)',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2
+                    pointHoverRadius: 6
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        padding: 12,
-                        titleColor: '#fff',
-                        bodyColor: '#fff',
-                        displayColors: false,
-                        callbacks: {
-                            label: function(context) {
-                                return '$' + context.parsed.y.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                            }
-                        }
-                    }
+                    legend: { display: false }
                 },
                 scales: {
                     y: {
                         beginAtZero: true,
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.05)',
-                            drawBorder: false
-                        },
                         ticks: {
                             callback: function(value) {
-                                return '$' + value.toLocaleString();
-                            },
-                            color: '#6B7280',
-                            font: {
-                                size: 11
-                            }
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false,
-                            drawBorder: false
-                        },
-                        ticks: {
-                            color: '#6B7280',
-                            font: {
-                                size: 11
+                                return '$' + value.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
                             }
                         }
                     }
                 }
             }
         });
+        console.log('✅ Revenue chart created!');
+    }
+    
+    // Expense Breakdown Chart
+    const categories = {};
+    expenses.forEach(exp => {
+        const cat = exp.category || 'Other';
+        categories[cat] = (categories[cat] || 0) + parseFloat(exp.amount || 0);
+    });
+    
+    const expenseLabels = Object.keys(categories);
+    const expenseData = Object.values(categories);
+    const colors = [
+        'rgb(20, 184, 166)',
+        'rgb(59, 130, 246)',
+        'rgb(249, 115, 22)',
+        'rgb(236, 72, 153)',
+        'rgb(139, 92, 246)',
+        'rgb(34, 197, 94)'
+    ];
+    
+    const expenseCtx = document.getElementById('dashboardExpenseChart');
+    if (expenseCtx) {
+        if (dashboardExpenseChartInstance) {
+            dashboardExpenseChartInstance.destroy();
+        }
+        
+        dashboardExpenseChartInstance = new Chart(expenseCtx, {
+            type: 'doughnut',
+            data: {
+                labels: expenseLabels,
+                datasets: [{
+                    data: expenseData,
+                    backgroundColor: colors,
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 10,
+                            font: { size: 11 }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = '$' + context.parsed.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return label + ': ' + value + ' (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        console.log('✅ Expense chart created!');
     }
 }
 
-console.log('✅ Professional Dashboard module loaded (Xero-inspired)');
+// Dismiss user guide banner
+function dismissUserGuide() {
+    localStorage.setItem('userGuideDismissed', 'true');
+    const banner = document.getElementById('userGuideBanner');
+    if (banner) {
+        banner.style.opacity = '0';
+        banner.style.transition = 'opacity 0.3s';
+        setTimeout(() => {
+            renderApp();
+        }, 300);
+    }
+}
+
+console.log('✅ Professional Dashboard module loaded (Mockup Design)');
