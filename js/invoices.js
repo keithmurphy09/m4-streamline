@@ -26,6 +26,11 @@ function renderInvoices() {
 }
 
 function renderInvoicesTable() {
+    // Recurring view (special case)
+    if (invoiceFilter === 'recurring') {
+        return renderRecurringInvoices();
+    }
+    
     // Monthly view (special case)
     if (invoiceFilter === 'monthly') {
         return renderMonthlyInvoices();
@@ -92,7 +97,6 @@ function renderInvoicesTable() {
                 <td class="px-6 py-4">
                     <div class="text-sm text-gray-600 dark:text-gray-400">${formatDate(inv.issue_date || inv.created_at)}</div>
                     ${inv.due_date ? `<div class="text-xs text-gray-400 dark:text-gray-500">Due ${formatDate(inv.due_date)}</div>` : ''}
-                    ${isPaid && inv.paid_date ? `<div class="text-xs text-teal-600 dark:text-teal-400 font-medium mt-1 cursor-pointer hover:underline" onclick="event.stopPropagation(); editPaidDate('${inv.id}', '${inv.paid_date}')">Paid ${formatDate(inv.paid_date)}</div>` : ''}
                 </td>
                 <td class="px-6 py-4">
                     ${statusBadge}
@@ -143,6 +147,9 @@ function renderInvoicesTable() {
             </button>
             <button onclick="invoiceFilter='monthly'; currentPage.invoices=1; renderApp();" class="px-4 py-2 rounded-lg text-sm font-medium ${invoiceFilter === 'monthly' ? 'bg-black text-white border-teal-400' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600'} border transition-colors">
                 Monthly View
+            </button>
+            <button onclick="invoiceFilter='recurring'; currentPage.invoices=1; renderApp();" class="px-4 py-2 rounded-lg text-sm font-medium ${invoiceFilter === 'recurring' ? 'bg-black text-white border-teal-400' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600'} border transition-colors">
+                Recurring (${(recurringInvoices || []).filter(r => r.status === 'active').length})
             </button>
         </div>
     `;
@@ -490,105 +497,6 @@ function renderInvoiceDetail() {
             </div>
         </div>
     </div>`;
-}
-
-// Edit paid date function with calendar picker
-async function editPaidDate(invoiceId, currentDate) {
-    // Create modal overlay
-    const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-    modal.onclick = (e) => {
-        if (e.target === modal) modal.remove();
-    };
-    
-    // Create modal content
-    const modalContent = document.createElement('div');
-    modalContent.className = 'bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-sm w-full mx-4';
-    modalContent.onclick = (e) => e.stopPropagation();
-    
-    const currentDateObj = currentDate ? new Date(currentDate) : new Date();
-    const formattedDate = currentDateObj.toISOString().split('T')[0];
-    
-    modalContent.innerHTML = `
-        <div class="mb-4">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Edit Paid Date</h3>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Select the date this invoice was paid</p>
-        </div>
-        
-        <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Paid Date</label>
-            <input 
-                type="date" 
-                id="paidDateInput" 
-                value="${formattedDate}"
-                class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 dark:bg-gray-700 dark:text-white"
-            />
-        </div>
-        
-        <div class="flex gap-3 justify-end">
-            <button 
-                onclick="this.closest('.fixed').remove()" 
-                class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg font-medium transition-colors"
-            >
-                Cancel
-            </button>
-            <button 
-                id="savePaidDateBtn"
-                class="px-4 py-2 bg-teal-600 text-white hover:bg-teal-700 rounded-lg font-medium transition-colors"
-            >
-                Save Date
-            </button>
-        </div>
-    `;
-    
-    modal.appendChild(modalContent);
-    document.body.appendChild(modal);
-    
-    // Focus the date input
-    setTimeout(() => {
-        const dateInput = document.getElementById('paidDateInput');
-        if (dateInput) dateInput.focus();
-    }, 100);
-    
-    // Handle save button
-    document.getElementById('savePaidDateBtn').onclick = async () => {
-        const newDate = document.getElementById('paidDateInput').value;
-        
-        if (!newDate) {
-            alert('Please select a date');
-            return;
-        }
-        
-        modal.remove();
-        
-        try {
-            isLoading = true;
-            loadingMessage = 'Updating paid date...';
-            renderApp();
-            
-            const { data, error } = await supabaseClient
-                .from('invoices')
-                .update({ paid_date: newDate })
-                .eq('id', invoiceId)
-                .select();
-            
-            if (error) throw error;
-            
-            if (data) {
-                const index = invoices.findIndex(i => i.id === invoiceId);
-                if (index !== -1) {
-                    invoices[index] = data[0];
-                }
-                showNotification('Paid date updated successfully!', 'success');
-            }
-        } catch (error) {
-            console.error('Error updating paid date:', error);
-            showNotification('Failed to update paid date: ' + error.message, 'error');
-        } finally {
-            isLoading = false;
-            renderApp();
-        }
-    };
 }
 
 console.log('✅ Invoices module loaded (Professional Table View)');
