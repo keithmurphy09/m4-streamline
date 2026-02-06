@@ -71,11 +71,34 @@ async function updateClient(id) {
 }
 
 async function deleteClient(id) {
-    if (!confirm('Are you sure you want to delete this client? This will also delete all related quotes, jobs, invoices, and expenses.')) {
-        return;
-    }
-    
     try {
+        // Check if client has related data
+        const [quotesCheck, invoicesCheck, jobsCheck] = await Promise.all([
+            supabaseClient.from('quotes').select('id').eq('client_id', id).limit(1),
+            supabaseClient.from('invoices').select('id').eq('client_id', id).limit(1),
+            supabaseClient.from('jobs').select('id').eq('client_id', id).limit(1)
+        ]);
+        
+        const hasQuotes = quotesCheck.data && quotesCheck.data.length > 0;
+        const hasInvoices = invoicesCheck.data && invoicesCheck.data.length > 0;
+        const hasJobs = jobsCheck.data && jobsCheck.data.length > 0;
+        
+        if (hasQuotes || hasInvoices || hasJobs) {
+            let message = '⚠️ Cannot delete this client because they have:\n\n';
+            if (hasQuotes) message += '• Active quotes\n';
+            if (hasInvoices) message += '• Invoices\n';
+            if (hasJobs) message += '• Scheduled jobs\n';
+            message += '\nPlease delete or reassign these items first.';
+            
+            alert(message);
+            return;
+        }
+        
+        // No related data - safe to delete
+        if (!confirm('Are you sure you want to delete this client? This action cannot be undone.')) {
+            return;
+        }
+        
         const { error } = await supabaseClient.from('clients').delete().eq('id', id);
         if (error) throw error;
         
@@ -86,7 +109,7 @@ async function deleteClient(id) {
         renderApp();
     } catch (error) {
         console.error('Error deleting client:', error);
-        showNotification('Error deleting client', 'error');
+        showNotification('Error deleting client: ' + error.message, 'error');
     }
 }
 
