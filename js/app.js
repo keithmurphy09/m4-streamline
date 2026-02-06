@@ -153,7 +153,7 @@ async function renderApp() {
                                 
                                 <!-- Accounts Dropdown -->
                                 <div class="relative group">
-                                    <button class="px-4 py-2 text-sm font-medium ${['analytics', 'expenses'].includes(activeTab) ? 'text-teal-400 bg-gray-900' : 'text-white hover:bg-gray-900'} rounded transition-colors flex items-center gap-1">
+                                    <button class="px-4 py-2 text-sm font-medium ${['analytics', 'expenses', 'cashflow'].includes(activeTab) ? 'text-teal-400 bg-gray-900' : 'text-white hover:bg-gray-900'} rounded transition-colors flex items-center gap-1">
                                         Accounts
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -163,6 +163,7 @@ async function renderApp() {
                                         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2">
                                             <button onclick="switchTab('analytics')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'analytics' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Analytics</button>
                                             <button onclick="switchTab('expenses')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'expenses' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Expenses</button>
+                                            <button onclick="switchTab('cashflow')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'cashflow' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Cash Flow</button>
                                         </div>
                                     </div>
                                 </div>
@@ -203,6 +204,11 @@ async function renderApp() {
     if (activeTab === 'analytics') {
         setTimeout(() => initializeCharts(), 100);
     }
+    
+    // Initialize cash flow chart
+    if (activeTab === 'cashflow') {
+        setTimeout(() => initializeCashFlowChart(), 100);
+    }
 }
 
 function toggleSettingsMenu() {
@@ -227,6 +233,7 @@ async function renderContent() {
     if (activeTab === 'invoices') return renderInvoices();
     if (activeTab === 'expenses') return renderExpenses();
     if (activeTab === 'analytics') return renderAnalytics();
+    if (activeTab === 'cashflow') return renderCashFlow();
     if (activeTab === 'company') return renderCompany();
     if (activeTab === 'team') return renderTeam();
     if (activeTab === 'admin') return renderAdmin();
