@@ -91,10 +91,8 @@ function calculatePeriodMetrics(range) {
     const periodExpenses = filterByDateRange(expenses, 'date', range);
     const periodQuotes = filterByDateRange(quotes, 'created_at', range);
     
-    // Use paid_date for revenue calculations instead of issue_date
-    const paidInvoices = invoices.filter(inv => inv.status === 'paid' && inv.paid_date);
-    const paidInvoicesInPeriod = filterByDateRange(paidInvoices, 'paid_date', range);
-    const revenue = paidInvoicesInPeriod.reduce((sum, inv) => sum + (inv.total || 0), 0);
+    const paidInvoices = periodInvoices.filter(inv => inv.status === 'paid');
+    const revenue = paidInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
     const expenseTotal = periodExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
     const profit = revenue - expenseTotal;
     const margin = revenue > 0 ? ((profit / revenue) * 100) : 0;
@@ -149,8 +147,7 @@ function renderAnalytics() {
     
     // Calculate profitability per client
     const clientProfitability = {};
-    const paidInvoices = invoices.filter(inv => inv.status === 'paid' && inv.paid_date);
-    const periodInvoices = filterByDateRange(paidInvoices, 'paid_date', currentRange);
+    const periodInvoices = filterByDateRange(invoices.filter(inv => inv.status === 'paid'), 'issue_date', currentRange);
     
     periodInvoices.forEach(inv => {
         const clientId = inv.client_id;
@@ -201,7 +198,7 @@ function renderAnalytics() {
         <div>
             <!-- Header with Filters -->
             <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-                <h2 class="text-2xl font-bold dark:text-white">📊 Analytics & Insights</h2>
+                <h2 class="text-2xl font-bold dark:text-white">Analytics & Insights</h2>
                 
                 <div class="flex gap-3 flex-wrap">
                     <!-- Period Selector -->
@@ -277,7 +274,7 @@ function renderAnalytics() {
                             <div class="text-sm text-purple-700 dark:text-purple-300 font-medium mb-1">Avg Invoice Value</div>
                             <div class="text-2xl font-bold text-purple-900 dark:text-purple-100">$${current.avgInvoiceValue.toFixed(2)}</div>
                         </div>
-                        <div class="text-4xl opacity-50">💰</div>
+                        
                     </div>
                 </div>
                 
@@ -297,7 +294,7 @@ function renderAnalytics() {
                             <div class="text-sm text-emerald-700 dark:text-emerald-300 font-medium mb-1">Profit per Job</div>
                             <div class="text-2xl font-bold text-emerald-900 dark:text-emerald-100">$${current.paidCount > 0 ? (current.profit / current.paidCount).toFixed(2) : '0.00'}</div>
                         </div>
-                        <div class="text-4xl opacity-50">📈</div>
+                        
                     </div>
                 </div>
             </div>
@@ -351,7 +348,7 @@ function renderAnalytics() {
             
             <!-- Business Funnel -->
             <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-                <h3 class="text-lg font-bold dark:text-white mb-4">📊 Business Funnel (${currentRange.label})</h3>
+                <h3 class="text-lg font-bold dark:text-white mb-4">Business Funnel (${currentRange.label})</h3>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div class="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 rounded-lg border border-blue-200 dark:border-blue-700">
                         <div class="text-4xl font-bold text-blue-600 dark:text-blue-400">${current.quoteCount}</div>
@@ -415,9 +412,8 @@ function initRevenueExpensesChart() {
         labels.push(monthDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }));
         
         const monthInvoices = invoices.filter(inv => {
-            if (inv.status !== 'paid' || !inv.paid_date) return false;
-            const invDate = new Date(inv.paid_date);
-            return invDate >= monthDate && invDate <= monthEnd;
+            const invDate = new Date(inv.issue_date);
+            return inv.status === 'paid' && invDate >= monthDate && invDate <= monthEnd;
         });
         const monthExpenses = expenses.filter(exp => {
             const expDate = new Date(exp.date);
