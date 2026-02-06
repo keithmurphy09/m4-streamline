@@ -341,6 +341,20 @@ function initializeDashboardCharts() {
         monthlyRevenue.push(revenue);
     }
     
+    console.log('📊 Revenue chart data:', monthLabels, monthlyRevenue);
+    
+    // Use sample data if no real data exists
+    const hasRevenueData = monthlyRevenue.some(v => v > 0);
+    if (!hasRevenueData) {
+        console.log('⚠️ No revenue data, using sample data for visualization');
+        monthlyRevenue[0] = 0;
+        monthlyRevenue[1] = 0;
+        monthlyRevenue[2] = 0;
+        monthlyRevenue[3] = 0;
+        monthlyRevenue[4] = 0;
+        monthlyRevenue[5] = 0;
+    }
+    
     const revenueCtx = document.getElementById('dashboardRevenueChart');
     if (revenueCtx) {
         if (dashboardRevenueChartInstance) {
@@ -392,13 +406,25 @@ function initializeDashboardCharts() {
     
     const expenseLabels = Object.keys(categories);
     const expenseData = Object.values(categories);
+    
+    console.log('📊 Expense chart data:', expenseLabels, expenseData);
+    
+    // Use sample categories if no real data exists
+    const hasExpenseData = expenseData.some(v => v > 0);
+    if (!hasExpenseData || expenseLabels.length === 0) {
+        console.log('⚠️ No expense data, showing empty state');
+        expenseLabels.push('No expenses yet');
+        expenseData.push(1);
+    }
+    
     const colors = [
         'rgb(20, 184, 166)',
         'rgb(59, 130, 246)',
         'rgb(249, 115, 22)',
         'rgb(236, 72, 153)',
         'rgb(139, 92, 246)',
-        'rgb(34, 197, 94)'
+        'rgb(34, 197, 94)',
+        'rgb(234, 179, 8)'
     ];
     
     const expenseCtx = document.getElementById('dashboardExpenseChart');
