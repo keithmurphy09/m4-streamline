@@ -192,7 +192,7 @@
                             ${quote.deposit_percentage > 0 ? `
                                 <div style="display: flex; justify-content: space-between; margin-top: 12px; margin-bottom: 8px;">
                                     <span style="font-size: 16px; font-weight: bold; color: #f97316;">DEPOSIT REQUIRED:</span>
-                                    <span style="font-size: 16px; font-weight: bold; color: #f97316;">$${parseFloat(quote.deposit_amount).toFixed(2)}</span>
+                                    <span style="font-size: 16px; font-weight: bold; color: #f97316;">$${(parseFloat(quote.total) * (parseFloat(quote.deposit_percentage) / 100)).toFixed(2)}</span>
                                 </div>
                                 <div style="text-align: right; font-size: 11px; color: #666; font-style: italic; margin-bottom: 8px;">
                                     (${quote.deposit_percentage}% of total)
@@ -203,7 +203,7 @@
                                             <span style="font-size: 14px; color: #666;">Balance on completion:</span>
                                             <span style="font-size: 10px; color: #999; font-style: italic; margin-top: 2px;">(Unless specified otherwise)</span>
                                         </div>
-                                        <span style="font-size: 14px; font-weight: 500;">$${(parseFloat(quote.total) - parseFloat(quote.deposit_amount)).toFixed(2)}</span>
+                                        <span style="font-size: 14px; font-weight: 500;">$${(parseFloat(quote.total) - (parseFloat(quote.total) * (parseFloat(quote.deposit_percentage) / 100))).toFixed(2)}</span>
                                     </div>
                                 </div>
                             ` : `
@@ -217,14 +217,14 @@
                         <div class="total">Total: $${parseFloat(quote.total).toFixed(2)}</div>
                         ${quote.deposit_percentage > 0 ? `
                             <div style="margin-top: 15px; padding: 15px; background: #fff7ed; border-radius: 8px; border: 2px solid #f97316;">
-                                <div style="font-size: 16px; font-weight: bold; color: #f97316; margin-bottom: 5px; text-align: right;">DEPOSIT REQUIRED: $${parseFloat(quote.deposit_amount).toFixed(2)}</div>
+                                <div style="font-size: 16px; font-weight: bold; color: #f97316; margin-bottom: 5px; text-align: right;">DEPOSIT REQUIRED: $${(parseFloat(quote.total) * (parseFloat(quote.deposit_percentage) / 100)).toFixed(2)}</div>
                                 <div style="font-size: 11px; color: #666; font-style: italic; margin-bottom: 8px; text-align: right;">(${quote.deposit_percentage}% of total)</div>
                                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2px;">
                                     <div>
                                         <div style="font-size: 14px; color: #666;">Balance on completion:</div>
                                         <div style="font-size: 10px; color: #999; font-style: italic; margin-top: 2px;">(Unless specified otherwise)</div>
                                     </div>
-                                    <div style="font-size: 14px; font-weight: 500; color: #666;">$${(parseFloat(quote.total) - parseFloat(quote.deposit_amount)).toFixed(2)}</div>
+                                    <div style="font-size: 14px; font-weight: 500; color: #666;">$${(parseFloat(quote.total) - (parseFloat(quote.total) * (parseFloat(quote.deposit_percentage) / 100))).toFixed(2)}</div>
                                 </div>
                             </div>
                         ` : `
