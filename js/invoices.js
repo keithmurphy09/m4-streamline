@@ -146,7 +146,7 @@ function renderInvoicesTable() {
         </div>
     `;
     
-    return `<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+    return `<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-visible">
         <!-- Header -->
         <div class="p-6 border-b border-gray-100 dark:border-gray-700">
             <div class="flex justify-between items-start mb-4">
