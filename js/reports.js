@@ -5,6 +5,18 @@
 // Report date range
 let reportRange = 'current'; // 'current', 'quarter', 'year', 'all'
 
+// Expandable sections state
+let expandedSections = {
+    pl: true,
+    gst: true,
+    expenses: true
+};
+
+function toggleReportSection(section) {
+    expandedSections[section] = !expandedSections[section];
+    renderApp();
+}
+
 function renderReports() {
     const range = getReportDateRange(reportRange);
     
@@ -62,7 +74,7 @@ function renderReports() {
                         <option value="year" ${reportRange === 'year' ? 'selected' : ''}>This Year</option>
                         <option value="all" ${reportRange === 'all' ? 'selected' : ''}>All Time</option>
                     </select>
-                    <button onclick="downloadReport()" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors text-sm">
+                    <button onclick="downloadReportPDF()" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors text-sm">
                         📄 Download PDF
                     </button>
                 </div>
@@ -77,10 +89,14 @@ function renderReports() {
             
             <!-- Profit & Loss Summary -->
             <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                <div class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                    <h3 class="text-lg font-bold dark:text-white">Profit & Loss Statement</h3>
+                <div onclick="toggleReportSection('pl')" class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 px-6 py-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:from-gray-100 hover:to-gray-200 dark:hover:from-gray-600 dark:hover:to-gray-500 transition-colors">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-bold dark:text-white">Profit & Loss Statement</h3>
+                        <span class="text-2xl">${expandedSections.pl ? '▼' : '▶'}</span>
+                    </div>
                 </div>
                 
+                ${expandedSections.pl ? `
                 <div class="p-6 space-y-4">
                     <!-- Revenue -->
                     <div class="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-gray-700">
@@ -103,14 +119,19 @@ function renderReports() {
                         </div>
                     </div>
                 </div>
+                ` : ''}
             </div>
             
             <!-- GST Summary -->
             <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                <div class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                    <h3 class="text-lg font-bold dark:text-white">GST Summary</h3>
+                <div onclick="toggleReportSection('gst')" class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 px-6 py-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:from-gray-100 hover:to-gray-200 dark:hover:from-gray-600 dark:hover:to-gray-500 transition-colors">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-bold dark:text-white">GST Summary</h3>
+                        <span class="text-2xl">${expandedSections.gst ? '▼' : '▶'}</span>
+                    </div>
                 </div>
                 
+                ${expandedSections.gst ? `
                 <div class="p-6 space-y-3">
                     <div class="flex justify-between items-center">
                         <span class="text-gray-700 dark:text-gray-300">GST Collected (on sales)</span>
@@ -125,14 +146,19 @@ function renderReports() {
                         <span class="text-xl font-bold text-teal-600">$${gstCollected.toFixed(2)}</span>
                     </div>
                 </div>
+                ` : ''}
             </div>
             
             <!-- Expense Breakdown -->
             <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                <div class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                    <h3 class="text-lg font-bold dark:text-white">Expense Breakdown by Category</h3>
+                <div onclick="toggleReportSection('expenses')" class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 px-6 py-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:from-gray-100 hover:to-gray-200 dark:hover:from-gray-600 dark:hover:to-gray-500 transition-colors">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-bold dark:text-white">Expense Breakdown by Category</h3>
+                        <span class="text-2xl">${expandedSections.expenses ? '▼' : '▶'}</span>
+                    </div>
                 </div>
                 
+                ${expandedSections.expenses ? `
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead>
@@ -152,6 +178,7 @@ function renderReports() {
                         </tbody>
                     </table>
                 </div>
+                ` : ''}
             </div>
         </div>
     `;
@@ -194,9 +221,116 @@ function getReportDateRange(rangeType) {
 }
 
 // Download report as PDF
-function downloadReport() {
-    alert('📄 PDF export coming soon! For now, use Print > Save as PDF');
-    window.print();
+async function downloadReportPDF() {
+    const range = getReportDateRange(reportRange);
+    
+    // Filter data
+    const periodInvoices = invoices.filter(inv => {
+        const date = new Date(inv.issue_date);
+        return date >= range.start && date <= range.end;
+    });
+    const periodExpenses = expenses.filter(exp => {
+        const date = new Date(exp.date);
+        return date >= range.start && date <= range.end;
+    });
+    
+    // Calculate totals
+    const paidInvoices = periodInvoices.filter(inv => inv.status === 'paid');
+    const revenue = paidInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
+    const gstCollected = paidInvoices.reduce((sum, inv) => sum + (inv.gst || 0), 0);
+    const totalExpenses = periodExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
+    const profit = revenue - totalExpenses;
+    const margin = revenue > 0 ? ((profit / revenue) * 100) : 0;
+    
+    // Expense breakdown
+    const expensesByCategory = {};
+    periodExpenses.forEach(exp => {
+        const cat = exp.category || 'Other';
+        expensesByCategory[cat] = (expensesByCategory[cat] || 0) + parseFloat(exp.amount || 0);
+    });
+    
+    // Generate PDF using jsPDF
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let y = 20;
+    
+    // Title
+    doc.setFontSize(20);
+    doc.setFont(undefined, 'bold');
+    doc.text('Financial Report', pageWidth / 2, y, { align: 'center' });
+    
+    y += 10;
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'normal');
+    doc.text(range.label, pageWidth / 2, y, { align: 'center' });
+    
+    y += 15;
+    
+    // Profit & Loss
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('Profit & Loss Statement', 20, y);
+    
+    y += 10;
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'normal');
+    doc.text(`Revenue:`, 20, y);
+    doc.text(`$${revenue.toFixed(2)}`, pageWidth - 20, y, { align: 'right' });
+    
+    y += 7;
+    doc.text(`Total Expenses:`, 20, y);
+    doc.text(`$${totalExpenses.toFixed(2)}`, pageWidth - 20, y, { align: 'right' });
+    
+    y += 10;
+    doc.setFont(undefined, 'bold');
+    doc.text(`Net Profit:`, 20, y);
+    doc.text(`$${profit.toFixed(2)} (${margin.toFixed(1)}% margin)`, pageWidth - 20, y, { align: 'right' });
+    
+    y += 15;
+    
+    // GST Summary
+    doc.setFontSize(14);
+    doc.text('GST Summary', 20, y);
+    
+    y += 10;
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'normal');
+    doc.text(`GST Collected:`, 20, y);
+    doc.text(`$${gstCollected.toFixed(2)}`, pageWidth - 20, y, { align: 'right' });
+    
+    y += 7;
+    doc.text(`GST Paid:`, 20, y);
+    doc.text(`$0.00`, pageWidth - 20, y, { align: 'right' });
+    
+    y += 10;
+    doc.setFont(undefined, 'bold');
+    doc.text(`Net GST Payable:`, 20, y);
+    doc.text(`$${gstCollected.toFixed(2)}`, pageWidth - 20, y, { align: 'right' });
+    
+    y += 15;
+    
+    // Expense Breakdown
+    doc.setFontSize(14);
+    doc.text('Expense Breakdown', 20, y);
+    
+    y += 10;
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'normal');
+    
+    Object.entries(expensesByCategory).sort((a, b) => b[1] - a[1]).forEach(([cat, amount]) => {
+        if (y > 270) {
+            doc.addPage();
+            y = 20;
+        }
+        doc.text(cat, 20, y);
+        doc.text(`$${amount.toFixed(2)}`, pageWidth - 20, y, { align: 'right' });
+        y += 7;
+    });
+    
+    // Save PDF
+    doc.save(`Financial-Report-${range.label.replace(/\s/g, '-')}.pdf`);
 }
 
 console.log('✅ Reports module loaded');
