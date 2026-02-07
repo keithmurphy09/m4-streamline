@@ -823,6 +823,51 @@ async function sendQuoteEmail(quote) {
     }
 }
 
+async function sendQuoteSMS(quote) {
+    const client = clients.find(c => c.id === quote.client_id);
+    if (!client || !client.phone) {
+        alert('Client phone number not found!');
+        return;
+    }
+    
+    if (!smsSettings || !smsSettings.enabled) {
+        alert('⚠️ SMS not configured! Please enable SMS in Company Settings.');
+        return;
+    }
+    
+    const currentUrl = window.location.href.split('?')[0].split('#')[0];
+    const baseUrl = currentUrl.replace(/\/[^\/]*$/, '/');
+    const shareLink = baseUrl + 'quote-viewer.html?quote=' + quote.share_token;
+    
+    const message = `${companySettings?.business_name || 'M4 STREAMLINE'} has sent you a quote for: ${quote.title}\n\nTotal: $${quote.total.toFixed(2)}\n\nView quote: ${shareLink}`;
+    
+    try {
+        const response = await fetch('https://xviustrrsuhidzbcpgow.supabase.co/functions/v1/send-sms', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aXVzdHJyc3VoaWR6YmNwZ293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3ODk1NDgsImV4cCI6MjA4NDM2NTU0OH0.CEcc50c1K2Qnh6rXt_1-_w30LzHvDniGLbqWhdOolRY'
+            },
+            body: JSON.stringify({
+                user_id: currentUser.id,
+                to_phone: client.phone,
+                message: message
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            alert('✅ SMS sent successfully to ' + client.phone + '!\n\nQuote link: ' + shareLink);
+        } else {
+            alert('⚠️ SMS may not have sent: ' + (result.error || 'Unknown error') + '\n\nManually send this link:\n' + shareLink);
+        }
+    } catch (error) {
+        console.error('SMS error:', error);
+        alert('❌ Failed to send SMS: ' + error.message + '\n\nManually send this link:\n' + shareLink);
+    }
+}
+
 async function sendInvoiceEmail(invoice) {
     const client = clients.find(c => c.id === invoice.client_id);
     if (!client || !client.email) {
