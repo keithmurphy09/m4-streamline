@@ -328,11 +328,14 @@
                 });
                 
                 // Check if deposit needs to be paid
-                console.log('Checking deposit:', currentQuote.deposit_amount, currentQuote.deposit_percentage);
+                console.log('Checking deposit:', currentQuote.deposit_percentage);
                 
-                if (currentQuote.deposit_amount && currentQuote.deposit_amount > 0) {
+                if (currentQuote.deposit_percentage && currentQuote.deposit_percentage > 0) {
                     console.log('Has deposit - redirecting to payment');
                     messageDiv.innerHTML = '<p style="color: #10b981; font-weight: bold; font-size: 18px;">✓ Quote Accepted!</p><p style="margin-top: 10px;">Redirecting to deposit payment...</p>';
+                    
+                    // Calculate deposit amount
+                    const depositAmount = parseFloat(currentQuote.total) * (parseFloat(currentQuote.deposit_percentage) / 100);
                     
                     // Create a deposit invoice and redirect to payment
                     setTimeout(async () => {
@@ -349,12 +352,12 @@
                                 items: [{
                                     description: `Deposit (${currentQuote.deposit_percentage}%)`,
                                     quantity: 1,
-                                    price: currentQuote.deposit_amount
+                                    price: depositAmount
                                 }],
-                                notes: `Deposit for quote: ${currentQuote.title}\nRemaining balance: $${(currentQuote.total - currentQuote.deposit_amount).toFixed(2)}`,
-                                subtotal: currentQuote.deposit_amount,
+                                notes: `Deposit for quote: ${currentQuote.title}\nRemaining balance: $${(currentQuote.total - depositAmount).toFixed(2)}`,
+                                subtotal: depositAmount,
                                 gst: 0,
-                                total: currentQuote.deposit_amount,
+                                total: depositAmount,
                                 invoice_number: invoiceNumber,
                                 status: 'unpaid',
                                 issue_date: new Date().toISOString().split('T')[0],
