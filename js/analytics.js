@@ -227,6 +227,79 @@ function renderAnalytics() {
                 </div>
             </div>
             
+            <!-- Actionable Alerts (Clickable) -->
+            ${(() => {
+                const overdueInvoices = invoices.filter(inv => {
+                    if (inv.status === 'paid') return false;
+                    const dueDate = new Date(inv.due_date);
+                    return dueDate < new Date();
+                });
+                
+                const unpaidQuotes = quotes.filter(q => 
+                    (q.status === 'accepted' || q.accepted) && q.status !== 'converted'
+                );
+                const unpaidQuotesValue = unpaidQuotes.reduce((sum, q) => sum + (q.total || 0), 0);
+                
+                // Get current period expenses and find highest category
+                const periodExpenses = filterByDateRange(expenses, 'date', currentRange);
+                const categoryTotals = {};
+                periodExpenses.forEach(e => {
+                    const cat = e.category || 'Uncategorized';
+                    categoryTotals[cat] = (categoryTotals[cat] || 0) + parseFloat(e.amount || 0);
+                });
+                const highestCategory = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0];
+                
+                const alerts = [];
+                
+                if (overdueInvoices.length > 0) {
+                    alerts.push(`
+                        <div onclick="switchTab('invoices'); invoiceFilter='unpaid'; renderApp();" class="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 p-4 rounded-lg border-l-4 border-red-500 cursor-pointer hover:shadow-lg transition-all">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="text-sm font-semibold text-red-700 dark:text-red-400">⚠️ ${overdueInvoices.length} Invoice${overdueInvoices.length > 1 ? 's' : ''} Overdue</div>
+                                    <div class="text-xs text-red-600 dark:text-red-300 mt-1">Click to review and follow up</div>
+                                </div>
+                                <div class="text-2xl">→</div>
+                            </div>
+                        </div>
+                    `);
+                }
+                
+                if (unpaidQuotes.length > 0) {
+                    alerts.push(`
+                        <div onclick="switchTab('quotes'); renderApp();" class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 rounded-lg border-l-4 border-blue-500 cursor-pointer hover:shadow-lg transition-all">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="text-sm font-semibold text-blue-700 dark:text-blue-400">📊 $${unpaidQuotesValue.toFixed(0)} in Accepted Quotes</div>
+                                    <div class="text-xs text-blue-600 dark:text-blue-300 mt-1">${unpaidQuotes.length} quote${unpaidQuotes.length > 1 ? 's' : ''} ready to convert to invoice</div>
+                                </div>
+                                <div class="text-2xl">→</div>
+                            </div>
+                        </div>
+                    `);
+                }
+                
+                if (highestCategory) {
+                    alerts.push(`
+                        <div onclick="switchTab('expenses'); expenseFilter='all'; renderApp();" class="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-lg border-l-4 border-purple-500 cursor-pointer hover:shadow-lg transition-all">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="text-sm font-semibold text-purple-700 dark:text-purple-400">💰 Highest Expense: ${highestCategory[0]}</div>
+                                    <div class="text-xs text-purple-600 dark:text-purple-300 mt-1">$${highestCategory[1].toFixed(2)} this period</div>
+                                </div>
+                                <div class="text-2xl">→</div>
+                            </div>
+                        </div>
+                    `);
+                }
+                
+                return alerts.length > 0 ? `
+                    <div class="grid grid-cols-1 md:grid-cols-${Math.min(alerts.length, 3)} gap-4 mb-6">
+                        ${alerts.join('')}
+                    </div>
+                ` : '';
+            })()}
+            
             <!-- Key Metrics Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border-l-4 border-green-500">
@@ -305,14 +378,14 @@ function renderAnalytics() {
                 ${topProfitableClients.length > 0 ? `
                     <div class="space-y-3">
                         ${topProfitableClients.map((client, index) => `
-                            <div class="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 rounded-lg hover:shadow-md transition-shadow">
+                            <div onclick="switchTab('invoices'); clientSearch='${client.name}'; renderApp();" class="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 rounded-lg hover:shadow-md transition-shadow cursor-pointer">
                                 <div class="flex items-center gap-4 flex-1">
                                     <div class="w-10 h-10 rounded-full ${index === 0 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' : index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-500' : index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600' : 'bg-teal-100 dark:bg-teal-900'} flex items-center justify-center font-bold text-white shadow-md">
                                         ${index + 1}
                                     </div>
                                     <div class="flex-1">
                                         <div class="font-semibold dark:text-white">${client.name}</div>
-                                        <div class="text-xs text-gray-500 dark:text-gray-400">${client.jobs} job${client.jobs !== 1 ? 's' : ''} • ${client.margin.toFixed(1)}% margin</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">${client.jobs} job${client.jobs !== 1 ? 's' : ''} • ${client.margin.toFixed(1)}% margin • Click to view invoices</div>
                                     </div>
                                 </div>
                                 <div class="text-right">
