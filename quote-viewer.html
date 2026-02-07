@@ -119,6 +119,10 @@
                 document.getElementById('app').innerHTML = '<div class="error">Error loading quote: ' + error.message + '</div>';
                 // Don't retry - just show error
             }
+            } catch (error) {
+                console.error('Error loading quote:', error);
+                document.getElementById('app').innerHTML = '<div class="error">Error loading quote: ' + error.message + '</div>';
+            }
         }
 
         function renderQuote() {
