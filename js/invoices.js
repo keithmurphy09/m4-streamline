@@ -106,7 +106,7 @@ function renderInvoicesTable() {
                                 <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path>
                             </svg>
                         </button>
-                        <div id="inv-actions-${inv.id}" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+                        <div id="inv-actions-${inv.id}" class="hidden fixed mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
                             <div class="py-1">
                                 <button onclick="generatePDF('invoice', ${JSON.stringify(inv).replace(/"/g, '&quot;')}); toggleInvoiceActions('${inv.id}')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">Download PDF</button>
                                 <button onclick="sendInvoiceEmail(${JSON.stringify(inv).replace(/"/g, '&quot;')}); toggleInvoiceActions('${inv.id}')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">Email Invoice</button>
@@ -212,8 +212,18 @@ function renderInvoicesTable() {
 
 function toggleInvoiceActions(invoiceId) {
     const menu = document.getElementById(`inv-actions-${invoiceId}`);
+    const button = event.target.closest('button');
+    
     if (menu) {
-        menu.classList.toggle('hidden');
+        if (menu.classList.contains('hidden')) {
+            // Position menu below button
+            const rect = button.getBoundingClientRect();
+            menu.style.top = `${rect.bottom + 8}px`;
+            menu.style.left = `${rect.right - 192}px`; // 192px = w-48
+            menu.classList.remove('hidden');
+        } else {
+            menu.classList.add('hidden');
+        }
     }
     // Close other menus
     document.querySelectorAll('[id^="inv-actions-"]').forEach(m => {
