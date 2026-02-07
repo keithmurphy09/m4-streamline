@@ -346,9 +346,79 @@ function exitDemoMode() {
 }
 
 function initDemoData() {
-    // Demo data is loaded in auth.js when useDemoData = true
-    // This function is here for future demo data setup if needed
-    console.log('✅ Demo mode enabled:', demoMode);
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Sample clients
+    demoClients = [
+        { id: 'demo-client-1', name: 'John Smith', email: 'john@example.com', phone: '0412 345 678', address: '123 Main St, Brisbane', notes: 'Prefers morning appointments' },
+        { id: 'demo-client-2', name: 'Sarah Johnson', email: 'sarah@example.com', phone: '0423 456 789', address: '456 Oak Ave, Gold Coast', notes: 'VIP customer' }
+    ];
+    
+    // Sample jobs
+    demoJobs = [
+        { id: 'demo-job-1', client_id: 'demo-client-1', title: 'Bathroom Renovation', date: today, time: '09:00', status: 'scheduled', notes: 'Full bathroom remodel', photos: [], job_address: '123 Main St, Brisbane' },
+        { id: 'demo-job-2', client_id: 'demo-client-2', title: 'Kitchen Installation', date: today, time: '14:00', status: 'in_progress', notes: 'Cabinet installation', photos: [], job_address: '456 Oak Ave, Gold Coast' }
+    ];
+    
+    // Sample quotes
+    demoQuotes = [
+        { 
+            id: 'demo-quote-1', 
+            client_id: 'demo-client-1', 
+            title: 'Bathroom Renovation', 
+            created_at: today,
+            quote_number: 'QT-001',
+            items: [
+                { description: 'Labour', quantity: 1, price: 3000 },
+                { description: 'Materials', quantity: 1, price: 2000 }
+            ],
+            total: 5000,
+            subtotal: 4545.45,
+            gst: 454.55,
+            deposit_percentage: 30,
+            status: 'pending',
+            share_token: 'demo-token-1',
+            job_address: '123 Main St, Brisbane'
+        }
+    ];
+    
+    // Sample invoices
+    demoInvoices = [
+        {
+            id: 'demo-invoice-1',
+            client_id: 'demo-client-2',
+            title: 'Kitchen Installation - Deposit',
+            invoice_number: 'INV-001',
+            issue_date: today,
+            due_date: today,
+            items: [{ description: 'Deposit - Kitchen Installation', quantity: 1, price: 2000 }],
+            total: 2000,
+            subtotal: 1818.18,
+            gst: 181.82,
+            status: 'unpaid',
+            job_address: '456 Oak Ave, Gold Coast'
+        }
+    ];
+    
+    // Sample expenses
+    demoExpenses = [
+        { id: 'demo-expense-1', date: today, amount: 150, category: 'Materials', description: 'Tiles for bathroom', job_id: 'demo-job-1' },
+        { id: 'demo-expense-2', date: today, amount: 80, category: 'Fuel', description: 'Weekly fuel', job_id: null }
+    ];
+    
+    // Sample team members (for business demo)
+    if (demoMode === 'business') {
+        demoTeamMembers = [
+            { id: 'demo-team-1', name: 'Mike Wilson', email: 'mike@example.com', phone: '0434 567 890', occupation: 'Painter', color: '#3b82f6' },
+            { id: 'demo-team-2', name: 'Lisa Brown', email: 'lisa@example.com', phone: '0445 678 901', occupation: 'Electrician', color: '#ef4444' }
+        ];
+        demoJobs[0].assigned_to = 'demo-team-1';
+        demoExpenses[0].team_member_id = 'demo-team-1';
+    } else {
+        demoTeamMembers = [];
+    }
+    
+    console.log('✅ Demo data populated:', demoMode);
 }
 
 // Upgrade to Business
