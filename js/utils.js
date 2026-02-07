@@ -342,19 +342,7 @@ function exitDemoMode() {
     if (!isAdmin) return;
     demoMode = null;
     useDemoData = false;
-    
-    // Show loading
-    document.body.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100vh; font-size: 18px;">Loading your account...</div>';
-    
-    // Force reload to clear demo data
-    setTimeout(() => {
-        loadAllData().then(() => {
-            renderApp();
-        }).catch(error => {
-            console.error('Error loading data:', error);
-            location.reload(); // Force page reload if data load fails
-        });
-    }, 100);
+    location.reload();
 }
 
 function initDemoData() {
@@ -380,15 +368,6 @@ const GOOGLE_MAPS_API_KEY = 'YOUR_GOOGLE_MAPS_API_KEY_HERE';
 
 // Track which fields have been initialized to prevent duplicates
 const initializedFields = new Set();
-
-// Handle expense receipt upload
-let currentExpenseReceipt = null;
-function handleExpenseReceiptUpload(input) {
-    if (input.files && input.files[0]) {
-        currentExpenseReceipt = input.files[0];
-        console.log('📎 Receipt selected:', currentExpenseReceipt.name);
-    }
-}
 
 // Initialize autocomplete on address field
 function initAddressAutocomplete(inputId) {
@@ -785,12 +764,6 @@ async function sendQuoteEmail(quote) {
             <p>Hello ${client.name},</p>
             <p>${fromName} has sent you a quote for: <strong>${quote.title}</strong></p>
             <p>Total Amount: <strong>$${quote.total.toFixed(2)}</strong></p>
-            ${quote.deposit_percentage > 0 ? `
-                <p style="background: #fff7ed; border-left: 4px solid #fb923c; padding: 12px; margin: 20px 0;">
-                    <strong style="color: #fb923c;">Deposit Required:</strong> $${(quote.total * (quote.deposit_percentage / 100)).toFixed(2)} (${quote.deposit_percentage}% of total)<br>
-                    <span style="color: #666; font-size: 14px;">Balance due on completion: $${(quote.total - (quote.total * (quote.deposit_percentage / 100))).toFixed(2)}</span>
-                </p>
-            ` : ''}
             <p>Please click the link below to view and download your quote.</p>
             <p style="margin: 30px 0;">
                 <a href="${shareLink}" style="background-color: #14b8a6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">View Your Quote</a>
@@ -831,62 +804,6 @@ async function sendQuoteEmail(quote) {
     } catch (error) {
         console.error('Email error:', error);
         alert('❌ Failed to send email: ' + error.message + '\n\nManually send this link:\n' + shareLink);
-    }
-}
-
-async function sendQuoteSMS(quote) {
-    const client = clients.find(c => c.id === quote.client_id);
-    if (!client || !client.phone) {
-        alert('Client phone number not found!');
-        return;
-    }
-    
-    if (!smsSettings || !smsSettings.enabled) {
-        alert('⚠️ SMS is not enabled! Please enable SMS in Company Info settings.');
-        return;
-    }
-    
-    // Check SMS limit
-    if (smsSettings.sms_count_current_month >= smsSettings.sms_limit) {
-        alert('⚠️ SMS limit reached for this month (' + smsSettings.sms_limit + ' SMS). Please wait until next month or upgrade your plan.');
-        return;
-    }
-    
-    // Construct share link
-    const currentUrl = window.location.href.split('?')[0].split('#')[0];
-    const baseUrl = currentUrl.replace(/\/[^\/]*$/, '/');
-    const shareLink = baseUrl + 'quote-viewer.html?quote=' + quote.share_token;
-    
-    const fromName = companySettings?.business_name || 'M4 Projects & Designs';
-    const message = `${fromName}: Your quote for "${quote.title}" is ready! Total: $${quote.total.toFixed(2)}. View: ${shareLink}`;
-    
-    try {
-        const response = await fetch('https://xviustrrsuhidzbcpgow.supabase.co/functions/v1/send-sms', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aXVzdHJyc3VoaWR6YmNwZ293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3ODk1NDgsImV4cCI6MjA4NDM2NTU0OH0.CEcc50c1K2Qnh6rXt_1-_w30LzHvDniGLbqWhdOolRY'
-            },
-            body: JSON.stringify({
-                user_id: currentUser.id,
-                to_number: client.phone,
-                message: message,
-                type: 'quote'
-            })
-        });
-        
-        const result = await response.json();
-        
-        if (response.ok && result.success) {
-            alert('✅ SMS sent successfully to ' + client.phone + '!');
-            await loadAllData(); // Refresh SMS counter
-            renderApp();
-        } else {
-            alert('⚠️ SMS failed: ' + (result.error || 'Unknown error'));
-        }
-    } catch (error) {
-        console.error('SMS error:', error);
-        alert('❌ Failed to send SMS: ' + error.message);
     }
 }
 
