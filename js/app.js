@@ -165,6 +165,7 @@ async function renderApp() {
                                             <button onclick="switchTab('expenses')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'expenses' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Expenses</button>
                                             <button onclick="switchTab('cashflow')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'cashflow' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Cash Flow</button>
                                             <button onclick="switchTab('budget')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'budget' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Budget</button>
+                                            <button onclick="switchTab('reports')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'reports' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Reports</button>
                                         </div>
                                     </div>
                                 </div>
@@ -241,6 +242,7 @@ async function renderContent() {
     if (activeTab === 'analytics') return renderAnalytics();
     if (activeTab === 'cashflow') return renderCashFlow();
     if (activeTab === 'budget') return renderBudget();
+    if (activeTab === 'reports') return renderReports();
     if (activeTab === 'company') return renderCompany();
     if (activeTab === 'team') return renderTeam();
     if (activeTab === 'admin') return renderAdmin();
