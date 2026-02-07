@@ -105,7 +105,7 @@ function renderQuotesTable() {
                                 <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path>
                             </svg>
                         </button>
-                        <div id="actions-${q.id}" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
+                        <div id="actions-${q.id}" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
                             <div class="py-1">
                                 <button onclick="generatePDF('quote', ${JSON.stringify(q).replace(/"/g, '&quot;')}); toggleQuoteActions('${q.id}')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">Download PDF</button>
                                 <button onclick="sendQuoteEmail(${JSON.stringify(q).replace(/"/g, '&quot;')}); toggleQuoteActions('${q.id}')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">Email Quote</button>
@@ -162,7 +162,7 @@ function renderQuotesTable() {
         ${bulkActions}
         
         <!-- Table -->
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto overflow-y-visible">
             <table class="w-full">
                 <thead>
                     <tr class="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
