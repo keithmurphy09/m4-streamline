@@ -831,15 +831,23 @@ async function sendQuoteSMS(quote) {
     }
     
     if (!smsSettings || !smsSettings.enabled) {
-        alert('⚠️ SMS not configured! Please enable SMS in Company Settings.');
+        alert('⚠️ SMS is not enabled! Please enable SMS in Company Info settings.');
         return;
     }
     
+    // Check SMS limit
+    if (smsSettings.sms_count_current_month >= smsSettings.sms_limit) {
+        alert('⚠️ SMS limit reached for this month (' + smsSettings.sms_limit + ' SMS). Please wait until next month or upgrade your plan.');
+        return;
+    }
+    
+    // Construct share link
     const currentUrl = window.location.href.split('?')[0].split('#')[0];
     const baseUrl = currentUrl.replace(/\/[^\/]*$/, '/');
     const shareLink = baseUrl + 'quote-viewer.html?quote=' + quote.share_token;
     
-    const message = `${companySettings?.business_name || 'M4 STREAMLINE'} has sent you a quote for: ${quote.title}\n\nTotal: $${quote.total.toFixed(2)}\n\nView quote: ${shareLink}`;
+    const fromName = companySettings?.business_name || 'M4 Projects & Designs';
+    const message = `${fromName}: Your quote for "${quote.title}" is ready! Total: $${quote.total.toFixed(2)}. View: ${shareLink}`;
     
     try {
         const response = await fetch('https://xviustrrsuhidzbcpgow.supabase.co/functions/v1/send-sms', {
@@ -850,21 +858,24 @@ async function sendQuoteSMS(quote) {
             },
             body: JSON.stringify({
                 user_id: currentUser.id,
-                to_phone: client.phone,
-                message: message
+                to_number: client.phone,
+                message: message,
+                type: 'quote'
             })
         });
         
         const result = await response.json();
         
         if (response.ok && result.success) {
-            alert('✅ SMS sent successfully to ' + client.phone + '!\n\nQuote link: ' + shareLink);
+            alert('✅ SMS sent successfully to ' + client.phone + '!');
+            await loadAllData(); // Refresh SMS counter
+            renderApp();
         } else {
-            alert('⚠️ SMS may not have sent: ' + (result.error || 'Unknown error') + '\n\nManually send this link:\n' + shareLink);
+            alert('⚠️ SMS failed: ' + (result.error || 'Unknown error'));
         }
     } catch (error) {
         console.error('SMS error:', error);
-        alert('❌ Failed to send SMS: ' + error.message + '\n\nManually send this link:\n' + shareLink);
+        alert('❌ Failed to send SMS: ' + error.message);
     }
 }
 
