@@ -342,8 +342,19 @@ function exitDemoMode() {
     if (!isAdmin) return;
     demoMode = null;
     useDemoData = false;
-    loadAllData();
-    renderApp();
+    
+    // Show loading
+    document.body.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100vh; font-size: 18px;">Loading your account...</div>';
+    
+    // Force reload to clear demo data
+    setTimeout(() => {
+        loadAllData().then(() => {
+            renderApp();
+        }).catch(error => {
+            console.error('Error loading data:', error);
+            location.reload(); // Force page reload if data load fails
+        });
+    }, 100);
 }
 
 function initDemoData() {
