@@ -90,9 +90,6 @@ function renderReports() {
                         <option value="year" ${reportRange === 'year' ? 'selected' : ''}>This Year</option>
                         <option value="all" ${reportRange === 'all' ? 'selected' : ''}>All Time</option>
                     </select>
-                    <button onclick="downloadReportPDF()" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors text-sm">
-                        📄 Download PDF
-                    </button>
                 </div>
             </div>
             
@@ -353,7 +350,7 @@ function renderReports() {
                                 <button onclick="refreshCustomReport('${report.id}')" class="flex-1 px-4 py-2 border border-teal-600 text-teal-600 dark:text-teal-400 rounded-lg hover:bg-teal-50 dark:hover:bg-teal-900/20 text-sm font-medium">
                                     🔄 Refresh Data
                                 </button>
-                                <button onclick="downloadCustomReportPDF('${report.id}')" class="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm font-medium" ${!report.lastData ? 'disabled' : ''}>
+                                <button onclick="downloadCustomReportPDF('${report.id}')" class="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm font-medium ${!report.lastData ? 'opacity-50 cursor-not-allowed' : ''}" ${!report.lastData ? 'disabled' : ''}>
                                     📄 Download PDF
                                 </button>
                             </div>
