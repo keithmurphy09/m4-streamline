@@ -592,14 +592,20 @@ function renderCalendar() {
         }),
         eventClick: function(info) {
             const job = jobs.find(j => j.id === info.event.extendedProps.jobId);
-            if (job) {
+            if (job && job.quote_id) {
+                // Navigate to the quote
+                switchTab('quotes');
+                selectedQuoteId = job.quote_id;
+                renderApp();
+            } else if (job) {
+                // If no quote linked, show job details
                 const workers = info.event.extendedProps.workers || [];
                 const workerNames = workers.length > 0 
                     ? workers.map(w => w.name + (w.occupation ? ` (${w.occupation})` : '')).join('\n')
                     : 'Unassigned';
                 const duration = job.duration || 1;
                 const durationText = duration > 1 ? `\nDuration: ${duration} days` : '';
-                alert('Job: ' + job.title + '\nClient: ' + info.event.extendedProps.clientName + '\n\nTeam Members:\n' + workerNames + '\n\nDate: ' + new Date(job.date).toLocaleDateString() + '\nTime: ' + job.time + durationText);
+                alert('Job: ' + job.title + '\nClient: ' + info.event.extendedProps.clientName + '\n\nTeam Members:\n' + workerNames + '\n\nDate: ' + new Date(job.date).toLocaleDateString() + '\nTime: ' + job.time + durationText + '\n\n(No quote linked to this job)');
             }
         }
     });
