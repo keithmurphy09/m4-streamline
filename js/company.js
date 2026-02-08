@@ -42,34 +42,6 @@ function renderCompany() {
                         <textarea id="settings_address" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" rows="2">${settings.address || ''}</textarea>
                     </div>
                     
-                    <h3 class="text-lg font-bold dark:text-teal-400 mt-6 mb-4">🎨 Company Logo</h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">Upload your company logo to appear on quotes and invoices. Recommended size: 500x500px or larger.</p>
-                    <p class="text-xs text-teal-600 dark:text-teal-400 mb-4">💡 If no logo is uploaded, the M4 Streamline logo will be used as default.</p>
-                    
-                    <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6">
-                        <div class="mb-4">
-                            <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                ${settings.logo_url ? 'Your Logo:' : 'Current Logo (Default):'}
-                            </p>
-                            <img src="${settings.logo_url || 'final_logo.png'}" alt="Company Logo" class="h-32 w-auto object-contain border border-gray-200 dark:border-gray-700 rounded p-2 bg-white dark:bg-gray-800">
-                            ${!settings.logo_url ? '<p class="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">M4 Streamline Logo (Default)</p>' : ''}
-                        </div>
-                        
-                        <div class="flex gap-2">
-                            <label class="flex-1 cursor-pointer">
-                                <input type="file" accept="image/*" onchange="uploadCompanyLogo(this)" class="hidden" id="logo-upload-input">
-                                <div class="w-full px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-center font-medium transition-colors">
-                                    ${settings.logo_url ? 'Change Logo' : 'Upload Custom Logo'}
-                                </div>
-                            </label>
-                            ${settings.logo_url ? `
-                                <button onclick="removeCompanyLogo()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors">
-                                    Remove
-                                </button>
-                            ` : ''}
-                        </div>
-                    </div>
-                    
                     <h3 class="text-lg font-bold dark:text-teal-400 mt-6 mb-4">Bank Details (for invoices)</h3>
                     
                     <div>
@@ -230,6 +202,45 @@ function renderCompany() {
                     
                     <button onclick="saveSMSSettings()" class="w-full bg-black text-white px-4 py-3 rounded-lg border border-teal-400 hover:bg-gray-800">
                         Save SMS Settings
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Automated Reminders -->
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow max-w-2xl mb-6">
+                <div class="mb-4">
+                    <h3 class="text-lg font-bold dark:text-teal-400 mb-2">🔔 Automated Reminders</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Automatically send reminders to clients via SMS or email</p>
+                </div>
+                
+                <div class="space-y-6">
+                    <!-- Payment Reminders -->
+                    <div class="border-l-4 border-orange-400 pl-4 py-2">
+                        <div class="flex items-center gap-3 mb-3">
+                            <input type="checkbox" id="enable_payment_reminders" ${settings.enable_payment_reminders ? 'checked' : ''} class="w-5 h-5 text-teal-600 rounded">
+                            <label for="enable_payment_reminders" class="font-semibold dark:text-white">Enable Payment Reminders</label>
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Automatically email clients when invoices become overdue</p>
+                        
+                        <div class="flex items-center gap-3">
+                            <label class="text-sm dark:text-gray-300">Send reminder</label>
+                            <input type="number" id="payment_reminder_days" value="${settings.payment_reminder_days || 5}" min="1" max="90" class="w-20 px-3 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 text-center">
+                            <label class="text-sm dark:text-gray-300">days after invoice due date</label>
+                        </div>
+                    </div>
+                    
+                    <!-- Job Reminders -->
+                    <div class="border-l-4 border-blue-400 pl-4 py-2">
+                        <div class="flex items-center gap-3 mb-3">
+                            <input type="checkbox" id="enable_job_reminders" ${settings.enable_job_reminders ? 'checked' : ''} class="w-5 h-5 text-teal-600 rounded">
+                            <label for="enable_job_reminders" class="font-semibold dark:text-white">Enable Job Reminders</label>
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Automatically send SMS (or email if no phone) 2 days before scheduled jobs</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-500 italic">💡 Reminder will include final payment amount if applicable</p>
+                    </div>
+                    
+                    <button onclick="saveReminderSettings()" class="bg-teal-600 text-white px-6 py-2 rounded hover:bg-teal-700 w-full">
+                        Save Reminder Settings
                     </button>
                 </div>
             </div>
@@ -426,168 +437,46 @@ async function saveSMSSettings() {
     }
 }
 
-async function uploadCompanyLogo(input) {
-    const file = input.files[0];
-    if (!file) return;
-    
-    if (!file.type.startsWith('image/')) {
-        showNotification('Please upload an image file', 'error');
-        return;
-    }
-    
-    // Check file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-        showNotification('Image must be less than 5MB', 'error');
-        return;
-    }
+async function saveReminderSettings() {
+    const enable_payment_reminders = document.getElementById('enable_payment_reminders').checked;
+    const payment_reminder_days = parseInt(document.getElementById('payment_reminder_days').value) || 5;
+    const enable_job_reminders = document.getElementById('enable_job_reminders').checked;
     
     try {
-        showNotification('Uploading logo...', 'info');
-        
-        // Upload to Supabase Storage
-        const fileExt = file.name.split('.').pop();
-        const fileName = `logo-${currentUser.id}-${Date.now()}.${fileExt}`;
-        const filePath = fileName; // Changed: don't include folder in path
-        
-        console.log('📤 Uploading file:', fileName);
-        
-        const { data: uploadData, error: uploadError } = await supabaseClient.storage
-            .from('company-logos')
-            .upload(filePath, file);
-        
-        if (uploadError) {
-            console.error('❌ Storage upload error:', uploadError);
-            
-            // Check if bucket exists
-            if (uploadError.message?.includes('Bucket not found') || uploadError.statusCode === 404) {
-                showNotification('❌ Storage bucket "company-logos" not found. Please create it in Supabase Dashboard.', 'error');
-                return;
-            }
-            
-            throw uploadError;
-        }
-        
-        console.log('✅ File uploaded:', uploadData);
-        
-        // Get public URL
-        const { data: urlData } = supabaseClient.storage
-            .from('company-logos')
-            .getPublicUrl(filePath);
-        
-        const logoUrl = urlData.publicUrl;
-        console.log('🔗 Logo URL:', logoUrl);
-        
-        // Update company settings with logo URL
-        if (companySettings?.id) {
-            // Update existing record
-            console.log('📝 Updating existing settings, ID:', companySettings.id);
-            
-            const { data: updateData, error: updateError } = await supabaseClient
+        if (!companySettings || !companySettings.id) {
+            // Create new company settings if doesn't exist
+            const { data, error } = await supabaseClient
                 .from('company_settings')
-                .update({ logo_url: logoUrl })
+                .insert([{
+                    user_id: currentUser.id,
+                    enable_payment_reminders,
+                    payment_reminder_days,
+                    enable_job_reminders
+                }])
+                .select();
+            
+            if (error) throw error;
+            companySettings = data[0];
+        } else {
+            // Update existing
+            const { data, error } = await supabaseClient
+                .from('company_settings')
+                .update({
+                    enable_payment_reminders,
+                    payment_reminder_days,
+                    enable_job_reminders
+                })
                 .eq('id', companySettings.id)
                 .select();
             
-            if (updateError) {
-                console.error('❌ Update error:', updateError);
-                
-                // Check if column exists
-                if (updateError.message?.includes('column') && updateError.message?.includes('logo_url')) {
-                    showNotification('❌ Database error: logo_url column missing. Run: ALTER TABLE company_settings ADD COLUMN logo_url TEXT;', 'error');
-                    return;
-                }
-                
-                throw updateError;
-            }
-            
-            console.log('✅ Settings updated:', updateData);
-            if (updateData && updateData[0]) {
-                companySettings = updateData[0];
-            }
-        } else {
-            // Insert new record
-            console.log('📝 Creating new settings record');
-            
-            const newSettings = {
-                user_id: currentUser.id,
-                logo_url: logoUrl,
-                business_name: '',
-                abn: '',
-                phone: '',
-                email: '',
-                address: ''
-            };
-            
-            const { data: insertData, error: insertError } = await supabaseClient
-                .from('company_settings')
-                .insert([newSettings])
-                .select();
-            
-            if (insertError) {
-                console.error('❌ Insert error:', insertError);
-                
-                // Check if column exists
-                if (insertError.message?.includes('column') && insertError.message?.includes('logo_url')) {
-                    showNotification('❌ Database error: logo_url column missing. Run: ALTER TABLE company_settings ADD COLUMN logo_url TEXT;', 'error');
-                    return;
-                }
-                
-                throw insertError;
-            }
-            
-            console.log('✅ Settings created:', insertData);
-            if (insertData && insertData[0]) {
-                companySettings = insertData[0];
-            }
-        }
-        
-        // Update local state
-        if (companySettings) {
-            companySettings.logo_url = logoUrl;
-        }
-        
-        showNotification('✅ Logo uploaded successfully!', 'success');
-        renderApp();
-    } catch (error) {
-        console.error('❌ Error uploading logo:', error);
-        console.error('Error details:', {
-            message: error.message,
-            code: error.code,
-            statusCode: error.statusCode,
-            details: error.details
-        });
-        
-        showNotification(`Failed to upload logo: ${error.message || 'Unknown error'}`, 'error');
-    }
-    
-    // Reset input
-    input.value = '';
-}
-
-async function removeCompanyLogo() {
-    if (!confirm('Are you sure you want to remove your company logo?')) {
-        return;
-    }
-    
-    try {
-        // Remove from company settings
-        if (companySettings?.id) {
-            const { error } = await supabaseClient
-                .from('company_settings')
-                .update({ logo_url: null })
-                .eq('id', companySettings.id);
-            
             if (error) throw error;
+            if (data) companySettings = data[0];
         }
         
-        // Update local state
-        if (companySettings) companySettings.logo_url = null;
-        
-        showNotification('✅ Logo removed', 'success');
-        renderApp();
+        showNotification('Reminder settings saved successfully!', 'success');
     } catch (error) {
-        console.error('Error removing logo:', error);
-        showNotification('Failed to remove logo', 'error');
+        console.error('Error saving reminder settings:', error);
+        showNotification('Error saving reminder settings', 'error');
     }
 }
 
