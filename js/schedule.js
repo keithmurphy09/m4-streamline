@@ -130,7 +130,7 @@ function renderJobsTable() {
                                 <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path>
                             </svg>
                         </button>
-                        <div id="job-actions-${job.id}" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
+                        <div id="job-actions-${job.id}" class="hidden fixed w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
                             <div class="py-1">
                                 <button onclick='openModal("job", ${JSON.stringify(job).replace(/"/g, "&quot;")}); toggleJobActions("${job.id}")' class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">Edit Job</button>
                                 ${job.status !== 'completed' ? `<button onclick="updateJobStatus('${job.id}', 'completed'); toggleJobActions('${job.id}')" class="block w-full text-left px-4 py-2 text-sm text-teal-600 dark:text-teal-400 hover:bg-gray-50 dark:hover:bg-gray-700">Mark Complete</button>` : ''}
@@ -188,7 +188,7 @@ function renderJobsTable() {
         ${bulkActions}
         
         <!-- Table -->
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto overflow-visible">
             <table class="w-full">
                 <thead>
                     <tr class="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
@@ -221,15 +221,26 @@ function renderJobsTable() {
 
 function toggleJobActions(jobId) {
     const menu = document.getElementById(`job-actions-${jobId}`);
+    const button = document.querySelector(`button[onclick*="toggleJobActions('${jobId}')"]`);
+    
     if (menu) {
-        menu.classList.toggle('hidden');
-    }
-    // Close other menus
-    document.querySelectorAll('[id^="job-actions-"]').forEach(m => {
-        if (m.id !== `job-actions-${jobId}`) {
+        const isHidden = menu.classList.contains('hidden');
+        
+        // Close all other menus first
+        document.querySelectorAll('[id^="job-actions-"]').forEach(m => {
             m.classList.add('hidden');
+        });
+        
+        if (isHidden && button) {
+            // Calculate position relative to button
+            const rect = button.getBoundingClientRect();
+            menu.style.top = `${rect.bottom + 8}px`;
+            menu.style.left = `${rect.right - 192}px`; // 192px = w-48
+            menu.classList.remove('hidden');
+        } else {
+            menu.classList.add('hidden');
         }
-    });
+    }
 }
 
 async function updateJobStatus(jobId, newStatus) {
