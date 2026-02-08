@@ -106,7 +106,7 @@ function renderInvoicesTable() {
                                 <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path>
                             </svg>
                         </button>
-                        <div id="inv-actions-${inv.id}" class="hidden fixed mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+                        <div id="inv-actions-${inv.id}" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
                             <div class="py-1">
                                 <button onclick="generatePDF('invoice', ${JSON.stringify(inv).replace(/"/g, '&quot;')}); toggleInvoiceActions('${inv.id}')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">Download PDF</button>
                                 <button onclick="sendInvoiceEmail(${JSON.stringify(inv).replace(/"/g, '&quot;')}); toggleInvoiceActions('${inv.id}')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">Email Invoice</button>
@@ -146,7 +146,7 @@ function renderInvoicesTable() {
         </div>
     `;
     
-    return `<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-visible">
+    return `<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
         <!-- Header -->
         <div class="p-6 border-b border-gray-100 dark:border-gray-700">
             <div class="flex justify-between items-start mb-4">
@@ -178,7 +178,7 @@ function renderInvoicesTable() {
         ${bulkActions}
         
         <!-- Table -->
-        <div class="overflow-x-auto overflow-y-visible">
+        <div class="overflow-x-auto">
             <table class="w-full">
                 <thead>
                     <tr class="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
@@ -212,18 +212,8 @@ function renderInvoicesTable() {
 
 function toggleInvoiceActions(invoiceId) {
     const menu = document.getElementById(`inv-actions-${invoiceId}`);
-    const button = event.target.closest('button');
-    
     if (menu) {
-        if (menu.classList.contains('hidden')) {
-            // Position menu below button
-            const rect = button.getBoundingClientRect();
-            menu.style.top = `${rect.bottom + 8}px`;
-            menu.style.left = `${rect.right - 192}px`; // 192px = w-48
-            menu.classList.remove('hidden');
-        } else {
-            menu.classList.add('hidden');
-        }
+        menu.classList.toggle('hidden');
     }
     // Close other menus
     document.querySelectorAll('[id^="inv-actions-"]').forEach(m => {
@@ -434,20 +424,13 @@ function renderInvoiceDetail() {
                 <div class="text-right">
                     <div class="text-4xl font-bold text-gray-900 dark:text-white">${formatCurrency(inv.total)}</div>
                     <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">Total Amount</p>
-                    ${inv.amount_paid > 0 ? `
-                        <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
-                            <div class="text-sm text-gray-600 dark:text-gray-400">Paid: <span class="font-semibold text-teal-600 dark:text-teal-400">${formatCurrency(inv.amount_paid)}</span></div>
-                            <div class="text-sm text-gray-600 dark:text-gray-400">Balance: <span class="font-semibold ${inv.balance_due > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-gray-900 dark:text-white'}">${formatCurrency(inv.balance_due || (inv.total - inv.amount_paid))}</span></div>
-                        </div>
-                    ` : ''}
                 </div>
             </div>
             
             <!-- Actions -->
             <div class="flex flex-wrap gap-2 pt-4 border-t border-gray-100 dark:border-gray-700">
                 ${!isPaid ? `<button onclick='openModal("invoice", ${JSON.stringify(inv).replace(/"/g, "&quot;")})' class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors">Edit Invoice</button>` : ''}
-                ${!isPaid ? `<button onclick="recordPayment('${inv.id}', ${inv.total}, ${inv.amount_paid || 0})" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">Record Payment</button>` : ''}
-                ${!isPaid ? `<button onclick="markPaid('${inv.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors">Mark Fully Paid</button>` : `<button onclick="markUnpaid('${inv.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 border border-orange-200 dark:border-orange-800 rounded-lg transition-colors">Mark as Unpaid</button>`}
+                ${!isPaid ? `<button onclick="markPaid('${inv.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors">Mark as Paid</button>` : `<button onclick="markUnpaid('${inv.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 border border-orange-200 dark:border-orange-800 rounded-lg transition-colors">Mark as Unpaid</button>`}
                 <button onclick='generatePDF("invoice", ${JSON.stringify(inv).replace(/"/g, '&quot;')})' class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors">Download PDF</button>
                 <button onclick='sendInvoiceEmail(${JSON.stringify(inv).replace(/"/g, '&quot;')})' class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors">Email Invoice</button>
                 <button onclick="deleteInvoice('${inv.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 bg-white dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors ml-auto">Delete</button>
@@ -508,51 +491,67 @@ function renderInvoiceDetail() {
     </div>`;
 }
 
-// Record payment function
-async function recordPayment(invoiceId, total, amountPaid) {
-    const balance = total - amountPaid;
-    const paymentAmount = prompt(`Record payment amount (Balance due: $${balance.toFixed(2)}):`);
-    
-    if (!paymentAmount) return;
-    
-    const amount = parseFloat(paymentAmount);
-    if (isNaN(amount) || amount <= 0) {
-        alert('Please enter a valid amount');
-        return;
-    }
-    
-    const newAmountPaid = amountPaid + amount;
-    const newBalance = total - newAmountPaid;
-    const isFullyPaid = newBalance <= 0.01;
-    
+// Mark invoice as paid
+async function markPaid(invoiceId) {
     try {
-        isLoading = true;
-        loadingMessage = 'Recording payment...';
-        renderApp();
-        
-        const { data, error} = await supabaseClient
+        const invoice = invoices.find(i => i.id === invoiceId);
+        if (!invoice) {
+            showNotification('Invoice not found', 'error');
+            return;
+        }
+
+        // Update in database
+        const { error } = await supabaseClient
             .from('invoices')
-            .update({
-                amount_paid: newAmountPaid,
-                balance_due: newBalance,
-                status: isFullyPaid ? 'paid' : 'unpaid',
-                paid_date: isFullyPaid ? new Date().toISOString().split('T')[0] : null
+            .update({ 
+                status: 'paid',
+                paid_date: new Date().toISOString().split('T')[0]
             })
-            .eq('id', invoiceId)
-            .select();
-        
+            .eq('id', invoiceId);
+
         if (error) throw error;
-        
-        const index = invoices.findIndex(i => i.id === invoiceId);
-        if (index !== -1) invoices[index] = data[0];
-        
-        showNotification(`Payment of $${amount.toFixed(2)} recorded successfully!`, 'success');
-    } catch (error) {
-        console.error('Error recording payment:', error);
-        showNotification('Failed to record payment: ' + error.message, 'error');
-    } finally {
-        isLoading = false;
+
+        // Update local state
+        invoice.status = 'paid';
+        invoice.paid_date = new Date().toISOString().split('T')[0];
+
+        showNotification('Invoice marked as paid!', 'success');
         renderApp();
+    } catch (error) {
+        console.error('Error marking as paid:', error);
+        showNotification('Failed to mark invoice as paid', 'error');
+    }
+}
+
+// Mark invoice as unpaid
+async function markUnpaid(invoiceId) {
+    try {
+        const invoice = invoices.find(i => i.id === invoiceId);
+        if (!invoice) {
+            showNotification('Invoice not found', 'error');
+            return;
+        }
+
+        // Update in database
+        const { error } = await supabaseClient
+            .from('invoices')
+            .update({ 
+                status: 'unpaid',
+                paid_date: null
+            })
+            .eq('id', invoiceId);
+
+        if (error) throw error;
+
+        // Update local state
+        invoice.status = 'unpaid';
+        invoice.paid_date = null;
+
+        showNotification('Invoice marked as unpaid', 'success');
+        renderApp();
+    } catch (error) {
+        console.error('Error marking as unpaid:', error);
+        showNotification('Failed to mark invoice as unpaid', 'error');
     }
 }
 
