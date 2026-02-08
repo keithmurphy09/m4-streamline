@@ -421,6 +421,7 @@ function saveJob() {
     
     addJob({
         client_id: clientId,
+        quote_id: editingItem?.quote_id,
         title,
         date,
         time,
