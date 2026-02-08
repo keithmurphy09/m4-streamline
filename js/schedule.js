@@ -593,10 +593,14 @@ function renderCalendar() {
         eventClick: function(info) {
             const job = jobs.find(j => j.id === info.event.extendedProps.jobId);
             if (job && job.quote_id) {
-                // Navigate to the quote
-                switchTab('quotes');
-                selectedQuoteId = job.quote_id;
-                renderApp();
+                // Find the quote
+                const quote = quotes.find(q => q.id === job.quote_id);
+                if (quote) {
+                    // Open the quote modal
+                    openModal('quote', quote);
+                } else {
+                    alert('Quote not found');
+                }
             } else if (job) {
                 // If no quote linked, show job details
                 const workers = info.event.extendedProps.workers || [];
