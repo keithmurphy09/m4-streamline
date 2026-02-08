@@ -41,6 +41,7 @@ function openJobFromQuote(quote) {
     const today = new Date().toISOString().split('T')[0];
     editingItem = {
         client_id: quote.client_id,
+        quote_id: quote.id,
         title: quote.title,
         date: today,
         time: '06:00',
@@ -339,12 +340,6 @@ function renderModal() {
             <div class="mb-3">
                 <label class="block text-sm font-medium mb-1 dark:text-gray-200">Description</label>
                 <textarea id="description" placeholder="Expense description" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" rows="3">${description}</textarea>
-            </div>
-            <div class="mb-3">
-                <label class="block text-sm font-medium mb-1 dark:text-gray-200">Receipt/Photo (Optional)</label>
-                <input type="file" id="expense_receipt" accept="image/*,.pdf" onchange="handleExpenseReceiptUpload(this)" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Upload receipt image or PDF</p>
-                ${editingItem?.receipt_url ? `<p class="text-xs text-teal-600 mt-2">✓ Receipt already uploaded</p>` : ''}
             </div>
             <button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>
         `;
