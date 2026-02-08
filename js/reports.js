@@ -724,8 +724,13 @@ function calculateSectionData(sectionId, range) {
 // Download custom report as PDF
 function downloadCustomReportPDF(reportId) {
     const report = customReports.find(r => r.id === reportId);
-    if (!report || !report.lastData) {
-        showNotification('Please refresh report data first', 'error');
+    if (!report) return;
+    
+    // If no data, refresh first
+    if (!report.lastData) {
+        refreshCustomReport(reportId);
+        // Wait a bit then download
+        setTimeout(() => downloadCustomReportPDF(reportId), 500);
         return;
     }
     
