@@ -593,9 +593,16 @@ function renderCalendar() {
         eventClick: function(info) {
             const job = jobs.find(j => j.id === info.event.extendedProps.jobId);
             if (job) {
-                // Show job detail view (same as clicking in list view)
-                openJobDetail(job);
+                // Switch to list view first, then show detail
+                scheduleView = 'list';
+                selectedJobForDetail = job;
+                jobViewMode = 'detail';
+                renderApp();
             }
+        },
+        eventDidMount: function(info) {
+            // Make calendar events have pointer cursor
+            info.el.style.cursor = 'pointer';
         }
     });
     
