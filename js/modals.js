@@ -22,6 +22,12 @@ function closeModal() {
     showModal = false;
     editingItem = null;
     modalType = '';
+    
+    // Clear Google Maps autocomplete tracking
+    if (typeof clearInitializedFields === 'function') {
+        clearInitializedFields();
+    }
+    
     renderApp();
 }
 
