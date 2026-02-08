@@ -235,7 +235,13 @@ async function deleteQuote(id) {
         renderApp();
     } catch (error) {
         console.error('Error deleting quote:', error);
-        showNotification('Error deleting quote', 'error');
+        
+        // Check if it's a foreign key constraint error (409 conflict)
+        if (error.code === '23503' || error.message?.includes('violates foreign key') || error.status === 409) {
+            showNotification('Cannot delete quote - it has linked jobs or invoices. Delete those first.', 'error');
+        } else {
+            showNotification('Error deleting quote: ' + (error.message || 'Unknown error'), 'error');
+        }
     }
 }
 
@@ -435,17 +441,12 @@ function saveJob() {
 
 async function addJob(job) {
     try {
-        console.log('💾 SAVING JOB:', job);
-        console.log('📌 quote_id in job:', job.quote_id);
-        
         const { data, error } = await supabaseClient
             .from('jobs')
             .insert([{ ...job, user_id: currentUser.id }])
             .select();
             
         if (error) throw error;
-        
-        console.log('✅ JOB SAVED:', data[0]);
         
         jobs.push(data[0]);
         closeModal();
