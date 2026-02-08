@@ -439,6 +439,12 @@ const GOOGLE_MAPS_API_KEY = 'YOUR_GOOGLE_MAPS_API_KEY_HERE';
 // Track which fields have been initialized to prevent duplicates
 const initializedFields = new Set();
 
+// Clear initialized fields (call when modal closes)
+function clearInitializedFields() {
+    console.log('🧹 Clearing initialized autocomplete fields');
+    initializedFields.clear();
+}
+
 // Initialize autocomplete on address field
 function initAddressAutocomplete(inputId) {
     console.log(`🔍 Attempting to init autocomplete for: ${inputId}`);
