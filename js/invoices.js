@@ -511,23 +511,70 @@ async function markPaid(invoiceId) {
             return;
         }
 
-        // Update in database
-        const { error } = await supabaseClient
-            .from('invoices')
-            .update({ 
-                status: 'paid',
-                paid_date: new Date().toISOString().split('T')[0]
-            })
-            .eq('id', invoiceId);
+        // Create temporary date input
+        const input = document.createElement('input');
+        input.type = 'date';
+        input.value = new Date().toISOString().split('T')[0];
+        input.style.position = 'fixed';
+        input.style.top = '50%';
+        input.style.left = '50%';
+        input.style.transform = 'translate(-50%, -50%)';
+        input.style.zIndex = '9999';
+        input.style.padding = '12px';
+        input.style.fontSize = '16px';
+        input.style.border = '2px solid #14b8a6';
+        input.style.borderRadius = '8px';
+        
+        // Add backdrop
+        const backdrop = document.createElement('div');
+        backdrop.style.position = 'fixed';
+        backdrop.style.top = '0';
+        backdrop.style.left = '0';
+        backdrop.style.right = '0';
+        backdrop.style.bottom = '0';
+        backdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        backdrop.style.zIndex = '9998';
+        
+        document.body.appendChild(backdrop);
+        document.body.appendChild(input);
+        input.focus();
+        input.showPicker();
+        
+        // Handle date selection
+        const handleChange = async () => {
+            const paidDate = input.value;
+            
+            if (paidDate) {
+                // Update in database
+                const { error } = await supabaseClient
+                    .from('invoices')
+                    .update({ 
+                        status: 'paid',
+                        paid_date: paidDate
+                    })
+                    .eq('id', invoiceId);
 
-        if (error) throw error;
+                if (error) throw error;
 
-        // Update local state
-        invoice.status = 'paid';
-        invoice.paid_date = new Date().toISOString().split('T')[0];
+                // Update local state
+                invoice.status = 'paid';
+                invoice.paid_date = paidDate;
 
-        showNotification('Invoice marked as paid!', 'success');
-        renderApp();
+                showNotification('Invoice marked as paid!', 'success');
+                renderApp();
+            }
+            
+            // Cleanup
+            backdrop.remove();
+            input.remove();
+        };
+        
+        input.addEventListener('change', handleChange);
+        backdrop.addEventListener('click', () => {
+            backdrop.remove();
+            input.remove();
+        });
+        
     } catch (error) {
         console.error('Error marking as paid:', error);
         showNotification('Failed to mark invoice as paid', 'error');
