@@ -218,10 +218,10 @@ function renderReports() {
                             </div>
                             ${customReportSections.revenue ? `
                             <select onchange="updateSectionDateRange('revenue', this.value)" class="px-3 py-1 border rounded text-sm dark:bg-gray-700 dark:border-gray-600">
-                                <option value="current">This Month</option>
-                                <option value="quarter">This Quarter</option>
-                                <option value="year">This Year</option>
-                                <option value="all">All Time</option>
+                                <option value="current" ${(sectionDateRanges.revenue || 'current') === 'current' ? 'selected' : ''}>This Month</option>
+                                <option value="quarter" ${sectionDateRanges.revenue === 'quarter' ? 'selected' : ''}>This Quarter</option>
+                                <option value="year" ${sectionDateRanges.revenue === 'year' ? 'selected' : ''}>This Year</option>
+                                <option value="all" ${sectionDateRanges.revenue === 'all' ? 'selected' : ''}>All Time</option>
                             </select>
                             ` : ''}
                         </div>
