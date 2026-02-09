@@ -702,4 +702,69 @@ async function saveTeamMember() {
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// CLIENT NOTE OPERATIONS
+// ═══════════════════════════════════════════════════════════════════
+
+async function saveClientNote() {
+    const noteText = document.getElementById('note_text')?.value.trim();
+    
+    if (!noteText) {
+        showNotification('Please enter a note', 'error');
+        return;
+    }
+    
+    const note = {
+        client_id: editingItem.client_id,
+        related_type: editingItem.related_type,
+        related_id: editingItem.related_id,
+        note_text: noteText
+    };
+    
+    try {
+        const { data, error } = await supabaseClient
+            .from('client_notes')
+            .insert([{ ...note, user_id: currentUser.id }])
+            .select();
+            
+        if (error) throw error;
+        
+        // Add to local array (create if doesn't exist)
+        if (!window.clientNotes) window.clientNotes = [];
+        window.clientNotes.push(data[0]);
+        
+        closeModal();
+        showNotification('Note saved successfully!', 'success');
+        renderApp();
+    } catch (error) {
+        console.error('Error saving note:', error);
+        showNotification('Error saving note', 'error');
+    }
+}
+
+async function deleteClientNote(noteId) {
+    if (!confirm('Are you sure you want to delete this note?')) return;
+    
+    try {
+        const { error } = await supabaseClient
+            .from('client_notes')
+            .delete()
+            .eq('id', noteId);
+            
+        if (error) throw error;
+        
+        // Remove from local array
+        if (window.clientNotes) {
+            const index = window.clientNotes.findIndex(n => n.id === noteId);
+            if (index > -1) window.clientNotes.splice(index, 1);
+        }
+        
+        showNotification('Note deleted successfully!', 'success');
+        renderApp();
+    } catch (error) {
+        console.error('Error deleting note:', error);
+        showNotification('Error deleting note', 'error');
+    }
+}
+
 console.log('✅ CRUD operations module loaded');
