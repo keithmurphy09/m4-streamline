@@ -31,6 +31,11 @@ function toggleReportSection(section) {
 }
 
 function renderReports() {
+    // Load custom reports if not already loaded
+    if (customReports.length === 0 && currentUser) {
+        loadCustomReports();
+    }
+    
     const range = getReportDateRange(reportRange);
     
     // Filter data by date range
@@ -346,14 +351,9 @@ function renderReports() {
                                 </div>
                             </div>
                             
-                            <div class="flex gap-2">
-                                <button onclick="refreshCustomReport('${report.id}')" class="flex-1 px-4 py-2 border border-teal-600 text-teal-600 dark:text-teal-400 rounded-lg hover:bg-teal-50 dark:hover:bg-teal-900/20 text-sm font-medium">
-                                    🔄 Refresh Data
-                                </button>
-                                <button onclick="downloadCustomReportPDF('${report.id}')" class="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm font-medium">
-                                    📄 Download PDF
-                                </button>
-                            </div>
+                            <button onclick="downloadCustomReportPDF('${report.id}')" class="w-full px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm font-medium">
+                                📄 Download PDF
+                            </button>
                         </div>
                     `).join('')}
                 </div>
@@ -726,13 +726,12 @@ function downloadCustomReportPDF(reportId) {
     const report = customReports.find(r => r.id === reportId);
     if (!report) return;
     
-    // If no data, refresh first
-    if (!report.lastData) {
-        refreshCustomReport(reportId);
-        // Wait a bit then download
-        setTimeout(() => downloadCustomReportPDF(reportId), 500);
-        return;
-    }
+    // Always get fresh data
+    const data = {};
+    report.sections.forEach(section => {
+        const range = getReportDateRange(section.dateRange);
+        data[section.id] = calculateSectionData(section.id, range);
+    });
     
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -753,17 +752,17 @@ function downloadCustomReportPDF(reportId) {
     
     // Render each section
     report.sections.forEach(section => {
-        const data = report.lastData[section.id];
-        if (!data) return;
+        const sectionData = data[section.id];
+        if (!sectionData) return;
         
         const sectionNames = {
-            revenue: '💰 Revenue Summary',
-            expenses: '💸 Expense Breakdown',
-            profit: '📊 Profit & Loss',
-            gst: '🧾 GST Summary',
-            jobs: '✅ Jobs Completed',
-            clients: '👥 Top Clients',
-            quotes: '📋 Quote Statistics'
+            revenue: 'Revenue Summary',
+            expenses: 'Expense Breakdown',
+            profit: 'Profit & Loss',
+            gst: 'GST Summary',
+            jobs: 'Jobs Completed',
+            clients: 'Top Clients',
+            quotes: 'Quote Statistics'
         };
         
         doc.setFontSize(14);
@@ -773,7 +772,7 @@ function downloadCustomReportPDF(reportId) {
         y += 7;
         doc.setFontSize(10);
         doc.setFont(undefined, 'italic');
-        doc.text(`Period: ${data.range}`, 20, y);
+        doc.text(`Period: ${sectionData.range}`, 20, y);
         
         y += 10;
         doc.setFont(undefined, 'normal');
@@ -781,15 +780,15 @@ function downloadCustomReportPDF(reportId) {
         // Section-specific rendering
         switch (section.id) {
             case 'revenue':
-                doc.text(`Total Revenue: $${data.total.toFixed(2)}`, 20, y);
+                doc.text(`Total Revenue: $${sectionData.total.toFixed(2)}`, 20, y);
                 y += 5;
-                doc.text(`Invoices Paid: ${data.count}`, 20, y);
+                doc.text(`Invoices Paid: ${sectionData.count}`, 20, y);
                 break;
             
             case 'expenses':
-                doc.text(`Total Expenses: $${data.total.toFixed(2)}`, 20, y);
+                doc.text(`Total Expenses: $${sectionData.total.toFixed(2)}`, 20, y);
                 y += 7;
-                Object.entries(data.byCategory).forEach(([cat, amount]) => {
+                Object.entries(sectionData.byCategory).forEach(([cat, amount]) => {
                     if (y > 270) {
                         doc.addPage();
                         y = 20;
@@ -800,42 +799,42 @@ function downloadCustomReportPDF(reportId) {
                 break;
             
             case 'profit':
-                doc.text(`Revenue: $${data.revenue.toFixed(2)}`, 20, y);
+                doc.text(`Revenue: $${sectionData.revenue.toFixed(2)}`, 20, y);
                 y += 5;
-                doc.text(`Expenses: $${data.expenses.toFixed(2)}`, 20, y);
+                doc.text(`Expenses: $${sectionData.expenses.toFixed(2)}`, 20, y);
                 y += 5;
                 doc.setFont(undefined, 'bold');
-                doc.text(`Net Profit: $${data.profit.toFixed(2)} (${data.margin.toFixed(1)}%)`, 20, y);
+                doc.text(`Net Profit: $${sectionData.profit.toFixed(2)} (${sectionData.margin.toFixed(1)}%)`, 20, y);
                 doc.setFont(undefined, 'normal');
                 break;
             
             case 'gst':
-                doc.text(`GST Collected: $${data.collected.toFixed(2)}`, 20, y);
+                doc.text(`GST Collected: $${sectionData.collected.toFixed(2)}`, 20, y);
                 y += 5;
-                doc.text(`GST Paid: $${data.paid.toFixed(2)}`, 20, y);
+                doc.text(`GST Paid: $${sectionData.paid.toFixed(2)}`, 20, y);
                 y += 5;
                 doc.setFont(undefined, 'bold');
-                doc.text(`Net GST Payable: $${data.collected.toFixed(2)}`, 20, y);
+                doc.text(`Net GST Payable: $${sectionData.collected.toFixed(2)}`, 20, y);
                 doc.setFont(undefined, 'normal');
                 break;
             
             case 'jobs':
-                doc.text(`Jobs Completed: ${data.completed}`, 20, y);
+                doc.text(`Jobs Completed: ${sectionData.completed}`, 20, y);
                 break;
             
             case 'clients':
-                data.topClients.forEach(([name, revenue], i) => {
+                sectionData.topClients.forEach(([name, revenue], i) => {
                     doc.text(`${i + 1}. ${name}: $${revenue.toFixed(2)}`, 25, y);
                     y += 5;
                 });
                 break;
             
             case 'quotes':
-                doc.text(`Total Quotes: ${data.total}`, 20, y);
+                doc.text(`Total Quotes: ${sectionData.total}`, 20, y);
                 y += 5;
-                doc.text(`Accepted: ${data.accepted}`, 20, y);
+                doc.text(`Accepted: ${sectionData.accepted}`, 20, y);
                 y += 5;
-                doc.text(`Conversion Rate: ${data.conversionRate.toFixed(1)}%`, 20, y);
+                doc.text(`Conversion Rate: ${sectionData.conversionRate.toFixed(1)}%`, 20, y);
                 break;
         }
         
