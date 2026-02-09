@@ -911,7 +911,7 @@ async function sendQuoteSMS(quote) {
             },
             body: JSON.stringify({
                 user_id: currentUser.id,
-                to: client.phone,
+                to_number: client.phone,
                 message: message
             })
         });
