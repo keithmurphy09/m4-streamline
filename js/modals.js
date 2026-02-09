@@ -61,6 +61,17 @@ function openJobFromQuote(quote) {
     setTimeout(() => initAllAddressAutocomplete(), 500);
 }
 
+function openNoteModal(relatedType, relatedId, clientId) {
+    editingItem = {
+        related_type: relatedType,
+        related_id: relatedId,
+        client_id: clientId
+    };
+    modalType = 'client_note';
+    showModal = true;
+    renderApp();
+}
+
 function viewJobExpenses(jobId, jobTitle) {
     modalType = 'job_expenses';
     editingItem = { jobId, jobTitle };
@@ -416,6 +427,39 @@ function renderModal() {
                 </div>
             </div>
             <button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400 hover:bg-gray-800">${buttonText}</button>
+        `;
+    }
+    
+    // CLIENT NOTE MODAL
+    if (modalType === 'client_note') {
+        const relatedType = editingItem?.related_type || '';
+        const relatedId = editingItem?.related_id || '';
+        const clientId = editingItem?.client_id || '';
+        
+        // Get context info for the note
+        let contextInfo = '';
+        if (relatedType === 'quote') {
+            const quote = quotes.find(q => q.id === relatedId);
+            const client = clients.find(c => c.id === clientId);
+            contextInfo = `<div class="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded">
+                <p class="text-sm text-gray-700 dark:text-gray-300"><strong>Quote:</strong> ${quote?.title || 'Unknown'}</p>
+                <p class="text-sm text-gray-700 dark:text-gray-300"><strong>Client:</strong> ${client?.name || 'Unknown'}</p>
+            </div>`;
+        } else if (relatedType === 'invoice') {
+            const invoice = invoices.find(i => i.id === relatedId);
+            const client = clients.find(c => c.id === clientId);
+            contextInfo = `<div class="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded">
+                <p class="text-sm text-gray-700 dark:text-gray-300"><strong>Invoice:</strong> ${invoice?.title || 'Unknown'}</p>
+                <p class="text-sm text-gray-700 dark:text-gray-300"><strong>Client:</strong> ${client?.name || 'Unknown'}</p>
+            </div>`;
+        }
+        
+        title = 'Add Communication Note';
+        form = `
+            ${contextInfo}
+            <textarea id="note_text" placeholder="Add a note about this client interaction (e.g., 'Called client to discuss quote details', 'Client requested changes to project scope')" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" rows="6" required></textarea>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">💡 This note will be saved to the client's communication history</p>
+            <button onclick="saveClientNote()" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400 hover:bg-gray-800">Save Note</button>
         `;
     }
     
