@@ -445,6 +445,7 @@ function renderInvoiceDetail() {
                 ${!isPaid ? `<button onclick="markPaid('${inv.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors">Mark as Paid</button>` : `<button onclick="markUnpaid('${inv.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 border border-orange-200 dark:border-orange-800 rounded-lg transition-colors">Mark as Unpaid</button>`}
                 <button onclick='generatePDF("invoice", ${JSON.stringify(inv).replace(/"/g, '&quot;')})' class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors">Download PDF</button>
                 <button onclick='sendInvoiceEmail(${JSON.stringify(inv).replace(/"/g, '&quot;')})' class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors">Email Invoice</button>
+                <button onclick="toggleInvoiceCommunications('${inv.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg transition-colors">📞 Communications</button>
                 <button onclick="deleteInvoice('${inv.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 bg-white dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors ml-auto">Delete</button>
             </div>
         </div>
@@ -498,6 +499,34 @@ function renderInvoiceDetail() {
                 
                 <!-- Activity -->
                 ${activityTimeline}
+            </div>
+        </div>
+        
+        <!-- Communications Panel (Collapsible) -->
+        <div id="invoice-communications-${inv.id}" class="hidden mt-6">
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">📞 Communication History</h3>
+                    <button onclick="openNoteModal('invoice', '${inv.id}', '${inv.client_id}')" class="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">+ Add Note</button>
+                </div>
+                <div class="space-y-3">
+                    ${(() => {
+                        const invoiceNotes = window.clientNotes ? window.clientNotes.filter(n => n.related_id === inv.id && n.related_type === 'invoice').sort((a, b) => new Date(b.created_at) - new Date(a.created_at)) : [];
+                        if (invoiceNotes.length === 0) {
+                            return '<p class="text-sm text-gray-500 dark:text-gray-400 italic">No communication notes yet. Click "+ Add Note" to log client interactions.</p>';
+                        }
+                        return invoiceNotes.map(note => {
+                            const noteDate = new Date(note.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                            return `<div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+                                <div class="flex justify-between items-start gap-2 mb-2">
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">${noteDate}</span>
+                                    <button onclick="deleteClientNote('${note.id}')" class="text-red-500 hover:text-red-700 text-sm">Delete</button>
+                                </div>
+                                <p class="text-sm text-gray-700 dark:text-gray-300">${note.note_text}</p>
+                            </div>`;
+                        }).join('');
+                    })()}
+                </div>
             </div>
         </div>
     </div>`;
@@ -611,6 +640,13 @@ async function markUnpaid(invoiceId) {
     } catch (error) {
         console.error('Error marking as unpaid:', error);
         showNotification('Failed to mark invoice as unpaid', 'error');
+    }
+}
+
+function toggleInvoiceCommunications(invoiceId) {
+    const panel = document.getElementById(`invoice-communications-${invoiceId}`);
+    if (panel) {
+        panel.classList.toggle('hidden');
     }
 }
 
