@@ -19,35 +19,6 @@ function renderClients() {
         ? '<div class="text-center py-12 text-gray-500 dark:text-gray-400">No clients found</div>' 
         : paginatedClients.map(c => {
             const isSelected = selectedClients.includes(c.id);
-            
-            // Get client notes (communication history)
-            const clientNotesList = window.clientNotes ? window.clientNotes.filter(n => n.client_id === c.id).sort((a, b) => new Date(b.created_at) - new Date(a.created_at)) : [];
-            const notesHTML = clientNotesList.length > 0 ? `
-                <div class="mt-3 border-t border-gray-200 dark:border-gray-700 pt-3">
-                    <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">📞 Communication History</p>
-                    ${clientNotesList.slice(0, 3).map(note => {
-                        const noteDate = new Date(note.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                        let contextLabel = '';
-                        if (note.related_type === 'quote') {
-                            const quote = quotes.find(q => q.id === note.related_id);
-                            contextLabel = quote ? `<span class="text-xs text-blue-600 dark:text-blue-400">Quote: ${quote.title}</span>` : '';
-                        } else if (note.related_type === 'invoice') {
-                            const invoice = invoices.find(i => i.id === note.related_id);
-                            contextLabel = invoice ? `<span class="text-xs text-teal-600 dark:text-teal-400">Invoice: ${invoice.title}</span>` : '';
-                        }
-                        return `<div class="bg-gray-50 dark:bg-gray-700/50 p-2 rounded text-xs mb-2">
-                            <div class="flex justify-between items-start gap-2 mb-1">
-                                <span class="text-gray-500 dark:text-gray-400">${noteDate}</span>
-                                <button onclick="deleteClientNote('${note.id}')" class="text-red-500 hover:text-red-700 text-xs">×</button>
-                            </div>
-                            ${contextLabel ? `<div class="mb-1">${contextLabel}</div>` : ''}
-                            <p class="text-gray-700 dark:text-gray-300">${note.note_text}</p>
-                        </div>`;
-                    }).join('')}
-                    ${clientNotesList.length > 3 ? `<p class="text-xs text-gray-500 dark:text-gray-400 italic">+ ${clientNotesList.length - 3} more note${clientNotesList.length - 3 > 1 ? 's' : ''}</p>` : ''}
-                </div>
-            ` : '';
-            
             return `<div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow ${isSelected ? 'ring-2 ring-blue-400' : ''}">
                 <div class="flex gap-3">
                     <div class="flex items-start pt-1">
@@ -60,8 +31,7 @@ function renderClients() {
                                 <p class="text-sm text-gray-600 dark:text-gray-300">${c.email}</p>
                                 <p class="text-sm text-gray-600 dark:text-gray-300">${c.phone}</p>
                                 ${c.address ? `<p class="text-sm text-gray-600 dark:text-gray-300 mt-1">📍 ${c.address}</p>` : ''}
-                                ${c.notes ? `<p class="text-sm text-gray-700 italic mt-3 p-2 bg-yellow-50 border-l-4 border-yellow-400 rounded dark:bg-yellow-900/20 dark:border-yellow-600">📝 ${c.notes}</p>` : ''}
-                                ${notesHTML}
+                                ${c.notes ? `<p class="text-sm text-gray-700 italic mt-3 p-2 bg-yellow-50 border-l-4 border-yellow-400 rounded">📝 ${c.notes}</p>` : ''}
                             </div>
                             <div class="flex sm:flex-col gap-2">
                                 <button onclick='openQuoteForClient(${JSON.stringify(c).replace(/"/g, "&quot;")})' class="flex-1 sm:w-24 px-3 py-1 bg-teal-600 text-white rounded text-sm whitespace-nowrap">New Quote</button>
