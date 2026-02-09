@@ -109,6 +109,7 @@ function renderQuotesTable() {
                             <div class="py-1">
                                 <button onclick="generatePDF('quote', ${JSON.stringify(q).replace(/"/g, '&quot;')}); toggleQuoteActions('${q.id}')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">Download PDF</button>
                                 <button onclick="sendQuoteEmail(${JSON.stringify(q).replace(/"/g, '&quot;')}); toggleQuoteActions('${q.id}')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">Email Quote</button>
+                                <button onclick="openNoteModal('quote', '${q.id}', '${q.client_id}'); toggleQuoteActions('${q.id}')" class="block w-full text-left px-4 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700">📝 Add Note</button>
                                 ${!isConverted ? `<button onclick="convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')}); toggleQuoteActions('${q.id}')" class="block w-full text-left px-4 py-2 text-sm text-teal-600 dark:text-teal-400 hover:bg-gray-50 dark:hover:bg-gray-700">Convert to Invoice</button>` : ''}
                                 <button onclick="deleteQuote('${q.id}'); toggleQuoteActions('${q.id}')" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">Delete</button>
                             </div>
