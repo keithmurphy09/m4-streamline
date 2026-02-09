@@ -883,6 +883,38 @@ async function sendQuoteEmail(quote) {
     }
 }
 
+async function sendQuoteSMS(quote) {
+    const client = clients.find(c => c.id === quote.client_id);
+    
+    if (!client?.phone) {
+        showNotification('Client has no phone number', 'error');
+        return;
+    }
+    
+    if (!smsSettings?.enabled) {
+        showNotification('SMS is not configured', 'error');
+        return;
+    }
+    
+    const message = `Hi ${client.name}, your quote ${quote.quote_number || quote.title} for $${quote.total.toFixed(2)} is ready. View it here: ${window.location.origin}/quote/${quote.id}`;
+    
+    try {
+        const { data, error } = await supabaseClient.functions.invoke('send-sms', {
+            body: { 
+                to: client.phone, 
+                message: message 
+            }
+        });
+        
+        if (error) throw error;
+        
+        showNotification('SMS sent successfully!', 'success');
+    } catch (error) {
+        console.error('Error sending SMS:', error);
+        showNotification('Failed to send SMS: ' + (error.message || 'Unknown error'), 'error');
+    }
+}
+
 async function sendInvoiceEmail(invoice) {
     const client = clients.find(c => c.id === invoice.client_id);
     if (!client || !client.email) {
