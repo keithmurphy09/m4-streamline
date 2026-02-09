@@ -38,67 +38,67 @@
         }
         
         /* ═══════════════════════════════════════════════════════════════════
-           UNIVERSAL BUTTON GLOW STYLES
+           UNIVERSAL BUTTON GLOW STYLES (Content Area Only)
            ═══════════════════════════════════════════════════════════════════ */
         
-        /* Base: All buttons white with teal glow hover */
-        button:not(.no-glow) {
+        /* Only apply to buttons in the main content area, NOT navigation */
+        #app > div > div:not([class*="bg-black"]) button:not(.no-glow),
+        .max-w-7xl button:not(.no-glow) {
             background-color: white !important;
             color: #374151 !important;
             border: 1px solid #e5e7eb !important;
         }
         
-        .dark button:not(.no-glow) {
+        .dark #app > div > div:not([class*="bg-black"]) button:not(.no-glow),
+        .dark .max-w-7xl button:not(.no-glow) {
             background-color: #374151 !important;
             color: #e5e7eb !important;
             border-color: #4b5563 !important;
         }
         
-        button:not(.no-glow):hover {
+        #app > div > div:not([class*="bg-black"]) button:not(.no-glow):hover,
+        .max-w-7xl button:not(.no-glow):hover {
             background-color: #f0fdfa !important;
             border-color: #14b8a6 !important;
         }
         
-        .dark button:not(.no-glow):hover {
+        .dark #app > div > div:not([class*="bg-black"]) button:not(.no-glow):hover,
+        .dark .max-w-7xl button:not(.no-glow):hover {
             background-color: rgba(20, 184, 166, 0.3) !important;
             border-color: #14b8a6 !important;
         }
         
         /* Schedule/Create buttons: Green glow */
-        button[onclick*="Schedule"]:hover,
-        button[onclick*="openJobFromQuote"]:hover,
-        button[onclick*="openModal('job'"]:hover,
-        button:has(:contains("Schedule")):hover,
-        button:has(:contains("New Quote")):hover,
-        button:has(:contains("Add")):hover,
-        button:has(:contains("Create")):hover {
+        .max-w-7xl button[onclick*="Schedule"]:hover,
+        .max-w-7xl button[onclick*="openJobFromQuote"]:hover,
+        .max-w-7xl button[onclick*="openModal('job'"]:hover {
             background-color: #f0fdf4 !important;
             border-color: #22c55e !important;
         }
         
-        .dark button[onclick*="Schedule"]:hover,
-        .dark button[onclick*="openJobFromQuote"]:hover {
+        .dark .max-w-7xl button[onclick*="Schedule"]:hover,
+        .dark .max-w-7xl button[onclick*="openJobFromQuote"]:hover {
             background-color: rgba(34, 197, 94, 0.3) !important;
             border-color: #22c55e !important;
         }
         
         /* Delete buttons: Red glow & red text */
-        button[onclick*="delete"],
-        button[onclick*="Delete"],
-        button[onclick*="bulkDelete"] {
+        .max-w-7xl button[onclick*="delete"],
+        .max-w-7xl button[onclick*="Delete"],
+        .max-w-7xl button[onclick*="bulkDelete"] {
             color: #dc2626 !important;
         }
         
-        button[onclick*="delete"]:hover,
-        button[onclick*="Delete"]:hover,
-        button[onclick*="bulkDelete"]:hover {
+        .max-w-7xl button[onclick*="delete"]:hover,
+        .max-w-7xl button[onclick*="Delete"]:hover,
+        .max-w-7xl button[onclick*="bulkDelete"]:hover {
             background-color: #fef2f2 !important;
             border-color: #ef4444 !important;
         }
         
-        .dark button[onclick*="delete"]:hover,
-        .dark button[onclick*="Delete"]:hover,
-        .dark button[onclick*="bulkDelete"]:hover {
+        .dark .max-w-7xl button[onclick*="delete"]:hover,
+        .dark .max-w-7xl button[onclick*="Delete"]:hover,
+        .dark .max-w-7xl button[onclick*="bulkDelete"]:hover {
             background-color: rgba(239, 68, 68, 0.2) !important;
             border-color: #ef4444 !important;
         }
