@@ -110,7 +110,7 @@ async function loadAllData() {
             return;
         }
         
-        const [c, j, q, i, e, s, sub, admin, team, stripe, pay, email, sms, recurring] = await Promise.all([
+        const [c, j, q, i, e, s, sub, admin, team, stripe, pay, email, sms, recurring, notes] = await Promise.all([
             supabaseClient.from('clients').select('*'), 
             supabaseClient.from('jobs').select('*'), 
             supabaseClient.from('quotes').select('*'), 
@@ -124,7 +124,8 @@ async function loadAllData() {
             supabaseClient.from('payments').select('*'),
             supabaseClient.from('email_settings').select('*').eq('user_id', currentUser.id).single(),
             supabaseClient.from('sms_settings').select('*').eq('user_id', currentUser.id).single(),
-            supabaseClient.from('recurring_invoices').select('*')
+            supabaseClient.from('recurring_invoices').select('*'),
+            supabaseClient.from('client_notes').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false })
         ]);
         
         clients = c.data || []; 
@@ -141,6 +142,8 @@ async function loadAllData() {
         emailSettings = email.data || null;
         smsSettings = sms.data || null;
         recurringInvoices = recurring.data || [];
+        clientNotes = notes.data || [];
+        window.clientNotes = clientNotes; // Make globally available
         
         if (!subscription) {
             const { data: trialCheck } = await supabaseClient
