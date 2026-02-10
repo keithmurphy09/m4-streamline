@@ -155,7 +155,7 @@ function renderInvoicesTable() {
                     <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Invoices</h1>
                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Track payments and manage invoicing</p>
                 </div>
-                <button onclick="openModal('invoice')" class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-white bg-black hover:bg-gray-900 border border-teal-400 rounded-lg transition-colors shadow-sm">
+                <button onclick="openModal('invoice')" class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-green-50 dark:hover:bg-green-900/30 border border-gray-200 dark:border-gray-600 hover:border-green-500 rounded-lg transition-colors shadow-sm">
                     Create Invoice
                 </button>
             </div>
@@ -170,7 +170,7 @@ function renderInvoicesTable() {
                        value="${invoiceSearch}" 
                        oninput="invoiceSearch = this.value; clearTimeout(window.invoiceSearchTimer); window.invoiceSearchTimer = setTimeout(() => { renderApp(); setTimeout(() => document.getElementById('invoice-search-input')?.focus(), 0); }, 300);" 
                        class="flex-1 px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all">
-                <button onclick="exportToCSV('invoices')" class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors">
+                <button onclick="exportToCSV('invoices')" class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 rounded-lg transition-colors">
                     Export CSV
                 </button>
             </div>
