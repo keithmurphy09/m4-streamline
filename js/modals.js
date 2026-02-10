@@ -245,13 +245,25 @@ function renderModal() {
         const issueDate = editingItem?.issue_date || new Date().toISOString().split('T')[0];
         const dueDate = editingItem?.due_date || '';
         const notes = editingItem?.notes || '';
+        const clientId = editingItem?.client_id || '';
         
-        title = 'Edit Invoice';
+        const buttonText = (editingItem && editingItem.id) ? 'Update Invoice' : 'Create Invoice';
+        const action = (editingItem && editingItem.id) ? `updateInvoiceDetails('${editingItem.id}')` : `saveInvoice()`;
+        
+        title = (editingItem && editingItem.id) ? 'Edit Invoice' : 'Create Invoice';
         form = `
+            ${!(editingItem && editingItem.id) ? `
+            <select id="client_id" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" required>
+                <option value="">Select Client *</option>
+                ${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}
+            </select>
+            ` : ''}
+            ${(editingItem && editingItem.id) ? `
             <div class="mb-3">
                 <label class="block text-sm font-medium mb-1 dark:text-gray-200">Invoice Number</label>
                 <input type="text" id="invoice_number" value="${invoiceNumber}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" readonly>
             </div>
+            ` : ''}
             <div class="mb-3">
                 <label class="block text-sm font-medium mb-1 dark:text-gray-200">Title</label>
                 <input type="text" id="title" value="${invTitle}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
@@ -265,7 +277,7 @@ function renderModal() {
                 <input type="date" id="due_date" value="${dueDate}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
             </div>
             <textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" rows="3">${notes}</textarea>
-            <button onclick="updateInvoiceDetails('${editingItem.id}')" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">Update Invoice</button>
+            <button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>
         `;
     }
     
@@ -560,6 +572,52 @@ function autoFillJobAddress() {
         if (client && client.address && !addressField.value) {
             addressField.value = client.address;
         }
+    }
+}
+
+async function saveInvoice() {
+    const clientId = document.getElementById('client_id').value;
+    const title = document.getElementById('title').value;
+    const issueDate = document.getElementById('issue_date').value;
+    const dueDate = document.getElementById('due_date').value;
+    const notes = document.getElementById('notes').value;
+    
+    if (!clientId || !title) {
+        alert('Please select a client and enter a title');
+        return;
+    }
+    
+    try {
+        isLoading = true;
+        loadingMessage = 'Creating invoice...';
+        renderApp();
+        
+        const { data, error } = await supabaseClient
+            .from('invoices')
+            .insert([{
+                user_id: currentUser.id,
+                client_id: clientId,
+                title: title,
+                issue_date: issueDate,
+                due_date: dueDate,
+                notes: notes,
+                total: 0,
+                status: 'unpaid'
+            }])
+            .select();
+        
+        if (error) throw error;
+        
+        invoices.push(data[0]);
+        closeModal();
+        switchTab('invoices');
+        showNotification('Invoice created successfully!');
+    } catch (error) {
+        console.error('Error creating invoice:', error);
+        showNotification('Failed to create invoice: ' + error.message, 'error');
+    } finally {
+        isLoading = false;
+        renderApp();
     }
 }
 
