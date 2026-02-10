@@ -267,7 +267,8 @@ function exportToCSV(type) {
         });
         data = filtered.map(q => {
             const client = clients.find(c => c.id === q.client_id);
-            return [client?.name || 'Unknown', q.title, q.date, q.total, q.status, q.accepted ? 'Yes' : 'No'];
+            const dateFormatted = q.created_at ? new Date(q.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+            return [client?.name || 'Unknown', q.title, dateFormatted, q.total, q.status, q.accepted ? 'Yes' : 'No'];
         });
         filename = quoteSearch ? `quotes_filtered_${quoteSearch}.csv` : 'quotes.csv';
     } else if (type === 'invoices') {
