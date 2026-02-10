@@ -268,7 +268,7 @@ function renderDashboard() {
                         const isOverdue = dueDate && dueDate < todayDate;
                         const daysOverdue = isOverdue ? Math.ceil((todayDate - dueDate) / (1000 * 60 * 60 * 24)) : 0;
                         return `
-                        <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer" onclick="openInvoiceDetail(${JSON.stringify(inv).replace(/"/g, '&quot;')})">
+                        <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer" onclick="openInvoiceFromDashboard('${inv.id}')">
                             <div class="flex items-start justify-between">
                                 <div class="flex-1">
                                     <div class="flex items-center gap-2">
@@ -342,8 +342,7 @@ function generateActivityTimeline() {
             title: 'Quote Accepted',
             description: `${client?.name || 'Client'} accepted quote for ${q.title}`,
             amount: q.total,
-            quoteId: q.id,
-            quoteData: q
+            quoteId: q.id
         });
     });
     
@@ -362,8 +361,7 @@ function generateActivityTimeline() {
             title: 'Invoice Paid',
             description: `${client?.name || 'Client'} paid ${inv.invoice_number || 'invoice'}`,
             amount: inv.total,
-            invoiceId: inv.id,
-            invoiceData: inv
+            invoiceId: inv.id
         });
     });
     
@@ -388,8 +386,7 @@ function generateActivityTimeline() {
                 title: `Invoice Due ${daysUntil === 0 ? 'Today' : daysUntil === 1 ? 'Tomorrow' : 'in ' + daysUntil + ' days'}`,
                 description: `${client?.name || 'Client'} - ${inv.invoice_number || 'Invoice'}`,
                 amount: inv.total,
-                invoiceId: inv.id,
-                invoiceData: inv
+                invoiceId: inv.id
             });
         }
     });
@@ -408,8 +405,7 @@ function generateActivityTimeline() {
             title: 'Quote Sent',
             description: `Sent quote to ${client?.name || 'Client'} for ${q.title}`,
             amount: q.total,
-            quoteId: q.id,
-            quoteData: q
+            quoteId: q.id
         });
     });
     
@@ -436,14 +432,14 @@ function generateActivityTimeline() {
         
         // Determine onclick handler
         let onclickHandler = '';
-        if (activity.quoteData) {
-            onclickHandler = `onclick="openQuoteDetail(${JSON.stringify(activity.quoteData).replace(/"/g, '&quot;')})"`;
-        } else if (activity.invoiceData) {
-            onclickHandler = `onclick="openInvoiceDetail(${JSON.stringify(activity.invoiceData).replace(/"/g, '&quot;')})"`;
+        if (activity.quoteId) {
+            onclickHandler = `onclick="openQuoteFromDashboard('${activity.quoteId}')"`;
+        } else if (activity.invoiceId) {
+            onclickHandler = `onclick="openInvoiceFromDashboard('${activity.invoiceId}')"`;
         }
         
         return `
-            <div class="flex gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer" ${onclickHandler}>
+            <div class="flex gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors ${onclickHandler ? 'cursor-pointer' : ''}" ${onclickHandler}>
                 <div class="flex-shrink-0">
                     <div class="w-10 h-10 ${colorClasses[activity.color]} rounded-lg flex items-center justify-center text-lg">
                         ${activity.icon}
@@ -574,6 +570,21 @@ function dismissUserGuide() {
         setTimeout(() => {
             renderApp();
         }, 300);
+    }
+}
+
+// Helper functions to open details from dashboard
+function openQuoteFromDashboard(quoteId) {
+    const quote = quotes.find(q => q.id === quoteId);
+    if (quote) {
+        openQuoteDetail(quote);
+    }
+}
+
+function openInvoiceFromDashboard(invoiceId) {
+    const invoice = invoices.find(i => i.id === invoiceId);
+    if (invoice) {
+        openInvoiceDetail(invoice);
     }
 }
 
