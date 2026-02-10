@@ -58,14 +58,14 @@ async function renderApp() {
                         ${isAdmin ? '<span class="bg-red-600 px-2 py-1 rounded text-xs font-bold">ADMIN</span>' : ''}
                         
                         ${isAdmin ? `
-                            <div class="flex gap-1 bg-gray-800 rounded p-1">
-                                <button onclick="enterDemoMode('sole_trader');" class="px-2 py-1 rounded text-xs border border-teal-400 ${demoMode === 'sole_trader' ? 'bg-teal-600' : 'hover:bg-gray-700'}">
+                            <div class="flex gap-2">
+                                <button onclick="enterDemoMode('sole_trader');" class="px-3 py-2 rounded-lg text-xs font-medium border-2 border-teal-400 ${demoMode === 'sole_trader' ? 'bg-teal-600 text-white' : 'bg-white text-gray-700 hover:bg-teal-50'}">
                                     Sole Trader
                                 </button>
-                                <button onclick="enterDemoMode('business');" class="px-2 py-1 rounded text-xs border border-teal-400 ${demoMode === 'business' ? 'bg-teal-600' : 'hover:bg-gray-700'}">
+                                <button onclick="enterDemoMode('business');" class="px-3 py-2 rounded-lg text-xs font-medium border-2 border-teal-400 ${demoMode === 'business' ? 'bg-teal-600 text-white' : 'bg-white text-gray-700 hover:bg-teal-50'}">
                                     Business
                                 </button>
-                                <button onclick="exitDemoMode();" class="px-2 py-1 rounded text-xs border border-teal-400 ${demoMode === null ? 'bg-teal-600' : 'hover:bg-gray-700'}">
+                                <button onclick="exitDemoMode();" class="px-3 py-2 rounded-lg text-xs font-medium border-2 border-teal-400 ${demoMode === null ? 'bg-teal-600 text-white' : 'bg-white text-gray-700 hover:bg-teal-50'}">
                                     Real
                                 </button>
                             </div>
