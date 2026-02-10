@@ -59,13 +59,13 @@ async function renderApp() {
                         
                         ${isAdmin ? `
                             <div class="flex gap-1 bg-gray-800 rounded p-1">
-                                <button onclick="enterDemoMode('sole_trader');" class="px-2 py-1 rounded text-xs ${demoMode === 'sole_trader' ? 'bg-teal-600' : 'hover:bg-gray-700'}">
+                                <button onclick="enterDemoMode('sole_trader');" class="px-2 py-1 rounded text-xs border border-teal-400 ${demoMode === 'sole_trader' ? 'bg-teal-600' : 'hover:bg-gray-700'}">
                                     Sole Trader
                                 </button>
-                                <button onclick="enterDemoMode('business');" class="px-2 py-1 rounded text-xs ${demoMode === 'business' ? 'bg-teal-600' : 'hover:bg-gray-700'}">
+                                <button onclick="enterDemoMode('business');" class="px-2 py-1 rounded text-xs border border-teal-400 ${demoMode === 'business' ? 'bg-teal-600' : 'hover:bg-gray-700'}">
                                     Business
                                 </button>
-                                <button onclick="exitDemoMode();" class="px-2 py-1 rounded text-xs ${demoMode === null ? 'bg-teal-600' : 'hover:bg-gray-700'}">
+                                <button onclick="exitDemoMode();" class="px-2 py-1 rounded text-xs border border-teal-400 ${demoMode === null ? 'bg-teal-600' : 'hover:bg-gray-700'}">
                                     Real
                                 </button>
                             </div>
