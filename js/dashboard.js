@@ -190,7 +190,7 @@ function renderDashboard() {
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
             <!-- Revenue Trend Chart -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 cursor-pointer hover:shadow-md transition-shadow" onclick="switchTab('analytics')">
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 cursor-pointer" onclick="switchTab('analytics')">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Revenue Trend</h3>
                 <div class="relative h-64">
                     <canvas id="dashboardRevenueChart"></canvas>
@@ -268,7 +268,7 @@ function renderDashboard() {
                         const isOverdue = dueDate && dueDate < todayDate;
                         const daysOverdue = isOverdue ? Math.ceil((todayDate - dueDate) / (1000 * 60 * 60 * 24)) : 0;
                         return `
-                        <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer" onclick="openInvoiceFromDashboard('${inv.id}')">
+                        <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer" onclick="const inv = invoices.find(x => x.id === '${inv.id}'); if(inv) openInvoiceDetail(inv);">
                             <div class="flex items-start justify-between">
                                 <div class="flex-1">
                                     <div class="flex items-center gap-2">
@@ -430,16 +430,16 @@ function generateActivityTimeline() {
         
         const relativeTime = getRelativeTime(activity.date);
         
-        // Determine onclick handler
-        let onclickHandler = '';
+        // Build onclick based on activity type
+        let onclick = '';
         if (activity.quoteId) {
-            onclickHandler = `onclick="openQuoteFromDashboard('${activity.quoteId}')"`;
+            onclick = `onclick="const q = quotes.find(x => x.id === '${activity.quoteId}'); if(q) openQuoteDetail(q);"`;
         } else if (activity.invoiceId) {
-            onclickHandler = `onclick="openInvoiceFromDashboard('${activity.invoiceId}')"`;
+            onclick = `onclick="const inv = invoices.find(x => x.id === '${activity.invoiceId}'); if(inv) openInvoiceDetail(inv);"`;
         }
         
         return `
-            <div class="flex gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors ${onclickHandler ? 'cursor-pointer' : ''}" ${onclickHandler}>
+            <div class="flex gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors ${onclick ? 'cursor-pointer' : ''}" ${onclick}>
                 <div class="flex-shrink-0">
                     <div class="w-10 h-10 ${colorClasses[activity.color]} rounded-lg flex items-center justify-center text-lg">
                         ${activity.icon}
@@ -570,21 +570,6 @@ function dismissUserGuide() {
         setTimeout(() => {
             renderApp();
         }, 300);
-    }
-}
-
-// Helper functions to open details from dashboard
-function openQuoteFromDashboard(quoteId) {
-    const quote = quotes.find(q => q.id === quoteId);
-    if (quote) {
-        openQuoteDetail(quote);
-    }
-}
-
-function openInvoiceFromDashboard(invoiceId) {
-    const invoice = invoices.find(i => i.id === invoiceId);
-    if (invoice) {
-        openInvoiceDetail(invoice);
     }
 }
 
