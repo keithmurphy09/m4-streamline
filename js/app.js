@@ -119,24 +119,24 @@ async function renderApp() {
             </div>
             
             <!-- Navigation with Dropdowns -->
-            <div class="bg-black border-b border-teal-400">
+            <div class="bg-white dark:bg-gray-800 border-b border-teal-400">
                 <div class="max-w-7xl mx-auto px-4">
                     <div class="flex items-center justify-between h-16">
                         <div class="flex items-center gap-8">
                             <div class="text-teal-400 text-2xl font-bold cursor-pointer" onclick="switchTab('dashboard')">M4</div>
                             
                             <nav class="hidden md:flex gap-1">
-                                <button onclick="switchTab('dashboard')" class="px-4 py-2 text-sm font-medium ${activeTab === 'dashboard' ? 'text-teal-400 bg-gray-900' : 'text-white hover:bg-gray-900'} rounded transition-colors">
+                                <button onclick="switchTab('dashboard')" class="px-4 py-2 text-sm font-medium ${activeTab === 'dashboard' ? 'text-teal-400 bg-gray-100 dark:bg-gray-700' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'} rounded transition-colors">
                                     Dashboard
                                 </button>
                                 
-                                <button onclick="switchTab('schedule')" class="px-4 py-2 text-sm font-medium ${activeTab === 'schedule' ? 'text-teal-400 bg-gray-900' : 'text-white hover:bg-gray-900'} rounded transition-colors">
+                                <button onclick="switchTab('schedule')" class="px-4 py-2 text-sm font-medium ${activeTab === 'schedule' ? 'text-teal-400 bg-gray-100 dark:bg-gray-700' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'} rounded transition-colors">
                                     Schedule
                                 </button>
                                 
                                 <!-- Customers Dropdown -->
                                 <div class="relative group">
-                                    <button class="px-4 py-2 text-sm font-medium ${['clients', 'quotes', 'invoices'].includes(activeTab) ? 'text-teal-400 bg-gray-900' : 'text-white hover:bg-gray-900'} rounded transition-colors flex items-center gap-1">
+                                    <button class="px-4 py-2 text-sm font-medium ${['clients', 'quotes', 'invoices'].includes(activeTab) ? 'text-teal-400 bg-gray-100 dark:bg-gray-700' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'} rounded transition-colors flex items-center gap-1">
                                         Customers
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -153,7 +153,7 @@ async function renderApp() {
                                 
                                 <!-- Accounts Dropdown -->
                                 <div class="relative group">
-                                    <button class="px-4 py-2 text-sm font-medium ${['analytics', 'expenses', 'cashflow'].includes(activeTab) ? 'text-teal-400 bg-gray-900' : 'text-white hover:bg-gray-900'} rounded transition-colors flex items-center gap-1">
+                                    <button class="px-4 py-2 text-sm font-medium ${['analytics', 'expenses', 'cashflow'].includes(activeTab) ? 'text-teal-400 bg-gray-100 dark:bg-gray-700' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'} rounded transition-colors flex items-center gap-1">
                                         Accounts
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -172,7 +172,7 @@ async function renderApp() {
                                 
                                 <!-- Company Dropdown -->
                                 <div class="relative group">
-                                    <button class="px-4 py-2 text-sm font-medium ${['company', 'team', 'admin'].includes(activeTab) ? 'text-teal-400 bg-gray-900' : 'text-white hover:bg-gray-900'} rounded transition-colors flex items-center gap-1">
+                                    <button class="px-4 py-2 text-sm font-medium ${['company', 'team', 'admin'].includes(activeTab) ? 'text-teal-400 bg-gray-100 dark:bg-gray-700' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'} rounded transition-colors flex items-center gap-1">
                                         Company
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -265,4 +265,4 @@ document.addEventListener('click', function(event) {
     }
 });
 
-console.log('✅ App core loaded (full version)');
+console.log('✅ App core loaded (full version');
