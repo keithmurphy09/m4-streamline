@@ -190,7 +190,7 @@ function renderDashboard() {
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
             <!-- Revenue Trend Chart -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 cursor-pointer hover:shadow-md transition-shadow" onclick="switchTab('analytics')">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Revenue Trend</h3>
                 <div class="relative h-64">
                     <canvas id="dashboardRevenueChart"></canvas>
@@ -268,7 +268,7 @@ function renderDashboard() {
                         const isOverdue = dueDate && dueDate < todayDate;
                         const daysOverdue = isOverdue ? Math.ceil((todayDate - dueDate) / (1000 * 60 * 60 * 24)) : 0;
                         return `
-                        <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer" onclick="switchTab('invoices')">
+                        <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer" onclick="openInvoiceDetail(${JSON.stringify(inv).replace(/"/g, '&quot;')})">
                             <div class="flex items-start justify-between">
                                 <div class="flex-1">
                                     <div class="flex items-center gap-2">
@@ -341,7 +341,9 @@ function generateActivityTimeline() {
             color: 'green',
             title: 'Quote Accepted',
             description: `${client?.name || 'Client'} accepted quote for ${q.title}`,
-            amount: q.total
+            amount: q.total,
+            quoteId: q.id,
+            quoteData: q
         });
     });
     
@@ -359,7 +361,9 @@ function generateActivityTimeline() {
             color: 'teal',
             title: 'Invoice Paid',
             description: `${client?.name || 'Client'} paid ${inv.invoice_number || 'invoice'}`,
-            amount: inv.total
+            amount: inv.total,
+            invoiceId: inv.id,
+            invoiceData: inv
         });
     });
     
@@ -383,7 +387,9 @@ function generateActivityTimeline() {
                 color: 'orange',
                 title: `Invoice Due ${daysUntil === 0 ? 'Today' : daysUntil === 1 ? 'Tomorrow' : 'in ' + daysUntil + ' days'}`,
                 description: `${client?.name || 'Client'} - ${inv.invoice_number || 'Invoice'}`,
-                amount: inv.total
+                amount: inv.total,
+                invoiceId: inv.id,
+                invoiceData: inv
             });
         }
     });
@@ -401,7 +407,9 @@ function generateActivityTimeline() {
             color: 'blue',
             title: 'Quote Sent',
             description: `Sent quote to ${client?.name || 'Client'} for ${q.title}`,
-            amount: q.total
+            amount: q.total,
+            quoteId: q.id,
+            quoteData: q
         });
     });
     
@@ -426,8 +434,16 @@ function generateActivityTimeline() {
         
         const relativeTime = getRelativeTime(activity.date);
         
+        // Determine onclick handler
+        let onclickHandler = '';
+        if (activity.quoteData) {
+            onclickHandler = `onclick="openQuoteDetail(${JSON.stringify(activity.quoteData).replace(/"/g, '&quot;')})"`;
+        } else if (activity.invoiceData) {
+            onclickHandler = `onclick="openInvoiceDetail(${JSON.stringify(activity.invoiceData).replace(/"/g, '&quot;')})"`;
+        }
+        
         return `
-            <div class="flex gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+            <div class="flex gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer" ${onclickHandler}>
                 <div class="flex-shrink-0">
                     <div class="w-10 h-10 ${colorClasses[activity.color]} rounded-lg flex items-center justify-center text-lg">
                         ${activity.icon}
