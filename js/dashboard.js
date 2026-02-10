@@ -268,7 +268,7 @@ function renderDashboard() {
                         const isOverdue = dueDate && dueDate < todayDate;
                         const daysOverdue = isOverdue ? Math.ceil((todayDate - dueDate) / (1000 * 60 * 60 * 24)) : 0;
                         return `
-                        <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer" onclick="handleActivityClick('invoice','${inv.id}')">
+                        <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer" onclick="switchTab('invoices'); setTimeout(() => { const inv = invoices.find(x => x.id === '${inv.id}'); if (inv) openInvoiceDetail(inv); }, 100);">
                             <div class="flex items-start justify-between">
                                 <div class="flex-1">
                                     <div class="flex items-center gap-2">
@@ -342,7 +342,7 @@ function generateActivityTimeline() {
             title: 'Quote Accepted',
             description: `${client?.name || 'Client'} accepted quote for ${q.title}`,
             amount: q.total,
-            id: q.id
+            itemId: q.id
         });
     });
     
@@ -361,7 +361,7 @@ function generateActivityTimeline() {
             title: 'Invoice Paid',
             description: `${client?.name || 'Client'} paid ${inv.invoice_number || 'invoice'}`,
             amount: inv.total,
-            id: inv.id
+            itemId: inv.id
         });
     });
     
@@ -386,7 +386,7 @@ function generateActivityTimeline() {
                 title: `Invoice Due ${daysUntil === 0 ? 'Today' : daysUntil === 1 ? 'Tomorrow' : 'in ' + daysUntil + ' days'}`,
                 description: `${client?.name || 'Client'} - ${inv.invoice_number || 'Invoice'}`,
                 amount: inv.total,
-                id: inv.id
+                itemId: inv.id
             });
         }
     });
@@ -405,7 +405,7 @@ function generateActivityTimeline() {
             title: 'Quote Sent',
             description: `Sent quote to ${client?.name || 'Client'} for ${q.title}`,
             amount: q.total,
-            id: q.id
+            itemId: q.id
         });
     });
     
@@ -428,10 +428,19 @@ function generateActivityTimeline() {
             blue: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
         };
         
-        const onclick = activity.id ? `onclick="handleActivityClick('${activity.type}','${activity.id}')"` : '';
+        const relativeTime = getRelativeTime(activity.date);
+        
+        let clickHandler = '';
+        if (activity.itemId) {
+            if (activity.type.includes('quote')) {
+                clickHandler = ` style="cursor:pointer" onclick="switchTab('quotes'); setTimeout(() => { const q = quotes.find(x => x.id === '${activity.itemId}'); if (q) openQuoteDetail(q); }, 100);"`;
+            } else {
+                clickHandler = ` style="cursor:pointer" onclick="switchTab('invoices'); setTimeout(() => { const inv = invoices.find(x => x.id === '${activity.itemId}'); if (inv) openInvoiceDetail(inv); }, 100);"`;
+            }
+        }
         
         return `
-            <div class="flex gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors ${activity.id ? 'cursor-pointer' : ''}" ${onclick}>
+            <div class="flex gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"${clickHandler}>
                 <div class="flex-shrink-0">
                     <div class="w-10 h-10 ${colorClasses[activity.color]} rounded-lg flex items-center justify-center text-lg">
                         ${activity.icon}
@@ -562,16 +571,6 @@ function dismissUserGuide() {
         setTimeout(() => {
             renderApp();
         }, 300);
-    }
-}
-
-function handleActivityClick(type, id) {
-    if (type.includes('quote')) {
-        const quote = quotes.find(q => q.id === id);
-        if (quote) openQuoteDetail(quote);
-    } else if (type.includes('invoice')) {
-        const invoice = invoices.find(i => i.id === id);
-        if (invoice) openInvoiceDetail(invoice);
     }
 }
 
