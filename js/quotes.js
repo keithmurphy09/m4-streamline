@@ -738,9 +738,22 @@ function renderQuoteDetail() {
 }
 
 function toggleQuoteCommunications(quoteId) {
+    console.log('Toggling communications for quote:', quoteId);
     const panel = document.getElementById(`quote-communications-${quoteId}`);
+    console.log('Found panel:', panel);
     if (panel) {
+        const wasHidden = panel.classList.contains('hidden');
         panel.classList.toggle('hidden');
+        console.log('Panel is now:', wasHidden ? 'visible' : 'hidden');
+        // Scroll into view if being shown
+        if (wasHidden) {
+            setTimeout(() => {
+                panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+    } else {
+        console.error('Communications panel not found for quote:', quoteId);
+        alert('Communications panel not found. Please refresh the page.');
     }
 }
 
