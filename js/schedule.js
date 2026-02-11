@@ -245,7 +245,7 @@ function toggleJobActions(jobId) {
 
 async function updateJobStatus(jobId, newStatus) {
     try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('jobs')
             .update({ status: newStatus })
             .eq('id', jobId);
