@@ -29,8 +29,10 @@ function renderCashFlow() {
         dueDate.setHours(0, 0, 0, 0);
         const daysDiff = Math.floor((today - dueDate) / (1000 * 60 * 60 * 24));
         
-        if (daysDiff < 0) aging.current.push(inv);
-        else if (daysDiff <= 30) aging.days_1_30.push(inv);
+        // daysDiff negative = future, positive = overdue
+        // Include both "due within 30 days" and "overdue 1-30 days" in same bucket
+        if (daysDiff < -30) aging.current.push(inv); // Due more than 30 days out
+        else if (daysDiff <= 30) aging.days_1_30.push(inv); // Due within 30 days OR overdue 1-30 days
         else if (daysDiff <= 60) aging.days_31_60.push(inv);
         else if (daysDiff <= 90) aging.days_61_90.push(inv);
         else aging.days_90_plus.push(inv);
