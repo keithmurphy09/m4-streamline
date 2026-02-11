@@ -549,12 +549,19 @@ async function deleteJob(id) {
 function saveExpense() {
     const date = document.getElementById('expense_date').value;
     const amount = parseFloat(document.getElementById('amount').value);
-    const category = document.getElementById('category').value;
+    let category = document.getElementById('category').value;
+    const customCategory = document.getElementById('custom_category')?.value.trim();
     const description = document.getElementById('description')?.value.trim() || '';
     const jobIdRaw = document.getElementById('job_id')?.value || '';
     const teamMemberId = document.getElementById('team_member_id')?.value || null;
     
-    if (!date || !amount || !category) {
+    // Handle custom category
+    if (category === '__custom__' && customCategory) {
+        category = customCategory;
+        saveCustomExpenseCategory(category);
+    }
+    
+    if (!date || !amount || !category || category === '__custom__') {
         showNotification('Please fill in all required fields', 'error');
         return;
     }
@@ -773,6 +780,31 @@ async function deleteClientNote(noteId) {
     } catch (error) {
         console.error('Error deleting note:', error);
         showNotification('Error deleting note', 'error');
+    }
+}
+
+async function saveCustomExpenseCategory(categoryName) {
+    try {
+        const customCategories = companySettings?.custom_expense_categories || [];
+        
+        // Don't add if already exists
+        if (customCategories.includes(categoryName)) return;
+        
+        const updatedCategories = [...customCategories, categoryName];
+        
+        const { error } = await supabaseClient
+            .from('company_settings')
+            .update({ custom_expense_categories: updatedCategories })
+            .eq('user_id', currentUser.id);
+        
+        if (error) throw error;
+        
+        // Update local settings
+        if (!companySettings) companySettings = {};
+        companySettings.custom_expense_categories = updatedCategories;
+    } catch (error) {
+        console.error('Error saving custom category:', error);
+        // Don't show error to user, category will still work for this expense
     }
 }
 
