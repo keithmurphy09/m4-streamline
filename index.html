@@ -24,6 +24,10 @@
         }
     </script>
     
+    <!-- ⭐ NEW: Micro-interactions & Mobile Optimization CSS ⭐ -->
+    <link rel="stylesheet" href="micro-interactions.css">
+    <link rel="stylesheet" href="mobile-optimization.css">
+    
     <!-- Styles -->
     <style>
         * {
@@ -37,9 +41,9 @@
             white-space: pre-line !important;
         }
         
-        /* ═══════════════════════════════════════════════════════════════════
+        /* ═══════════════════════════════════════════════════════════════
            UNIVERSAL BUTTON GLOW STYLES (Content Area Only)
-           ═══════════════════════════════════════════════════════════════════ */
+           ═══════════════════════════════════════════════════════════════ */
         
         /* Only apply to buttons in the main content area, NOT navigation */
         #app > div > div:not([class*="bg-black"]) button:not(.no-glow),
@@ -134,7 +138,17 @@
         </p>
     </footer>
     
-    <!-- Load Modules in Order -->
+    <!-- ⭐ NEW FEATURES: Load these FIRST (before your existing modules) ⭐ -->
+    <script src="confetti.js"></script>
+    <script src="smart-filters.js"></script>
+    <script src="shimmer-loading.js"></script>
+    <script src="ai-insights.js"></script>
+    <script src="document-templates.js"></script>
+    <script src="email-automation.js"></script>
+    <script src="advanced-scheduling.js"></script>
+    <script src="client-portal.js"></script>
+    
+    <!-- Load Existing Modules in Order -->
     <script src="js/config.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/auth.js"></script>
