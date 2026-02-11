@@ -110,7 +110,7 @@ function renderQuotesTable() {
                                 <button onclick="generatePDF('quote', ${JSON.stringify(q).replace(/"/g, '&quot;')}); toggleQuoteActions('${q.id}')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">Download PDF</button>
                                 <button onclick="sendQuoteEmail(${JSON.stringify(q).replace(/"/g, '&quot;')}); toggleQuoteActions('${q.id}')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">Email Quote</button>
                                 ${client?.phone && smsSettings?.enabled ? `<button onclick="sendQuoteSMS(${JSON.stringify(q).replace(/"/g, '&quot;')}); toggleQuoteActions('${q.id}')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">SMS Quote</button>` : ''}
-                                <button onclick="openNoteModal('quote', '${q.id}', '${q.client_id}'); toggleQuoteActions('${q.id}')" class="block w-full text-left px-4 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700">📝 Add Note</button>
+                                <button onclick="openNoteModal('quote', '${q.id}', '${q.client_id}'); toggleQuoteActions('${q.id}')" class="block w-full text-left px-4 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700">Add Note</button>
                                 ${!isConverted ? `<button onclick="convertToInvoice(${JSON.stringify(q).replace(/"/g, '&quot;')}); toggleQuoteActions('${q.id}')" class="block w-full text-left px-4 py-2 text-sm text-teal-600 dark:text-teal-400 hover:bg-gray-50 dark:hover:bg-gray-700">Convert to Invoice</button>` : ''}
                                 <button onclick="deleteQuote('${q.id}'); toggleQuoteActions('${q.id}')" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">Delete</button>
                             </div>
@@ -643,8 +643,8 @@ function renderQuoteDetail() {
                 <button onclick='sendQuoteEmail(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 rounded-lg transition-colors">Email Quote</button>
                 ${client?.phone && smsSettings?.enabled ? `<button onclick='sendQuoteSMS(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 rounded-lg transition-colors">SMS Quote</button>` : ''}
                 <button onclick="toggleQuoteCommunications('${q.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 rounded-lg transition-colors">Communications</button>
-                <button onclick="document.getElementById('file-upload-${q.id}').click()" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 rounded-lg transition-colors">📎 Add File</button>
-                <button onclick="toggleQuoteFiles('${q.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 rounded-lg transition-colors">📁 View Files</button>
+                <button onclick="document.getElementById('file-upload-${q.id}').click()" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 rounded-lg transition-colors">Add File</button>
+                <button onclick="toggleQuoteFiles('${q.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 rounded-lg transition-colors">View Files</button>
                 <input type="file" id="file-upload-${q.id}" class="hidden" onchange="uploadQuoteFile(this, '${q.id}')" multiple>
                 <button onclick="deleteQuote('${q.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 bg-white dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors ml-auto">Delete</button>
             </div>
@@ -714,7 +714,7 @@ function renderQuoteDetail() {
         <div id="quote-communications-${q.id}" class="hidden mt-6">
             <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">📞 Communication History</h3>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Communication History</h3>
                     <button onclick="openNoteModal('quote', '${q.id}', '${q.client_id}')" class="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">+ Add Note</button>
                 </div>
                 <div class="space-y-3">
@@ -742,8 +742,8 @@ function renderQuoteDetail() {
         <div id="quote-files-${q.id}" class="hidden mt-6">
             <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">📁 Files & Documents</h3>
-                    <button onclick="document.getElementById('file-upload-${q.id}').click()" class="px-3 py-1.5 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors">+ Upload File</button>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Files & Documents</h3>
+                    <button onclick="document.getElementById('file-upload-${q.id}').click()" class="px-3 py-1.5 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors">Upload File</button>
                 </div>
                 <div id="quote-files-list-${q.id}" class="space-y-2">
                     <p class="text-sm text-gray-500 dark:text-gray-400 italic">Loading files...</p>
@@ -811,13 +811,8 @@ async function loadQuoteFiles(quoteId) {
             return `
                 <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
                     <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2">
-                            <span class="text-2xl">📄</span>
-                            <div class="flex-1 min-w-0">
-                                <a href="${file.file_url}" target="_blank" class="text-sm font-medium text-teal-600 dark:text-teal-400 hover:underline truncate block">${file.file_name}</a>
-                                <div class="text-xs text-gray-500 dark:text-gray-400">${fileSize} • ${uploadDate}</div>
-                            </div>
-                        </div>
+                        <a href="${file.file_url}" target="_blank" class="text-sm font-medium text-teal-600 dark:text-teal-400 hover:underline truncate block">${file.file_name}</a>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">${fileSize} • ${uploadDate}</div>
                     </div>
                     <button onclick="deleteQuoteFile('${file.id}', '${quoteId}')" class="ml-2 text-red-500 hover:text-red-700 text-sm px-2 py-1">Delete</button>
                 </div>
