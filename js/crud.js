@@ -28,6 +28,9 @@ async function addClient() {
         
         clients.push(data[0]);
         closeModal();
+        if (openedFromDashboard) {
+            switchTab('clients');
+        }
         showNotification('Client added successfully!', 'success');
         renderApp();
     } catch (error) {
@@ -145,7 +148,9 @@ async function addQuote(quote) {
         lastCreatedQuote = data[0];
         closeModal();
         showNotification('Quote created successfully!', 'success');
-        switchTab('quotes');
+        if (openedFromDashboard) {
+            switchTab('quotes');
+        }
     } catch (error) {
         console.error('Error creating quote:', error);
         showNotification('Error creating quote', 'error');
@@ -451,7 +456,9 @@ async function addJob(job) {
         jobs.push(data[0]);
         closeModal();
         showNotification('Job scheduled successfully!', 'success');
-        switchTab('schedule');
+        if (openedFromDashboard) {
+            switchTab('schedule');
+        }
     } catch (error) {
         console.error('Error scheduling job:', error);
         showNotification('Error scheduling job', 'error');
@@ -588,7 +595,9 @@ async function addExpense(expense) {
         expenses.push(data[0]);
         closeModal();
         showNotification('Expense added successfully!', 'success');
-        switchTab('expenses');
+        if (openedFromDashboard) {
+            switchTab('expenses');
+        }
     } catch (error) {
         console.error('Error adding expense:', error);
         showNotification('Error adding expense', 'error');
