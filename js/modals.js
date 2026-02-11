@@ -253,6 +253,7 @@ function renderModal() {
         const dueDate = editingItem?.due_date || '';
         const notes = editingItem?.notes || '';
         const clientId = editingItem?.client_id || '';
+        const total = editingItem?.total || '';
         
         const buttonText = (editingItem && editingItem.id) ? 'Update Invoice' : 'Create Invoice';
         const action = (editingItem && editingItem.id) ? `updateInvoiceDetails('${editingItem.id}')` : `saveInvoice()`;
@@ -274,6 +275,10 @@ function renderModal() {
             <div class="mb-3">
                 <label class="block text-sm font-medium mb-1 dark:text-gray-200">Title</label>
                 <input type="text" id="title" value="${invTitle}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
+            </div>
+            <div class="mb-3">
+                <label class="block text-sm font-medium mb-1 dark:text-gray-200">Amount *</label>
+                <input type="number" id="invoice_total" value="${total}" step="0.01" min="0" placeholder="0.00" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" required>
             </div>
             <div class="mb-3">
                 <label class="block text-sm font-medium mb-1 dark:text-gray-200">Issue Date</label>
@@ -585,12 +590,13 @@ function autoFillJobAddress() {
 async function saveInvoice() {
     const clientId = document.getElementById('client_id').value;
     const title = document.getElementById('title').value;
+    const total = parseFloat(document.getElementById('invoice_total').value);
     const issueDate = document.getElementById('issue_date').value;
     const dueDate = document.getElementById('due_date').value;
     const notes = document.getElementById('notes').value;
     
-    if (!clientId || !title) {
-        alert('Please select a client and enter a title');
+    if (!clientId || !title || !total) {
+        alert('Please select a client, enter a title and amount');
         return;
     }
     
@@ -603,8 +609,8 @@ async function saveInvoice() {
             user_id: currentUser.id,
             client_id: clientId,
             title: title,
+            total: total,
             notes: notes || null,
-            total: 0,
             status: 'unpaid'
         };
         
