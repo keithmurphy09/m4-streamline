@@ -94,11 +94,28 @@ function generatePDF(type, item) {
     
     if (item.items && Array.isArray(item.items)) {
         item.items.forEach(lineItem => {
-            doc.text(lineItem.description || '', 25, y);
-            doc.text(String(lineItem.quantity || 0), 120, y);
-            doc.text('$' + (lineItem.price || 0).toFixed(2), 145, y);
-            doc.text('$' + ((lineItem.quantity * lineItem.price) || 0).toFixed(2), 170, y);
-            y += 7;
+            const startY = y;
+            
+            // Check if we need a new page (leaving room for totals)
+            if (y > 250) {
+                doc.addPage();
+                y = 20;
+            }
+            
+            // Wrap description text to fit in available space (from x=25 to x=115, so 90 units wide)
+            const descriptionLines = doc.splitTextToSize(lineItem.description || '', 90);
+            doc.text(descriptionLines, 25, y);
+            
+            // Calculate height needed for description
+            const descriptionHeight = descriptionLines.length * 5;
+            
+            // Place quantity, price, and total at the FIRST line of the description
+            doc.text(String(lineItem.quantity || 0), 120, startY);
+            doc.text('$' + (lineItem.price || 0).toFixed(2), 145, startY);
+            doc.text('$' + ((lineItem.quantity * lineItem.price) || 0).toFixed(2), 170, startY);
+            
+            // Move y down by the height of the description + spacing
+            y += Math.max(descriptionHeight, 5) + 2;
         });
     }
     
