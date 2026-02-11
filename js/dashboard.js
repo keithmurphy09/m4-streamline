@@ -1,671 +1,577 @@
 // ═══════════════════════════════════════════════════════════════════
-// M4 STREAMLINE - Modal System Module
-// ═══════════════════════════════════════════════════════════════════
+// M4 STREAMLINE - Professional Dashboard (Based on Mockup)
+// ═════════════════════════════════════════════════════════════════
 
-// ═══════════════════════════════════════════════════════════════════
-// MODAL CONTROL FUNCTIONS
-// ═══════════════════════════════════════════════════════════════════
+let dashboardRevenueChartInstance = null;
 
-let openedFromDashboard = false;
-
-function openModal(type, item = null, fromDashboard = false) {
-    modalType = type;
-    editingItem = item;
-    showModal = true;
-    openedFromDashboard = fromDashboard;
-    if (type === 'quote') quoteItems = item?.items || [{ description: '', quantity: 1, price: 0 }];
-    renderApp();
-    if (type === 'quote') setTimeout(renderQuoteItems, 100);
-    
-    // Initialize address autocomplete for any address fields
-    initAllAddressAutocomplete();
-}
-
-function closeModal() {
-    showModal = false;
-    editingItem = null;
-    modalType = '';
-    openedFromDashboard = false;
-    
-    // Clear Google Maps autocomplete tracking
-    if (typeof clearInitializedFields === 'function') {
-        clearInitializedFields();
-    }
-    
-    renderApp();
-}
-
-function openQuoteForClient(client) {
-    editingItem = { client_id: client.id };
-    modalType = 'quote';
-    quoteItems = [{ description: '', quantity: 1, price: 0 }];
-    showModal = true;
-    renderApp();
-    setTimeout(renderQuoteItems, 100);
-    
-    // Initialize autocomplete with delay for quote modal
-    setTimeout(() => initAllAddressAutocomplete(), 500);
-}
-
-function openJobFromQuote(quote) {
+function renderDashboard() {
     const today = new Date().toISOString().split('T')[0];
-    editingItem = {
-        client_id: quote.client_id,
-        quote_id: quote.id,
-        title: quote.title,
-        date: today,
-        time: '06:00',
-        notes: `Quote: ${quote.title} - Total: $${quote.total.toFixed(2)}\n\n${quote.notes || ''}`
-    };
-    modalType = 'job';
-    showModal = true;
-    renderApp();
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+    const upcomingJobs = jobs.filter(j => j.date >= today).sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 5);
+    const tomorrowJobs = jobs.filter(j => j.date === tomorrow);
+    const pendingQuotes = quotes.filter(q => q.status === 'pending' && !q.accepted);
+    const acceptedQuotes = quotes.filter(q => q.accepted || q.status === 'accepted');
+    const unpaidInvoices = invoices.filter(i => i.status === 'unpaid').slice(0, 4);
     
-    // Initialize autocomplete with delay for job modal
-    setTimeout(() => initAllAddressAutocomplete(), 500);
-}
-
-function openNoteModal(relatedType, relatedId, clientId) {
-    editingItem = {
-        related_type: relatedType,
-        related_id: relatedId,
-        client_id: clientId
-    };
-    modalType = 'client_note';
-    showModal = true;
-    renderApp();
-}
-
-function viewJobExpenses(jobId, jobTitle) {
-    modalType = 'job_expenses';
-    editingItem = { jobId, jobTitle };
-    showModal = true;
-    renderApp();
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// MODAL RENDERING
-// ═══════════════════════════════════════════════════════════════════
-
-function renderModal() {
-    if (!showModal) return '';
+    const todayDate = new Date();
+    todayDate.setHours(0,0,0,0);
+    const overdueInvoices = unpaidInvoices.filter(i => {
+        if (!i.due_date) return false;
+        const dueDate = new Date(i.due_date);
+        dueDate.setHours(0,0,0,0);
+        dueDate.setDate(dueDate.getDate() + 1);
+        return dueDate < todayDate;
+    });
     
-    let form = '';
-    let title = modalType.charAt(0).toUpperCase() + modalType.slice(1);
+    // Financial calculations
+    const totalUnpaid = invoices.filter(i => i.status === 'unpaid').reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
+    const totalRevenue = invoices.filter(i => i.status === 'paid').reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
+    const totalExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+    const netProfit = totalRevenue - totalExpenses;
+    const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : 0;
     
-    // CLIENT MODAL
-    if (modalType === 'client') {
-        const name = editingItem?.name || '';
-        const email = editingItem?.email || '';
-        const phone = editingItem?.phone || '';
-        const address = editingItem?.address || '';
-        const notes = editingItem?.notes || '';
-        const buttonText = editingItem ? 'Update Client' : 'Add Client';
-        const action = editingItem ? `updateClient('${editingItem.id}')` : `addClient()`;
-        
-        title = editingItem ? 'Edit Client' : 'Add Client';
-        form = `
-            <input type="text" id="client_name" placeholder="Name *" value="${name}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" required>
-            <input type="email" id="client_email" placeholder="Email *" value="${email}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" required>
-            <input type="tel" id="client_phone" placeholder="Phone *" value="${phone}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" required>
-            <input type="text" id="client_address" placeholder="Address" value="${address}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3">
-            <textarea id="client_notes" placeholder="Internal notes (only visible to you)" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" rows="3">${notes}</textarea>
-            <button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>
-        `;
-    }
+    // Last 30 days revenue
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const recentRevenue = invoices.filter(i => i.status === 'paid' && i.paid_date && new Date(i.paid_date) >= thirtyDaysAgo).reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
     
-    // JOB MODAL
-    if (modalType === 'job') {
-        const clientId = editingItem?.client_id || '';
-        const jobTitle = editingItem?.title || '';
-        const date = editingItem?.date || '';
-        const time = editingItem?.time || '06:00';
-        const duration = editingItem?.duration || 1;
-        const notes = editingItem?.notes || '';
-        const status = editingItem?.status || 'scheduled';
-        const assignedTeam = editingItem?.assigned_team_members || [];
-        const buttonText = (editingItem && editingItem.id) ? 'Update Job' : 'Schedule Job';
-        const action = (editingItem && editingItem.id) ? `updateJob('${editingItem.id}')` : `saveJob()`;
-        
-        const workerCheckboxes = getAccountType() === 'business' && teamMembers.length > 0 
-            ? `<div class="mb-3">
-                <label class="block text-sm font-medium mb-2 dark:text-gray-200">Assign Team Members</label>
-                <div class="border rounded p-3 space-y-2 max-h-48 overflow-y-auto bg-gray-50 dark:bg-gray-800">
-                    ${teamMembers.map(m => {
-                        const isChecked = assignedTeam.includes(m.id);
-                        return `<label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded">
-                            <input type="checkbox" value="${m.id}" ${isChecked ? 'checked' : ''} class="worker-checkbox" />
-                            <span class="flex-1">${m.name}${m.occupation ? ` - ${m.occupation}` : ''}</span>
-                            <span class="w-4 h-4 rounded-full" style="background-color: ${m.color || '#14b8a6'}"></span>
-                        </label>`;
-                    }).join('')}
-                </div>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">💡 Select multiple team members for this job</p>
-               </div>`
-            : '';
-        
-        title = editingItem && editingItem.id ? 'Edit Job' : 'Schedule Job';
-        form = `
-            <select id="client_id" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" required onchange="updateQuotesForClient()">
-                <option value="">Select Client *</option>
-                ${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}
-            </select>
-            <select id="quote_id" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" onchange="prefillFromQuote()">
-                <option value="">Or select from accepted quote (optional)</option>
-            </select>
-            <input type="text" id="title" placeholder="Job Title *" value="${jobTitle}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" required>
-            <div class="mb-3">
-                <label class="block text-sm font-medium mb-1 dark:text-gray-200">Job Site Address</label>
-                <input type="text" id="job_address" placeholder="Job site address (start typing for suggestions)" value="${editingItem?.job_address || ''}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" onchange="autoFillJobAddress()">
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">💡 Auto-fills from client address</p>
-            </div>
-            <div class="mb-3">
-                <label class="block text-sm font-medium mb-1 dark:text-gray-200">Start Date *</label>
-                <input type="date" id="date" value="${date}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" required>
-            </div>
-            <div class="mb-3">
-                <label class="block text-sm font-medium mb-1 dark:text-gray-200">Start Time</label>
-                <input type="time" id="time" value="${time}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
-            </div>
-            <div class="mb-3">
-                <label class="block text-sm font-medium mb-1 dark:text-gray-200">Duration (days)</label>
-                <input type="number" id="duration" value="${duration}" min="1" max="30" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
-            </div>
-            ${workerCheckboxes}
-            <select id="jobStatus" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3">
-                <option value="scheduled" ${status === 'scheduled' ? 'selected' : ''}>Scheduled</option>
-                <option value="in_progress" ${status === 'in_progress' ? 'selected' : ''}>In Progress</option>
-                <option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option>
-            </select>
-            <textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" rows="3">${notes}</textarea>
-            <button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>
-        `;
-    }
+    // Revenue growth
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+    const previousMonthRevenue = invoices.filter(i => i.status === 'paid' && i.paid_date && new Date(i.paid_date) >= sixtyDaysAgo && new Date(i.paid_date) < thirtyDaysAgo).reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
+    const revenueGrowth = previousMonthRevenue > 0 ? (((recentRevenue - previousMonthRevenue) / previousMonthRevenue) * 100).toFixed(1) : 0;
     
-    // QUOTE MODAL
-    if (modalType === 'quote') {
-        const clientId = editingItem?.client_id || '';
-        const quoteTitle = editingItem?.title || '';
-        const notes = editingItem?.notes || '';
-        const jobAddress = editingItem?.job_address || '';
-        const includeGst = editingItem?.include_gst || false;
-        const depositPercentage = editingItem?.deposit_percentage || 0;
-        const paymentTerms = editingItem?.payment_terms || 'Full payment (COD) to be paid on completion';
-        const isEditing = editingItem && editingItem.id;
-        const buttonText = isEditing ? 'Update Quote' : 'Create Quote';
-        
-        if (isEditing) {
-            quoteItems = editingItem.items || [{ description: '', quantity: 1, price: 0 }];
-        }
-        
-        const displayQuoteNumber = isEditing ? quoteTitle : `QT-${String(quotes.length + 1).padStart(3, '0')}`;
-        
-        title = isEditing ? 'Edit Quote' : 'Create Quote';
-        form = `
-            <select id="client_id" onchange="autoFillJobAddress()" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" required>
-                <option value="">Select Client *</option>
-                ${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}
-            </select>
-            <div class="mb-3">
-                <label class="block text-sm font-medium mb-1 dark:text-gray-200">Quote/PO Number</label>
-                <input type="text" id="title" value="${displayQuoteNumber}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">💡 Auto-generated, but you can edit it</p>
-            </div>
-            <div class="mb-3">
-                <label class="block text-sm font-medium mb-1 dark:text-gray-200">Job Address</label>
-                <input type="text" id="job_address" placeholder="Job site address (start typing for suggestions)" value="${jobAddress}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">💡 Defaults to client address</p>
-            </div>
-            <div id="items-list"></div>
-            <button onclick="addQuoteItem()" class="text-teal-500 text-sm mb-3">+ Add Item</button>
-            <div id="quote-total" class="font-bold mb-3">Total: $0</div>
-            <div class="mb-3">
-                <label class="flex items-center cursor-pointer">
-                    <input type="checkbox" id="include_gst" ${includeGst ? 'checked' : ''} onchange="updateQuoteTotal()" class="mr-2">
-                    <span class="text-sm font-medium dark:text-gray-200">Include GST (10%)</span>
-                </label>
-            </div>
-            <div class="mb-3">
-                <label class="block text-sm font-medium mb-2 dark:text-gray-200">Deposit Required</label>
-                <input type="hidden" id="deposit_percentage" value="${depositPercentage}">
-                <div class="flex gap-2 flex-wrap">
-                    <button type="button" onclick="setDeposit(0)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 0 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'}">0% (COD)</button>
-                    <button type="button" onclick="setDeposit(30)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 30 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'}">30%</button>
-                    <button type="button" onclick="setDeposit(40)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 40 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'}">40%</button>
-                    <button type="button" onclick="setDeposit(50)" class="px-4 py-2 border rounded text-sm ${depositPercentage === 50 ? 'bg-black text-white border-teal-400' : 'bg-white text-black border-gray-300'}">50%</button>
-                </div>
-            </div>
-            <div id="deposit-amount" class="text-sm text-gray-600 dark:text-gray-300 mb-3"></div>
-            <div class="mb-3">
-                <label class="block text-sm font-medium mb-1 dark:text-gray-200">Payment Terms</label>
-                <textarea id="payment_terms" placeholder="Payment terms" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" rows="2">${paymentTerms}</textarea>
-            </div>
-            <textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" rows="3">${notes}</textarea>
-            <button onclick="${isEditing ? `updateQuote('${editingItem.id}')` : 'saveQuote()'}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>
-        `;
-    }
+    // Active jobs count
+    const activeJobs = jobs.filter(j => j.date >= today).length;
     
-    // INVOICE MODAL
-    if (modalType === 'invoice') {
-        const invTitle = editingItem?.title || '';
-        const invoiceNumber = editingItem?.invoice_number || '';
-        const issueDate = editingItem?.issue_date || new Date().toISOString().split('T')[0];
-        const dueDate = editingItem?.due_date || '';
-        const notes = editingItem?.notes || '';
-        const clientId = editingItem?.client_id || '';
-        
-        const buttonText = (editingItem && editingItem.id) ? 'Update Invoice' : 'Create Invoice';
-        const action = (editingItem && editingItem.id) ? `updateInvoiceDetails('${editingItem.id}')` : `saveInvoice()`;
-        
-        title = (editingItem && editingItem.id) ? 'Edit Invoice' : 'Create Invoice';
-        form = `
-            ${!(editingItem && editingItem.id) ? `
-            <select id="client_id" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" required>
-                <option value="">Select Client *</option>
-                ${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}
-            </select>
-            ` : ''}
-            ${(editingItem && editingItem.id) ? `
-            <div class="mb-3">
-                <label class="block text-sm font-medium mb-1 dark:text-gray-200">Invoice Number</label>
-                <input type="text" id="invoice_number" value="${invoiceNumber}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" readonly>
-            </div>
-            ` : ''}
-            <div class="mb-3">
-                <label class="block text-sm font-medium mb-1 dark:text-gray-200">Title</label>
-                <input type="text" id="title" value="${invTitle}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
-            </div>
-            <div class="mb-3">
-                <label class="block text-sm font-medium mb-1 dark:text-gray-200">Issue Date</label>
-                <input type="date" id="issue_date" value="${issueDate}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
-            </div>
-            <div class="mb-3">
-                <label class="block text-sm font-medium mb-1 dark:text-gray-200">Due Date</label>
-                <input type="date" id="due_date" value="${dueDate}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
-            </div>
-            <textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" rows="3">${notes}</textarea>
-            <button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>
-        `;
-    }
+    // Current date display
+    const now = new Date();
+    const dayName = now.toLocaleDateString('en-US', { weekday: 'long' });
+    const dateString = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     
-    // EXPENSE MODAL
-    if (modalType === 'expense') {
-        const date = editingItem?.date || new Date().toISOString().split('T')[0];
-        const amount = editingItem?.amount || '';
-        const category = editingItem?.category || 'Materials';
-        const description = editingItem?.description || '';
-        const team_member_id = editingItem?.team_member_id || '';
-        const job_id_raw = editingItem?.job_id || '';
+    return `<div class="max-w-7xl mx-auto space-y-6">
         
-        let job_id = '';
-        if (job_id_raw) {
-            job_id = `job_${job_id_raw}`;
-        } else if (editingItem && description) {
-            const match = description.match(/\[Related to: ([^\]]+)\]/);
-            if (match) {
-                const relatedText = match[1];
-                const matchingQuote = quotes.find(q => relatedText.includes(q.title));
-                if (matchingQuote) {
-                    job_id = `quote_${matchingQuote.id}`;
-                } else {
-                    const matchingJob = jobs.find(j => relatedText.includes(j.title));
-                    if (matchingJob) {
-                        job_id = `job_${matchingJob.id}`;
-                    }
-                }
-            }
-        }
-        
-        const categories = ['Labour', 'Materials', 'Fuel', 'Equipment', 'Subcontractors', 'Office Supplies', 'Insurance', 'Marketing', 'Other'];
-        const buttonText = editingItem ? 'Update Expense' : 'Add Expense';
-        const action = editingItem ? `updateExpense('${editingItem.id}')` : `saveExpense()`;
-        
-        const jobOptions = [];
-        quotes.forEach(q => {
-            const client = clients.find(c => c.id === q.client_id);
-            jobOptions.push({
-                id: `quote_${q.id}`,
-                display: `${q.title}${client ? ' - ' + client.name : ''} (Quote)`,
-                date: q.created_at || q.date
-            });
-        });
-        jobs.forEach(j => {
-            const client = clients.find(c => c.id === j.client_id);
-            jobOptions.push({
-                id: `job_${j.id}`,
-                display: `${j.title}${client ? ' - ' + client.name : ''} (Scheduled)`,
-                date: j.date
-            });
-        });
-        jobOptions.sort((a, b) => new Date(b.date) - new Date(a.date));
-        
-        const teamMemberDropdown = getAccountType() === 'business' 
-            ? `<div class="mb-3">
-                <label class="block text-sm font-medium mb-1 dark:text-gray-200">Team Member (Optional)</label>
-                <select id="team_member_id" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                    <option value="">No specific team member</option>
-                    ${teamMembers.map(m => `<option value="${m.id}" ${m.id === team_member_id ? 'selected' : ''}>${m.name}${m.occupation ? ' - ' + m.occupation : ''}</option>`).join('')}
-                </select>
-               </div>`
-            : '';
-        
-        title = editingItem ? 'Edit Expense' : 'Add Expense';
-        form = `
-            <div class="mb-3">
-                <label class="block text-sm font-medium mb-1 dark:text-gray-200">Date *</label>
-                <input type="date" id="expense_date" value="${date}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" required>
+        <!-- Page Header -->
+        <div class="flex justify-between items-start">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Your business at a glance</p>
             </div>
-            <div class="mb-3">
-                <label class="block text-sm font-medium mb-1 dark:text-gray-200">Amount *</label>
-                <input type="number" id="amount" placeholder="0.00" value="${amount}" step="0.01" min="0" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" required>
-            </div>
-            <div class="mb-3">
-                <label class="block text-sm font-medium mb-1 dark:text-gray-200">Category *</label>
-                <select id="category" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" required>
-                    ${categories.map(c => `<option value="${c}" ${c === category ? 'selected' : ''}>${c}</option>`).join('')}
-                </select>
-            </div>
-            <div class="mb-3">
-                <label class="block text-sm font-medium mb-1 dark:text-gray-200">Related Job/Quote (Optional)</label>
-                <select id="job_id" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                    <option value="">No specific job</option>
-                    ${jobOptions.map(opt => `<option value="${opt.id}" ${opt.id === job_id ? 'selected' : ''}>${opt.display}</option>`).join('')}
-                </select>
-            </div>
-            ${teamMemberDropdown}
-            <div class="mb-3">
-                <label class="block text-sm font-medium mb-1 dark:text-gray-200">Description</label>
-                <textarea id="description" placeholder="Expense description" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" rows="3">${description}</textarea>
-            </div>
-            <button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>
-        `;
-    }
-    
-    // JOB EXPENSES VIEW MODAL
-    if (modalType === 'job_expenses') {
-        const jobId = editingItem?.jobId;
-        const jobTitle = editingItem?.jobTitle;
-        const jobExpensesList = expenses.filter(e => e.job_id === jobId);
-        const totalExpenses = jobExpensesList.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
-        
-        title = `Expenses for ${jobTitle}`;
-        form = `
-            <div class="space-y-4">
-                <div class="bg-blue-50 dark:bg-blue-900 p-3 rounded border-l-4 border-blue-500">
-                    <p class="text-sm font-medium dark:text-gray-200">Job: <span class="font-bold">${jobTitle}</span></p>
-                    <p class="text-sm dark:text-gray-200">Total Expenses: <span class="font-bold text-red-600">$${totalExpenses.toFixed(2)}</span></p>
-                </div>
-                ${jobExpensesList.length === 0 ? '<p class="text-gray-500 dark:text-gray-400 text-center py-8">No expenses recorded for this job yet</p>' : ''}
-                <div class="space-y-3">
-                    ${jobExpensesList.sort((a, b) => new Date(b.date) - new Date(a.date)).map(exp => {
-                        const teamMember = exp.team_member_id ? teamMembers.find(tm => tm.id === exp.team_member_id) : null;
-                        return `<div class="border rounded p-3 dark:border-gray-700">
-                            <div class="flex justify-between items-start mb-2">
-                                <div class="flex-1">
-                                    <p class="font-semibold dark:text-white">${exp.category}</p>
-                                    <p class="text-sm text-gray-600 dark:text-gray-300">${exp.description || 'No description'}</p>
-                                    ${teamMember ? `<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">👤 ${teamMember.name}</p>` : ''}
-                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">📅 ${new Date(exp.date).toLocaleDateString()}</p>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-lg font-bold text-red-600">$${parseFloat(exp.amount).toFixed(2)}</p>
-                                    <button onclick="closeModal(); openModal('expense', ${JSON.stringify(exp).replace(/"/g, '&quot;')})" class="text-xs text-blue-600 hover:underline mt-1">Edit</button>
-                                </div>
-                            </div>
-                        </div>`;
-                    }).join('')}
-                </div>
-                <button onclick="closeModal(); openModal('expense', {job_id: '${jobId}'})" class="w-full bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">
-                    + Add Expense to This Job
-                </button>
-            </div>
-        `;
-    }
-    
-    // TEAM MEMBER MODAL
-    if (modalType === 'team_member') {
-        const name = editingItem?.name || '';
-        const email = editingItem?.email || '';
-        const phone = editingItem?.phone || '';
-        const occupation = editingItem?.occupation || '';
-        const color = editingItem?.color || '#3b82f6';
-        const buttonText = editingItem ? 'Update Team Member' : 'Add Team Member';
-        const action = editingItem ? `updateTeamMember('${editingItem.id}')` : `saveTeamMember()`;
-        
-        title = editingItem ? 'Edit Team Member' : 'Add Team Member';
-        form = `
-            <input type="text" id="team_name" placeholder="Name *" value="${name}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" required>
-            <input type="email" id="team_email" placeholder="Email (optional)" value="${email}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3">
-            <input type="tel" id="team_phone" placeholder="Phone (optional)" value="${phone}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3">
-            <input type="text" id="team_occupation" placeholder="Occupation (e.g., Painter, Electrician)" value="${occupation}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3">
-            <div class="mb-3">
-                <label class="block text-sm font-medium mb-2 dark:text-gray-200">Calendar Color</label>
-                <div class="flex items-center gap-3">
-                    <input type="color" id="team_color" value="${color}" class="h-10 w-20 cursor-pointer border rounded">
-                    <span class="text-sm text-gray-600 dark:text-gray-300">Choose a color for this team member's jobs</span>
-                </div>
-            </div>
-            <button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400 hover:bg-gray-800">${buttonText}</button>
-        `;
-    }
-    
-    // CLIENT NOTE MODAL
-    if (modalType === 'client_note') {
-        const relatedType = editingItem?.related_type || '';
-        const relatedId = editingItem?.related_id || '';
-        const clientId = editingItem?.client_id || '';
-        
-        // Get context info for the note
-        let contextInfo = '';
-        if (relatedType === 'quote') {
-            const quote = quotes.find(q => q.id === relatedId);
-            const client = clients.find(c => c.id === clientId);
-            contextInfo = `<div class="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded">
-                <p class="text-sm text-gray-700 dark:text-gray-300"><strong>Quote:</strong> ${quote?.title || 'Unknown'}</p>
-                <p class="text-sm text-gray-700 dark:text-gray-300"><strong>Client:</strong> ${client?.name || 'Unknown'}</p>
-            </div>`;
-        } else if (relatedType === 'invoice') {
-            const invoice = invoices.find(i => i.id === relatedId);
-            const client = clients.find(c => c.id === clientId);
-            contextInfo = `<div class="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded">
-                <p class="text-sm text-gray-700 dark:text-gray-300"><strong>Invoice:</strong> ${invoice?.title || 'Unknown'}</p>
-                <p class="text-sm text-gray-700 dark:text-gray-300"><strong>Client:</strong> ${client?.name || 'Unknown'}</p>
-            </div>`;
-        }
-        
-        title = 'Add Communication Note';
-        form = `
-            ${contextInfo}
-            <textarea id="note_text" placeholder="Add a note about this client interaction (e.g., 'Called client to discuss quote details', 'Client requested changes to project scope')" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" rows="6" required></textarea>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">💡 This note will be saved to the client's communication history</p>
-            <button onclick="saveClientNote()" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400 hover:bg-gray-800">Save Note</button>
-        `;
-    }
-    
-    return `
-        <div class="fixed inset-0 bg-black bg-opacity-70 dark:bg-opacity-80 flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto" onclick="if(event.target===this)closeModal()">
-            <div class="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 max-w-2xl w-full my-4 max-h-[90vh] overflow-y-auto">
-                <div class="flex justify-between mb-4">
-                    <h3 class="text-lg sm:text-xl font-bold dark:text-white">${title}</h3>
-                    <button onclick="closeModal()" class="text-2xl leading-none dark:text-gray-300">×</button>
-                </div>
-                ${form}
+            <div class="text-right">
+                <div class="text-sm text-gray-500 dark:text-gray-400">${dayName}</div>
+                <div class="text-lg font-semibold text-gray-900 dark:text-white">${dateString}</div>
             </div>
         </div>
-    `;
+        
+        ${!companySettings?.business_name && !companySettings?.phone ? `
+        <div class="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-4">
+            <div class="flex items-start gap-3">
+                <svg class="w-5 h-5 text-orange-600 dark:text-orange-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                <div class="flex-1">
+                    <p class="text-sm font-medium text-orange-900 dark:text-orange-200">Complete your setup</p>
+                    <p class="text-sm text-orange-700 dark:text-orange-300 mt-1">Add your business details in <button onclick="switchTab('company')" class="underline font-medium hover:text-orange-900">Company Info</button> to start creating quotes and invoices.</p>
+                </div>
+            </div>
+        </div>
+        ` : ''}
+        
+        ${!localStorage.getItem('userGuideDismissed') ? `
+        <div id="userGuideBanner" class="bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-xl p-4">
+            <div class="flex items-start gap-3">
+                <svg class="w-5 h-5 text-teal-600 dark:text-teal-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/>
+                </svg>
+                <div class="flex-1">
+                    <p class="text-sm font-medium text-teal-900 dark:text-teal-200">New to M4 Streamline?</p>
+                    <p class="text-sm text-teal-700 dark:text-teal-300 mt-1">Check out our comprehensive <button onclick="dismissUserGuide(); downloadUserGuide();" class="underline font-medium hover:text-teal-900 dark:hover:text-teal-100">User Guide</button> for a complete walkthrough.</p>
+                </div>
+                <button onclick="dismissUserGuide()" class="text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        ` : ''}
+        
+        <!-- Key Metrics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <!-- Total Revenue -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 hover:shadow-md transition-shadow cursor-pointer" onclick="switchTab('analytics')">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 bg-teal-100 dark:bg-teal-900/30 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-teal-600 dark:text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    ${revenueGrowth != 0 ? `
+                    <div class="flex items-center gap-1 text-xs font-medium ${revenueGrowth > 0 ? 'text-teal-600 dark:text-teal-400' : 'text-red-600 dark:text-red-400'}">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${revenueGrowth > 0 ? 'M5 10l7-7m0 0l7 7m-7-7v18' : 'M19 14l-7 7m0 0l-7-7m7 7V3'}"></path>
+                        </svg>
+                        ${Math.abs(revenueGrowth)}%
+                    </div>
+                    ` : ''}
+                </div>
+                <div>
+                    <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Total Revenue</div>
+                    <div class="text-2xl font-bold text-gray-900 dark:text-white">$${totalRevenue.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">$${recentRevenue.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})} this month</div>
+                </div>
+            </div>
+            
+            <!-- Net Profit -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 hover:shadow-md transition-shadow cursor-pointer" onclick="switchTab('analytics')">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <div class="text-xs font-medium ${netProfit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">
+                        ${profitMargin}% margin
+                    </div>
+                </div>
+                <div>
+                    <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Net Profit</div>
+                    <div class="text-2xl font-bold ${netProfit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">$${Math.abs(netProfit).toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">$${totalExpenses.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})} expenses</div>
+                </div>
+            </div>
+            
+            <!-- Outstanding Invoices -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 hover:shadow-md transition-shadow cursor-pointer" onclick="switchTab('invoices')">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    ${overdueInvoices.length > 0 ? `
+                    <div class="text-xs font-medium text-red-600 dark:text-red-400">
+                        ${overdueInvoices.length} overdue
+                    </div>
+                    ` : ''}
+                </div>
+                <div>
+                    <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Outstanding</div>
+                    <div class="text-2xl font-bold text-gray-900 dark:text-white">$${totalUnpaid.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${invoices.filter(i => i.status === 'unpaid').length} unpaid invoices</div>
+                </div>
+            </div>
+            
+            <!-- Active Jobs -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 hover:shadow-md transition-shadow cursor-pointer" onclick="switchTab('schedule')">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    ${pendingQuotes.length > 0 ? `
+                    <div class="text-xs font-medium text-blue-600 dark:text-blue-400">
+                        ${pendingQuotes.length} pending
+                    </div>
+                    ` : ''}
+                </div>
+                <div>
+                    <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Active Jobs</div>
+                    <div class="text-2xl font-bold text-gray-900 dark:text-white">${activeJobs}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${acceptedQuotes.length} accepted quotes</div>
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- Charts Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <!-- Revenue Trend Chart -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 cursor-pointer" onclick="switchTab('analytics')">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Revenue Trend</h3>
+                <div class="relative h-64">
+                    <canvas id="dashboardRevenueChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Expense Breakdown Chart -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h3>
+                <div class="space-y-3 max-h-64 overflow-y-auto">
+                    ${generateActivityTimeline()}
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- Bottom Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <!-- Upcoming Jobs -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div class="p-6 border-b border-gray-100 dark:border-gray-700">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Upcoming Jobs</h3>
+                        <button onclick="switchTab('schedule')" class="text-sm text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium">
+                            View All →
+                        </button>
+                    </div>
+                </div>
+                <div class="divide-y divide-gray-100 dark:divide-gray-700">
+                    ${upcomingJobs.length === 0 ? `
+                        <div class="p-8 text-center text-gray-500 dark:text-gray-400 text-sm">
+                            No upcoming jobs scheduled
+                        </div>
+                    ` : upcomingJobs.map(job => {
+                        const client = clients.find(c => c.id === job.client_id);
+                        const jobDate = new Date(job.date);
+                        const daysUntil = Math.ceil((jobDate - new Date()) / (1000 * 60 * 60 * 24));
+                        return `
+                        <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer" onclick="switchTab('schedule')">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white">${job.title}</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${client?.name || 'Unknown'}</div>
+                                </div>
+                                <div class="text-right ml-4">
+                                    <div class="text-xs font-medium text-gray-900 dark:text-white">${jobDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})}</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">${daysUntil === 0 ? 'Today' : daysUntil === 1 ? 'Tomorrow' : daysUntil + ' days'}</div>
+                                </div>
+                            </div>
+                        </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+            
+            <!-- Outstanding Invoices -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div class="p-6 border-b border-gray-100 dark:border-gray-700">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Outstanding Invoices</h3>
+                        <button onclick="switchTab('invoices')" class="text-sm text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium">
+                            View All →
+                        </button>
+                    </div>
+                </div>
+                <div class="divide-y divide-gray-100 dark:divide-gray-700">
+                    ${unpaidInvoices.length === 0 ? `
+                        <div class="p-8 text-center text-gray-500 dark:text-gray-400 text-sm">
+                            No outstanding invoices
+                        </div>
+                    ` : unpaidInvoices.map(inv => {
+                        const client = clients.find(c => c.id === inv.client_id);
+                        const dueDate = inv.due_date ? new Date(inv.due_date) : null;
+                        const isOverdue = dueDate && dueDate < todayDate;
+                        const daysOverdue = isOverdue ? Math.ceil((todayDate - dueDate) / (1000 * 60 * 60 * 24)) : 0;
+                        return `
+                        <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer" onclick="switchTab('invoices'); setTimeout(() => { const inv = invoices.find(x => x.id === '${inv.id}'); if (inv) openInvoiceDetail(inv); }, 100);">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white">${inv.invoice_number || 'INV-' + inv.id.slice(0,6)}</div>
+                                        ${isOverdue ? `
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                                            ${daysOverdue}d overdue
+                                        </span>
+                                        ` : ''}
+                                    </div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${client?.name || 'Unknown'}</div>
+                                </div>
+                                <div class="text-right ml-4">
+                                    <div class="text-sm font-semibold text-gray-900 dark:text-white">$${(inv.total || 0).toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">Due ${dueDate ? dueDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric'}) : 'N/A'}</div>
+                                </div>
+                            </div>
+                        </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="bg-gradient-to-r from-teal-500 to-teal-600 rounded-xl shadow-lg p-6">
+            <h3 class="text-lg font-semibold text-white mb-4">Quick Actions</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <button onclick="openModal('quote', null, true)" class="bg-white/10 hover:bg-white/20 backdrop-blur text-white px-4 py-3 rounded-lg font-medium transition-colors text-sm">
+                    + Create Quote
+                </button>
+                <button onclick="openModal('invoice', null, true)" class="bg-white/10 hover:bg-white/20 backdrop-blur text-white px-4 py-3 rounded-lg font-medium transition-colors text-sm">
+                    + Create Invoice
+                </button>
+                <button onclick="openModal('job', null, true)" class="bg-white/10 hover:bg-white/20 backdrop-blur text-white px-4 py-3 rounded-lg font-medium transition-colors text-sm">
+                    + Schedule Job
+                </button>
+                <button onclick="openModal('expense', null, true)" class="bg-white/10 hover:bg-white/20 backdrop-blur text-white px-4 py-3 rounded-lg font-medium transition-colors text-sm">
+                    + Add Expense
+                </button>
+            </div>
+        </div>
+        
+    </div>`;
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// QUOTE ITEMS FUNCTIONS
-// ═══════════════════════════════════════════════════════════════════
-
-function addQuoteItem() {
-    quoteItems.push({ description: '', quantity: 1, price: 0 });
-    renderQuoteItems();
-}
-
-function updateQuoteTotal() {
-    renderQuoteItems();
-}
-
-function setDeposit(percentage) {
-    document.getElementById('deposit_percentage').value = percentage;
+// Generate activity timeline
+function generateActivityTimeline() {
+    const activities = [];
     
-    const buttons = document.querySelectorAll('[onclick^="setDeposit"]');
-    buttons.forEach(btn => {
-        const btnPercentage = parseInt(btn.textContent);
-        if (btnPercentage === percentage || (percentage === 0 && btn.textContent.includes('COD'))) {
-            btn.className = 'px-4 py-2 border rounded text-sm bg-black text-white border-teal-400';
-        } else {
-            btn.className = 'px-4 py-2 border rounded text-sm bg-white text-black border-gray-300';
+    // Define 7 days ago cutoff
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+    
+    // Collect all activities with timestamps
+    
+    // Quote acceptances (last 7 days only)
+    quotes.filter(q => {
+        if ((!q.accepted && q.status !== 'accepted') || !q.accepted_date) return false;
+        const acceptedDate = new Date(q.accepted_date);
+        return acceptedDate >= sevenDaysAgo;
+    }).forEach(q => {
+        const client = clients.find(c => c.id === q.client_id);
+        activities.push({
+            date: new Date(q.accepted_date),
+            type: 'quote_accepted',
+            icon: '✅',
+            color: 'green',
+            title: 'Quote Accepted',
+            description: `${client?.name || 'Client'} accepted quote for ${q.title}`,
+            amount: q.total,
+            itemId: q.id
+        });
+    });
+    
+    // Invoice payments (last 7 days only)
+    invoices.filter(i => {
+        if (i.status !== 'paid' || !i.paid_date) return false;
+        const paidDate = new Date(i.paid_date);
+        return paidDate >= sevenDaysAgo;
+    }).forEach(inv => {
+        const client = clients.find(c => c.id === inv.client_id);
+        activities.push({
+            date: new Date(inv.paid_date),
+            type: 'invoice_paid',
+            icon: '💰',
+            color: 'teal',
+            title: 'Invoice Paid',
+            description: `${client?.name || 'Client'} paid ${inv.invoice_number || 'invoice'}`,
+            amount: inv.total,
+            itemId: inv.id
+        });
+    });
+    
+    // Upcoming invoice due dates (next 7 days)
+    const sevenDaysFromNow = new Date();
+    sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    invoices.filter(i => i.status === 'unpaid' && i.due_date).forEach(inv => {
+        const dueDate = new Date(inv.due_date);
+        dueDate.setHours(0, 0, 0, 0);
+        
+        if (dueDate >= today && dueDate <= sevenDaysFromNow) {
+            const client = clients.find(c => c.id === inv.client_id);
+            const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+            activities.push({
+                date: dueDate,
+                type: 'invoice_due',
+                icon: '📅',
+                color: 'orange',
+                title: `Invoice Due ${daysUntil === 0 ? 'Today' : daysUntil === 1 ? 'Tomorrow' : 'in ' + daysUntil + ' days'}`,
+                description: `${client?.name || 'Client'} - ${inv.invoice_number || 'Invoice'}`,
+                amount: inv.total,
+                itemId: inv.id
+            });
         }
     });
     
-    renderQuoteItems();
-}
-
-function renderQuoteItems() {
-    const container = document.getElementById('items-list');
-    if (!container) return;
+    // New quotes created (last 7 days)
+    quotes.filter(q => {
+        const createdDate = new Date(q.created_at);
+        return createdDate >= sevenDaysAgo && !q.accepted && q.status === 'pending';
+    }).forEach(q => {
+        const client = clients.find(c => c.id === q.client_id);
+        activities.push({
+            date: new Date(q.created_at),
+            type: 'quote_created',
+            icon: '📝',
+            color: 'blue',
+            title: 'Quote Sent',
+            description: `Sent quote to ${client?.name || 'Client'} for ${q.title}`,
+            amount: q.total,
+            itemId: q.id
+        });
+    });
     
-    const items = quoteItems.map((item, index) => {
+    // Sort by date (most recent first)
+    activities.sort((a, b) => b.date - a.date);
+    
+    // Take top 10
+    const recentActivities = activities.slice(0, 10);
+    
+    if (recentActivities.length === 0) {
+        return '<div class="text-center py-8 text-gray-500 dark:text-gray-400 text-sm">No recent activity</div>';
+    }
+    
+    return recentActivities.map(activity => {
+        const colorClasses = {
+            green: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400',
+            teal: 'bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400',
+            orange: 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400',
+            red: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
+            blue: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+        };
+        
+        const relativeTime = getRelativeTime(activity.date);
+        
+        let clickHandler = '';
+        if (activity.itemId) {
+            if (activity.type.includes('quote')) {
+                clickHandler = ` style="cursor:pointer" onclick="switchTab('quotes'); setTimeout(() => { const q = quotes.find(x => x.id === '${activity.itemId}'); if (q) openQuoteDetail(q); }, 100);"`;
+            } else {
+                clickHandler = ` style="cursor:pointer" onclick="switchTab('invoices'); setTimeout(() => { const inv = invoices.find(x => x.id === '${activity.itemId}'); if (inv) openInvoiceDetail(inv); }, 100);"`;
+            }
+        }
+        
         return `
-            <div class="border rounded p-3 mb-3 dark:border-gray-600">
-                <input type="text" placeholder="Description *" value="${item.description}" onchange="quoteItems[${index}].description=this.value; renderQuoteItems()" class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-2">
-                <div class="flex gap-2">
-                    <input type="number" placeholder="Qty" value="${item.quantity}" onchange="quoteItems[${index}].quantity=parseFloat(this.value); renderQuoteItems()" class="w-20 px-3 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" min="1">
-                    <input type="number" placeholder="Price" value="${item.price}" onchange="quoteItems[${index}].price=parseFloat(this.value); renderQuoteItems()" class="flex-1 px-3 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" min="0" step="0.01">
-                    <button onclick="quoteItems.splice(${index}, 1); renderQuoteItems()" class="px-3 py-2 text-red-600 border rounded hover:bg-red-50">×</button>
+            <div class="flex gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"${clickHandler}>
+                <div class="flex-shrink-0">
+                    <div class="w-10 h-10 ${colorClasses[activity.color]} rounded-lg flex items-center justify-center text-lg">
+                        ${activity.icon}
+                    </div>
                 </div>
-                <div class="text-right text-sm mt-1 font-semibold dark:text-gray-200">Line: $${(item.quantity * item.price).toFixed(2)}</div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-medium text-gray-900 dark:text-white">${activity.title}</div>
+                            <div class="text-xs text-gray-600 dark:text-gray-400 truncate">${activity.description}</div>
+                            <div class="text-xs text-gray-400 dark:text-gray-500 mt-1">${relativeTime}</div>
+                        </div>
+                        ${activity.amount ? `<div class="text-sm font-semibold text-gray-900 dark:text-white whitespace-nowrap">$${activity.amount.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</div>` : ''}
+                    </div>
+                </div>
             </div>
         `;
     }).join('');
-    
-    container.innerHTML = items;
-    
-    const subtotal = quoteItems.reduce((sum, item) => sum + (item.quantity * item.price), 0);
-    const includeGst = document.getElementById('include_gst')?.checked || false;
-    const gst = includeGst ? subtotal * 0.1 : 0;
-    const total = subtotal + gst;
-    
-    const totalContainer = document.getElementById('quote-total');
-    if (totalContainer) {
-        totalContainer.innerHTML = `
-            <div class="space-y-1">
-                <div class="flex justify-between dark:text-gray-200"><span>Subtotal:</span><span>$${subtotal.toFixed(2)}</span></div>
-                ${includeGst ? `<div class="flex justify-between dark:text-gray-200"><span>GST (10%):</span><span>$${gst.toFixed(2)}</span></div>` : ''}
-                <div class="flex justify-between font-bold text-lg border-t pt-2 dark:text-white"><span>Total:</span><span>$${total.toFixed(2)}</span></div>
-            </div>
-        `;
-    }
-    
-    const depositPercentage = parseInt(document.getElementById('deposit_percentage')?.value || 0);
-    const depositAmount = total * (depositPercentage / 100);
-    const depositContainer = document.getElementById('deposit-amount');
-    if (depositContainer && depositPercentage > 0) {
-        depositContainer.innerHTML = `Deposit amount (${depositPercentage}%): <span class="font-bold">$${depositAmount.toFixed(2)}</span>`;
-    } else if (depositContainer) {
-        depositContainer.innerHTML = '';
-    }
 }
 
-function autoFillJobAddress() {
-    const clientId = document.getElementById('client_id').value;
-    const addressField = document.getElementById('job_address');
+// Helper function for relative time
+function getRelativeTime(date) {
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
     
-    if (clientId && addressField) {
-        const client = clients.find(c => c.id === clientId);
-        if (client && client.address && !addressField.value) {
-            addressField.value = client.address;
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    if (diffDays < 0) {
+        const futureDays = Math.abs(diffDays);
+        return `In ${futureDays} day${futureDays > 1 ? 's' : ''}`;
+    }
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// Initialize dashboard charts
+function initializeDashboardCharts() {
+    console.log('🎨 Initializing dashboard charts...');
+    
+    // Revenue Trend Chart
+    const monthLabels = [];
+    const monthlyRevenue = [];
+    
+    for (let i = 5; i >= 0; i--) {
+        const date = new Date();
+        date.setMonth(date.getMonth() - i);
+        const monthKey = date.toLocaleDateString('en-US', { month: 'short' });
+        monthLabels.push(monthKey);
+        
+        const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+        const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
+        
+        const revenue = invoices
+            .filter(inv => inv.status === 'paid' && inv.paid_date && new Date(inv.paid_date) >= monthStart && new Date(inv.paid_date) <= monthEnd)
+            .reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
+        
+        monthlyRevenue.push(revenue);
+    }
+    
+    console.log('📊 Revenue chart data:', monthLabels, monthlyRevenue);
+    
+    // Use sample data if no real data exists
+    const hasRevenueData = monthlyRevenue.some(v => v > 0);
+    if (!hasRevenueData) {
+        console.log('⚠️ No revenue data, using sample data for visualization');
+        monthlyRevenue[0] = 0;
+        monthlyRevenue[1] = 0;
+        monthlyRevenue[2] = 0;
+        monthlyRevenue[3] = 0;
+        monthlyRevenue[4] = 0;
+        monthlyRevenue[5] = 0;
+    }
+    
+    const revenueCtx = document.getElementById('dashboardRevenueChart');
+    if (revenueCtx) {
+        if (dashboardRevenueChartInstance) {
+            dashboardRevenueChartInstance.destroy();
         }
+        
+        dashboardRevenueChartInstance = new Chart(revenueCtx, {
+            type: 'line',
+            data: {
+                labels: monthLabels,
+                datasets: [{
+                    label: 'Revenue',
+                    data: monthlyRevenue,
+                    borderColor: 'rgb(20, 184, 166)',
+                    backgroundColor: 'rgba(20, 184, 166, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        console.log('✅ Revenue chart created!');
     }
 }
 
-async function saveInvoice() {
-    const clientId = document.getElementById('client_id').value;
-    const title = document.getElementById('title').value;
-    const issueDate = document.getElementById('issue_date').value;
-    const dueDate = document.getElementById('due_date').value;
-    const notes = document.getElementById('notes').value;
-    
-    if (!clientId || !title) {
-        alert('Please select a client and enter a title');
-        return;
-    }
-    
-    try {
-        isLoading = true;
-        loadingMessage = 'Creating invoice...';
-        renderApp();
-        
-        const invoiceData = {
-            user_id: currentUser.id,
-            client_id: clientId,
-            title: title,
-            notes: notes || null,
-            total: 0,
-            status: 'unpaid'
-        };
-        
-        // Only add dates if they have values
-        if (issueDate) invoiceData.issue_date = issueDate;
-        if (dueDate) invoiceData.due_date = dueDate;
-        
-        const { data, error } = await supabaseClient
-            .from('invoices')
-            .insert([invoiceData])
-            .select();
-        
-        if (error) throw error;
-        
-        invoices.push(data[0]);
-        closeModal();
-        if (openedFromDashboard) {
-            switchTab('invoices');
-        }
-        showNotification('Invoice created successfully!');
-    } catch (error) {
-        console.error('Error creating invoice:', error);
-        showNotification('Failed to create invoice: ' + error.message, 'error');
-    } finally {
-        isLoading = false;
-        renderApp();
+// Dismiss user guide banner
+function dismissUserGuide() {
+    localStorage.setItem('userGuideDismissed', 'true');
+    const banner = document.getElementById('userGuideBanner');
+    if (banner) {
+        banner.style.opacity = '0';
+        banner.style.transition = 'opacity 0.3s';
+        setTimeout(() => {
+            renderApp();
+        }, 300);
     }
 }
 
-function updateQuotesForClient() {
-    const clientId = document.getElementById('client_id').value;
-    const quoteSelect = document.getElementById('quote_id');
-    
-    if (!quoteSelect) return;
-    
-    const acceptedQuotes = quotes.filter(q => 
-        q.client_id === clientId && 
-        (q.accepted || q.status === 'accepted') &&
-        q.status !== 'converted'
-    );
-    
-    quoteSelect.innerHTML = '<option value="">Or select from accepted quote (optional)</option>' +
-        acceptedQuotes.map(q => `<option value="${q.id}">${q.quote_number || q.title} - $${q.total.toFixed(2)}</option>`).join('');
-}
-
-function prefillFromQuote() {
-    const quoteId = document.getElementById('quote_id').value;
-    if (!quoteId) return;
-    
-    const quote = quotes.find(q => q.id === quoteId);
-    if (!quote) return;
-    
-    document.getElementById('title').value = quote.title;
-    if (quote.job_address) {
-        const addressField = document.getElementById('job_address');
-        if (addressField) addressField.value = quote.job_address;
-    }
-    const notesField = document.getElementById('notes');
-    if (notesField && quote.notes) {
-        notesField.value = `Quote: ${quote.quote_number || quote.title} - $${quote.total.toFixed(2)}\n\n${quote.notes}`;
-    }
-}
-
-console.log('✅ Modal system module loaded');
+console.log('✅ Professional Dashboard module loaded (Mockup Design)');
