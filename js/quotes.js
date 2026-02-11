@@ -798,7 +798,13 @@ async function loadQuoteFiles(quoteId) {
             .eq('quote_id', quoteId)
             .order('created_at', { ascending: false });
         
-        if (error) throw error;
+        if (error) {
+            console.error('Database error loading quote files:', error);
+            console.error('Error code:', error.code);
+            console.error('Error message:', error.message);
+            console.error('Error details:', error.details);
+            throw error;
+        }
         
         if (!data || data.length === 0) {
             listContainer.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 italic">No files uploaded yet.</p>';
@@ -820,7 +826,9 @@ async function loadQuoteFiles(quoteId) {
         }).join('');
     } catch (error) {
         console.error('Error loading files:', error);
-        listContainer.innerHTML = '<p class="text-sm text-red-500">Error loading files</p>';
+        console.error('Full error object:', JSON.stringify(error, null, 2));
+        const errorMsg = error.message || error.hint || 'Unknown error loading files';
+        listContainer.innerHTML = `<p class="text-sm text-red-500">Error: ${errorMsg}</p>`;
     }
 }
 
@@ -843,7 +851,12 @@ async function uploadQuoteFile(input, quoteId) {
                 .from('quote-files')
                 .upload(filePath, file);
             
-            if (uploadError) throw uploadError;
+            if (uploadError) {
+                console.error('Storage upload error:', uploadError);
+                console.error('Bucket:', 'quote-files');
+                console.error('File path:', filePath);
+                throw uploadError;
+            }
             
             // Get public URL
             const { data: { publicUrl } } = supabaseClient.storage
@@ -862,7 +875,11 @@ async function uploadQuoteFile(input, quoteId) {
                     file_type: file.type
                 }]);
             
-            if (dbError) throw dbError;
+            if (dbError) {
+                console.error('Database insert error:', dbError);
+                console.error('Table:', 'quote_files');
+                throw dbError;
+            }
         }
         
         showNotification('Files uploaded successfully!');
@@ -870,7 +887,10 @@ async function uploadQuoteFile(input, quoteId) {
         input.value = ''; // Clear input
     } catch (error) {
         console.error('Error uploading files:', error);
-        showNotification('Error uploading files: ' + error.message, 'error');
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+        console.error('Full error:', JSON.stringify(error, null, 2));
+        showNotification('Error uploading files: ' + (error.message || 'Unknown error'), 'error');
     } finally {
         isLoading = false;
         renderApp();
