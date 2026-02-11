@@ -614,12 +614,19 @@ async function addExpense(expense) {
 async function updateExpense(id) {
     const date = document.getElementById('expense_date').value;
     const amount = parseFloat(document.getElementById('amount').value);
-    const category = document.getElementById('category').value;
+    let category = document.getElementById('category').value;
+    const customCategory = document.getElementById('custom_category')?.value.trim();
     const description = document.getElementById('description')?.value.trim() || '';
     const jobIdRaw = document.getElementById('job_id')?.value || '';
     const teamMemberId = document.getElementById('team_member_id')?.value || null;
     
-    if (!date || !amount || !category) {
+    // Handle custom category
+    if (category === '__custom__' && customCategory) {
+        category = customCategory;
+        saveCustomExpenseCategory(category);
+    }
+    
+    if (!date || !amount || !category || category === '__custom__') {
         showNotification('Please fill in all required fields', 'error');
         return;
     }
