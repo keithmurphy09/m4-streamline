@@ -1,0 +1,389 @@
+/* ═══════════════════════════════════════════════════════════════════
+   M4 STREAMLINE - Micro-interactions & Smooth Animations
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Add this CSS to your main stylesheet or in a <style> tag in index.html */
+
+/* Smooth transitions for all interactive elements */
+* {
+    transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+    transition-duration: 200ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Button Hover Effects */
+button:not(:disabled):hover,
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+button:not(:disabled):active,
+.btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* Primary Button (Teal) - Enhanced */
+button.bg-teal-600:hover,
+.bg-teal-600:hover {
+    background-color: #0d9488 !important;
+    box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.1);
+}
+
+/* Black Button with Teal Border - Enhanced */
+button.bg-black:hover,
+.bg-black.border-teal-400:hover {
+    background-color: #1a1a1a !important;
+    border-color: #14b8a6 !important;
+    box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.1);
+}
+
+/* Danger Button - Enhanced */
+button.bg-red-600:hover,
+.bg-red-600:hover {
+    background-color: #dc2626 !important;
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+}
+
+/* Card Hover Effects */
+.cursor-pointer:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Table Row Hover - Smooth Scale */
+tr.hover\:bg-gray-50:hover,
+tr.hover\:bg-gray-100:hover {
+    transform: scale(1.01);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Input Focus - Smooth Ring */
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: #14b8a6;
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+    transform: scale(1.01);
+}
+
+/* Checkbox Animations */
+input[type="checkbox"] {
+    transition: all 0.2s ease;
+}
+
+input[type="checkbox"]:checked {
+    transform: scale(1.1);
+}
+
+/* Stat Card Number Animation */
+.stat-number {
+    display: inline-block;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.stat-card:hover .stat-number {
+    transform: scale(1.05);
+    color: #14b8a6;
+}
+
+/* Badge Pulse Animation */
+@keyframes badge-pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+.badge-pulse {
+    animation: badge-pulse 2s ease-in-out infinite;
+}
+
+/* Status Badge Hover */
+span[class*="bg-teal"]:hover,
+span[class*="bg-red"]:hover,
+span[class*="bg-orange"]:hover,
+span[class*="bg-green"]:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Dropdown Menu Slide-in */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dropdown-menu {
+    animation: slideDown 0.2s ease-out;
+}
+
+/* Modal Fade-in */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.modal-content {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Link Underline Animation */
+a {
+    position: relative;
+    text-decoration: none;
+}
+
+a::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: #14b8a6;
+    transition: width 0.3s ease;
+}
+
+a:hover::after {
+    width: 100%;
+}
+
+/* Icon Rotation on Hover */
+.icon-rotate:hover {
+    transform: rotate(10deg);
+}
+
+/* Icon Bounce on Click */
+@keyframes iconBounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+.icon-bounce:active {
+    animation: iconBounce 0.3s ease;
+}
+
+/* Loading Spinner - Smooth */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+/* Success Checkmark Animation */
+@keyframes checkmark {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.checkmark-animate {
+    animation: checkmark 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Number Counter Animation */
+@keyframes countUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.count-up {
+    animation: countUp 0.6s ease-out;
+}
+
+/* Ripple Effect for Buttons */
+.ripple {
+    position: relative;
+    overflow: hidden;
+}
+
+.ripple::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.ripple:active::after {
+    width: 300px;
+    height: 300px;
+}
+
+/* Smooth Page Transitions */
+.page-transition {
+    animation: fadeIn 0.4s ease-out;
+}
+
+/* Notification Slide-in from Right */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.notification {
+    animation: slideInRight 0.3s ease-out;
+}
+
+/* Tab Underline Animation */
+.tab-active {
+    position: relative;
+}
+
+.tab-active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #14b8a6;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        width: 0;
+        left: 50%;
+    }
+    to {
+        width: 100%;
+        left: 0;
+    }
+}
+
+/* Skeleton Loading Shimmer (already defined but enhanced) */
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+.shimmer {
+    animation: shimmer 2s infinite linear;
+    background: linear-gradient(
+        90deg,
+        #f0f0f0 0%,
+        #e0e0e0 20%,
+        #f0f0f0 40%,
+        #f0f0f0 100%
+    );
+    background-size: 1000px 100%;
+}
+
+/* Dark mode shimmer */
+.dark .shimmer {
+    background: linear-gradient(
+        90deg,
+        #374151 0%,
+        #4b5563 20%,
+        #374151 40%,
+        #374151 100%
+    );
+}
+
+/* Smooth Scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-track {
+    background: #1f2937;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: #4b5563;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+}
+
+/* Add these classes to your HTML elements for enhanced effects:
+   - Add "ripple" class to buttons for ripple effect
+   - Add "icon-rotate" to icons for rotation on hover
+   - Add "icon-bounce" to icons for bounce on click
+   - Add "badge-pulse" to notification badges
+   - Add "stat-number" to dashboard numbers
+   - Add "count-up" to animated numbers
+   - Add "page-transition" to main content divs
+*/
