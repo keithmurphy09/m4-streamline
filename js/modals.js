@@ -599,18 +599,22 @@ async function saveInvoice() {
         loadingMessage = 'Creating invoice...';
         renderApp();
         
+        const invoiceData = {
+            user_id: currentUser.id,
+            client_id: clientId,
+            title: title,
+            notes: notes || null,
+            total: 0,
+            status: 'unpaid'
+        };
+        
+        // Only add dates if they have values
+        if (issueDate) invoiceData.issue_date = issueDate;
+        if (dueDate) invoiceData.due_date = dueDate;
+        
         const { data, error } = await supabaseClient
             .from('invoices')
-            .insert([{
-                user_id: currentUser.id,
-                client_id: clientId,
-                title: title,
-                issue_date: issueDate,
-                due_date: dueDate,
-                notes: notes,
-                total: 0,
-                status: 'unpaid'
-            }])
+            .insert([invoiceData])
             .select();
         
         if (error) throw error;
