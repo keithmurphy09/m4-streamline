@@ -6,10 +6,13 @@
 // MODAL CONTROL FUNCTIONS
 // ═══════════════════════════════════════════════════════════════════
 
-function openModal(type, item = null) {
+let openedFromDashboard = false;
+
+function openModal(type, item = null, fromDashboard = false) {
     modalType = type;
     editingItem = item;
     showModal = true;
+    openedFromDashboard = fromDashboard;
     if (type === 'quote') quoteItems = item?.items || [{ description: '', quantity: 1, price: 0 }];
     renderApp();
     if (type === 'quote') setTimeout(renderQuoteItems, 100);
@@ -22,6 +25,7 @@ function closeModal() {
     showModal = false;
     editingItem = null;
     modalType = '';
+    openedFromDashboard = false;
     
     // Clear Google Maps autocomplete tracking
     if (typeof clearInitializedFields === 'function') {
@@ -142,9 +146,12 @@ function renderModal() {
         
         title = editingItem && editingItem.id ? 'Edit Job' : 'Schedule Job';
         form = `
-            <select id="client_id" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" required>
+            <select id="client_id" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" required onchange="updateQuotesForClient()">
                 <option value="">Select Client *</option>
                 ${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}
+            </select>
+            <select id="quote_id" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" onchange="prefillFromQuote()">
+                <option value="">Or select from accepted quote (optional)</option>
             </select>
             <input type="text" id="title" placeholder="Job Title *" value="${jobTitle}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" required>
             <div class="mb-3">
@@ -610,7 +617,9 @@ async function saveInvoice() {
         
         invoices.push(data[0]);
         closeModal();
-        switchTab('invoices');
+        if (openedFromDashboard) {
+            switchTab('invoices');
+        }
         showNotification('Invoice created successfully!');
     } catch (error) {
         console.error('Error creating invoice:', error);
@@ -618,6 +627,40 @@ async function saveInvoice() {
     } finally {
         isLoading = false;
         renderApp();
+    }
+}
+
+function updateQuotesForClient() {
+    const clientId = document.getElementById('client_id').value;
+    const quoteSelect = document.getElementById('quote_id');
+    
+    if (!quoteSelect) return;
+    
+    const acceptedQuotes = quotes.filter(q => 
+        q.client_id === clientId && 
+        (q.accepted || q.status === 'accepted') &&
+        q.status !== 'converted'
+    );
+    
+    quoteSelect.innerHTML = '<option value="">Or select from accepted quote (optional)</option>' +
+        acceptedQuotes.map(q => `<option value="${q.id}">${q.quote_number || q.title} - $${q.total.toFixed(2)}</option>`).join('');
+}
+
+function prefillFromQuote() {
+    const quoteId = document.getElementById('quote_id').value;
+    if (!quoteId) return;
+    
+    const quote = quotes.find(q => q.id === quoteId);
+    if (!quote) return;
+    
+    document.getElementById('title').value = quote.title;
+    if (quote.job_address) {
+        const addressField = document.getElementById('job_address');
+        if (addressField) addressField.value = quote.job_address;
+    }
+    const notesField = document.getElementById('notes');
+    if (notesField && quote.notes) {
+        notesField.value = `Quote: ${quote.quote_number || quote.title} - $${quote.total.toFixed(2)}\n\n${quote.notes}`;
     }
 }
 
