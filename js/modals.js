@@ -322,6 +322,10 @@ function renderModal() {
         }
         
         const categories = ['Labour', 'Materials', 'Fuel', 'Equipment', 'Subcontractors', 'Office Supplies', 'Insurance', 'Marketing', 'Other'];
+        // Add custom categories from company settings
+        const customCategories = companySettings?.custom_expense_categories || [];
+        const allCategories = [...categories, ...customCategories];
+        
         const buttonText = editingItem ? 'Update Expense' : 'Add Expense';
         const action = editingItem ? `updateExpense('${editingItem.id}')` : `saveExpense()`;
         
@@ -366,9 +370,11 @@ function renderModal() {
             </div>
             <div class="mb-3">
                 <label class="block text-sm font-medium mb-1 dark:text-gray-200">Category *</label>
-                <select id="category" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" required>
-                    ${categories.map(c => `<option value="${c}" ${c === category ? 'selected' : ''}>${c}</option>`).join('')}
+                <select id="category" onchange="toggleCustomCategory()" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" required>
+                    ${allCategories.map(c => `<option value="${c}" ${c === category ? 'selected' : ''}>${c}</option>`).join('')}
+                    <option value="__custom__" ${!allCategories.includes(category) && category ? 'selected' : ''}>+ Add Custom Category</option>
                 </select>
+                <input type="text" id="custom_category" placeholder="Enter custom category name" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mt-2 ${allCategories.includes(category) || !category ? 'hidden' : ''}" value="${!allCategories.includes(category) && category ? category : ''}">
             </div>
             <div class="mb-3">
                 <label class="block text-sm font-medium mb-1 dark:text-gray-200">Related Job/Quote (Optional)</label>
@@ -671,6 +677,21 @@ function prefillFromQuote() {
     const notesField = document.getElementById('notes');
     if (notesField && quote.notes) {
         notesField.value = `Quote: ${quote.quote_number || quote.title} - $${quote.total.toFixed(2)}\n\n${quote.notes}`;
+    }
+}
+
+function toggleCustomCategory() {
+    const categorySelect = document.getElementById('category');
+    const customInput = document.getElementById('custom_category');
+    
+    if (categorySelect && customInput) {
+        if (categorySelect.value === '__custom__') {
+            customInput.classList.remove('hidden');
+            customInput.focus();
+        } else {
+            customInput.classList.add('hidden');
+            customInput.value = '';
+        }
     }
 }
 
