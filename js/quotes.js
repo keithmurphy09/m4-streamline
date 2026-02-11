@@ -643,6 +643,9 @@ function renderQuoteDetail() {
                 <button onclick='sendQuoteEmail(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 rounded-lg transition-colors">Email Quote</button>
                 ${client?.phone && smsSettings?.enabled ? `<button onclick='sendQuoteSMS(${JSON.stringify(q).replace(/"/g, '&quot;')})' class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 rounded-lg transition-colors">SMS Quote</button>` : ''}
                 <button onclick="toggleQuoteCommunications('${q.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 rounded-lg transition-colors">Communications</button>
+                <button onclick="document.getElementById('file-upload-${q.id}').click()" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 rounded-lg transition-colors">📎 Add File</button>
+                <button onclick="toggleQuoteFiles('${q.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 rounded-lg transition-colors">📁 View Files</button>
+                <input type="file" id="file-upload-${q.id}" class="hidden" onchange="uploadQuoteFile(this, '${q.id}')" multiple>
                 <button onclick="deleteQuote('${q.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 bg-white dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors ml-auto">Delete</button>
             </div>
         </div>
@@ -734,6 +737,19 @@ function renderQuoteDetail() {
                 </div>
             </div>
         </div>
+        
+        <!-- Files Panel (Collapsible) -->
+        <div id="quote-files-${q.id}" class="hidden mt-6">
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">📁 Files & Documents</h3>
+                    <button onclick="document.getElementById('file-upload-${q.id}').click()" class="px-3 py-1.5 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors">+ Upload File</button>
+                </div>
+                <div id="quote-files-list-${q.id}" class="space-y-2">
+                    <p class="text-sm text-gray-500 dark:text-gray-400 italic">Loading files...</p>
+                </div>
+            </div>
+        </div>
     </div>`;
 }
 
@@ -754,6 +770,134 @@ function toggleQuoteCommunications(quoteId) {
     } else {
         console.error('Communications panel not found for quote:', quoteId);
         alert('Communications panel not found. Please refresh the page.');
+    }
+}
+
+function toggleQuoteFiles(quoteId) {
+    const panel = document.getElementById(`quote-files-${quoteId}`);
+    if (panel) {
+        const wasHidden = panel.classList.contains('hidden');
+        panel.classList.toggle('hidden');
+        if (wasHidden) {
+            loadQuoteFiles(quoteId);
+            setTimeout(() => {
+                panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+    }
+}
+
+async function loadQuoteFiles(quoteId) {
+    const listContainer = document.getElementById(`quote-files-list-${quoteId}`);
+    if (!listContainer) return;
+    
+    try {
+        const { data, error } = await supabaseClient
+            .from('quote_files')
+            .select('*')
+            .eq('quote_id', quoteId)
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        if (!data || data.length === 0) {
+            listContainer.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 italic">No files uploaded yet.</p>';
+            return;
+        }
+        
+        listContainer.innerHTML = data.map(file => {
+            const uploadDate = new Date(file.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            const fileSize = file.file_size ? (file.file_size / 1024 / 1024).toFixed(2) + ' MB' : 'Unknown size';
+            return `
+                <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl">📄</span>
+                            <div class="flex-1 min-w-0">
+                                <a href="${file.file_url}" target="_blank" class="text-sm font-medium text-teal-600 dark:text-teal-400 hover:underline truncate block">${file.file_name}</a>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">${fileSize} • ${uploadDate}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="deleteQuoteFile('${file.id}', '${quoteId}')" class="ml-2 text-red-500 hover:text-red-700 text-sm px-2 py-1">Delete</button>
+                </div>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Error loading files:', error);
+        listContainer.innerHTML = '<p class="text-sm text-red-500">Error loading files</p>';
+    }
+}
+
+async function uploadQuoteFile(input, quoteId) {
+    const files = input.files;
+    if (!files || files.length === 0) return;
+    
+    try {
+        isLoading = true;
+        loadingMessage = 'Uploading files...';
+        renderApp();
+        
+        for (const file of files) {
+            // Upload to Supabase Storage
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${quoteId}-${Date.now()}.${fileExt}`;
+            const filePath = `quote-files/${fileName}`;
+            
+            const { data: uploadData, error: uploadError } = await supabaseClient.storage
+                .from('quote-files')
+                .upload(filePath, file);
+            
+            if (uploadError) throw uploadError;
+            
+            // Get public URL
+            const { data: { publicUrl } } = supabaseClient.storage
+                .from('quote-files')
+                .getPublicUrl(filePath);
+            
+            // Save file record to database
+            const { error: dbError } = await supabaseClient
+                .from('quote_files')
+                .insert([{
+                    user_id: currentUser.id,
+                    quote_id: quoteId,
+                    file_name: file.name,
+                    file_url: publicUrl,
+                    file_size: file.size,
+                    file_type: file.type
+                }]);
+            
+            if (dbError) throw dbError;
+        }
+        
+        showNotification('Files uploaded successfully!');
+        loadQuoteFiles(quoteId);
+        input.value = ''; // Clear input
+    } catch (error) {
+        console.error('Error uploading files:', error);
+        showNotification('Error uploading files: ' + error.message, 'error');
+    } finally {
+        isLoading = false;
+        renderApp();
+    }
+}
+
+async function deleteQuoteFile(fileId, quoteId) {
+    if (!confirm('Are you sure you want to delete this file?')) return;
+    
+    try {
+        const { error } = await supabaseClient
+            .from('quote_files')
+            .delete()
+            .eq('id', fileId);
+        
+        if (error) throw error;
+        
+        showNotification('File deleted successfully!');
+        loadQuoteFiles(quoteId);
+    } catch (error) {
+        console.error('Error deleting file:', error);
+        showNotification('Error deleting file', 'error');
     }
 }
 
