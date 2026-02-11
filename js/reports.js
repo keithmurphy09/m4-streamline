@@ -688,8 +688,14 @@ function calculateSectionData(sectionId, range) {
             };
         
         case 'jobs':
+            const totalJobs = jobs.filter(job => {
+                const date = new Date(job.date);
+                return date >= range.start && date <= range.end;
+            }).length;
             return {
                 completed: periodJobs.length,
+                total: totalJobs,
+                completionRate: totalJobs > 0 ? (periodJobs.length / totalJobs * 100) : 0,
                 range: range.label
             };
         
@@ -714,9 +720,11 @@ function calculateSectionData(sectionId, range) {
                 return date >= range.start && date <= range.end;
             });
             const accepted = periodQuotes.filter(q => q.status === 'accepted' || q.accepted).length;
+            const pending = periodQuotes.filter(q => q.status === 'pending').length;
             return {
                 total: periodQuotes.length,
                 accepted,
+                pending,
                 conversionRate: periodQuotes.length > 0 ? (accepted / periodQuotes.length * 100) : 0,
                 range: range.label
             };
@@ -741,22 +749,51 @@ function downloadCustomReportPDF(reportId) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
     let y = 20;
     
-    // Title
-    doc.setFontSize(20);
+    // M4 STREAMLINE HEADER
+    const logoImg = new Image();
+    logoImg.src = 'https://i.imgur.com/dF4xRDK.jpeg';
+    doc.addImage(logoImg, 'JPEG', 10, 10, 25, 25);
+    
+    doc.setFontSize(24);
+    doc.setTextColor(20, 184, 166); // Teal
+    doc.text('M4 STREAMLINE', pageWidth / 2, 22, { align: 'center' });
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'italic');
+    doc.text('"streamlining your business"', pageWidth / 2, 28, { align: 'center' });
+    
+    // Report Title
+    y = 45;
+    doc.setFontSize(18);
+    doc.setTextColor(0, 0, 0);
     doc.setFont(undefined, 'bold');
     doc.text(report.name, pageWidth / 2, y, { align: 'center' });
     
-    y += 10;
+    y += 8;
     doc.setFontSize(10);
     doc.setFont(undefined, 'normal');
-    doc.text(`Generated: ${new Date(report.lastRun).toLocaleDateString()}`, pageWidth / 2, y, { align: 'center' });
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Generated: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`, pageWidth / 2, y, { align: 'center' });
     
     y += 15;
     
+    // Company info if available
+    if (companySettings?.business_name) {
+        doc.setFontSize(9);
+        doc.setTextColor(100, 100, 100);
+        doc.text(companySettings.business_name, pageWidth / 2, y, { align: 'center' });
+        y += 4;
+        if (companySettings.abn) {
+            doc.text(`ABN: ${companySettings.abn}`, pageWidth / 2, y, { align: 'center' });
+            y += 4;
+        }
+        y += 6;
+    }
+    
     // Render each section
-    report.sections.forEach(section => {
+    report.sections.forEach((section, sectionIndex) => {
         const sectionData = data[section.id];
         if (!sectionData) return;
         
@@ -770,88 +807,276 @@ function downloadCustomReportPDF(reportId) {
             quotes: 'Quote Statistics'
         };
         
+        // Check if we need a new page
+        if (y > pageHeight - 40) {
+            doc.addPage();
+            y = 20;
+        }
+        
+        // Section header with teal background
+        doc.setFillColor(20, 184, 166);
+        doc.rect(10, y - 5, pageWidth - 20, 10, 'F');
         doc.setFontSize(14);
         doc.setFont(undefined, 'bold');
-        doc.text(sectionNames[section.id] || section.id, 20, y);
+        doc.setTextColor(255, 255, 255);
+        doc.text(sectionNames[section.id] || section.id, 15, y + 2);
         
-        y += 7;
-        doc.setFontSize(10);
+        y += 12;
+        doc.setFontSize(9);
         doc.setFont(undefined, 'italic');
-        doc.text(`Period: ${sectionData.range}`, 20, y);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Period: ${sectionData.range}`, 15, y);
         
         y += 10;
         doc.setFont(undefined, 'normal');
+        doc.setTextColor(0, 0, 0);
         
-        // Section-specific rendering
+        // Section-specific rendering with DETAILED DATA
         switch (section.id) {
             case 'revenue':
-                doc.text(`Total Revenue: $${sectionData.total.toFixed(2)}`, 20, y);
-                y += 5;
-                doc.text(`Invoices Paid: ${sectionData.count}`, 20, y);
+                // Revenue header
+                doc.setFontSize(11);
+                doc.setFont(undefined, 'bold');
+                doc.text(`Total Revenue: $${sectionData.total.toFixed(2)}`, 15, y);
+                doc.text(`Invoices Paid: ${sectionData.count}`, pageWidth - 80, y);
+                y += 10;
+                
+                // Get actual invoice details
+                const range = getReportDateRange(section.dateRange);
+                const paidInvoices = invoices.filter(inv => {
+                    const date = new Date(inv.issue_date);
+                    return inv.status === 'paid' && date >= range.start && date <= range.end;
+                }).sort((a, b) => new Date(b.issue_date) - new Date(a.issue_date));
+                
+                if (paidInvoices.length > 0) {
+                    // Table header
+                    doc.setFillColor(0, 0, 0);
+                    doc.rect(10, y - 5, pageWidth - 20, 8, 'F');
+                    doc.setFontSize(9);
+                    doc.setFont(undefined, 'bold');
+                    doc.setTextColor(255, 255, 255);
+                    doc.text('Date', 15, y);
+                    doc.text('Invoice #', 45, y);
+                    doc.text('Client', 80, y);
+                    doc.text('Amount', pageWidth - 30, y, { align: 'right' });
+                    
+                    y += 8;
+                    doc.setFont(undefined, 'normal');
+                    doc.setTextColor(0, 0, 0);
+                    
+                    paidInvoices.forEach(inv => {
+                        if (y > pageHeight - 30) {
+                            doc.addPage();
+                            y = 20;
+                        }
+                        
+                        const client = clients.find(c => c.id === inv.client_id);
+                        doc.setFontSize(8);
+                        doc.text(new Date(inv.issue_date).toLocaleDateString(), 15, y);
+                        doc.text(inv.invoice_number || 'N/A', 45, y);
+                        const clientName = doc.splitTextToSize(client?.name || 'Unknown', 80);
+                        doc.text(clientName[0], 80, y);
+                        doc.text(`$${inv.total.toFixed(2)}`, pageWidth - 30, y, { align: 'right' });
+                        y += 5;
+                    });
+                }
                 break;
             
             case 'expenses':
-                doc.text(`Total Expenses: $${sectionData.total.toFixed(2)}`, 20, y);
-                y += 7;
-                Object.entries(sectionData.byCategory).forEach(([cat, amount]) => {
-                    if (y > 270) {
+                // Expenses header
+                doc.setFontSize(11);
+                doc.setFont(undefined, 'bold');
+                doc.text(`Total Expenses: $${sectionData.total.toFixed(2)}`, 15, y);
+                y += 10;
+                
+                // Get actual expense details
+                const expRange = getReportDateRange(section.dateRange);
+                const periodExpenses = expenses.filter(exp => {
+                    const date = new Date(exp.date);
+                    return date >= expRange.start && date <= expRange.end;
+                }).sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                // Group by category
+                const expensesByCategory = {};
+                periodExpenses.forEach(exp => {
+                    const cat = exp.category || 'Other';
+                    if (!expensesByCategory[cat]) expensesByCategory[cat] = [];
+                    expensesByCategory[cat].push(exp);
+                });
+                
+                // Render each category with detail
+                Object.entries(expensesByCategory).sort((a, b) => {
+                    const totalA = a[1].reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+                    const totalB = b[1].reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+                    return totalB - totalA;
+                }).forEach(([category, catExpenses]) => {
+                    if (y > pageHeight - 40) {
                         doc.addPage();
                         y = 20;
                     }
-                    doc.text(`  ${cat}: $${amount.toFixed(2)}`, 25, y);
+                    
+                    const categoryTotal = catExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+                    
+                    // Category subheader
+                    doc.setFillColor(240, 240, 240);
+                    doc.rect(10, y - 4, pageWidth - 20, 7, 'F');
+                    doc.setFontSize(10);
+                    doc.setFont(undefined, 'bold');
+                    doc.setTextColor(0, 0, 0);
+                    doc.text(category, 15, y);
+                    doc.text(`$${categoryTotal.toFixed(2)}`, pageWidth - 30, y, { align: 'right' });
+                    y += 8;
+                    
+                    // Table header for category
+                    doc.setFontSize(8);
+                    doc.setFont(undefined, 'bold');
+                    doc.setTextColor(80, 80, 80);
+                    doc.text('Date', 15, y);
+                    doc.text('Description', 45, y);
+                    doc.text('Job', 120, y);
+                    doc.text('Amount', pageWidth - 30, y, { align: 'right' });
                     y += 5;
+                    
+                    doc.setFont(undefined, 'normal');
+                    doc.setTextColor(0, 0, 0);
+                    
+                    // Category expense items
+                    catExpenses.forEach(exp => {
+                        if (y > pageHeight - 25) {
+                            doc.addPage();
+                            y = 20;
+                        }
+                        
+                        doc.setFontSize(7);
+                        doc.text(new Date(exp.date).toLocaleDateString(), 15, y);
+                        
+                        // Description (truncate if needed)
+                        const description = exp.description || '-';
+                        const cleanDesc = description.replace(/\[Related to:[^\]]+\]/, '').trim();
+                        const descLines = doc.splitTextToSize(cleanDesc || '-', 70);
+                        doc.text(descLines[0], 45, y);
+                        
+                        // Job association
+                        let jobDisplay = '-';
+                        if (exp.job_id) {
+                            const job = jobs.find(j => j.id === exp.job_id);
+                            jobDisplay = job ? job.title.substring(0, 30) : '-';
+                        } else if (description.includes('[Related to:')) {
+                            const match = description.match(/\[Related to: ([^\]]+)\]/);
+                            if (match) {
+                                jobDisplay = match[1].replace(/\s*\((?:Quote|Scheduled)\)\s*$/, '').substring(0, 30);
+                            }
+                        }
+                        doc.text(jobDisplay, 120, y);
+                        
+                        doc.text(`$${parseFloat(exp.amount).toFixed(2)}`, pageWidth - 30, y, { align: 'right' });
+                        y += 4;
+                    });
+                    
+                    y += 4; // Space between categories
                 });
                 break;
             
             case 'profit':
-                doc.text(`Revenue: $${sectionData.revenue.toFixed(2)}`, 20, y);
-                y += 5;
-                doc.text(`Expenses: $${sectionData.expenses.toFixed(2)}`, 20, y);
-                y += 5;
-                doc.setFont(undefined, 'bold');
-                doc.text(`Net Profit: $${sectionData.profit.toFixed(2)} (${sectionData.margin.toFixed(1)}%)`, 20, y);
+                doc.setFontSize(10);
+                // Create P&L table
+                doc.setFillColor(240, 248, 255);
+                doc.rect(10, y - 4, pageWidth - 20, 35, 'F');
+                
                 doc.setFont(undefined, 'normal');
+                doc.text('Revenue', 20, y);
+                doc.text(`$${sectionData.revenue.toFixed(2)}`, pageWidth - 30, y, { align: 'right' });
+                y += 7;
+                doc.text('Expenses', 20, y);
+                doc.text(`($${sectionData.expenses.toFixed(2)})`, pageWidth - 30, y, { align: 'right' });
+                y += 10;
+                
+                doc.setLineWidth(0.5);
+                doc.setDrawColor(20, 184, 166);
+                doc.line(20, y - 3, pageWidth - 30, y - 3);
+                
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'bold');
+                doc.setTextColor(20, 184, 166);
+                doc.text('Net Profit', 20, y);
+                doc.text(`$${sectionData.profit.toFixed(2)}`, pageWidth - 30, y, { align: 'right' });
+                y += 7;
+                doc.setFontSize(9);
+                doc.setTextColor(100, 100, 100);
+                doc.text(`Profit Margin: ${sectionData.margin.toFixed(1)}%`, 20, y);
+                doc.setTextColor(0, 0, 0);
                 break;
             
             case 'gst':
-                doc.text(`GST Collected: $${sectionData.collected.toFixed(2)}`, 20, y);
-                y += 5;
-                doc.text(`GST Paid: $${sectionData.paid.toFixed(2)}`, 20, y);
-                y += 5;
-                doc.setFont(undefined, 'bold');
-                doc.text(`Net GST Payable: $${sectionData.collected.toFixed(2)}`, 20, y);
+                doc.setFontSize(10);
                 doc.setFont(undefined, 'normal');
+                doc.text('GST Collected (from sales)', 20, y);
+                doc.text(`$${sectionData.collected.toFixed(2)}`, pageWidth - 30, y, { align: 'right' });
+                y += 7;
+                doc.text('GST Paid (on expenses)', 20, y);
+                doc.text(`$${sectionData.paid.toFixed(2)}`, pageWidth - 30, y, { align: 'right' });
+                y += 10;
+                doc.setFont(undefined, 'bold');
+                doc.setTextColor(20, 184, 166);
+                doc.text('Net GST Payable to ATO', 20, y);
+                doc.text(`$${(sectionData.collected - sectionData.paid).toFixed(2)}`, pageWidth - 30, y, { align: 'right' });
+                doc.setTextColor(0, 0, 0);
                 break;
             
             case 'jobs':
+                doc.setFontSize(10);
                 doc.text(`Jobs Completed: ${sectionData.completed}`, 20, y);
+                y += 7;
+                doc.text(`Total Jobs: ${sectionData.total}`, 20, y);
+                y += 7;
+                doc.text(`Completion Rate: ${sectionData.completionRate?.toFixed(1) || 0}%`, 20, y);
                 break;
             
             case 'clients':
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'bold');
+                doc.text('Top Clients by Revenue', 20, y);
+                y += 8;
+                doc.setFont(undefined, 'normal');
+                doc.setFontSize(9);
                 sectionData.topClients.forEach(([name, revenue], i) => {
-                    doc.text(`${i + 1}. ${name}: $${revenue.toFixed(2)}`, 25, y);
+                    if (y > pageHeight - 25) {
+                        doc.addPage();
+                        y = 20;
+                    }
+                    doc.text(`${i + 1}.`, 20, y);
+                    doc.text(name, 30, y);
+                    doc.text(`$${revenue.toFixed(2)}`, pageWidth - 30, y, { align: 'right' });
                     y += 5;
                 });
                 break;
             
             case 'quotes':
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'normal');
                 doc.text(`Total Quotes: ${sectionData.total}`, 20, y);
-                y += 5;
+                y += 7;
                 doc.text(`Accepted: ${sectionData.accepted}`, 20, y);
-                y += 5;
+                y += 7;
+                doc.text(`Pending: ${sectionData.pending}`, 20, y);
+                y += 7;
+                doc.setFont(undefined, 'bold');
+                doc.setTextColor(20, 184, 166);
                 doc.text(`Conversion Rate: ${sectionData.conversionRate.toFixed(1)}%`, 20, y);
+                doc.setTextColor(0, 0, 0);
                 break;
         }
         
-        y += 12;
-        
-        if (y > 250) {
-            doc.addPage();
-            y = 20;
-        }
+        y += 15;
     });
     
-    doc.save(`${report.name.replace(/\s/g, '-')}.pdf`);
+    // Footer on last page
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.setFont(undefined, 'italic');
+    doc.text('Generated by M4 Streamline - Professional Business Management', pageWidth / 2, pageHeight - 10, { align: 'center' });
+    
+    doc.save(`${report.name.replace(/\s/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`);
 }
 
 // Delete custom report
