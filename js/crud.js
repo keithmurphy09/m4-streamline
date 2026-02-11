@@ -353,6 +353,12 @@ async function quickMarkAsPaid(id) {
         }
         
         showNotification('Invoice marked as paid!', 'success');
+        
+        // Trigger confetti celebration!
+        if (typeof triggerConfetti === 'function') {
+            triggerConfetti();
+        }
+        
         renderApp();
     } catch (error) {
         console.error('Error marking invoice as paid:', error);
