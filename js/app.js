@@ -226,6 +226,11 @@ function toggleSettingsMenu() {
 async function switchTab(tab) {
     activeTab = tab;
     localStorage.setItem('activeTab', tab);
+    
+    // Close any detail views when switching tabs
+    if (typeof selectedQuoteForDetail !== 'undefined') selectedQuoteForDetail = null;
+    if (typeof selectedInvoiceForDetail !== 'undefined') selectedInvoiceForDetail = null;
+    
     renderApp();
 }
 
