@@ -5,6 +5,9 @@
 // View state
 let invoiceViewMode = 'table'; // 'table' or 'detail'
 let selectedInvoiceForDetail = null;
+let invoiceFilter = 'unpaid';
+let invoiceSearch = '';
+let selectedInvoices = [];
 
 function openInvoiceDetail(invoice) {
     selectedInvoiceForDetail = invoice;
