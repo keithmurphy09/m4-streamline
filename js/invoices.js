@@ -2,6 +2,11 @@
 // M4 STREAMLINE - Invoices Module (Professional Table View)
 // ═══════════════════════════════════════════════════════════════════
 
+// Declare module variables if not already defined
+if (typeof invoiceFilter === 'undefined') var invoiceFilter = 'unpaid';
+if (typeof invoiceSearch === 'undefined') var invoiceSearch = '';
+if (typeof selectedInvoices === 'undefined') var selectedInvoices = [];
+
 // View state
 let invoiceViewMode = 'table'; // 'table' or 'detail'
 let selectedInvoiceForDetail = null;
