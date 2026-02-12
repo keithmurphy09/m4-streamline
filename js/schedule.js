@@ -630,6 +630,18 @@ function openRecurringJobModal() {
         return;
     }
     
+    // Store and override closeModal for this session
+    if (!window._originalCloseModal) {
+        window._originalCloseModal = window.closeModal;
+        window.closeModal = function(modalId) {
+            if (modalId === 'recurringJobModal') {
+                closeRecurringJobModal();
+            } else if (window._originalCloseModal) {
+                window._originalCloseModal();
+            }
+        };
+    }
+    
     const container = document.createElement('div');
     container.id = 'recurringJobModalContainer';
     container.innerHTML = renderRecurringJobModal();
@@ -654,24 +666,6 @@ function closeRecurringJobModal() {
     if (container) {
         container.remove();
     }
-}
-
-// Add closeModal for recurring modal if it doesn't exist
-if (!window.closeModal) {
-    window.closeModal = function(modalId) {
-        if (modalId === 'recurringJobModal') {
-            closeRecurringJobModal();
-        }
-    };
-} else {
-    const originalCloseModal = window.closeModal;
-    window.closeModal = function(modalId) {
-        if (modalId === 'recurringJobModal') {
-            closeRecurringJobModal();
-        } else {
-            originalCloseModal(modalId);
-        }
-    };
 }
 
 console.log('✅ Schedule module loaded (Professional Table View)');
