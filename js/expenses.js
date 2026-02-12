@@ -3,9 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════
 
 function renderExpenses() {
-    const defaultCategories = ['Labour', 'Materials', 'Fuel', 'Equipment', 'Subcontractors', 'Office Supplies', 'Insurance', 'Marketing', 'Other'];
-    const customCategories = companySettings?.custom_expense_categories || [];
-    const categories = [...defaultCategories, ...customCategories];
+    const categories = ['Materials', 'Fuel', 'Equipment', 'Subcontractors', 'Office Supplies', 'Insurance', 'Marketing', 'Other'];
     
     const monthsSet = new Set();
     expenses.forEach(exp => {
