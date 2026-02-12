@@ -2,28 +2,6 @@
 // M4 STREAMLINE - Invoices Module (Professional Table View)
 // ═══════════════════════════════════════════════════════════════════
 
-// Initialize global variables if not already defined
-if (typeof invoiceFilter === 'undefined') window.invoiceFilter = 'unpaid';
-if (typeof invoiceSearch === 'undefined') window.invoiceSearch = '';
-if (typeof selectedInvoices === 'undefined') window.selectedInvoices = [];
-if (typeof currentPage === 'undefined') window.currentPage = { invoices: 1, quotes: 1, clients: 1, jobs: 1 };
-if (typeof itemsPerPage === 'undefined') window.itemsPerPage = 20;
-
-// Helper functions
-if (typeof formatCurrency === 'undefined') {
-    window.formatCurrency = function(amount) {
-        return '$' + parseFloat(amount || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    };
-}
-
-if (typeof formatDate === 'undefined') {
-    window.formatDate = function(dateString) {
-        if (!dateString) return 'N/A';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    };
-}
-
 // View state
 let invoiceViewMode = 'table'; // 'table' or 'detail'
 let selectedInvoiceForDetail = null;
@@ -635,88 +613,6 @@ function toggleInvoiceCommunications(invoiceId) {
     if (panel) {
         panel.classList.toggle('hidden');
     }
-}
-
-// Utility functions needed by this module
-if (typeof getPaginationHTML === 'undefined') {
-    window.getPaginationHTML = function(type, total, current) {
-        const totalPages = Math.ceil(total / itemsPerPage);
-        if (totalPages <= 1) return '';
-        
-        let html = '<div class="flex items-center justify-between"><p class="text-sm text-gray-700 dark:text-gray-300">Showing ' + (((current - 1) * itemsPerPage) + 1) + ' to ' + Math.min(current * itemsPerPage, total) + ' of ' + total + '</p><div class="flex gap-2">';
-        
-        if (current > 1) html += '<button onclick="currentPage.' + type + '=' + (current - 1) + '; renderApp();" class="px-3 py-1 border rounded hover:bg-gray-50 dark:hover:bg-gray-700">Previous</button>';
-        if (current < totalPages) html += '<button onclick="currentPage.' + type + '=' + (current + 1) + '; renderApp();" class="px-3 py-1 border rounded hover:bg-gray-50 dark:hover:bg-gray-700">Next</button>';
-        
-        html += '</div></div>';
-        return html;
-    };
-}
-
-if (typeof toggleSelection === 'undefined') {
-    window.toggleSelection = function(type, id) {
-        if (type === 'invoices') {
-            const index = selectedInvoices.indexOf(id);
-            if (index > -1) selectedInvoices.splice(index, 1);
-            else selectedInvoices.push(id);
-            renderApp();
-        }
-    };
-}
-
-if (typeof toggleSelectAll === 'undefined') {
-    window.toggleSelectAll = function(type) {
-        if (type === 'invoices') {
-            selectedInvoices = selectedInvoices.length === invoices.length ? [] : invoices.map(i => i.id);
-            renderApp();
-        }
-    };
-}
-
-if (typeof bulkDelete === 'undefined') {
-    window.bulkDelete = function(type) {
-        if (type === 'invoices' && confirm('Delete ' + selectedInvoices.length + ' invoices?')) {
-            selectedInvoices.forEach(id => deleteInvoice(id));
-            selectedInvoices = [];
-        }
-    };
-}
-
-if (typeof exportToCSV === 'undefined') {
-    window.exportToCSV = function() {
-        showNotification('CSV export coming soon', 'info');
-    };
-}
-
-if (typeof sendInvoiceEmail === 'undefined') {
-    window.sendInvoiceEmail = function(invoice) {
-        if (typeof triggerEmail === 'function') triggerEmail('invoice_sent', invoice);
-        else showNotification('Email sent!', 'success');
-    };
-}
-
-if (typeof openNoteModal === 'undefined') {
-    window.openNoteModal = function(type, id, clientId) {
-        const note = prompt('Enter note:');
-        if (note) showNotification('Note saved', 'success');
-    };
-}
-
-if (typeof deleteInvoice === 'undefined') {
-    window.deleteInvoice = async function(id) {
-        if (!confirm('Delete this invoice?')) return;
-        try {
-            const { error } = await supabaseClient.from('invoices').delete().eq('id', id);
-            if (error) throw error;
-            const index = invoices.findIndex(i => i.id === id);
-            if (index > -1) invoices.splice(index, 1);
-            showNotification('Invoice deleted', 'success');
-            renderApp();
-        } catch (error) {
-            console.error(error);
-            showNotification('Error deleting invoice', 'error');
-        }
-    };
 }
 
 console.log('✅ Invoices module loaded (Professional Table View)');
