@@ -146,6 +146,9 @@ function renderQuotesTable() {
                 </button>
             </div>
             
+            <!-- ⭐ SMART FILTER BAR ⭐ -->
+            ${typeof renderSmartFilterBar === 'function' ? renderSmartFilterBar('quotes') : ''}
+            
             <!-- Search and Filter -->
             <div class="flex gap-3">
                 <input type="text" 
