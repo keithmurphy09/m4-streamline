@@ -19,23 +19,15 @@ function closeInvoiceDetail() {
 }
 
 function renderInvoices() {
-    console.log('🔥 INVOICES V2.0 - viewMode:', invoiceViewMode, 'selected:', selectedInvoiceForDetail);
-    
     // Reset to table view if no invoice is selected
     if (invoiceViewMode === 'detail' && !selectedInvoiceForDetail) {
-        console.log('Resetting to table view');
         invoiceViewMode = 'table';
     }
     
     if (invoiceViewMode === 'detail' && selectedInvoiceForDetail) {
-        console.log('Rendering detail view');
         return renderInvoiceDetail();
     }
-    
-    console.log('Rendering table view');
-    const result = renderInvoicesTable();
-    console.log('Result length:', result ? result.length : 'undefined');
-    return result;
+    return renderInvoicesTable();
 }
 
 function renderInvoicesTable() {
@@ -629,4 +621,3 @@ function toggleInvoiceCommunications(invoiceId) {
 }
 
 console.log('✅ Invoices module loaded (Professional Table View)');
-console.log('🔥🔥🔥 INVOICES.JS VERSION 2.0 - FIXED FILE 🔥🔥🔥');
