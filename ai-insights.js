@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════
-// M4 STREAMLINE - AI Business Insights & Seasonal Trends
+// M4 STREAMLINE - AI Business Insights (NO ICONS)
 // ═══════════════════════════════════════════════════════════════════
 
 // Generate AI-powered insights from business data
@@ -21,7 +21,6 @@ function generateBusinessInsights() {
         
         insights.push({
             category: 'quotes',
-            icon: '⚡',
             color: avgAcceptanceTime < industryAvg ? 'green' : 'orange',
             title: 'Quote Response Time',
             insight: `Your quotes are accepted in ${avgAcceptanceTime.toFixed(1)} days on average`,
@@ -50,7 +49,6 @@ function generateBusinessInsights() {
         
         insights.push({
             category: 'clients',
-            icon: '👥',
             color: concentration > 60 ? 'orange' : 'green',
             title: 'Client Concentration',
             insight: `Top 3 clients represent ${concentration}% of revenue`,
@@ -72,7 +70,6 @@ function generateBusinessInsights() {
         if (avgAcceptedValue > avgDeclinedValue * 1.2) {
             insights.push({
                 category: 'quotes',
-                icon: '💰',
                 color: 'blue',
                 title: 'Sweet Spot Identified',
                 insight: `Higher value quotes perform better`,
@@ -82,7 +79,6 @@ function generateBusinessInsights() {
         } else if (avgDeclinedValue > avgAcceptedValue * 1.2) {
             insights.push({
                 category: 'quotes',
-                icon: '📊',
                 color: 'orange',
                 title: 'Pricing Pattern Detected',
                 insight: `Lower value quotes have better conversion`,
@@ -110,7 +106,6 @@ function generateBusinessInsights() {
         
         insights.push({
             category: 'seasonal',
-            icon: '📅',
             color: 'purple',
             title: 'Seasonal Pattern Detected',
             insight: `Your busiest months: ${bestMonths.map(m => monthNames[m]).join(', ')}`,
@@ -133,7 +128,6 @@ function generateBusinessInsights() {
         
         insights.push({
             category: 'cash-flow',
-            icon: '💸',
             color: avgPaymentTime <= invoiceTerms ? 'green' : 'red',
             title: 'Payment Collection Speed',
             insight: `Invoices paid in ${avgPaymentTime.toFixed(1)} days on average`,
@@ -166,7 +160,6 @@ function generateBusinessInsights() {
         
         insights.push({
             category: 'profit',
-            icon: '📈',
             color: margin >= healthyMargin ? 'green' : margin >= 15 ? 'orange' : 'red',
             title: 'Profit Margin Analysis',
             insight: `Current profit margin: ${margin.toFixed(1)}%`,
@@ -196,7 +189,6 @@ function generateBusinessInsights() {
         
         insights.push({
             category: 'expenses',
-            icon: '🔍',
             color: 'yellow',
             title: 'Biggest Cost Driver',
             insight: `${topExpenseCategory[0]} represents ${percentage}% of expenses`,
@@ -230,7 +222,6 @@ function generateBusinessInsights() {
         
         insights.push({
             category: 'growth',
-            icon: growth >= 0 ? '🚀' : '⚠️',
             color: growth >= 10 ? 'green' : growth >= 0 ? 'blue' : 'red',
             title: 'Business Growth Trend',
             insight: `${growth >= 0 ? '+' : ''}${growth.toFixed(1)}% revenue growth last 3 months`,
@@ -246,14 +237,13 @@ function generateBusinessInsights() {
     return insights;
 }
 
-// Render insights widget for dashboard
+// Render insights widget for dashboard (NO ICONS)
 function renderInsightsWidget() {
     const insights = generateBusinessInsights();
     
     if (insights.length === 0) {
         return `
             <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-8 text-center">
-                <div class="text-gray-400 text-5xl mb-4">🤖</div>
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">AI Insights Coming Soon</h3>
                 <p class="text-sm text-gray-600 dark:text-gray-400">Keep using M4 Streamline - insights will appear as you build more data</p>
             </div>
@@ -272,10 +262,9 @@ function renderInsightsWidget() {
     return `
         <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
             <div class="p-6 border-b border-gray-100 dark:border-gray-700">
-                <div class="flex items-center gap-2">
-                    <span class="text-2xl">🤖</span>
+                <div class="flex items-center justify-between">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">AI Business Insights</h3>
-                    <span class="ml-auto text-xs px-2 py-1 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 rounded-full font-medium">
+                    <span class="text-xs px-2 py-1 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 rounded-full font-medium">
                         ${insights.length} insight${insights.length > 1 ? 's' : ''}
                     </span>
                 </div>
@@ -283,17 +272,12 @@ function renderInsightsWidget() {
             <div class="p-6 space-y-4 max-h-96 overflow-y-auto">
                 ${insights.map(insight => `
                     <div class="border ${colorClasses[insight.color]} rounded-lg p-4">
-                        <div class="flex items-start gap-3">
-                            <div class="text-2xl">${insight.icon}</div>
-                            <div class="flex-1 min-w-0">
-                                <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-1">${insight.title}</h4>
-                                <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">${insight.insight}</p>
-                                <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">${insight.comparison}</p>
-                                <div class="flex items-center gap-2 text-xs">
-                                    <span class="font-medium text-gray-900 dark:text-white">💡 Action:</span>
-                                    <span class="text-gray-600 dark:text-gray-400">${insight.action}</span>
-                                </div>
-                            </div>
+                        <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-1">${insight.title}</h4>
+                        <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">${insight.insight}</p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">${insight.comparison}</p>
+                        <div class="flex items-start gap-2 text-xs">
+                            <span class="font-medium text-gray-900 dark:text-white flex-shrink-0">💡 Action:</span>
+                            <span class="text-gray-600 dark:text-gray-400">${insight.action}</span>
                         </div>
                     </div>
                 `).join('')}
@@ -302,43 +286,4 @@ function renderInsightsWidget() {
     `;
 }
 
-// Generate seasonal trends chart data
-function getSeasonalTrendsData() {
-    const monthlyData = {};
-    
-    // Collect revenue by month
-    invoices.filter(i => i.status === 'paid' && i.paid_date).forEach(inv => {
-        const date = new Date(inv.paid_date);
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        if (!monthlyData[monthKey]) {
-            monthlyData[monthKey] = { revenue: 0, expenses: 0, jobs: 0, quotes: 0 };
-        }
-        monthlyData[monthKey].revenue += (inv.total || 0);
-    });
-    
-    // Collect expenses by month
-    expenses.forEach(exp => {
-        const date = new Date(exp.date);
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        if (!monthlyData[monthKey]) {
-            monthlyData[monthKey] = { revenue: 0, expenses: 0, jobs: 0, quotes: 0 };
-        }
-        monthlyData[monthKey].expenses += parseFloat(exp.amount || 0);
-    });
-    
-    // Sort by month
-    const sortedMonths = Object.keys(monthlyData).sort();
-    
-    return {
-        labels: sortedMonths.map(m => {
-            const [year, month] = m.split('-');
-            const date = new Date(year, parseInt(month) - 1);
-            return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
-        }),
-        revenue: sortedMonths.map(m => monthlyData[m].revenue),
-        expenses: sortedMonths.map(m => monthlyData[m].expenses),
-        profit: sortedMonths.map(m => monthlyData[m].revenue - monthlyData[m].expenses)
-    };
-}
-
-console.log('✅ AI Insights & Seasonal Trends loaded');
+console.log('✅ AI Insights loaded (NO ICONS)');
