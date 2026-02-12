@@ -848,6 +848,61 @@ function downloadCustomReportPDF(reportId) {
                     return inv.status === 'paid' && date >= range.start && date <= range.end;
                 }).sort((a, b) => new Date(b.issue_date) - new Date(a.issue_date));
                 
+                // Calculate analytics
+                if (paidInvoices.length > 0) {
+                    const invoiceAmounts = paidInvoices.map(inv => inv.total || 0);
+                    const avgInvoice = invoiceAmounts.reduce((a, b) => a + b, 0) / invoiceAmounts.length;
+                    const largestInvoice = Math.max(...invoiceAmounts);
+                    const smallestInvoice = Math.min(...invoiceAmounts);
+                    
+                    // Analytics box
+                    doc.setFillColor(240, 248, 255);
+                    doc.rect(10, y - 4, pageWidth - 20, 25, 'F');
+                    doc.setFontSize(9);
+                    doc.setFont(undefined, 'normal');
+                    doc.text('Average Invoice:', 15, y);
+                    doc.text(`$${avgInvoice.toFixed(2)}`, 60, y);
+                    doc.text('Largest Invoice:', 100, y);
+                    doc.text(`$${largestInvoice.toFixed(2)}`, 145, y);
+                    y += 5;
+                    doc.text('Smallest Invoice:', 15, y);
+                    doc.text(`$${smallestInvoice.toFixed(2)}`, 60, y);
+                    doc.text('Median Invoice:', 100, y);
+                    const sortedAmounts = [...invoiceAmounts].sort((a, b) => a - b);
+                    const median = sortedAmounts[Math.floor(sortedAmounts.length / 2)];
+                    doc.text(`$${median.toFixed(2)}`, 145, y);
+                    y += 10;
+                    
+                    // Revenue by month (if year or all time)
+                    if (section.dateRange === 'year' || section.dateRange === 'all') {
+                        const monthlyRevenue = {};
+                        paidInvoices.forEach(inv => {
+                            const monthKey = new Date(inv.issue_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                            monthlyRevenue[monthKey] = (monthlyRevenue[monthKey] || 0) + (inv.total || 0);
+                        });
+                        
+                        doc.setFont(undefined, 'bold');
+                        doc.text('Monthly Breakdown:', 15, y);
+                        y += 6;
+                        doc.setFont(undefined, 'normal');
+                        doc.setFontSize(8);
+                        
+                        Object.entries(monthlyRevenue).forEach(([month, amount]) => {
+                            if (y > pageHeight - 25) {
+                                doc.addPage();
+                                y = 20;
+                            }
+                            doc.text(month, 15, y);
+                            doc.text(`$${amount.toFixed(2)}`, 60, y);
+                            y += 4;
+                        });
+                        y += 6;
+                    }
+                    
+                    doc.setFontSize(9);
+                    y += 5;
+                }
+                
                 if (paidInvoices.length > 0) {
                     // Table header
                     doc.setFillColor(0, 0, 0);
@@ -858,6 +913,7 @@ function downloadCustomReportPDF(reportId) {
                     doc.text('Date', 15, y);
                     doc.text('Invoice #', 45, y);
                     doc.text('Client', 80, y);
+                    doc.text('GST', 135, y);
                     doc.text('Amount', pageWidth - 30, y, { align: 'right' });
                     
                     y += 8;
@@ -874,8 +930,9 @@ function downloadCustomReportPDF(reportId) {
                         doc.setFontSize(8);
                         doc.text(new Date(inv.issue_date).toLocaleDateString(), 15, y);
                         doc.text(inv.invoice_number || 'N/A', 45, y);
-                        const clientName = doc.splitTextToSize(client?.name || 'Unknown', 80);
+                        const clientName = doc.splitTextToSize(client?.name || 'Unknown', 50);
                         doc.text(clientName[0], 80, y);
+                        doc.text(`$${(inv.gst || 0).toFixed(2)}`, 135, y);
                         doc.text(`$${inv.total.toFixed(2)}`, pageWidth - 30, y, { align: 'right' });
                         y += 5;
                     });
@@ -903,6 +960,68 @@ function downloadCustomReportPDF(reportId) {
                     if (!expensesByCategory[cat]) expensesByCategory[cat] = [];
                     expensesByCategory[cat].push(exp);
                 });
+                
+                // Analytics section
+                if (periodExpenses.length > 0) {
+                    const expenseAmounts = periodExpenses.map(exp => parseFloat(exp.amount || 0));
+                    const avgExpense = expenseAmounts.reduce((a, b) => a + b, 0) / expenseAmounts.length;
+                    const largestExpense = Math.max(...expenseAmounts);
+                    const totalWithReceipts = periodExpenses.filter(exp => exp.receipt_url).length;
+                    
+                    // Analytics box
+                    doc.setFillColor(255, 248, 240);
+                    doc.rect(10, y - 4, pageWidth - 20, 20, 'F');
+                    doc.setFontSize(9);
+                    doc.setFont(undefined, 'normal');
+                    doc.text('Total Expenses:', 15, y);
+                    doc.text(String(periodExpenses.length), 60, y);
+                    doc.text('Average Expense:', 85, y);
+                    doc.text(`$${avgExpense.toFixed(2)}`, 130, y);
+                    doc.text('Largest:', 155, y);
+                    doc.text(`$${largestExpense.toFixed(2)}`, pageWidth - 30, y, { align: 'right' });
+                    y += 5;
+                    doc.text('With Receipts:', 15, y);
+                    doc.text(`${totalWithReceipts} (${((totalWithReceipts/periodExpenses.length)*100).toFixed(0)}%)`, 60, y);
+                    doc.text('Categories:', 85, y);
+                    doc.text(String(Object.keys(expensesByCategory).length), 130, y);
+                    y += 10;
+                    
+                    // Team member breakdown (if business account)
+                    if (getAccountType() === 'business' && teamMembers.length > 0) {
+                        const byTeamMember = {};
+                        periodExpenses.forEach(exp => {
+                            if (exp.team_member_id) {
+                                const member = teamMembers.find(m => m.id === exp.team_member_id);
+                                const name = member?.name || 'Unknown';
+                                byTeamMember[name] = (byTeamMember[name] || 0) + parseFloat(exp.amount || 0);
+                            }
+                        });
+                        
+                        if (Object.keys(byTeamMember).length > 0) {
+                            doc.setFont(undefined, 'bold');
+                            doc.text('Expenses by Team Member:', 15, y);
+                            y += 6;
+                            doc.setFont(undefined, 'normal');
+                            doc.setFontSize(8);
+                            
+                            Object.entries(byTeamMember)
+                                .sort((a, b) => b[1] - a[1])
+                                .forEach(([member, amount]) => {
+                                    if (y > pageHeight - 25) {
+                                        doc.addPage();
+                                        y = 20;
+                                    }
+                                    doc.text(member, 15, y);
+                                    doc.text(`$${amount.toFixed(2)}`, 80, y);
+                                    y += 4;
+                                });
+                            y += 6;
+                        }
+                    }
+                    
+                    doc.setFontSize(9);
+                    y += 5;
+                }
                 
                 // Render each category with detail
                 Object.entries(expensesByCategory).sort((a, b) => {
@@ -978,18 +1097,75 @@ function downloadCustomReportPDF(reportId) {
                 break;
             
             case 'profit':
-                doc.setFontSize(10);
+                doc.setFontSize(11);
+                doc.setFont(undefined, 'bold');
+                doc.text('Profit & Loss Statement', 15, y);
+                y += 10;
+                
+                // Get detailed data
+                const plRange = getReportDateRange(section.dateRange);
+                const plInvoices = invoices.filter(inv => {
+                    const date = new Date(inv.issue_date);
+                    return inv.status === 'paid' && date >= plRange.start && date <= plRange.end;
+                });
+                const plExpenses = expenses.filter(exp => {
+                    const date = new Date(exp.date);
+                    return date >= plRange.start && date <= plRange.end;
+                });
+                
                 // Create P&L table
                 doc.setFillColor(240, 248, 255);
-                doc.rect(10, y - 4, pageWidth - 20, 35, 'F');
+                doc.rect(10, y - 4, pageWidth - 20, 50, 'F');
                 
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'bold');
+                doc.text('REVENUE', 20, y);
+                y += 6;
                 doc.setFont(undefined, 'normal');
-                doc.text('Revenue', 20, y);
+                doc.setFontSize(9);
+                doc.text(`Paid Invoices (${plInvoices.length})`, 25, y);
                 doc.text(`$${sectionData.revenue.toFixed(2)}`, pageWidth - 30, y, { align: 'right' });
-                y += 7;
-                doc.text('Expenses', 20, y);
-                doc.text(`($${sectionData.expenses.toFixed(2)})`, pageWidth - 30, y, { align: 'right' });
-                y += 10;
+                y += 5;
+                
+                // Top expense categories
+                const plExpensesByCategory = {};
+                plExpenses.forEach(exp => {
+                    const cat = exp.category || 'Other';
+                    plExpensesByCategory[cat] = (plExpensesByCategory[cat] || 0) + parseFloat(exp.amount || 0);
+                });
+                
+                y += 3;
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'bold');
+                doc.text('EXPENSES', 20, y);
+                y += 6;
+                doc.setFont(undefined, 'normal');
+                doc.setFontSize(9);
+                
+                const topExpCategories = Object.entries(plExpensesByCategory)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5);
+                
+                topExpCategories.forEach(([cat, amount]) => {
+                    doc.text(cat, 25, y);
+                    doc.text(`$${amount.toFixed(2)}`, pageWidth - 30, y, { align: 'right' });
+                    y += 4;
+                });
+                
+                if (Object.keys(plExpensesByCategory).length > 5) {
+                    const otherTotal = Object.entries(plExpensesByCategory)
+                        .slice(5)
+                        .reduce((sum, [_, amt]) => sum + amt, 0);
+                    doc.text('Other categories', 25, y);
+                    doc.text(`$${otherTotal.toFixed(2)}`, pageWidth - 30, y, { align: 'right' });
+                    y += 4;
+                }
+                
+                y += 2;
+                doc.setFont(undefined, 'bold');
+                doc.text('Total Expenses', 25, y);
+                doc.text(`$${sectionData.expenses.toFixed(2)}`, pageWidth - 30, y, { align: 'right' });
+                y += 8;
                 
                 doc.setLineWidth(0.5);
                 doc.setDrawColor(20, 184, 166);
@@ -997,73 +1173,366 @@ function downloadCustomReportPDF(reportId) {
                 
                 doc.setFontSize(12);
                 doc.setFont(undefined, 'bold');
-                doc.setTextColor(20, 184, 166);
-                doc.text('Net Profit', 20, y);
+                doc.setTextColor(sectionData.profit >= 0 ? 20 : 200, sectionData.profit >= 0 ? 184 : 0, sectionData.profit >= 0 ? 166 : 0);
+                doc.text('NET PROFIT', 20, y);
                 doc.text(`$${sectionData.profit.toFixed(2)}`, pageWidth - 30, y, { align: 'right' });
                 y += 7;
                 doc.setFontSize(9);
                 doc.setTextColor(100, 100, 100);
-                doc.text(`Profit Margin: ${sectionData.margin.toFixed(1)}%`, 20, y);
+                doc.text(`Profit Margin: ${sectionData.margin.toFixed(1)}% | ${sectionData.profit >= 0 ? 'Profitable' : 'Operating at Loss'}`, 20, y);
                 doc.setTextColor(0, 0, 0);
                 break;
             
             case 'gst':
+                doc.setFontSize(11);
+                doc.setFont(undefined, 'bold');
+                doc.text('GST Summary', 15, y);
+                y += 10;
+                
+                // Get GST details
+                const gstRange = getReportDateRange(section.dateRange);
+                const gstInvoices = invoices.filter(inv => {
+                    const date = new Date(inv.issue_date);
+                    return inv.status === 'paid' && date >= gstRange.start && date <= gstRange.end;
+                });
+                
+                const totalGSTInvoices = gstInvoices.filter(inv => inv.include_gst).length;
+                
+                // GST box
+                doc.setFillColor(255, 250, 240);
+                doc.rect(10, y - 4, pageWidth - 20, 30, 'F');
                 doc.setFontSize(10);
                 doc.setFont(undefined, 'normal');
                 doc.text('GST Collected (from sales)', 20, y);
                 doc.text(`$${sectionData.collected.toFixed(2)}`, pageWidth - 30, y, { align: 'right' });
+                y += 5;
+                doc.setFontSize(8);
+                doc.setTextColor(100, 100, 100);
+                doc.text(`From ${totalGSTInvoices} GST-inclusive invoices`, 25, y);
+                doc.setTextColor(0, 0, 0);
                 y += 7;
+                
+                doc.setFontSize(10);
                 doc.text('GST Paid (on expenses)', 20, y);
                 doc.text(`$${sectionData.paid.toFixed(2)}`, pageWidth - 30, y, { align: 'right' });
+                y += 5;
+                doc.setFontSize(8);
+                doc.setTextColor(100, 100, 100);
+                doc.text('Estimated at 10% of registered expenses', 25, y);
+                doc.setTextColor(0, 0, 0);
                 y += 10;
+                
+                doc.setLineWidth(0.5);
+                doc.setDrawColor(20, 184, 166);
+                doc.line(20, y - 3, pageWidth - 30, y - 3);
+                
+                doc.setFontSize(11);
                 doc.setFont(undefined, 'bold');
                 doc.setTextColor(20, 184, 166);
-                doc.text('Net GST Payable to ATO', 20, y);
-                doc.text(`$${(sectionData.collected - sectionData.paid).toFixed(2)}`, pageWidth - 30, y, { align: 'right' });
+                const netGST = sectionData.collected - sectionData.paid;
+                doc.text(`Net GST ${netGST >= 0 ? 'Payable to' : 'Refund from'} ATO`, 20, y);
+                doc.text(`$${Math.abs(netGST).toFixed(2)}`, pageWidth - 30, y, { align: 'right' });
+                y += 6;
+                doc.setFontSize(8);
+                doc.setFont(undefined, 'italic');
+                doc.setTextColor(100, 100, 100);
+                doc.text(`Report for ${gstRange.label} - Ensure accuracy with your registered accountant`, 20, y);
                 doc.setTextColor(0, 0, 0);
                 break;
             
             case 'jobs':
-                doc.setFontSize(10);
-                doc.text(`Jobs Completed: ${sectionData.completed}`, 20, y);
+                doc.setFontSize(11);
+                doc.setFont(undefined, 'bold');
+                doc.text(`Jobs Completed: ${sectionData.completed}`, 15, y);
+                doc.text(`Total Jobs: ${sectionData.total}`, pageWidth - 80, y);
                 y += 7;
-                doc.text(`Total Jobs: ${sectionData.total}`, 20, y);
-                y += 7;
-                doc.text(`Completion Rate: ${sectionData.completionRate?.toFixed(1) || 0}%`, 20, y);
+                doc.setFont(undefined, 'normal');
+                doc.text(`Completion Rate: ${sectionData.completionRate?.toFixed(1) || 0}%`, 15, y);
+                y += 10;
+                
+                // Get actual completed jobs
+                const jobsRange = getReportDateRange(section.dateRange);
+                const completedJobs = jobs.filter(job => {
+                    const date = new Date(job.date);
+                    return job.status === 'completed' && date >= jobsRange.start && date <= jobsRange.end;
+                }).sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                if (completedJobs.length > 0) {
+                    // Calculate job analytics
+                    const jobsByClient = {};
+                    completedJobs.forEach(job => {
+                        const client = clients.find(c => c.id === job.client_id);
+                        const clientName = client?.name || 'Unknown';
+                        jobsByClient[clientName] = (jobsByClient[clientName] || 0) + 1;
+                    });
+                    
+                    // Analytics box
+                    doc.setFillColor(240, 255, 240);
+                    doc.rect(10, y - 4, pageWidth - 20, 15, 'F');
+                    doc.setFontSize(9);
+                    doc.text('Most Active Client:', 15, y);
+                    const topClient = Object.entries(jobsByClient).sort((a, b) => b[1] - a[1])[0];
+                    doc.text(`${topClient[0]} (${topClient[1]} jobs)`, 70, y);
+                    y += 5;
+                    doc.text('Unique Clients Served:', 15, y);
+                    doc.text(String(Object.keys(jobsByClient).length), 70, y);
+                    y += 12;
+                    
+                    // Jobs table
+                    doc.setFillColor(0, 0, 0);
+                    doc.rect(10, y - 5, pageWidth - 20, 8, 'F');
+                    doc.setFontSize(8);
+                    doc.setFont(undefined, 'bold');
+                    doc.setTextColor(255, 255, 255);
+                    doc.text('Date', 15, y);
+                    doc.text('Job Title', 45, y);
+                    doc.text('Client', 120, y);
+                    doc.text('Team', pageWidth - 30, y, { align: 'right' });
+                    y += 8;
+                    
+                    doc.setFont(undefined, 'normal');
+                    doc.setTextColor(0, 0, 0);
+                    
+                    completedJobs.forEach(job => {
+                        if (y > pageHeight - 25) {
+                            doc.addPage();
+                            y = 20;
+                        }
+                        
+                        const client = clients.find(c => c.id === job.client_id);
+                        const teamMember = job.team_member_id ? teamMembers.find(m => m.id === job.team_member_id) : null;
+                        
+                        doc.setFontSize(7);
+                        doc.text(new Date(job.date).toLocaleDateString(), 15, y);
+                        const titleText = doc.splitTextToSize(job.title || 'Untitled', 70);
+                        doc.text(titleText[0], 45, y);
+                        const clientText = doc.splitTextToSize(client?.name || 'Unknown', 50);
+                        doc.text(clientText[0], 120, y);
+                        doc.text(teamMember?.name || '-', pageWidth - 30, y, { align: 'right' });
+                        y += 4;
+                    });
+                }
                 break;
             
             case 'clients':
                 doc.setFontSize(10);
                 doc.setFont(undefined, 'bold');
                 doc.text('Top Clients by Revenue', 20, y);
+                y += 10;
+                
+                // Get client details
+                const clientDetails = {};
+                const clientRange = getReportDateRange(section.dateRange);
+                
+                invoices.forEach(inv => {
+                    const invDate = new Date(inv.issue_date);
+                    if (invDate >= clientRange.start && invDate <= clientRange.end) {
+                        const client = clients.find(c => c.id === inv.client_id);
+                        const clientName = client?.name || 'Unknown';
+                        
+                        if (!clientDetails[clientName]) {
+                            clientDetails[clientName] = {
+                                revenue: 0,
+                                invoiceCount: 0,
+                                paidCount: 0,
+                                outstanding: 0,
+                                jobCount: 0,
+                                lastInvoice: null,
+                                invoiceValues: []
+                            };
+                        }
+                        
+                        clientDetails[clientName].invoiceCount++;
+                        if (inv.status === 'paid') {
+                            clientDetails[clientName].revenue += inv.total || 0;
+                            clientDetails[clientName].paidCount++;
+                        } else {
+                            clientDetails[clientName].outstanding += inv.total || 0;
+                        }
+                        clientDetails[clientName].invoiceValues.push(inv.total || 0);
+                        
+                        if (!clientDetails[clientName].lastInvoice || new Date(inv.issue_date) > new Date(clientDetails[clientName].lastInvoice)) {
+                            clientDetails[clientName].lastInvoice = inv.issue_date;
+                        }
+                    }
+                });
+                
+                // Count jobs per client
+                jobs.forEach(job => {
+                    const jobDate = new Date(job.date);
+                    if (jobDate >= clientRange.start && jobDate <= clientRange.end && job.status === 'completed') {
+                        const client = clients.find(c => c.id === job.client_id);
+                        const clientName = client?.name || 'Unknown';
+                        if (clientDetails[clientName]) {
+                            clientDetails[clientName].jobCount++;
+                        }
+                    }
+                });
+                
+                const topClients = Object.entries(clientDetails)
+                    .sort((a, b) => b[1].revenue - a[1].revenue)
+                    .slice(0, 10);
+                
+                // Table header
+                doc.setFillColor(0, 0, 0);
+                doc.rect(10, y - 5, pageWidth - 20, 8, 'F');
+                doc.setFontSize(8);
+                doc.setFont(undefined, 'bold');
+                doc.setTextColor(255, 255, 255);
+                doc.text('#', 15, y);
+                doc.text('Client', 22, y);
+                doc.text('Revenue', 70, y);
+                doc.text('Invoices', 95, y);
+                doc.text('Jobs', 118, y);
+                doc.text('Avg Invoice', 135, y);
+                doc.text('Outstanding', 165, y);
                 y += 8;
+                
                 doc.setFont(undefined, 'normal');
-                doc.setFontSize(9);
-                sectionData.topClients.forEach(([name, revenue], i) => {
+                doc.setTextColor(0, 0, 0);
+                
+                topClients.forEach(([clientName, details], i) => {
                     if (y > pageHeight - 25) {
                         doc.addPage();
                         y = 20;
                     }
-                    doc.text(`${i + 1}.`, 20, y);
-                    doc.text(name, 30, y);
-                    doc.text(`$${revenue.toFixed(2)}`, pageWidth - 30, y, { align: 'right' });
+                    
+                    const avgInvoice = details.invoiceValues.length > 0 
+                        ? details.invoiceValues.reduce((a, b) => a + b, 0) / details.invoiceValues.length 
+                        : 0;
+                    
+                    doc.setFontSize(8);
+                    doc.text(`${i + 1}`, 15, y);
+                    const nameText = doc.splitTextToSize(clientName, 45);
+                    doc.text(nameText[0], 22, y);
+                    doc.text(`$${details.revenue.toFixed(2)}`, 70, y);
+                    doc.text(`${details.paidCount}/${details.invoiceCount}`, 95, y);
+                    doc.text(String(details.jobCount), 118, y);
+                    doc.text(`$${avgInvoice.toFixed(2)}`, 135, y);
+                    
+                    if (details.outstanding > 0) {
+                        doc.setTextColor(200, 0, 0);
+                        doc.text(`$${details.outstanding.toFixed(2)}`, 165, y);
+                        doc.setTextColor(0, 0, 0);
+                    } else {
+                        doc.text('-', 165, y);
+                    }
+                    
                     y += 5;
                 });
+                
+                // Summary stats
+                y += 5;
+                doc.setFontSize(9);
+                doc.setFont(undefined, 'italic');
+                doc.setTextColor(100, 100, 100);
+                const totalRevenue = topClients.reduce((sum, [_, d]) => sum + d.revenue, 0);
+                const totalOutstanding = topClients.reduce((sum, [_, d]) => sum + d.outstanding, 0);
+                doc.text(`Top ${topClients.length} clients represent $${totalRevenue.toFixed(2)} in revenue`, 15, y);
+                if (totalOutstanding > 0) {
+                    y += 4;
+                    doc.text(`Total outstanding from top clients: $${totalOutstanding.toFixed(2)}`, 15, y);
+                }
+                doc.setTextColor(0, 0, 0);
                 break;
             
             case 'quotes':
-                doc.setFontSize(10);
-                doc.setFont(undefined, 'normal');
-                doc.text(`Total Quotes: ${sectionData.total}`, 20, y);
-                y += 7;
-                doc.text(`Accepted: ${sectionData.accepted}`, 20, y);
-                y += 7;
-                doc.text(`Pending: ${sectionData.pending}`, 20, y);
-                y += 7;
+                doc.setFontSize(11);
                 doc.setFont(undefined, 'bold');
-                doc.setTextColor(20, 184, 166);
-                doc.text(`Conversion Rate: ${sectionData.conversionRate.toFixed(1)}%`, 20, y);
-                doc.setTextColor(0, 0, 0);
+                doc.text(`Total Quotes: ${sectionData.total}`, 15, y);
+                doc.text(`Conversion Rate: ${sectionData.conversionRate.toFixed(1)}%`, pageWidth - 80, y);
+                y += 10;
+                
+                // Get actual quotes
+                const quotesRange = getReportDateRange(section.dateRange);
+                const periodQuotes = quotes.filter(q => {
+                    const date = new Date(q.created_at || q.date);
+                    return date >= quotesRange.start && date <= quotesRange.end;
+                }).sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date));
+                
+                if (periodQuotes.length > 0) {
+                    // Calculate quote analytics
+                    const quoteAmounts = periodQuotes.map(q => q.total || 0);
+                    const avgQuote = quoteAmounts.reduce((a, b) => a + b, 0) / quoteAmounts.length;
+                    const largestQuote = Math.max(...quoteAmounts);
+                    const totalQuoteValue = quoteAmounts.reduce((a, b) => a + b, 0);
+                    const acceptedValue = periodQuotes.filter(q => q.status === 'accepted' || q.accepted).reduce((sum, q) => sum + (q.total || 0), 0);
+                    
+                    // Analytics box
+                    doc.setFillColor(255, 240, 255);
+                    doc.rect(10, y - 4, pageWidth - 20, 25, 'F');
+                    doc.setFontSize(9);
+                    doc.setFont(undefined, 'normal');
+                    doc.text('Total Quote Value:', 15, y);
+                    doc.text(`$${totalQuoteValue.toFixed(2)}`, 65, y);
+                    doc.text('Accepted Value:', 105, y);
+                    doc.text(`$${acceptedValue.toFixed(2)}`, 155, y);
+                    y += 5;
+                    doc.text('Average Quote:', 15, y);
+                    doc.text(`$${avgQuote.toFixed(2)}`, 65, y);
+                    doc.text('Largest Quote:', 105, y);
+                    doc.text(`$${largestQuote.toFixed(2)}`, 155, y);
+                    y += 5;
+                    doc.text('Accepted:', 15, y);
+                    doc.text(String(sectionData.accepted), 65, y);
+                    doc.text('Pending:', 105, y);
+                    doc.text(String(sectionData.pending), 155, y);
+                    y += 12;
+                    
+                    // Quotes table
+                    doc.setFillColor(0, 0, 0);
+                    doc.rect(10, y - 5, pageWidth - 20, 8, 'F');
+                    doc.setFontSize(8);
+                    doc.setFont(undefined, 'bold');
+                    doc.setTextColor(255, 255, 255);
+                    doc.text('Date', 15, y);
+                    doc.text('Quote #', 40, y);
+                    doc.text('Client', 70, y);
+                    doc.text('Status', 120, y);
+                    doc.text('Amount', pageWidth - 30, y, { align: 'right' });
+                    y += 8;
+                    
+                    doc.setFont(undefined, 'normal');
+                    doc.setTextColor(0, 0, 0);
+                    
+                    periodQuotes.forEach(quote => {
+                        if (y > pageHeight - 25) {
+                            doc.addPage();
+                            y = 20;
+                        }
+                        
+                        const client = clients.find(c => c.id === quote.client_id);
+                        const status = quote.status || (quote.accepted ? 'accepted' : 'pending');
+                        
+                        doc.setFontSize(7);
+                        doc.text(new Date(quote.created_at || quote.date).toLocaleDateString(), 15, y);
+                        doc.text(quote.quote_number || '-', 40, y);
+                        const clientText = doc.splitTextToSize(client?.name || 'Unknown', 45);
+                        doc.text(clientText[0], 70, y);
+                        
+                        // Status with color
+                        if (status === 'accepted') {
+                            doc.setTextColor(0, 150, 0);
+                        } else if (status === 'declined') {
+                            doc.setTextColor(200, 0, 0);
+                        } else {
+                            doc.setTextColor(100, 100, 100);
+                        }
+                        doc.text(status.charAt(0).toUpperCase() + status.slice(1), 120, y);
+                        doc.setTextColor(0, 0, 0);
+                        
+                        doc.text(`$${(quote.total || 0).toFixed(2)}`, pageWidth - 30, y, { align: 'right' });
+                        y += 4;
+                    });
+                    
+                    // Quote summary stats
+                    y += 5;
+                    doc.setFontSize(9);
+                    doc.setFont(undefined, 'italic');
+                    doc.setTextColor(100, 100, 100);
+                    doc.text(`Win rate: ${sectionData.conversionRate.toFixed(1)}% | Value capture: $${acceptedValue.toFixed(2)} of $${totalQuoteValue.toFixed(2)} (${totalQuoteValue > 0 ? ((acceptedValue/totalQuoteValue)*100).toFixed(1) : 0}%)`, 15, y);
+                    doc.setTextColor(0, 0, 0);
+                }
                 break;
         }
         
