@@ -1,8 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════
-   M4 STREAMLINE - Micro-interactions & Smooth Animations
+   M4 STREAMLINE - Micro-interactions & Smooth Animations (FIXED)
    ═══════════════════════════════════════════════════════════════════ */
-
-/* Add this CSS to your main stylesheet or in a <style> tag in index.html */
 
 /* Smooth transitions for all interactive elements */
 * {
@@ -11,15 +9,32 @@
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Button Hover Effects */
-button:not(:disabled):hover,
-.btn:hover {
+/* ⚠️ CRITICAL FIX: Prevent dropdown shaking */
+.dropdown-menu,
+[class*="dropdown"],
+[role="menu"],
+.absolute.z-10,
+.origin-top-right {
+    transform: none !important;
+}
+
+.dropdown-menu *,
+[class*="dropdown"] *,
+[role="menu"] *,
+.absolute.z-10 *,
+.origin-top-right * {
+    transform: none !important;
+}
+
+/* Button Hover Effects - STABLE (no layout shift) */
+button:not(:disabled):not(.no-transform):hover,
+.btn:not(.no-transform):hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-button:not(:disabled):active,
-.btn:active {
+button:not(:disabled):not(.no-transform):active,
+.btn:not(.no-transform):active {
     transform: translateY(0);
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
@@ -46,16 +61,16 @@ button.bg-red-600:hover,
     box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
 }
 
-/* Card Hover Effects */
+/* Card Hover Effects - STABLE */
 .cursor-pointer:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-/* Table Row Hover - Smooth Scale */
+/* Table Row Hover - REMOVED TRANSFORM (prevents shake) */
 tr.hover\:bg-gray-50:hover,
 tr.hover\:bg-gray-100:hover {
-    transform: scale(1.01);
+    /* NO transform - just background change */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
@@ -66,7 +81,6 @@ textarea:focus {
     outline: none;
     border-color: #14b8a6;
     box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
-    transform: scale(1.01);
 }
 
 /* Checkbox Animations */
@@ -105,12 +119,11 @@ input[type="checkbox"]:checked {
     animation: badge-pulse 2s ease-in-out infinite;
 }
 
-/* Status Badge Hover */
+/* Status Badge Hover - NO TRANSFORM */
 span[class*="bg-teal"]:hover,
 span[class*="bg-red"]:hover,
 span[class*="bg-orange"]:hover,
 span[class*="bg-green"]:hover {
-    transform: scale(1.05);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -307,7 +320,7 @@ a:hover::after {
     }
 }
 
-/* Skeleton Loading Shimmer (already defined but enhanced) */
+/* Skeleton Loading Shimmer */
 @keyframes shimmer {
     0% {
         background-position: -1000px 0;
@@ -377,13 +390,3 @@ html {
 .dark ::-webkit-scrollbar-thumb:hover {
     background: #6b7280;
 }
-
-/* Add these classes to your HTML elements for enhanced effects:
-   - Add "ripple" class to buttons for ripple effect
-   - Add "icon-rotate" to icons for rotation on hover
-   - Add "icon-bounce" to icons for bounce on click
-   - Add "badge-pulse" to notification badges
-   - Add "stat-number" to dashboard numbers
-   - Add "count-up" to animated numbers
-   - Add "page-transition" to main content divs
-*/
