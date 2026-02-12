@@ -313,6 +313,9 @@ function renderDashboard() {
             </div>
         </div>
         
+        <!-- ⭐ AI BUSINESS INSIGHTS WIDGET ⭐ -->
+        ${typeof renderInsightsWidget === 'function' ? renderInsightsWidget() : ''}
+        
     </div>`;
 }
 
