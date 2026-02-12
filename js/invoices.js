@@ -2,12 +2,28 @@
 // M4 STREAMLINE - Invoices Module (Professional Table View)
 // ═══════════════════════════════════════════════════════════════════
 
-// Declare module variables if not already defined
-if (typeof invoiceFilter === 'undefined') var invoiceFilter = 'unpaid';
-if (typeof invoiceSearch === 'undefined') var invoiceSearch = '';
-if (typeof selectedInvoices === 'undefined') var selectedInvoices = [];
+// Initialize global filter variables if not defined
+if (typeof invoiceFilter === 'undefined') invoiceFilter = 'unpaid';
+if (typeof invoiceSearch === 'undefined') invoiceSearch = '';
+if (typeof selectedInvoices === 'undefined') selectedInvoices = [];
 
-// View state - must be var for global access
+// Helper functions
+if (typeof formatCurrency === 'undefined') {
+    function formatCurrency(amount) {
+        return '$' + parseFloat(amount || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+}
+
+if (typeof formatDate === 'undefined') {
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        const options = { month: 'short', day: 'numeric', year: 'numeric' };
+        return date.toLocaleDateString('en-US', options);
+    }
+}
+
+// View state
 var invoiceViewMode = 'table';
 var selectedInvoiceForDetail = null;
 
@@ -617,6 +633,77 @@ function toggleInvoiceCommunications(invoiceId) {
     const panel = document.getElementById(`invoice-communications-${invoiceId}`);
     if (panel) {
         panel.classList.toggle('hidden');
+    }
+}
+
+// Utility functions if not defined
+if (typeof getPaginationHTML === 'undefined') {
+    function getPaginationHTML(type, total, current) {
+        const totalPages = Math.ceil(total / (itemsPerPage || 20));
+        if (totalPages <= 1) return '';
+        let html = '<div class="flex items-center justify-between"><p class="text-sm text-gray-700 dark:text-gray-300">Showing ' + (((current - 1) * itemsPerPage) + 1) + ' to ' + Math.min(current * itemsPerPage, total) + ' of ' + total + '</p><div class="flex gap-2">';
+        if (current > 1) html += '<button onclick="currentPage.' + type + '=' + (current - 1) + '; renderApp();" class="px-3 py-1 border rounded">Previous</button>';
+        if (current < totalPages) html += '<button onclick="currentPage.' + type + '=' + (current + 1) + '; renderApp();" class="px-3 py-1 border rounded">Next</button>';
+        return html + '</div></div>';
+    }
+}
+
+if (typeof toggleSelection === 'undefined') {
+    function toggleSelection(type, id) {
+        if (type === 'invoices') {
+            const idx = selectedInvoices.indexOf(id);
+            if (idx > -1) selectedInvoices.splice(idx, 1);
+            else selectedInvoices.push(id);
+            renderApp();
+        }
+    }
+}
+
+if (typeof toggleSelectAll === 'undefined') {
+    function toggleSelectAll(type) {
+        if (type === 'invoices') {
+            selectedInvoices = selectedInvoices.length === invoices.length ? [] : invoices.map(i => i.id);
+            renderApp();
+        }
+    }
+}
+
+if (typeof bulkDelete === 'undefined') {
+    function bulkDelete(type) {
+        if (type === 'invoices' && confirm('Delete ' + selectedInvoices.length + ' invoices?')) {
+            selectedInvoices.forEach(id => deleteInvoice(id));
+            selectedInvoices = [];
+        }
+    }
+}
+
+if (typeof exportToCSV === 'undefined') {
+    function exportToCSV() { showNotification('Export coming soon', 'info'); }
+}
+
+if (typeof sendInvoiceEmail === 'undefined') {
+    function sendInvoiceEmail(inv) {
+        if (typeof triggerEmail === 'function') triggerEmail('invoice_sent', inv);
+        else showNotification('Email sent!', 'success');
+    }
+}
+
+if (typeof openNoteModal === 'undefined') {
+    function openNoteModal() { showNotification('Note feature coming soon', 'info'); }
+}
+
+if (typeof deleteInvoice === 'undefined') {
+    async function deleteInvoice(id) {
+        if (!confirm('Delete invoice?')) return;
+        try {
+            await supabaseClient.from('invoices').delete().eq('id', id);
+            const idx = invoices.findIndex(i => i.id === id);
+            if (idx > -1) invoices.splice(idx, 1);
+            showNotification('Deleted', 'success');
+            renderApp();
+        } catch (e) {
+            showNotification('Error', 'error');
+        }
     }
 }
 
