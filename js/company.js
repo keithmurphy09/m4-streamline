@@ -244,9 +244,6 @@ function renderCompany() {
                     </button>
                 </div>
             </div>
-            
-            <!-- Email Automation Settings -->
-            ${typeof renderEmailAutomationSettings === 'function' ? renderEmailAutomationSettings() : ''}
         </div>
     `;
 }
