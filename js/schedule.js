@@ -168,9 +168,6 @@ function renderJobsTable() {
                     <button onclick="openModal('job')" class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-white bg-black hover:bg-gray-900 border border-teal-400 rounded-lg transition-colors shadow-sm">
                         Schedule Job
                     </button>
-                    <button onclick="openRecurringJobModal()" class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors shadow-sm">
-                        🔄 Recurring Job
-                    </button>
                 </div>
             </div>
             
@@ -621,22 +618,6 @@ function renderCalendar() {
     });
     
     calendar.render();
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// Recurring Job Modal
-// ═══════════════════════════════════════════════════════════════════
-
-function openRecurringJobModal() {
-    if (typeof renderRecurringJobModal === 'function') {
-        const modalContainer = document.createElement('div');
-        modalContainer.id = 'recurringJobModalContainer';
-        modalContainer.innerHTML = renderRecurringJobModal();
-        document.body.appendChild(modalContainer);
-    } else {
-        console.error('renderRecurringJobModal function not found');
-        showNotification('Recurring job feature not loaded', 'error');
-    }
 }
 
 console.log('✅ Schedule module loaded (Professional Table View)');
