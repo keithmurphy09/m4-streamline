@@ -294,6 +294,9 @@ function renderDashboard() {
             
         </div>
         
+        <!-- ⭐ AI BUSINESS INSIGHTS WIDGET ⭐ -->
+        ${typeof renderInsightsWidget === 'function' ? renderInsightsWidget() : ''}
+        
         <!-- Quick Actions -->
         <div class="bg-gradient-to-r from-teal-500 to-teal-600 rounded-xl shadow-lg p-6">
             <h3 class="text-lg font-semibold text-white mb-4">Quick Actions</h3>
@@ -312,9 +315,6 @@ function renderDashboard() {
                 </button>
             </div>
         </div>
-        
-        <!-- ⭐ AI BUSINESS INSIGHTS WIDGET ⭐ -->
-        ${typeof renderInsightsWidget === 'function' ? renderInsightsWidget() : ''}
         
     </div>`;
 }
