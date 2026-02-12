@@ -260,23 +260,34 @@ function toggleSettingsMenu() {
 }
 
 async function switchTab(tab) {
+    console.log('🔥 switchTab called:', tab);
     activeTab = tab;
     localStorage.setItem('activeTab', tab);
     
     // Close any detail views when switching tabs
     if (typeof selectedQuoteForDetail !== 'undefined') selectedQuoteForDetail = null;
-    if (typeof selectedInvoiceForDetail !== 'undefined') selectedInvoiceForDetail = null;
+    if (typeof selectedInvoiceForDetail !== 'undefined') {
+        console.log('🔥 Resetting selectedInvoiceForDetail to null');
+        selectedInvoiceForDetail = null;
+    }
     
     renderApp();
 }
 
 async function renderContent() {
+    console.log('🔥 renderContent called - activeTab:', activeTab);
+    
     // Route to appropriate render function
     if (activeTab === 'dashboard') return renderDashboard();
     if (activeTab === 'schedule') return renderSchedule();
     if (activeTab === 'clients') return renderClients();
     if (activeTab === 'quotes') return renderQuotes();
-    if (activeTab === 'invoices') return renderInvoices();
+    if (activeTab === 'invoices') {
+        console.log('🔥 Calling renderInvoices()');
+        const result = renderInvoices();
+        console.log('🔥 renderInvoices returned:', result ? result.substring(0, 50) : 'undefined/null');
+        return result;
+    }
     if (activeTab === 'expenses') return renderExpenses();
     if (activeTab === 'analytics') return renderAnalytics();
     if (activeTab === 'cashflow') return renderCashFlow();
@@ -304,4 +315,5 @@ document.addEventListener('click', function(event) {
     }
 });
 
-console.log('✅ App core loaded (full version');
+console.log('✅ App core loaded (full version)');
+console.log('🔥🔥🔥 APP.JS VERSION 2.0 - DEBUG MODE 🔥🔥🔥');
