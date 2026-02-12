@@ -168,7 +168,7 @@ function renderJobsTable() {
                     <button onclick="openRecurringJobModal()" class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors shadow-sm">
                         🔄 Recurring
                     </button>
-                    <button onclick="openModal('job')" class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-white bg-black hover:bg-gray-900 border border-teal-400 rounded-lg transition-colors shadow-sm">
+                    <button onclick="openModal('job')" class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 rounded-lg transition-colors shadow-sm">
                         Schedule Job
                     </button>
                 </div>
@@ -634,6 +634,44 @@ function openRecurringJobModal() {
     container.id = 'recurringJobModalContainer';
     container.innerHTML = renderRecurringJobModal();
     document.body.appendChild(container);
+    
+    // Add click outside to close
+    setTimeout(() => {
+        const modal = document.getElementById('recurringJobModal');
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target.id === 'recurringJobModal') {
+                    closeRecurringJobModal();
+                }
+            });
+        }
+    }, 0);
+}
+
+// Close recurring job modal
+function closeRecurringJobModal() {
+    const container = document.getElementById('recurringJobModalContainer');
+    if (container) {
+        container.remove();
+    }
+}
+
+// Add closeModal for recurring modal if it doesn't exist
+if (!window.closeModal) {
+    window.closeModal = function(modalId) {
+        if (modalId === 'recurringJobModal') {
+            closeRecurringJobModal();
+        }
+    };
+} else {
+    const originalCloseModal = window.closeModal;
+    window.closeModal = function(modalId) {
+        if (modalId === 'recurringJobModal') {
+            closeRecurringJobModal();
+        } else {
+            originalCloseModal(modalId);
+        }
+    };
 }
 
 console.log('✅ Schedule module loaded (Professional Table View)');
