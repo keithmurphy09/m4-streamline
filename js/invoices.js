@@ -5,6 +5,16 @@
 // View state
 let invoiceViewMode = 'table'; // 'table' or 'detail'
 let selectedInvoiceForDetail = null;
+// Helper functions
+function formatCurrency(amount) {
+    return '$' + parseFloat(amount || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
 
 function openInvoiceDetail(invoice) {
     selectedInvoiceForDetail = invoice;
