@@ -47,7 +47,12 @@ function renderInvoicesTable() {
                inv.total?.toString().includes(searchTerm);
     });
     
-    const sortedInvoices = [...filteredInvoices].sort((a, b) => {
+    // Apply smart filter if active
+    const smartFiltered = typeof getSmartFilteredData === 'function' 
+        ? getSmartFilteredData(filteredInvoices, 'invoices')
+        : filteredInvoices;
+    
+    const sortedInvoices = [...smartFiltered].sort((a, b) => {
         return new Date(b.issue_date || b.created_at || 0) - new Date(a.issue_date || a.created_at || 0);
     });
     
