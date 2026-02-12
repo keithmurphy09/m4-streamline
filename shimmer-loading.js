@@ -136,33 +136,6 @@ async function loadInvoices() {
 }
 
 // In your render function:
-function renderInvoices() {
-    if (isLoadingInvoices) {
-        return `
-            <div>
-                <h2 class="text-2xl font-bold mb-4">Invoices</h2>
-                <div class="bg-white rounded-lg shadow overflow-hidden">
-                    <table class="w-full">
-                        <thead class="bg-black text-white">
-                            <tr>
-                                <th class="px-6 py-3">Select</th>
-                                <th class="px-6 py-3">Invoice #</th>
-                                <th class="px-6 py-3">Client</th>
-                                <th class="px-6 py-3">Description</th>
-                                <th class="px-6 py-3">Date</th>
-                                <th class="px-6 py-3">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${renderTableShimmer(8)}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-    }
-    
-    // Normal rendering...
 }
 
 console.log('✅ Shimmer loading states loaded');
