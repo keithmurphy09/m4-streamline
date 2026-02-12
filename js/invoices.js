@@ -2,9 +2,16 @@
 // M4 STREAMLINE - Invoices Module (Professional Table View)
 // ═══════════════════════════════════════════════════════════════════
 
+// Initialize globals if missing (declared elsewhere)
+window.invoiceFilter = window.invoiceFilter || 'unpaid';
+window.invoiceSearch = window.invoiceSearch || '';
+window.selectedInvoices = window.selectedInvoices || [];
+window.currentPage = window.currentPage || {invoices:1,quotes:1,clients:1,jobs:1};
+window.itemsPerPage = window.itemsPerPage || 20;
+
 // View state
-let invoiceViewMode = 'table'; // 'table' or 'detail'
-let selectedInvoiceForDetail = null;
+var invoiceViewMode = 'table';
+var selectedInvoiceForDetail = null;
 
 function openInvoiceDetail(invoice) {
     selectedInvoiceForDetail = invoice;
