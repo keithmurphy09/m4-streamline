@@ -162,6 +162,9 @@ function renderInvoicesTable() {
             
             ${filterTabs}
             
+            <!-- ⭐ SMART FILTER BAR ⭐ -->
+            ${typeof renderSmartFilterBar === 'function' ? renderSmartFilterBar('invoices') : ''}
+            
             <!-- Search and Filter -->
             <div class="flex gap-3">
                 <input type="text" 
