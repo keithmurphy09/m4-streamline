@@ -20,8 +20,8 @@ function closeJobDetail() {
 
 function renderSchedule() {
     const viewToggle = `<div class="flex gap-2">
-        <button onclick="scheduleView='list'; jobViewMode='table'; renderApp();" class="px-3 py-2 rounded text-sm ${scheduleView === 'list' ? 'bg-black text-white border-teal-400' : 'bg-white dark:bg-gray-700 text-black dark:text-white border-gray-300 dark:border-gray-600'} border">List</button>
-        <button onclick="scheduleView='calendar'; jobViewMode='calendar'; renderApp();" class="px-3 py-2 rounded text-sm ${scheduleView === 'calendar' ? 'bg-black text-white border-teal-400' : 'bg-white dark:bg-gray-700 text-black dark:text-white border-gray-300 dark:border-gray-600'} border">Calendar</button>
+        <button onclick="scheduleView='list'; jobViewMode='table'; renderApp();" class="px-3 py-2 rounded text-sm ${scheduleView === 'list' ? 'bg-white text-gray-900 border-teal-400 shadow-[0_0_10px_rgba(45,212,191,0.5)]' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600'} border">List</button>
+        <button onclick="scheduleView='calendar'; jobViewMode='calendar'; renderApp();" class="px-3 py-2 rounded text-sm ${scheduleView === 'calendar' ? 'bg-white text-gray-900 border-teal-400 shadow-[0_0_10px_rgba(45,212,191,0.5)]' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600'} border">Calendar</button>
     </div>`;
     
     const workerFilter = getAccountType() === 'business' && teamMembers.length > 0 
@@ -46,8 +46,8 @@ function renderSchedule() {
 
 function renderJobsTable() {
     const viewToggle = `<div class="flex gap-2">
-        <button onclick="scheduleView='list'; jobViewMode='table'; renderApp();" class="px-3 py-2 rounded text-sm bg-black text-white border-teal-400 border">List</button>
-        <button onclick="scheduleView='calendar'; jobViewMode='calendar'; renderApp();" class="px-3 py-2 rounded text-sm bg-white dark:bg-gray-700 text-black dark:text-white border-gray-300 dark:border-gray-600 border">Calendar</button>
+        <button onclick="scheduleView='list'; jobViewMode='table'; renderApp();" class="px-3 py-2 rounded text-sm bg-white text-gray-900 border-teal-400 shadow-[0_0_10px_rgba(45,212,191,0.5)] border">List</button>
+        <button onclick="scheduleView='calendar'; jobViewMode='calendar'; renderApp();" class="px-3 py-2 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 border">Calendar</button>
     </div>`;
     
     const filteredJobs = jobs.filter(job => {
@@ -165,6 +165,9 @@ function renderJobsTable() {
                 </div>
                 <div class="flex gap-2">
                     ${viewToggle}
+                    <button onclick="openRecurringJobModal()" class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors shadow-sm">
+                        🔄 Recurring
+                    </button>
                     <button onclick="openModal('job')" class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-white bg-black hover:bg-gray-900 border border-teal-400 rounded-lg transition-colors shadow-sm">
                         Schedule Job
                     </button>
@@ -618,6 +621,19 @@ function renderCalendar() {
     });
     
     calendar.render();
+}
+
+// Open recurring job modal
+function openRecurringJobModal() {
+    if (typeof renderRecurringJobModal !== 'function') {
+        alert('Recurring jobs feature not loaded. Please check if advanced-scheduling.js is included.');
+        return;
+    }
+    
+    const container = document.createElement('div');
+    container.id = 'recurringJobModalContainer';
+    container.innerHTML = renderRecurringJobModal();
+    document.body.appendChild(container);
 }
 
 console.log('✅ Schedule module loaded (Professional Table View)');
