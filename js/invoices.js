@@ -7,9 +7,9 @@ if (typeof invoiceFilter === 'undefined') var invoiceFilter = 'unpaid';
 if (typeof invoiceSearch === 'undefined') var invoiceSearch = '';
 if (typeof selectedInvoices === 'undefined') var selectedInvoices = [];
 
-// View state
-let invoiceViewMode = 'table'; // 'table' or 'detail'
-let selectedInvoiceForDetail = null;
+// View state - must be var for global access
+var invoiceViewMode = 'table';
+var selectedInvoiceForDetail = null;
 
 function openInvoiceDetail(invoice) {
     selectedInvoiceForDetail = invoice;
