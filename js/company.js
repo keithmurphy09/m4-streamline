@@ -480,4 +480,84 @@ async function saveReminderSettings() {
     }
 }
 
+// Team Management (for business accounts)
+function renderTeam() {
+    if (getAccountType() !== 'business') {
+        return `
+            <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow">
+                <h2 class="text-2xl font-bold mb-4 dark:text-white">Team Management</h2>
+                <p class="text-gray-600 dark:text-gray-300">Team management is only available for Business accounts.</p>
+                <button onclick="switchTab('company')" class="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+                    Back to Company Settings
+                </button>
+            </div>
+        `;
+    }
+    
+    return `
+        <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow">
+            <h2 class="text-2xl font-bold mb-4 dark:text-white">Team Management</h2>
+            <p class="text-gray-600 dark:text-gray-300 mb-6">Manage your team members and their permissions.</p>
+            
+            <div class="space-y-4">
+                ${teamMembers.length === 0 ? `
+                    <p class="text-gray-500 dark:text-gray-400">No team members yet.</p>
+                ` : teamMembers.map(member => `
+                    <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-semibold dark:text-white">${member.name}</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">${member.email || ''}</p>
+                                ${member.occupation ? `<p class="text-sm text-teal-600 dark:text-teal-400">${member.occupation}</p>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            
+            <button onclick="switchTab('company')" class="mt-6 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
+                Back to Company Settings
+            </button>
+        </div>
+    `;
+}
+
+// Admin Panel (for admin users only)
+function renderAdmin() {
+    if (!isAdmin) {
+        return `
+            <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow">
+                <h2 class="text-2xl font-bold mb-4 dark:text-white">Admin Panel</h2>
+                <p class="text-gray-600 dark:text-gray-300">Access denied. Admin privileges required.</p>
+                <button onclick="switchTab('company')" class="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+                    Back to Company Settings
+                </button>
+            </div>
+        `;
+    }
+    
+    return `
+        <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow">
+            <h2 class="text-2xl font-bold mb-4 dark:text-white">Admin Panel</h2>
+            <p class="text-gray-600 dark:text-gray-300 mb-6">System administration and settings.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <h3 class="font-semibold mb-2 dark:text-white">System Status</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">All systems operational</p>
+                </div>
+                
+                <div class="p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <h3 class="font-semibold mb-2 dark:text-white">Database</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Connected to Supabase</p>
+                </div>
+            </div>
+            
+            <button onclick="switchTab('company')" class="mt-6 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
+                Back to Company Settings
+            </button>
+        </div>
+    `;
+}
+
 console.log('✅ Company settings module loaded (COMPLETE)');
