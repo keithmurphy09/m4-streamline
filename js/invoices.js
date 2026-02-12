@@ -3,19 +3,15 @@
 // ═══════════════════════════════════════════════════════════════════
 
 // View state
-let invoiceViewMode = 'table'; // 'table' or 'detail'
+let invoiceViewMode = 'table';
 let selectedInvoiceForDetail = null;
-let invoiceFilter = 'unpaid';
-let invoiceSearch = '';
-let selectedInvoices = [];
 
-// Pagination
-if (typeof currentPage === 'undefined') {
-    var currentPage = { invoices: 1, quotes: 1, clients: 1, jobs: 1 };
-}
-if (typeof itemsPerPage === 'undefined') {
-    var itemsPerPage = 20;
-}
+// Initialize if not defined globally
+if (typeof invoiceFilter === 'undefined') invoiceFilter = 'unpaid';
+if (typeof invoiceSearch === 'undefined') invoiceSearch = '';
+if (typeof selectedInvoices === 'undefined') selectedInvoices = [];
+if (typeof currentPage === 'undefined') currentPage = { invoices: 1, quotes: 1, clients: 1, jobs: 1 };
+if (typeof itemsPerPage === 'undefined') itemsPerPage = 20;
 
 // Helper functions
 function formatCurrency(amount) {
