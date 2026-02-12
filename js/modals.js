@@ -202,6 +202,11 @@ function renderModal() {
         
         title = isEditing ? 'Edit Quote' : 'Create Quote';
         form = `
+            ${!isEditing && typeof renderTemplateSelector === 'function' ? `
+                <div class="mb-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                    ${renderTemplateSelector('quotes')}
+                </div>
+            ` : ''}
             <select id="client_id" onchange="autoFillJobAddress()" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" required>
                 <option value="">Select Client *</option>
                 ${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}
@@ -260,6 +265,11 @@ function renderModal() {
         
         title = (editingItem && editingItem.id) ? 'Edit Invoice' : 'Create Invoice';
         form = `
+            ${!(editingItem && editingItem.id) && typeof renderTemplateSelector === 'function' ? `
+                <div class="mb-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                    ${renderTemplateSelector('invoices')}
+                </div>
+            ` : ''}
             ${!(editingItem && editingItem.id) ? `
             <select id="client_id" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" required>
                 <option value="">Select Client *</option>
