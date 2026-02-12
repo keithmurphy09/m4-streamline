@@ -3,142 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>M4 Streamline</title>
+    <title>M4 Streamline - Business Management</title>
     
-    <!-- External Libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <script src="https://js.stripe.com/v3/"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     
-    <!-- Google Maps Places API -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCksBsfkY_17GI_uvi3suaeGa19LSKkUQA&libraries=places&callback=Function.prototype" async defer></script>
+    <!-- FullCalendar CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
     
-    <!-- Tailwind Dark Mode Config -->
-    <script>
-        tailwind.config = {
-            darkMode: 'class'
-        }
-    </script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
     
-    <!-- ⭐ NEW: Micro-interactions & Mobile Optimization CSS ⭐ -->
+    <!-- Custom Styles -->
     <link rel="stylesheet" href="micro-interactions.css">
     <link rel="stylesheet" href="mobile-optimization.css">
     
-    <!-- Styles -->
     <style>
-        * {
-            transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
-        }
-        .fc-event-title {
-            white-space: pre-line !important;
-            line-height: 1.3 !important;
-        }
-        .fc-daygrid-event {
-            white-space: pre-line !important;
+        [x-cloak] { display: none !important; }
+        
+        .dark {
+            color-scheme: dark;
         }
         
-        /* ═══════════════════════════════════════════════════════════════
-           UNIVERSAL BUTTON GLOW STYLES (Content Area Only)
-           ═══════════════════════════════════════════════════════════════ */
-        
-        /* Only apply to buttons in the main content area, NOT navigation */
-        #app > div > div:not([class*="bg-black"]) button:not(.no-glow),
-        .max-w-7xl button:not(.no-glow) {
-            background-color: white !important;
-            color: #374151 !important;
-            border: 1px solid #e5e7eb !important;
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
         }
         
-        .dark #app > div > div:not([class*="bg-black"]) button:not(.no-glow),
-        .dark .max-w-7xl button:not(.no-glow) {
-            background-color: #374151 !important;
-            color: #e5e7eb !important;
-            border-color: #4b5563 !important;
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
         }
         
-        #app > div > div:not([class*="bg-black"]) button:not(.no-glow):hover,
-        .max-w-7xl button:not(.no-glow):hover {
-            background-color: #f0fdfa !important;
-            border-color: #14b8a6 !important;
+        .dark ::-webkit-scrollbar-track {
+            background: #1f2937;
         }
         
-        .dark #app > div > div:not([class*="bg-black"]) button:not(.no-glow):hover,
-        .dark .max-w-7xl button:not(.no-glow):hover {
-            background-color: rgba(20, 184, 166, 0.3) !important;
-            border-color: #14b8a6 !important;
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
         }
         
-        /* Schedule/Create buttons: Green glow */
-        .max-w-7xl button[onclick*="Schedule"]:hover,
-        .max-w-7xl button[onclick*="openJobFromQuote"]:hover,
-        .max-w-7xl button[onclick*="openModal('job'"]:hover {
-            background-color: #f0fdf4 !important;
-            border-color: #22c55e !important;
-        }
-        
-        .dark .max-w-7xl button[onclick*="Schedule"]:hover,
-        .dark .max-w-7xl button[onclick*="openJobFromQuote"]:hover {
-            background-color: rgba(34, 197, 94, 0.3) !important;
-            border-color: #22c55e !important;
-        }
-        
-        /* Delete buttons: Red glow & red text */
-        .max-w-7xl button[onclick*="delete"],
-        .max-w-7xl button[onclick*="Delete"],
-        .max-w-7xl button[onclick*="bulkDelete"] {
-            color: #dc2626 !important;
-        }
-        
-        .max-w-7xl button[onclick*="delete"]:hover,
-        .max-w-7xl button[onclick*="Delete"]:hover,
-        .max-w-7xl button[onclick*="bulkDelete"]:hover {
-            background-color: #fef2f2 !important;
-            border-color: #ef4444 !important;
-        }
-        
-        .dark .max-w-7xl button[onclick*="delete"]:hover,
-        .dark .max-w-7xl button[onclick*="Delete"]:hover,
-        .dark .max-w-7xl button[onclick*="bulkDelete"]:hover {
-            background-color: rgba(239, 68, 68, 0.2) !important;
-            border-color: #ef4444 !important;
-        }
-        
-        /* Teal glow for header buttons */
-        .no-glow:hover {
-            box-shadow: 0 0 20px rgba(20, 184, 166, 0.8) !important;
-            transition: box-shadow 0.2s ease-in-out !important;
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
         }
     </style>
-    
-    <!-- EmailJS Init -->
-    <script>
-        emailjs.init('cl17j5coPTDN-aVM8');
-    </script>
 </head>
-    <body>
-    <div id="app">
-        <div style="padding: 40px; text-align: center;">
-            <h1 style="font-size: 32px; font-weight: bold; margin-bottom: 20px;">M4 Streamline</h1>
-            <p>Loading modules...</p>
-        </div>
-    </div>
+<body class="bg-gray-50 dark:bg-gray-900">
+    <div id="app"></div>
     
-    <!-- Footer -->
-    <footer style="background: #000; color: #14b8a6; text-align: center; padding: 20px; margin-top: 40px; border-top: 2px solid #14b8a6;">
-        <p style="margin: 0 0 10px 0; font-size: 14px;">© 2026 M4 Projects & Designs. All rights reserved.</p>
-        <p style="margin: 0 0 10px 0; font-size: 12px; color: #fff;">M4 Streamline™ - Streamlining Your Business</p>
-        <p style="margin: 0; font-size: 12px;">
-            <a href="/terms-of-service.html" target="_blank" style="color: #14b8a6; text-decoration: none; margin: 0 10px;">Terms of Service</a>
-            <span style="color: #666;">|</span>
-            <a href="/privacy-policy.html" target="_blank" style="color: #14b8a6; text-decoration: none; margin: 0 10px;">Privacy Policy</a>
-        </p>
-    </footer>
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- ⭐ NEW FEATURES: Load these FIRST (before your existing modules) ⭐ -->
+    <!-- FullCalendar -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    
+    <!-- jsPDF for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- Core Application Files -->
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/utils.js"></script>
+    
+    <!-- Main Module Files -->
+    <script src="js/dashboard.js"></script>
+    <script src="js/clients.js"></script>
+    <script src="js/quotes.js"></script>
+    <script src="js/invoices.js"></script>
+    <script src="js/schedule.js"></script>
+    <script src="js/expenses.js"></script>
+    <script src="js/company.js"></script>
+    <script src="js/analytics.js"></script>
+    <script src="js/cashflow.js"></script>
+    <script src="js/reports.js"></script>
+    
+    <!-- CRUD & Modal Operations -->
+    <script src="js/crud.js"></script>
+    <script src="js/modals.js"></script>
+    
+    <!-- PDF Generator -->
+    <script src="js/pdf-generator.js"></script>
+    
+    <!-- Advanced Features (Root Level) -->
     <script src="confetti.js"></script>
     <script src="smart-filters.js"></script>
     <script src="shimmer-loading.js"></script>
@@ -147,36 +94,18 @@
     <script src="email-automation.js"></script>
     <script src="advanced-scheduling.js"></script>
     <script src="client-portal.js"></script>
+    <script src="global-handlers.js"></script>
     
-    <!-- Load Existing Modules in Order -->
-    <script src="js/config.js"></script>
-    <script src="js/utils.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/modals.js"></script>
-    <script src="js/crud.js"></script>
-    <script src="js/pdf-generator.js"></script>
-    <script src="js/dashboard.js"></script>
-    <script src="js/clients.js"></script>
-    <script src="js/quotes.js"></script>
-    <script src="js/invoices.js"></script>
-    <script src="js/recurring-invoices.js"></script>
-    <script src="js/expenses.js"></script>
-    <script src="js/schedule.js"></script>
-    <script src="js/analytics.js"></script>
-    <script src="js/cashflow.js"></script>
-    <script src="js/budget.js"></script>
-    <script src="js/reports.js"></script>
-    <script src="js/company.js"></script>
-    <script src="js/team.js"></script>
-    <script src="js/admin.js"></script>
-    <script src="js/quotes.js"></script>
+    <!-- App Controller (MUST BE LAST) -->
     <script src="js/app.js"></script>
     
-    <!-- Initialize on Load -->
+    <!-- Initialize -->
     <script>
+        // Check authentication on page load
         window.addEventListener('load', () => {
-            applyDarkMode();
-            checkAuth();
+            if (typeof checkAuth === 'function') {
+                checkAuth();
+            }
         });
     </script>
 </body>
