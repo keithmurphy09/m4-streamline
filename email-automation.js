@@ -196,6 +196,45 @@ Thank you for your business!
 
 Best regards,
 {company_name}`
+    },
+    
+    portal_invite: {
+        subject: 'Welcome to Your Client Portal - {company_name}',
+        body: `Hi {client_name},
+
+You've been invited to access your exclusive client portal!
+
+Access your portal: {portal_url}
+
+In your portal, you can:
+✓ View and accept quotes instantly
+✓ Pay invoices online securely  
+✓ Track your job progress in real-time
+✓ Request new quotes
+✓ View your complete project history
+
+This link is valid for 30 days.
+
+If you have any questions, feel free to reach out!
+
+Best regards,
+{company_name}
+{company_phone}`
+    },
+    
+    invoice_paid: {
+        subject: 'Payment Confirmed - Invoice {invoice_number}',
+        body: `Hi {client_name},
+
+Great news! We've received your payment for invoice {invoice_number}.
+
+Amount Paid: ${'{invoice_total}'}
+Payment Date: {payment_date}
+
+Thank you for your prompt payment!
+
+Best regards,
+{company_name}`
     }
 };
 
@@ -464,7 +503,22 @@ async function processEmailAutomations() {
 
 // Trigger specific emails on actions
 async function triggerEmail(action, item) {
+    // Check if email automation is enabled
+    if (typeof emailAutomationSettings !== 'undefined' && !emailAutomationSettings.enabled) {
+        console.log('Email automation disabled');
+        return;
+    }
+    
+    // Check if this specific automation is enabled
+    if (typeof emailAutomationSettings !== 'undefined' && 
+        emailAutomationSettings.automations && 
+        emailAutomationSettings.automations[action] === false) {
+        console.log(`Email automation disabled for: ${action}`);
+        return;
+    }
+    
     switch(action) {
+        case 'quote_sent':
         case 'quote_created':
             if (automationRules.quote_sent.enabled) {
                 await sendAutomatedEmail('quote_sent', item);
@@ -475,6 +529,7 @@ async function triggerEmail(action, item) {
             await sendAutomatedEmail('quote_accepted', item);
             break;
             
+        case 'invoice_sent':
         case 'invoice_created':
             if (automationRules.invoice_sent.enabled) {
                 await sendAutomatedEmail('invoice_sent', item);
@@ -482,11 +537,16 @@ async function triggerEmail(action, item) {
             break;
             
         case 'invoice_paid':
+        case 'payment_received':
             await sendAutomatedEmail('payment_received', item);
             break;
             
         case 'job_scheduled':
             await sendAutomatedEmail('job_scheduled', item);
+            break;
+            
+        case 'portal_invite':
+            await sendAutomatedEmail('portal_invite', item);
             break;
             
         case 'job_completed':
