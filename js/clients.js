@@ -35,6 +35,7 @@ function renderClients() {
                             </div>
                             <div class="flex sm:flex-col gap-2">
                                 <button onclick='openQuoteForClient(${JSON.stringify(c).replace(/"/g, "&quot;")})' class="flex-1 sm:w-24 px-3 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-green-900/30 border border-gray-200 dark:border-gray-600 hover:border-green-500 rounded text-sm whitespace-nowrap transition-colors">New Quote</button>
+                                ${c.email ? `<button onclick="sendClientPortalInvite('${c.id}')" class="flex-1 sm:w-24 px-3 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded text-sm whitespace-nowrap transition-colors" title="Send Portal Access">📧 Portal</button>` : ''}
                                 <button onclick='openModal("client", ${JSON.stringify(c).replace(/"/g, "&quot;")})' class="flex-1 sm:w-24 px-3 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 rounded text-sm transition-colors">Edit</button>
                                 <button onclick="deleteClient('${c.id}')" class="flex-1 sm:w-24 px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button>
                             </div>
