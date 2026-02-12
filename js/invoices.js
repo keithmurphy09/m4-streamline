@@ -542,112 +542,69 @@ function renderInvoiceDetail() {
 
 // Mark invoice as paid
 async function markPaid(invoiceId) {
+    const paidDate = prompt('Enter paid date (YYYY-MM-DD) or leave blank for today:');
+    const finalDate = paidDate || new Date().toISOString().split('T')[0];
+    
+    if (!confirm(`Mark invoice as paid on ${finalDate}?`)) return;
+    
     try {
-        const invoice = invoices.find(i => i.id === invoiceId);
-        if (!invoice) {
-            showNotification('Invoice not found', 'error');
-            return;
-        }
-
-        // Create temporary date input
-        const input = document.createElement('input');
-        input.type = 'date';
-        input.value = new Date().toISOString().split('T')[0];
-        input.style.position = 'fixed';
-        input.style.top = '50%';
-        input.style.left = '50%';
-        input.style.transform = 'translate(-50%, -50%)';
-        input.style.zIndex = '9999';
-        input.style.padding = '12px';
-        input.style.fontSize = '16px';
-        input.style.border = '2px solid #14b8a6';
-        input.style.borderRadius = '8px';
-        
-        // Add backdrop
-        const backdrop = document.createElement('div');
-        backdrop.style.position = 'fixed';
-        backdrop.style.top = '0';
-        backdrop.style.left = '0';
-        backdrop.style.right = '0';
-        backdrop.style.bottom = '0';
-        backdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-        backdrop.style.zIndex = '9998';
-        
-        document.body.appendChild(backdrop);
-        document.body.appendChild(input);
-        input.focus();
-        input.showPicker();
-        
-        // Handle date selection
-        const handleChange = async () => {
-            const paidDate = input.value;
-            
-            if (paidDate) {
-                // Update in database
-                const { error } = await supabaseClient
-                    .from('invoices')
-                    .update({ 
-                        status: 'paid',
-                        paid_date: paidDate
-                    })
-                    .eq('id', invoiceId);
-
-                if (error) throw error;
-
-                // Update local state
-                invoice.status = 'paid';
-                invoice.paid_date = paidDate;
-
-                showNotification('Invoice marked as paid!', 'success');
-                renderApp();
-            }
-            
-            // Cleanup
-            backdrop.remove();
-            input.remove();
-        };
-        
-        input.addEventListener('change', handleChange);
-        backdrop.addEventListener('click', () => {
-            backdrop.remove();
-            input.remove();
-        });
-        
-    } catch (error) {
-        console.error('Error marking as paid:', error);
-        showNotification('Failed to mark invoice as paid', 'error');
-    }
-}
-
-// Mark invoice as unpaid
-async function markUnpaid(invoiceId) {
-    try {
-        const invoice = invoices.find(i => i.id === invoiceId);
-        if (!invoice) {
-            showNotification('Invoice not found', 'error');
-            return;
-        }
-
-        // Update in database
         const { error } = await supabaseClient
             .from('invoices')
             .update({ 
-                status: 'unpaid',
-                paid_date: null
+                status: 'paid', 
+                paid_date: finalDate 
             })
             .eq('id', invoiceId);
-
+            
         if (error) throw error;
+        
+        // Update local data
+        const invoice = invoices.find(i => i.id === invoiceId);
+        if (invoice) {
+            invoice.status = 'paid';
+            invoice.paid_date = finalDate;
+        }
+        
+        // Trigger confetti
+        if (typeof triggerConfetti === 'function') {
+            triggerConfetti();
+        }
+        
+        // Trigger email
+        if (typeof triggerEmail === 'function') {
+            await triggerEmail('invoice_paid', invoice);
+        }
+        
+        showNotification('Invoice marked as paid!', 'success');
+        renderApp();
+    } catch (error) {
+        console.error(error);
+        showNotification('Error marking as paid', 'error');
+    }
+}
 
-        // Update local state
-        invoice.status = 'unpaid';
-        invoice.paid_date = null;
-
+async function markUnpaid(invoiceId) {
+    if (!confirm('Mark invoice as unpaid?')) return;
+    
+    try {
+        const { error } = await supabaseClient
+            .from('invoices')
+            .update({ status: 'unpaid', paid_date: null })
+            .eq('id', invoiceId);
+            
+        if (error) throw error;
+        
+        const invoice = invoices.find(i => i.id === invoiceId);
+        if (invoice) {
+            invoice.status = 'unpaid';
+            invoice.paid_date = null;
+        }
+        
         showNotification('Invoice marked as unpaid', 'success');
         renderApp();
     } catch (error) {
-        console.error('Error marking as unpaid:', error);
-        showNotification('Failed to mark invoice as unpaid', 'error');
+        console.error(error);
+        showNotification('Error updating invoice', 'error');
     }
 }
 
