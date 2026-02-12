@@ -3,27 +3,8 @@
 // ═══════════════════════════════════════════════════════════════════
 
 // View state
-let invoiceViewMode = 'table';
+let invoiceViewMode = 'table'; // 'table' or 'detail'
 let selectedInvoiceForDetail = null;
-
-// Initialize if not defined globally
-if (typeof invoiceFilter === 'undefined') invoiceFilter = 'unpaid';
-if (typeof invoiceSearch === 'undefined') invoiceSearch = '';
-if (typeof selectedInvoices === 'undefined') selectedInvoices = [];
-if (typeof currentPage === 'undefined') currentPage = { invoices: 1, quotes: 1, clients: 1, jobs: 1 };
-if (typeof itemsPerPage === 'undefined') itemsPerPage = 20;
-
-// Helper functions
-function formatCurrency(amount) {
-    return '$' + parseFloat(amount || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-}
-
-function formatDate(dateString) {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    const options = { month: 'short', day: 'numeric', year: 'numeric' };
-    return date.toLocaleDateString('en-US', options);
-}
 
 function openInvoiceDetail(invoice) {
     selectedInvoiceForDetail = invoice;
@@ -631,87 +612,6 @@ function toggleInvoiceCommunications(invoiceId) {
     const panel = document.getElementById(`invoice-communications-${invoiceId}`);
     if (panel) {
         panel.classList.toggle('hidden');
-    }
-}
-
-// Utility functions (if not defined elsewhere)
-function getPaginationHTML(type, total, current) {
-    const totalPages = Math.ceil(total / itemsPerPage);
-    if (totalPages <= 1) return '';
-    
-    let html = '<div class="flex items-center justify-between">';
-    html += `<p class="text-sm text-gray-700 dark:text-gray-300">Showing ${((current - 1) * itemsPerPage) + 1} to ${Math.min(current * itemsPerPage, total)} of ${total}</p>`;
-    html += '<div class="flex gap-2">';
-    
-    if (current > 1) {
-        html += `<button onclick="currentPage.${type}=${current - 1}; renderApp();" class="px-3 py-1 border rounded hover:bg-gray-50 dark:hover:bg-gray-700">Previous</button>`;
-    }
-    
-    if (current < totalPages) {
-        html += `<button onclick="currentPage.${type}=${current + 1}; renderApp();" class="px-3 py-1 border rounded hover:bg-gray-50 dark:hover:bg-gray-700">Next</button>`;
-    }
-    
-    html += '</div></div>';
-    return html;
-}
-
-function toggleSelection(type, id) {
-    const array = type === 'invoices' ? selectedInvoices : [];
-    const index = array.indexOf(id);
-    if (index > -1) {
-        array.splice(index, 1);
-    } else {
-        array.push(id);
-    }
-    renderApp();
-}
-
-function toggleSelectAll(type) {
-    if (type === 'invoices') {
-        selectedInvoices = selectedInvoices.length === invoices.length ? [] : invoices.map(i => i.id);
-    }
-    renderApp();
-}
-
-function bulkDelete(type) {
-    if (!confirm(`Delete ${selectedInvoices.length} invoices?`)) return;
-    selectedInvoices.forEach(id => deleteInvoice(id));
-    selectedInvoices = [];
-}
-
-function exportToCSV(type) {
-    showNotification('CSV export coming soon', 'info');
-}
-
-function sendInvoiceEmail(invoice) {
-    if (typeof triggerEmail === 'function') {
-        triggerEmail('invoice_sent', invoice);
-    } else {
-        showNotification('Email sent!', 'success');
-    }
-}
-
-function openNoteModal(type, id, clientId) {
-    if (typeof window.openNoteModal === 'function') {
-        window.openNoteModal(type, id, clientId);
-    } else {
-        const note = prompt('Enter note:');
-        if (note) showNotification('Note saved', 'success');
-    }
-}
-
-async function deleteInvoice(id) {
-    if (!confirm('Delete this invoice?')) return;
-    try {
-        const { error } = await supabaseClient.from('invoices').delete().eq('id', id);
-        if (error) throw error;
-        const index = invoices.findIndex(i => i.id === id);
-        if (index > -1) invoices.splice(index, 1);
-        showNotification('Invoice deleted', 'success');
-        renderApp();
-    } catch (error) {
-        console.error(error);
-        showNotification('Error deleting invoice', 'error');
     }
 }
 
