@@ -591,267 +591,148 @@ async function removeCompanyLogo() {
     }
 }
 
-// Team Management Page
+// ============= TEAM MANAGEMENT =============
 function renderTeam() {
     if (getAccountType() !== 'business') {
-        return `
-            <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow">
-                <h2 class="text-2xl font-bold mb-4 dark:text-white">Team Management</h2>
-                <p class="text-gray-600 dark:text-gray-300 mb-4">Team management is only available for Business accounts.</p>
-                <button onclick="switchTab('company')" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
-                    Back to Company Settings
-                </button>
-            </div>
-        `;
+        return `<div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow">
+            <h2 class="text-2xl font-bold mb-4 dark:text-white">Team Management</h2>
+            <p class="text-gray-600 dark:text-gray-300">Only available for Business accounts</p>
+            <button onclick="switchTab('company')" class="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg">Back</button>
+        </div>`;
     }
     
-    return `
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Team Management</h1>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your team members</p>
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="editingItem = null; openModal('team_member')" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
-                        + Add Team Member
-                    </button>
-                    <button onclick="switchTab('company')" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
-                        Back
-                    </button>
-                </div>
+    return `<div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold dark:text-white">Team Management</h1>
+            <div class="flex gap-2">
+                <button onclick="editingItem = null; openModal('team_member')" class="px-4 py-2 bg-teal-600 text-white rounded-lg">+ Add Team Member</button>
+                <button onclick="switchTab('company')" class="px-4 py-2 border rounded-lg">Back</button>
             </div>
-            
-            ${teamMembers.length === 0 ? `
-                <div class="text-center py-12 text-gray-500 dark:text-gray-400">
-                    No team members yet. Click "Add Team Member" to get started.
-                </div>
-            ` : `
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead class="bg-gray-100 dark:bg-gray-900">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Name</th>
-                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Occupation</th>
-                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Email</th>
-                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Phone</th>
-                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                            ${teamMembers.map(member => `
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
-                                    <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">${member.name}</td>
-                                    <td class="px-6 py-4 text-sm text-teal-600 dark:text-teal-400">${member.occupation || '-'}</td>
-                                    <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">${member.email || '-'}</td>
-                                    <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">${member.phone || '-'}</td>
-                                    <td class="px-6 py-4 text-sm">
-                                        <button onclick="editTeamMember('${member.id}')" class="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 mr-2">
-                                            Edit
-                                        </button>
-                                        <button onclick="deleteTeamMember('${member.id}')" class="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700">
-                                            Delete
-                                        </button>
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `}
         </div>
-    `;
+        ${teamMembers.length === 0 ? '<p class="text-gray-500">No team members</p>' : `
+            <table class="w-full">
+                <thead class="bg-gray-100 dark:bg-gray-900">
+                    <tr>
+                        <th class="px-6 py-3 text-left">Name</th>
+                        <th class="px-6 py-3 text-left">Occupation</th>
+                        <th class="px-6 py-3 text-left">Email</th>
+                        <th class="px-6 py-3 text-left">Phone</th>
+                        <th class="px-6 py-3 text-left">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${teamMembers.map(m => `<tr class="border-t dark:border-gray-700">
+                        <td class="px-6 py-4">${m.name}</td>
+                        <td class="px-6 py-4 text-teal-600">${m.occupation || '-'}</td>
+                        <td class="px-6 py-4">${m.email || '-'}</td>
+                        <td class="px-6 py-4">${m.phone || '-'}</td>
+                        <td class="px-6 py-4">
+                            <button onclick="window.editingItem = teamMembers.find(x => x.id === '${m.id}'); openModal('team_member')" class="px-3 py-1 bg-blue-600 text-white rounded text-sm mr-2">Edit</button>
+                            <button onclick="deleteTeamMember('${m.id}')" class="px-3 py-1 bg-red-600 text-white rounded text-sm">Delete</button>
+                        </td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>
+        `}
+    </div>`;
 }
 
-// Admin Panel Page
+// ============= ADMIN PANEL =============
 async function renderAdmin() {
     if (!isAdmin) {
-        return `
-            <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow">
-                <h2 class="text-2xl font-bold mb-4 dark:text-white">Admin Panel</h2>
-                <p class="text-gray-600 dark:text-gray-300 mb-4">Access denied. Admin privileges required.</p>
-                <button onclick="switchTab('company')" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
-                    Back to Company Settings
-                </button>
-            </div>
-        `;
+        return `<div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow">
+            <h2 class="text-2xl font-bold mb-4 dark:text-white">Admin Panel</h2>
+            <p class="text-gray-600 dark:text-gray-300">Admin access required</p>
+            <button onclick="switchTab('company')" class="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg">Back</button>
+        </div>`;
     }
     
-    // Fetch all users from subscriptions table  
-    let allUsers = [];
-    let activeUsers = [];
-    let trialUsers = [];
-    
+    let users = [];
     try {
-        // Get auth users list to get emails
-        const { data: authData, error: authError } = await supabaseClient.auth.admin.listUsers();
-        
-        if (!authError && authData?.users) {
-            // Create a map of user_id to email
-            const emailMap = {};
-            authData.users.forEach(u => {
-                emailMap[u.id] = u.email;
-            });
-            
-            // Get subscriptions
-            const { data: subsData, error: subsError } = await supabaseClient
-                .from('subscriptions')
-                .select('*')
-                .order('created_at', { ascending: false });
-            
-            if (!subsError && subsData) {
-                // Add emails to subscription data
-                allUsers = subsData.map(sub => ({
-                    ...sub,
-                    email: emailMap[sub.user_id] || sub.user_id
-                }));
-                
-                activeUsers = allUsers.filter(u => u.subscription_status === 'active');
-                trialUsers = allUsers.filter(u => u.subscription_status === 'trial');
-            }
-        }
-    } catch (error) {
-        console.error('Error fetching users:', error);
+        const { data } = await supabaseClient.from('subscriptions').select('*').order('created_at', { ascending: false });
+        users = data || [];
+    } catch (e) {
+        console.error('Error:', e);
     }
     
-    return `
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Admin Panel</h1>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">System administration and user management</p>
-                </div>
-                <button onclick="switchTab('company')" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
-                    Back
-                </button>
+    const active = users.filter(u => u.subscription_status === 'active');
+    const trial = users.filter(u => u.subscription_status === 'trial');
+    
+    return `<div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold dark:text-white">Admin Panel</h1>
+            <button onclick="switchTab('company')" class="px-4 py-2 border rounded-lg">Back</button>
+        </div>
+        
+        <div class="grid grid-cols-4 gap-4 mb-6">
+            <div class="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200">
+                <div class="text-xs text-blue-600">Total Users</div>
+                <div class="text-2xl font-bold text-blue-900 dark:text-blue-300">${users.length}</div>
             </div>
-            
-            <!-- Stats Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div class="p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                    <h3 class="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1">Total Users</h3>
-                    <p class="text-2xl font-bold text-blue-900 dark:text-blue-300">${allUsers.length}</p>
-                </div>
-                
-                <div class="p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border border-green-200 dark:border-green-800 rounded-lg">
-                    <h3 class="text-xs font-medium text-green-600 dark:text-green-400 mb-1">Active</h3>
-                    <p class="text-2xl font-bold text-green-900 dark:text-green-300">${activeUsers.length}</p>
-                </div>
-                
-                <div class="p-4 bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                    <h3 class="text-xs font-medium text-yellow-600 dark:text-yellow-400 mb-1">Trial</h3>
-                    <p class="text-2xl font-bold text-yellow-900 dark:text-yellow-300">${trialUsers.length}</p>
-                </div>
-                
-                <div class="p-4 bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900/20 dark:to-teal-800/20 border border-teal-200 dark:border-teal-800 rounded-lg">
-                    <h3 class="text-xs font-medium text-teal-600 dark:text-teal-400 mb-1">System</h3>
-                    <p class="text-sm font-semibold text-teal-900 dark:text-teal-300">✓ Online</p>
-                </div>
+            <div class="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200">
+                <div class="text-xs text-green-600">Active</div>
+                <div class="text-2xl font-bold text-green-900 dark:text-green-300">${active.length}</div>
             </div>
-            
-            <!-- All Users List -->
-            <div>
-                <h2 class="text-lg font-bold mb-4 dark:text-white">All Users</h2>
-                ${allUsers.length === 0 ? `
-                    <p class="text-gray-500 dark:text-gray-400">No users found</p>
-                ` : `
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead class="bg-gray-100 dark:bg-gray-900">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Email</th>
-                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Account Type</th>
-                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Status</th>
-                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Created</th>
-                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                ${allUsers.map(user => `
-                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
-                                        <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">${user.email}</td>
-                                        <td class="px-6 py-4 text-sm">
-                                            <span class="px-2 py-1 rounded text-xs ${user.account_type === 'business' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'}">
-                                                ${user.account_type === 'business' ? 'Business' : 'Sole Trader'}
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 text-sm">
-                                            <span class="px-2 py-1 rounded text-xs ${user.subscription_status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'}">
-                                                ${user.subscription_status || 'trial'}
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                                            ${user.created_at ? new Date(user.created_at).toLocaleDateString() : '-'}
-                                        </td>
-                                        <td class="px-6 py-4 text-sm">
-                                            <button onclick="toggleUserStatus('${user.id}', '${user.subscription_status}')" class="px-3 py-1 text-xs bg-teal-600 text-white rounded hover:bg-teal-700">
-                                                ${user.subscription_status === 'active' ? 'Set Trial' : 'Activate'}
-                                            </button>
-                                        </td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                `}
+            <div class="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200">
+                <div class="text-xs text-yellow-600">Trial</div>
+                <div class="text-2xl font-bold text-yellow-900 dark:text-yellow-300">${trial.length}</div>
+            </div>
+            <div class="p-4 bg-teal-50 dark:bg-teal-900/20 rounded-lg border border-teal-200">
+                <div class="text-xs text-teal-600">System</div>
+                <div class="text-sm font-bold text-teal-900 dark:text-teal-300">✓ Online</div>
             </div>
         </div>
-    `;
-}
-
-// Edit team member - simple helper
-function editTeamMember(memberId) {
-    editingItem = teamMembers.find(m => m.id === memberId);
-    openModal('team_member');
+        
+        <h2 class="text-lg font-bold mb-4 dark:text-white">All Users</h2>
+        ${users.length === 0 ? '<p class="text-gray-500">No users found</p>' : `
+            <table class="w-full">
+                <thead class="bg-gray-100 dark:bg-gray-900">
+                    <tr>
+                        <th class="px-6 py-3 text-left">Email</th>
+                        <th class="px-6 py-3 text-left">Account Type</th>
+                        <th class="px-6 py-3 text-left">Status</th>
+                        <th class="px-6 py-3 text-left">Created</th>
+                        <th class="px-6 py-3 text-left">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${users.map(u => `<tr class="border-t dark:border-gray-700">
+                        <td class="px-6 py-4 font-medium">${u.email || 'No email'}</td>
+                        <td class="px-6 py-4"><span class="px-2 py-1 rounded text-xs ${u.account_type === 'business' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}">${u.account_type === 'business' ? 'Business' : 'Sole Trader'}</span></td>
+                        <td class="px-6 py-4"><span class="px-2 py-1 rounded text-xs ${u.subscription_status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${u.subscription_status || 'trial'}</span></td>
+                        <td class="px-6 py-4">${u.created_at ? new Date(u.created_at).toLocaleDateString() : '-'}</td>
+                        <td class="px-6 py-4">
+                            <button onclick="toggleUserStatus('${u.id}', '${u.subscription_status}')" class="px-3 py-1 bg-teal-600 text-white rounded text-xs">${u.subscription_status === 'active' ? 'Set Trial' : 'Activate'}</button>
+                        </td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>
+        `}
+    </div>`;
 }
 
 // Delete team member
-async function deleteTeamMember(memberId) {
-    if (!confirm('Are you sure you want to delete this team member?')) {
-        return;
-    }
-    
+async function deleteTeamMember(id) {
+    if (!confirm('Delete this team member?')) return;
     try {
-        const { error } = await supabaseClient
-            .from('team_members')
-            .delete()
-            .eq('id', memberId);
-        
-        if (error) throw error;
-        
-        // Update local state
-        teamMembers = teamMembers.filter(m => m.id !== memberId);
-        
-        showNotification('Team member deleted successfully', 'success');
+        await supabaseClient.from('team_members').delete().eq('id', id);
+        teamMembers = teamMembers.filter(m => m.id !== id);
+        showNotification('Team member deleted', 'success');
         renderApp();
-    } catch (error) {
-        console.error('Error deleting team member:', error);
-        showNotification('Failed to delete team member', 'error');
+    } catch (e) {
+        showNotification('Failed to delete', 'error');
     }
 }
 
-// Toggle user subscription status (admin only)
-async function toggleUserStatus(userId, currentStatus) {
-    if (!isAdmin) {
-        showNotification('Admin access required', 'error');
-        return;
-    }
-    
+// Toggle user status
+async function toggleUserStatus(id, currentStatus) {
     const newStatus = currentStatus === 'active' ? 'trial' : 'active';
-    
     try {
-        const { error } = await supabaseClient
-            .from('subscriptions')
-            .update({ subscription_status: newStatus })
-            .eq('id', userId);
-        
-        if (error) throw error;
-        
-        showNotification(`User status updated to ${newStatus}`, 'success');
+        await supabaseClient.from('subscriptions').update({ subscription_status: newStatus }).eq('id', id);
+        showNotification(`Status updated to ${newStatus}`, 'success');
         renderApp();
-    } catch (error) {
-        console.error('Error updating user status:', error);
-        showNotification('Failed to update user status', 'error');
+    } catch (e) {
+        showNotification('Failed to update', 'error');
     }
 }
 
