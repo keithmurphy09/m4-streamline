@@ -42,6 +42,34 @@ function renderCompany() {
                         <textarea id="settings_address" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" rows="2">${settings.address || ''}</textarea>
                     </div>
                     
+                    <h3 class="text-lg font-bold dark:text-teal-400 mt-6 mb-4">🎨 Company Logo</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">Upload your company logo to appear on quotes and invoices. Recommended size: 500x500px or larger.</p>
+                    <p class="text-xs text-teal-600 dark:text-teal-400 mb-4">💡 If no logo is uploaded, the M4 Streamline logo will be used as default.</p>
+                    
+                    <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6">
+                        <div class="mb-4">
+                            <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                ${settings.logo_url ? 'Your Logo:' : 'Current Logo (Default):'}
+                            </p>
+                            <img src="${settings.logo_url || 'final_logo.png'}" alt="Company Logo" class="h-32 w-auto object-contain border border-gray-200 dark:border-gray-700 rounded p-2 bg-white dark:bg-gray-800">
+                            ${!settings.logo_url ? '<p class="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">M4 Streamline Logo (Default)</p>' : ''}
+                        </div>
+                        
+                        <div class="flex gap-2">
+                            <label class="flex-1 cursor-pointer">
+                                <input type="file" accept="image/*" onchange="uploadCompanyLogo(this)" class="hidden" id="logo-upload-input">
+                                <div class="w-full px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-center font-medium transition-colors">
+                                    ${settings.logo_url ? 'Change Logo' : 'Upload Custom Logo'}
+                                </div>
+                            </label>
+                            ${settings.logo_url ? `
+                                <button onclick="removeCompanyLogo()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors">
+                                    Remove
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
                     <h3 class="text-lg font-bold dark:text-teal-400 mt-6 mb-4">Bank Details (for invoices)</h3>
                     
                     <div>
@@ -202,45 +230,6 @@ function renderCompany() {
                     
                     <button onclick="saveSMSSettings()" class="w-full bg-black text-white px-4 py-3 rounded-lg border border-teal-400 hover:bg-gray-800">
                         Save SMS Settings
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Automated Reminders -->
-            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow max-w-2xl mb-6">
-                <div class="mb-4">
-                    <h3 class="text-lg font-bold dark:text-teal-400 mb-2">🔔 Automated Reminders</h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">Automatically send reminders to clients via SMS or email</p>
-                </div>
-                
-                <div class="space-y-6">
-                    <!-- Payment Reminders -->
-                    <div class="border-l-4 border-orange-400 pl-4 py-2">
-                        <div class="flex items-center gap-3 mb-3">
-                            <input type="checkbox" id="enable_payment_reminders" ${settings.enable_payment_reminders ? 'checked' : ''} class="w-5 h-5 text-teal-600 rounded">
-                            <label for="enable_payment_reminders" class="font-semibold dark:text-white">Enable Payment Reminders</label>
-                        </div>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Automatically email clients when invoices become overdue</p>
-                        
-                        <div class="flex items-center gap-3">
-                            <label class="text-sm dark:text-gray-300">Send reminder</label>
-                            <input type="number" id="payment_reminder_days" value="${settings.payment_reminder_days || 5}" min="1" max="90" class="w-20 px-3 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 text-center">
-                            <label class="text-sm dark:text-gray-300">days after invoice due date</label>
-                        </div>
-                    </div>
-                    
-                    <!-- Job Reminders -->
-                    <div class="border-l-4 border-blue-400 pl-4 py-2">
-                        <div class="flex items-center gap-3 mb-3">
-                            <input type="checkbox" id="enable_job_reminders" ${settings.enable_job_reminders ? 'checked' : ''} class="w-5 h-5 text-teal-600 rounded">
-                            <label for="enable_job_reminders" class="font-semibold dark:text-white">Enable Job Reminders</label>
-                        </div>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Automatically send SMS (or email if no phone) 2 days before scheduled jobs</p>
-                        <p class="text-xs text-gray-500 dark:text-gray-500 italic">💡 Reminder will include final payment amount if applicable</p>
-                    </div>
-                    
-                    <button onclick="saveReminderSettings()" class="bg-teal-600 text-white px-6 py-2 rounded hover:bg-teal-700 w-full">
-                        Save Reminder Settings
                     </button>
                 </div>
             </div>
@@ -437,99 +426,233 @@ async function saveSMSSettings() {
     }
 }
 
-async function saveReminderSettings() {
-    const enable_payment_reminders = document.getElementById('enable_payment_reminders').checked;
-    const payment_reminder_days = parseInt(document.getElementById('payment_reminder_days').value) || 5;
-    const enable_job_reminders = document.getElementById('enable_job_reminders').checked;
+async function uploadCompanyLogo(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+        showNotification('Please upload an image file', 'error');
+        return;
+    }
+    
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        showNotification('Image must be less than 5MB', 'error');
+        return;
+    }
     
     try {
-        if (!companySettings || !companySettings.id) {
-            // Create new company settings if doesn't exist
-            const { data, error } = await supabaseClient
-                .from('company_settings')
-                .insert([{
-                    user_id: currentUser.id,
-                    enable_payment_reminders,
-                    payment_reminder_days,
-                    enable_job_reminders
-                }])
-                .select();
+        showNotification('Uploading logo...', 'info');
+        
+        // Upload to Supabase Storage
+        const fileExt = file.name.split('.').pop();
+        const fileName = `logo-${currentUser.id}-${Date.now()}.${fileExt}`;
+        const filePath = fileName; // Changed: don't include folder in path
+        
+        console.log('📤 Uploading file:', fileName);
+        
+        const { data: uploadData, error: uploadError } = await supabaseClient.storage
+            .from('company-logos')
+            .upload(filePath, file);
+        
+        if (uploadError) {
+            console.error('❌ Storage upload error:', uploadError);
             
-            if (error) throw error;
-            companySettings = data[0];
-        } else {
-            // Update existing
-            const { data, error } = await supabaseClient
+            // Check if bucket exists
+            if (uploadError.message?.includes('Bucket not found') || uploadError.statusCode === 404) {
+                showNotification('❌ Storage bucket "company-logos" not found. Please create it in Supabase Dashboard.', 'error');
+                return;
+            }
+            
+            throw uploadError;
+        }
+        
+        console.log('✅ File uploaded:', uploadData);
+        
+        // Get public URL
+        const { data: urlData } = supabaseClient.storage
+            .from('company-logos')
+            .getPublicUrl(filePath);
+        
+        const logoUrl = urlData.publicUrl;
+        console.log('🔗 Logo URL:', logoUrl);
+        
+        // Update company settings with logo URL
+        if (companySettings?.id) {
+            // Update existing record
+            console.log('📝 Updating existing settings, ID:', companySettings.id);
+            
+            const { data: updateData, error: updateError } = await supabaseClient
                 .from('company_settings')
-                .update({
-                    enable_payment_reminders,
-                    payment_reminder_days,
-                    enable_job_reminders
-                })
+                .update({ logo_url: logoUrl })
                 .eq('id', companySettings.id)
                 .select();
             
-            if (error) throw error;
-            if (data) companySettings = data[0];
+            if (updateError) {
+                console.error('❌ Update error:', updateError);
+                
+                // Check if column exists
+                if (updateError.message?.includes('column') && updateError.message?.includes('logo_url')) {
+                    showNotification('❌ Database error: logo_url column missing. Run: ALTER TABLE company_settings ADD COLUMN logo_url TEXT;', 'error');
+                    return;
+                }
+                
+                throw updateError;
+            }
+            
+            console.log('✅ Settings updated:', updateData);
+            if (updateData && updateData[0]) {
+                companySettings = updateData[0];
+            }
+        } else {
+            // Insert new record
+            console.log('📝 Creating new settings record');
+            
+            const newSettings = {
+                user_id: currentUser.id,
+                logo_url: logoUrl,
+                business_name: '',
+                abn: '',
+                phone: '',
+                email: '',
+                address: ''
+            };
+            
+            const { data: insertData, error: insertError } = await supabaseClient
+                .from('company_settings')
+                .insert([newSettings])
+                .select();
+            
+            if (insertError) {
+                console.error('❌ Insert error:', insertError);
+                
+                // Check if column exists
+                if (insertError.message?.includes('column') && insertError.message?.includes('logo_url')) {
+                    showNotification('❌ Database error: logo_url column missing. Run: ALTER TABLE company_settings ADD COLUMN logo_url TEXT;', 'error');
+                    return;
+                }
+                
+                throw insertError;
+            }
+            
+            console.log('✅ Settings created:', insertData);
+            if (insertData && insertData[0]) {
+                companySettings = insertData[0];
+            }
         }
         
-        showNotification('Reminder settings saved successfully!', 'success');
+        // Update local state
+        if (companySettings) {
+            companySettings.logo_url = logoUrl;
+        }
+        
+        showNotification('✅ Logo uploaded successfully!', 'success');
+        renderApp();
     } catch (error) {
-        console.error('Error saving reminder settings:', error);
-        showNotification('Error saving reminder settings', 'error');
+        console.error('❌ Error uploading logo:', error);
+        console.error('Error details:', {
+            message: error.message,
+            code: error.code,
+            statusCode: error.statusCode,
+            details: error.details
+        });
+        
+        showNotification(`Failed to upload logo: ${error.message || 'Unknown error'}`, 'error');
+    }
+    
+    // Reset input
+    input.value = '';
+}
+
+async function removeCompanyLogo() {
+    if (!confirm('Are you sure you want to remove your company logo?')) {
+        return;
+    }
+    
+    try {
+        // Remove from company settings
+        if (companySettings?.id) {
+            const { error } = await supabaseClient
+                .from('company_settings')
+                .update({ logo_url: null })
+                .eq('id', companySettings.id);
+            
+            if (error) throw error;
+        }
+        
+        // Update local state
+        if (companySettings) companySettings.logo_url = null;
+        
+        showNotification('✅ Logo removed', 'success');
+        renderApp();
+    } catch (error) {
+        console.error('Error removing logo:', error);
+        showNotification('Failed to remove logo', 'error');
     }
 }
 
-// Team Management (for business accounts)
+// Team Management Page
 function renderTeam() {
     if (getAccountType() !== 'business') {
         return `
             <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow">
                 <h2 class="text-2xl font-bold mb-4 dark:text-white">Team Management</h2>
-                <p class="text-gray-600 dark:text-gray-300">Team management is only available for Business accounts.</p>
-                <button onclick="switchTab('company')" class="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+                <p class="text-gray-600 dark:text-gray-300 mb-4">Team management is only available for Business accounts.</p>
+                <button onclick="switchTab('company')" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
                     Back to Company Settings
                 </button>
             </div>
         `;
     }
     
+    const teamColors = ['bg-blue-50 border-blue-200', 'bg-green-50 border-green-200', 'bg-purple-50 border-purple-200', 'bg-orange-50 border-orange-200', 'bg-pink-50 border-pink-200'];
+    
     return `
-        <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow">
-            <h2 class="text-2xl font-bold mb-4 dark:text-white">Team Management</h2>
-            <p class="text-gray-600 dark:text-gray-300 mb-6">Manage your team members and their permissions.</p>
-            
-            <div class="space-y-4">
-                ${teamMembers.length === 0 ? `
-                    <p class="text-gray-500 dark:text-gray-400">No team members yet.</p>
-                ` : teamMembers.map(member => `
-                    <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h3 class="font-semibold dark:text-white">${member.name}</h3>
-                                <p class="text-sm text-gray-600 dark:text-gray-400">${member.email || ''}</p>
-                                ${member.occupation ? `<p class="text-sm text-teal-600 dark:text-teal-400">${member.occupation}</p>` : ''}
-                            </div>
-                        </div>
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Team Management</h1>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your team members and their permissions.</p>
                     </div>
-                `).join('')}
+                    <button onclick="switchTab('company')" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
+                        Back
+                    </button>
+                </div>
+                
+                ${teamMembers.length === 0 ? `
+                    <div class="text-center py-12">
+                        <p class="text-gray-500 dark:text-gray-400 mb-4">No team members yet.</p>
+                        <p class="text-sm text-gray-400 dark:text-gray-500">Team members can be added from the Schedule page when assigning jobs.</p>
+                    </div>
+                ` : `
+                    <div class="space-y-3">
+                        ${teamMembers.map((member, index) => `
+                            <div class="p-4 border-2 rounded-lg ${teamColors[index % teamColors.length]} dark:bg-gray-700 dark:border-gray-600">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h3 class="font-bold text-lg text-gray-900 dark:text-white">${member.name}</h3>
+                                        ${member.occupation ? `<p class="text-sm text-teal-600 dark:text-teal-400 font-medium">${member.occupation}</p>` : ''}
+                                        ${member.email ? `<p class="text-sm text-gray-600 dark:text-gray-400 mt-1">${member.email}</p>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `}
             </div>
-            
-            <button onclick="switchTab('company')" class="mt-6 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
-                Back to Company Settings
-            </button>
         </div>
     `;
 }
 
-// Admin Panel (for admin users only)
+// Admin Panel Page
 function renderAdmin() {
     if (!isAdmin) {
         return `
             <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow">
                 <h2 class="text-2xl font-bold mb-4 dark:text-white">Admin Panel</h2>
-                <p class="text-gray-600 dark:text-gray-300">Access denied. Admin privileges required.</p>
-                <button onclick="switchTab('company')" class="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+                <p class="text-gray-600 dark:text-gray-300 mb-4">Access denied. Admin privileges required.</p>
+                <button onclick="switchTab('company')" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
                     Back to Company Settings
                 </button>
             </div>
@@ -537,25 +660,77 @@ function renderAdmin() {
     }
     
     return `
-        <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow">
-            <h2 class="text-2xl font-bold mb-4 dark:text-white">Admin Panel</h2>
-            <p class="text-gray-600 dark:text-gray-300 mb-6">System administration and settings.</p>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
-                    <h3 class="font-semibold mb-2 dark:text-white">System Status</h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">All systems operational</p>
+        <div class="max-w-6xl mx-auto">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Admin Panel</h1>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">System administration and user management</p>
+                    </div>
+                    <button onclick="switchTab('company')" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
+                        Back
+                    </button>
                 </div>
                 
-                <div class="p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
-                    <h3 class="font-semibold mb-2 dark:text-white">Database</h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">Connected to Supabase</p>
+                <!-- System Status -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
+                        <h3 class="font-semibold mb-2 dark:text-white">System Status</h3>
+                        <p class="text-sm text-green-600 dark:text-green-400">✓ All systems operational</p>
+                    </div>
+                    
+                    <div class="p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
+                        <h3 class="font-semibold mb-2 dark:text-white">Database</h3>
+                        <p class="text-sm text-green-600 dark:text-green-400">✓ Connected to Supabase</p>
+                    </div>
+                    
+                    <div class="p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
+                        <h3 class="font-semibold mb-2 dark:text-white">Active Users</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">${allUsers?.length || 0} registered users</p>
+                    </div>
+                </div>
+                
+                <!-- All Users List -->
+                <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6">
+                    <h2 class="text-xl font-bold mb-4 dark:text-white">All Users</h2>
+                    ${!allUsers || allUsers.length === 0 ? `
+                        <p class="text-gray-500 dark:text-gray-400">No users found</p>
+                    ` : `
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-200 dark:bg-gray-800">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold dark:text-white">Email</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold dark:text-white">Account Type</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold dark:text-white">Status</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold dark:text-white">Created</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                    ${allUsers.map(user => `
+                                        <tr class="hover:bg-gray-100 dark:hover:bg-gray-800">
+                                            <td class="px-4 py-3 text-sm dark:text-gray-300">${user.email}</td>
+                                            <td class="px-4 py-3 text-sm">
+                                                <span class="px-2 py-1 rounded text-xs ${user.account_type === 'business' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'}">
+                                                    ${user.account_type === 'business' ? 'Business' : 'Sole Trader'}
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3 text-sm">
+                                                <span class="px-2 py-1 rounded text-xs ${user.subscription_status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'}">
+                                                    ${user.subscription_status || 'trial'}
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                                ${user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `}
                 </div>
             </div>
-            
-            <button onclick="switchTab('company')" class="mt-6 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
-                Back to Company Settings
-            </button>
         </div>
     `;
 }
