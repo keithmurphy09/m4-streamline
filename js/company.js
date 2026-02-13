@@ -644,7 +644,7 @@ function renderTeam() {
                                         ${member.phone ? `<p class="text-sm text-gray-700 dark:text-gray-300 mt-1">📱 ${member.phone}</p>` : ''}
                                     </div>
                                     <div class="flex gap-2">
-                                        <button onclick="editItem = teamMembers[${index}]; openModal('team_member')" class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">
+                                        <button onclick="editingItem = teamMembers.find(m => m.id === '${member.id}'); openModal('team_member')" class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">
                                             Edit
                                         </button>
                                         <button onclick="deleteTeamMember('${member.id}')" class="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700">
@@ -677,6 +677,9 @@ async function renderAdmin() {
     
     // Fetch all users from Supabase
     let allUsers = [];
+    let activeUsers = [];
+    let trialUsers = [];
+    
     try {
         const { data, error } = await supabaseClient
             .from('subscriptions')
@@ -685,6 +688,8 @@ async function renderAdmin() {
         
         if (!error && data) {
             allUsers = data;
+            activeUsers = data.filter(u => u.subscription_status === 'active');
+            trialUsers = data.filter(u => u.subscription_status === 'trial');
         }
     } catch (error) {
         console.error('Error fetching users:', error);
@@ -703,21 +708,26 @@ async function renderAdmin() {
                     </button>
                 </div>
                 
-                <!-- System Status -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div class="p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
-                        <h3 class="font-semibold mb-2 dark:text-white">System Status</h3>
-                        <p class="text-sm text-green-600 dark:text-green-400">✓ All systems operational</p>
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                        <h3 class="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">Total Users</h3>
+                        <p class="text-3xl font-bold text-blue-900 dark:text-blue-300">${allUsers.length}</p>
                     </div>
                     
-                    <div class="p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
-                        <h3 class="font-semibold mb-2 dark:text-white">Database</h3>
-                        <p class="text-sm text-green-600 dark:text-green-400">✓ Connected to Supabase</p>
+                    <div class="p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border border-green-200 dark:border-green-800 rounded-lg">
+                        <h3 class="text-sm font-medium text-green-600 dark:text-green-400 mb-1">Active</h3>
+                        <p class="text-3xl font-bold text-green-900 dark:text-green-300">${activeUsers.length}</p>
                     </div>
                     
-                    <div class="p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
-                        <h3 class="font-semibold mb-2 dark:text-white">Active Users</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">${allUsers.length} registered users</p>
+                    <div class="p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                        <h3 class="text-sm font-medium text-yellow-600 dark:text-yellow-400 mb-1">Trial</h3>
+                        <p class="text-3xl font-bold text-yellow-900 dark:text-yellow-300">${trialUsers.length}</p>
+                    </div>
+                    
+                    <div class="p-6 bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900/20 dark:to-teal-800/20 border border-teal-200 dark:border-teal-800 rounded-lg">
+                        <h3 class="text-sm font-medium text-teal-600 dark:text-teal-400 mb-1">System</h3>
+                        <p class="text-sm font-semibold text-teal-900 dark:text-teal-300">✓ Online</p>
                     </div>
                 </div>
                 
@@ -735,6 +745,7 @@ async function renderAdmin() {
                                         <th class="px-4 py-3 text-left text-sm font-semibold dark:text-white">Account Type</th>
                                         <th class="px-4 py-3 text-left text-sm font-semibold dark:text-white">Status</th>
                                         <th class="px-4 py-3 text-left text-sm font-semibold dark:text-white">Created</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold dark:text-white">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -753,6 +764,11 @@ async function renderAdmin() {
                                             </td>
                                             <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                                                 ${user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
+                                            </td>
+                                            <td class="px-4 py-3 text-sm">
+                                                <button onclick="toggleUserStatus('${user.id}', '${user.subscription_status}')" class="px-3 py-1 text-xs bg-teal-600 text-white rounded hover:bg-teal-700">
+                                                    ${user.subscription_status === 'active' ? 'Set Trial' : 'Activate'}
+                                                </button>
                                             </td>
                                         </tr>
                                     `).join('')}
@@ -788,6 +804,31 @@ async function deleteTeamMember(memberId) {
     } catch (error) {
         console.error('Error deleting team member:', error);
         showNotification('Failed to delete team member', 'error');
+    }
+}
+
+// Toggle user subscription status (admin only)
+async function toggleUserStatus(userId, currentStatus) {
+    if (!isAdmin) {
+        showNotification('Admin access required', 'error');
+        return;
+    }
+    
+    const newStatus = currentStatus === 'active' ? 'trial' : 'active';
+    
+    try {
+        const { error } = await supabaseClient
+            .from('subscriptions')
+            .update({ subscription_status: newStatus })
+            .eq('id', userId);
+        
+        if (error) throw error;
+        
+        showNotification(`User status updated to ${newStatus}`, 'success');
+        renderApp();
+    } catch (error) {
+        console.error('Error updating user status:', error);
+        showNotification('Failed to update user status', 'error');
     }
 }
 
