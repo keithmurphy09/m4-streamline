@@ -646,7 +646,7 @@ function renderTeam() {
                                     <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">${member.email || '-'}</td>
                                     <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">${member.phone || '-'}</td>
                                     <td class="px-6 py-4 text-sm">
-                                        <button onclick='editingItem = ${JSON.stringify(member)}; openModal("team_member")' class="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 mr-2">
+                                        <button onclick="editingItem = teamMembers.find(m => m.id === '${member.id}'); openModal('team_member')" class="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 mr-2">
                                             Edit
                                         </button>
                                         <button onclick="deleteTeamMember('${member.id}')" class="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700">
