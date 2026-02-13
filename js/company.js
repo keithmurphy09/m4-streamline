@@ -605,58 +605,60 @@ function renderTeam() {
         `;
     }
     
-    const teamColors = ['bg-blue-100 border-blue-300 dark:bg-blue-900/30 dark:border-blue-700', 'bg-green-100 border-green-300 dark:bg-green-900/30 dark:border-green-700', 'bg-purple-100 border-purple-300 dark:bg-purple-900/30 dark:border-purple-700', 'bg-orange-100 border-orange-300 dark:bg-orange-900/30 dark:border-orange-700', 'bg-pink-100 border-pink-300 dark:bg-pink-900/30 dark:border-pink-700'];
-    
     return `
-        <div class="max-w-4xl mx-auto">
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <div>
-                        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Team Management</h1>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your team members and their details</p>
-                    </div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Team Management</h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your team members</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="editingItem = null; openModal('team_member')" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+                        + Add Team Member
+                    </button>
                     <button onclick="switchTab('company')" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
                         Back
                     </button>
                 </div>
-                
-                ${teamMembers.length === 0 ? `
-                    <div class="text-center py-12">
-                        <p class="text-gray-500 dark:text-gray-400 mb-4">No team members yet.</p>
-                        <button onclick="openModal('team_member')" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
-                            Add Team Member
-                        </button>
-                    </div>
-                ` : `
-                    <div class="mb-4">
-                        <button onclick="openModal('team_member')" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
-                            + Add Team Member
-                        </button>
-                    </div>
-                    <div class="space-y-4">
-                        ${teamMembers.map((member, index) => `
-                            <div class="p-4 border-2 rounded-lg ${teamColors[index % teamColors.length]}">
-                                <div class="flex justify-between items-start">
-                                    <div class="flex-1">
-                                        <h3 class="font-bold text-lg text-gray-900 dark:text-white">${member.name}</h3>
-                                        ${member.occupation ? `<p class="text-sm text-teal-600 dark:text-teal-400 font-medium mt-1">${member.occupation}</p>` : ''}
-                                        ${member.email ? `<p class="text-sm text-gray-700 dark:text-gray-300 mt-2">📧 ${member.email}</p>` : ''}
-                                        ${member.phone ? `<p class="text-sm text-gray-700 dark:text-gray-300 mt-1">📱 ${member.phone}</p>` : ''}
-                                    </div>
-                                    <div class="flex gap-2">
-                                        <button onclick="editingItem = teamMembers.find(m => m.id === '${member.id}'); openModal('team_member')" class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">
+            </div>
+            
+            ${teamMembers.length === 0 ? `
+                <div class="text-center py-12 text-gray-500 dark:text-gray-400">
+                    No team members yet. Click "Add Team Member" to get started.
+                </div>
+            ` : `
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-100 dark:bg-gray-900">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Name</th>
+                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Occupation</th>
+                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Email</th>
+                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Phone</th>
+                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                            ${teamMembers.map(member => `
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
+                                    <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">${member.name}</td>
+                                    <td class="px-6 py-4 text-sm text-teal-600 dark:text-teal-400">${member.occupation || '-'}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">${member.email || '-'}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">${member.phone || '-'}</td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <button onclick='editingItem = ${JSON.stringify(member)}; openModal("team_member")' class="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 mr-2">
                                             Edit
                                         </button>
-                                        <button onclick="deleteTeamMember('${member.id}')" class="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700">
+                                        <button onclick="deleteTeamMember('${member.id}')" class="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700">
                                             Delete
                                         </button>
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `}
-            </div>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `}
         </div>
     `;
 }
@@ -675,108 +677,125 @@ async function renderAdmin() {
         `;
     }
     
-    // Fetch all users from Supabase
+    // Fetch all users from Supabase with auth user data
     let allUsers = [];
     let activeUsers = [];
     let trialUsers = [];
     
     try {
-        const { data, error } = await supabaseClient
+        // First get subscriptions
+        const { data: subsData, error: subsError } = await supabaseClient
             .from('subscriptions')
             .select('*')
             .order('created_at', { ascending: false });
         
-        if (!error && data) {
-            allUsers = data;
-            activeUsers = data.filter(u => u.subscription_status === 'active');
-            trialUsers = data.filter(u => u.subscription_status === 'trial');
+        if (subsError) throw subsError;
+        
+        // Then get auth users to get emails
+        const { data: { users: authUsers }, error: authError } = await supabaseClient.auth.admin.listUsers();
+        
+        if (!authError && authUsers && subsData) {
+            // Merge subscription data with auth user emails
+            allUsers = subsData.map(sub => {
+                const authUser = authUsers.find(au => au.id === sub.user_id);
+                return {
+                    ...sub,
+                    email: authUser?.email || sub.user_id // Fallback to user_id if no email
+                };
+            });
+            
+            activeUsers = allUsers.filter(u => u.subscription_status === 'active');
+            trialUsers = allUsers.filter(u => u.subscription_status === 'trial');
+        } else {
+            // Fallback if auth.admin not available
+            allUsers = subsData || [];
+            activeUsers = allUsers.filter(u => u.subscription_status === 'active');
+            trialUsers = allUsers.filter(u => u.subscription_status === 'trial');
         }
     } catch (error) {
         console.error('Error fetching users:', error);
     }
     
     return `
-        <div class="max-w-6xl mx-auto">
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <div>
-                        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Admin Panel</h1>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">System administration and user management</p>
-                    </div>
-                    <button onclick="switchTab('company')" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
-                        Back
-                    </button>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Admin Panel</h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">System administration and user management</p>
+                </div>
+                <button onclick="switchTab('company')" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
+                    Back
+                </button>
+            </div>
+            
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <h3 class="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1">Total Users</h3>
+                    <p class="text-2xl font-bold text-blue-900 dark:text-blue-300">${allUsers.length}</p>
                 </div>
                 
-                <!-- Stats Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <div class="p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                        <h3 class="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">Total Users</h3>
-                        <p class="text-3xl font-bold text-blue-900 dark:text-blue-300">${allUsers.length}</p>
-                    </div>
-                    
-                    <div class="p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border border-green-200 dark:border-green-800 rounded-lg">
-                        <h3 class="text-sm font-medium text-green-600 dark:text-green-400 mb-1">Active</h3>
-                        <p class="text-3xl font-bold text-green-900 dark:text-green-300">${activeUsers.length}</p>
-                    </div>
-                    
-                    <div class="p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                        <h3 class="text-sm font-medium text-yellow-600 dark:text-yellow-400 mb-1">Trial</h3>
-                        <p class="text-3xl font-bold text-yellow-900 dark:text-yellow-300">${trialUsers.length}</p>
-                    </div>
-                    
-                    <div class="p-6 bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900/20 dark:to-teal-800/20 border border-teal-200 dark:border-teal-800 rounded-lg">
-                        <h3 class="text-sm font-medium text-teal-600 dark:text-teal-400 mb-1">System</h3>
-                        <p class="text-sm font-semibold text-teal-900 dark:text-teal-300">✓ Online</p>
-                    </div>
+                <div class="p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border border-green-200 dark:border-green-800 rounded-lg">
+                    <h3 class="text-xs font-medium text-green-600 dark:text-green-400 mb-1">Active</h3>
+                    <p class="text-2xl font-bold text-green-900 dark:text-green-300">${activeUsers.length}</p>
                 </div>
                 
-                <!-- All Users List -->
-                <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6">
-                    <h2 class="text-xl font-bold mb-4 dark:text-white">All Users</h2>
-                    ${allUsers.length === 0 ? `
-                        <p class="text-gray-500 dark:text-gray-400">No users found</p>
-                    ` : `
-                        <div class="overflow-x-auto">
-                            <table class="w-full">
-                                <thead class="bg-gray-200 dark:bg-gray-800">
-                                    <tr>
-                                        <th class="px-4 py-3 text-left text-sm font-semibold dark:text-white">Email</th>
-                                        <th class="px-4 py-3 text-left text-sm font-semibold dark:text-white">Account Type</th>
-                                        <th class="px-4 py-3 text-left text-sm font-semibold dark:text-white">Status</th>
-                                        <th class="px-4 py-3 text-left text-sm font-semibold dark:text-white">Created</th>
-                                        <th class="px-4 py-3 text-left text-sm font-semibold dark:text-white">Actions</th>
+                <div class="p-4 bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                    <h3 class="text-xs font-medium text-yellow-600 dark:text-yellow-400 mb-1">Trial</h3>
+                    <p class="text-2xl font-bold text-yellow-900 dark:text-yellow-300">${trialUsers.length}</p>
+                </div>
+                
+                <div class="p-4 bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900/20 dark:to-teal-800/20 border border-teal-200 dark:border-teal-800 rounded-lg">
+                    <h3 class="text-xs font-medium text-teal-600 dark:text-teal-400 mb-1">System</h3>
+                    <p class="text-sm font-semibold text-teal-900 dark:text-teal-300">✓ Online</p>
+                </div>
+            </div>
+            
+            <!-- All Users List -->
+            <div>
+                <h2 class="text-lg font-bold mb-4 dark:text-white">All Users</h2>
+                ${allUsers.length === 0 ? `
+                    <p class="text-gray-500 dark:text-gray-400">No users found</p>
+                ` : `
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-100 dark:bg-gray-900">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Email</th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Account Type</th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Status</th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Created</th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                ${allUsers.map(user => `
+                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
+                                        <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">${user.email}</td>
+                                        <td class="px-6 py-4 text-sm">
+                                            <span class="px-2 py-1 rounded text-xs ${user.account_type === 'business' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'}">
+                                                ${user.account_type === 'business' ? 'Business' : 'Sole Trader'}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm">
+                                            <span class="px-2 py-1 rounded text-xs ${user.subscription_status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'}">
+                                                ${user.subscription_status || 'trial'}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                                            ${user.created_at ? new Date(user.created_at).toLocaleDateString() : '-'}
+                                        </td>
+                                        <td class="px-6 py-4 text-sm">
+                                            <button onclick="toggleUserStatus('${user.id}', '${user.subscription_status}')" class="px-3 py-1 text-xs bg-teal-600 text-white rounded hover:bg-teal-700">
+                                                ${user.subscription_status === 'active' ? 'Set Trial' : 'Activate'}
+                                            </button>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                    ${allUsers.map(user => `
-                                        <tr class="hover:bg-gray-100 dark:hover:bg-gray-800">
-                                            <td class="px-4 py-3 text-sm dark:text-gray-300">${user.email || 'N/A'}</td>
-                                            <td class="px-4 py-3 text-sm">
-                                                <span class="px-2 py-1 rounded text-xs ${user.account_type === 'business' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'}">
-                                                    ${user.account_type === 'business' ? 'Business' : 'Sole Trader'}
-                                                </span>
-                                            </td>
-                                            <td class="px-4 py-3 text-sm">
-                                                <span class="px-2 py-1 rounded text-xs ${user.subscription_status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'}">
-                                                    ${user.subscription_status || 'trial'}
-                                                </span>
-                                            </td>
-                                            <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                                                ${user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
-                                            </td>
-                                            <td class="px-4 py-3 text-sm">
-                                                <button onclick="toggleUserStatus('${user.id}', '${user.subscription_status}')" class="px-3 py-1 text-xs bg-teal-600 text-white rounded hover:bg-teal-700">
-                                                    ${user.subscription_status === 'active' ? 'Set Trial' : 'Activate'}
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    `}
-                </div>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `}
             </div>
         </div>
     `;
