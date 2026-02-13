@@ -605,7 +605,7 @@ function renderTeam() {
         `;
     }
     
-    const teamColors = ['bg-blue-50 border-blue-200', 'bg-green-50 border-green-200', 'bg-purple-50 border-purple-200', 'bg-orange-50 border-orange-200', 'bg-pink-50 border-pink-200'];
+    const teamColors = ['bg-blue-100 border-blue-300 dark:bg-blue-900/30 dark:border-blue-700', 'bg-green-100 border-green-300 dark:bg-green-900/30 dark:border-green-700', 'bg-purple-100 border-purple-300 dark:bg-purple-900/30 dark:border-purple-700', 'bg-orange-100 border-orange-300 dark:bg-orange-900/30 dark:border-orange-700', 'bg-pink-100 border-pink-300 dark:bg-pink-900/30 dark:border-pink-700'];
     
     return `
         <div class="max-w-4xl mx-auto">
@@ -613,7 +613,7 @@ function renderTeam() {
                 <div class="flex justify-between items-center mb-6">
                     <div>
                         <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Team Management</h1>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your team members and their permissions.</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your team members and their details</p>
                     </div>
                     <button onclick="switchTab('company')" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
                         Back
@@ -623,17 +623,33 @@ function renderTeam() {
                 ${teamMembers.length === 0 ? `
                     <div class="text-center py-12">
                         <p class="text-gray-500 dark:text-gray-400 mb-4">No team members yet.</p>
-                        <p class="text-sm text-gray-400 dark:text-gray-500">Team members can be added from the Schedule page when assigning jobs.</p>
+                        <button onclick="openModal('team_member')" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+                            Add Team Member
+                        </button>
                     </div>
                 ` : `
-                    <div class="space-y-3">
+                    <div class="mb-4">
+                        <button onclick="openModal('team_member')" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+                            + Add Team Member
+                        </button>
+                    </div>
+                    <div class="space-y-4">
                         ${teamMembers.map((member, index) => `
-                            <div class="p-4 border-2 rounded-lg ${teamColors[index % teamColors.length]} dark:bg-gray-700 dark:border-gray-600">
+                            <div class="p-4 border-2 rounded-lg ${teamColors[index % teamColors.length]}">
                                 <div class="flex justify-between items-start">
-                                    <div>
+                                    <div class="flex-1">
                                         <h3 class="font-bold text-lg text-gray-900 dark:text-white">${member.name}</h3>
-                                        ${member.occupation ? `<p class="text-sm text-teal-600 dark:text-teal-400 font-medium">${member.occupation}</p>` : ''}
-                                        ${member.email ? `<p class="text-sm text-gray-600 dark:text-gray-400 mt-1">${member.email}</p>` : ''}
+                                        ${member.occupation ? `<p class="text-sm text-teal-600 dark:text-teal-400 font-medium mt-1">${member.occupation}</p>` : ''}
+                                        ${member.email ? `<p class="text-sm text-gray-700 dark:text-gray-300 mt-2">📧 ${member.email}</p>` : ''}
+                                        ${member.phone ? `<p class="text-sm text-gray-700 dark:text-gray-300 mt-1">📱 ${member.phone}</p>` : ''}
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button onclick="editItem = teamMembers[${index}]; openModal('team_member')" class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">
+                                            Edit
+                                        </button>
+                                        <button onclick="deleteTeamMember('${member.id}')" class="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700">
+                                            Delete
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -646,7 +662,7 @@ function renderTeam() {
 }
 
 // Admin Panel Page
-function renderAdmin() {
+async function renderAdmin() {
     if (!isAdmin) {
         return `
             <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow">
@@ -657,6 +673,21 @@ function renderAdmin() {
                 </button>
             </div>
         `;
+    }
+    
+    // Fetch all users from Supabase
+    let allUsers = [];
+    try {
+        const { data, error } = await supabaseClient
+            .from('subscriptions')
+            .select('*')
+            .order('created_at', { ascending: false });
+        
+        if (!error && data) {
+            allUsers = data;
+        }
+    } catch (error) {
+        console.error('Error fetching users:', error);
     }
     
     return `
@@ -686,14 +717,14 @@ function renderAdmin() {
                     
                     <div class="p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
                         <h3 class="font-semibold mb-2 dark:text-white">Active Users</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">${allUsers?.length || 0} registered users</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">${allUsers.length} registered users</p>
                     </div>
                 </div>
                 
                 <!-- All Users List -->
                 <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6">
                     <h2 class="text-xl font-bold mb-4 dark:text-white">All Users</h2>
-                    ${!allUsers || allUsers.length === 0 ? `
+                    ${allUsers.length === 0 ? `
                         <p class="text-gray-500 dark:text-gray-400">No users found</p>
                     ` : `
                         <div class="overflow-x-auto">
@@ -709,7 +740,7 @@ function renderAdmin() {
                                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                     ${allUsers.map(user => `
                                         <tr class="hover:bg-gray-100 dark:hover:bg-gray-800">
-                                            <td class="px-4 py-3 text-sm dark:text-gray-300">${user.email}</td>
+                                            <td class="px-4 py-3 text-sm dark:text-gray-300">${user.email || 'N/A'}</td>
                                             <td class="px-4 py-3 text-sm">
                                                 <span class="px-2 py-1 rounded text-xs ${user.account_type === 'business' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'}">
                                                     ${user.account_type === 'business' ? 'Business' : 'Sole Trader'}
@@ -733,6 +764,31 @@ function renderAdmin() {
             </div>
         </div>
     `;
+}
+
+// Delete team member
+async function deleteTeamMember(memberId) {
+    if (!confirm('Are you sure you want to delete this team member?')) {
+        return;
+    }
+    
+    try {
+        const { error } = await supabaseClient
+            .from('team_members')
+            .delete()
+            .eq('id', memberId);
+        
+        if (error) throw error;
+        
+        // Update local state
+        teamMembers = teamMembers.filter(m => m.id !== memberId);
+        
+        showNotification('Team member deleted successfully', 'success');
+        renderApp();
+    } catch (error) {
+        console.error('Error deleting team member:', error);
+        showNotification('Failed to delete team member', 'error');
+    }
 }
 
 console.log('✅ Company settings module loaded (COMPLETE)');
