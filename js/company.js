@@ -639,25 +639,14 @@ function renderTeam() {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                            ${teamMembers.map(member => {
-                                // Escape member data for onclick
-                                const memberJson = JSON.stringify({
-                                    id: member.id,
-                                    name: member.name || '',
-                                    email: member.email || '',
-                                    phone: member.phone || '',
-                                    occupation: member.occupation || '',
-                                    color: member.color || '#3b82f6'
-                                }).replace(/"/g, '&quot;');
-                                
-                                return `
+                            ${teamMembers.map(member => `
                                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
                                     <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">${member.name}</td>
                                     <td class="px-6 py-4 text-sm text-teal-600 dark:text-teal-400">${member.occupation || '-'}</td>
                                     <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">${member.email || '-'}</td>
                                     <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">${member.phone || '-'}</td>
                                     <td class="px-6 py-4 text-sm">
-                                        <button onclick="editingItem = JSON.parse('${memberJson}'.replace(/&quot;/g, '\\\"')); openModal('team_member')" class="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 mr-2">
+                                        <button onclick="editTeamMember('${member.id}')" class="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 mr-2">
                                             Edit
                                         </button>
                                         <button onclick="deleteTeamMember('${member.id}')" class="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700">
@@ -665,7 +654,7 @@ function renderTeam() {
                                         </button>
                                     </td>
                                 </tr>
-                            `}).join('')}
+                            `).join('')}
                         </tbody>
                     </table>
                 </div>
@@ -688,21 +677,38 @@ async function renderAdmin() {
         `;
     }
     
-    // Fetch all users from subscriptions table
+    // Fetch all users from subscriptions table  
     let allUsers = [];
     let activeUsers = [];
     let trialUsers = [];
     
     try {
-        const { data, error } = await supabaseClient
-            .from('subscriptions')
-            .select('*')
-            .order('created_at', { ascending: false });
+        // Get auth users list to get emails
+        const { data: authData, error: authError } = await supabaseClient.auth.admin.listUsers();
         
-        if (!error && data) {
-            allUsers = data;
-            activeUsers = data.filter(u => u.subscription_status === 'active');
-            trialUsers = data.filter(u => u.subscription_status === 'trial');
+        if (!authError && authData?.users) {
+            // Create a map of user_id to email
+            const emailMap = {};
+            authData.users.forEach(u => {
+                emailMap[u.id] = u.email;
+            });
+            
+            // Get subscriptions
+            const { data: subsData, error: subsError } = await supabaseClient
+                .from('subscriptions')
+                .select('*')
+                .order('created_at', { ascending: false });
+            
+            if (!subsError && subsData) {
+                // Add emails to subscription data
+                allUsers = subsData.map(sub => ({
+                    ...sub,
+                    email: emailMap[sub.user_id] || sub.user_id
+                }));
+                
+                activeUsers = allUsers.filter(u => u.subscription_status === 'active');
+                trialUsers = allUsers.filter(u => u.subscription_status === 'trial');
+            }
         }
     } catch (error) {
         console.error('Error fetching users:', error);
@@ -763,7 +769,7 @@ async function renderAdmin() {
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                 ${allUsers.map(user => `
                                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
-                                        <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">${user.email || user.user_id || 'No email'}</td>
+                                        <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">${user.email}</td>
                                         <td class="px-6 py-4 text-sm">
                                             <span class="px-2 py-1 rounded text-xs ${user.account_type === 'business' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'}">
                                                 ${user.account_type === 'business' ? 'Business' : 'Sole Trader'}
@@ -791,6 +797,12 @@ async function renderAdmin() {
             </div>
         </div>
     `;
+}
+
+// Edit team member - simple helper
+function editTeamMember(memberId) {
+    editingItem = teamMembers.find(m => m.id === memberId);
+    openModal('team_member');
 }
 
 // Delete team member
