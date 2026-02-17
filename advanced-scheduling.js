@@ -268,6 +268,23 @@ async function deleteRecurringSeries(seriesId, deleteType, fromDate = null) {
     }
 }
 
+// Prefill recurring modal from existing job
+function prefillFromJob(jobId) {
+    if (!jobId) return;
+    const job = jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    const titleEl = document.getElementById('recurring_title');
+    const clientEl = document.getElementById('recurring_client');
+    const addressEl = document.getElementById('recurring_address');
+    const teamEl = document.getElementById('recurring_team');
+
+    if (titleEl) titleEl.value = job.title || '';
+    if (clientEl) clientEl.value = job.client_id || '';
+    if (addressEl) addressEl.value = job.job_address || '';
+    if (teamEl && job.team_member_id) teamEl.value = job.team_member_id;
+}
+
 // Render Recurring Job Modal
 function renderRecurringJobModal(baseJobData = null) {
     return `
@@ -285,6 +302,19 @@ function renderRecurringJobModal(baseJobData = null) {
                 </div>
                 
                 <div class="p-6 space-y-4">
+                    <!-- Link to Existing Job -->
+                    <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">🔗 Link to Existing Job (optional)</label>
+                        <select id="recurring_linked_job" onchange="prefillFromJob(this.value)" class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 text-sm">
+                            <option value="">— Start from scratch —</option>
+                            ${jobs.map(j => {
+                                const client = clients.find(c => c.id === j.client_id);
+                                return `<option value="${j.id}">${j.title}${client ? ' — ' + client.name : ''}</option>`;
+                            }).join('')}
+                        </select>
+                        <div class="text-xs text-gray-400 mt-1">Selecting a job will prefill the details below</div>
+                    </div>
+
                     <!-- Job Details -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Job Title *</label>
