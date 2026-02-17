@@ -101,7 +101,7 @@ function renderBudget() {
                         </button>
                     </div>
                 ` : `
-                    <button onclick="editBudget()" class="px-4 py-2 bg-black text-white rounded-lg border border-teal-400 hover:bg-gray-900 transition-colors">
+                    <button onclick="editBudget()" class="px-4 py-2 bg-white text-teal-600 border border-teal-400 rounded-lg hover:bg-teal-50 transition-colors">
                         Edit Budget
                     </button>
                 `}
