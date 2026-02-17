@@ -428,26 +428,43 @@ function saveJob() {
     const notes = document.getElementById('notes')?.value.trim() || '';
     const status = document.getElementById('jobStatus')?.value || 'scheduled';
     const jobAddress = document.getElementById('job_address')?.value.trim() || '';
-    
+    const isRecurring = document.getElementById('is_recurring_job')?.checked || false;
+    const recurringInterval = parseInt(document.getElementById('job_recurring_schedule')?.value) || 7;
+    const recurringCount = parseInt(document.getElementById('job_recurring_count')?.value) || 1;
+
     if (!clientId || !title || !date) {
         showNotification('Please fill in all required fields', 'error');
         return;
     }
-    
+
     const assignedTeamMembers = Array.from(document.querySelectorAll('.worker-checkbox:checked')).map(cb => cb.value);
-    
-    addJob({
+
+    const baseJob = {
         client_id: clientId,
         quote_id: editingItem?.quote_id,
         title,
-        date,
         time,
         duration,
         notes,
         status,
         job_address: jobAddress,
         assigned_team_members: assignedTeamMembers
-    });
+    };
+
+    if (isRecurring && recurringCount > 1) {
+        const startDate = new Date(date);
+        const promises = [];
+        for (let i = 0; i < recurringCount; i++) {
+            const jobDate = new Date(startDate);
+            jobDate.setDate(jobDate.getDate() + (recurringInterval * i));
+            promises.push(addJob({ ...baseJob, date: jobDate.toISOString().split('T')[0] }));
+        }
+        Promise.all(promises).then(() => {
+            showNotification(`${recurringCount} recurring jobs scheduled!`, 'success');
+        });
+    } else {
+        addJob({ ...baseJob, date });
+    }
 }
 
 async function addJob(job) {
