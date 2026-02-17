@@ -98,7 +98,7 @@ function renderInvoicesTable() {
                     <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelection('invoices', '${inv.id}')" class="w-4 h-4 text-teal-600 rounded border-gray-300 focus:ring-teal-500">
                 </td>
                 <td class="px-6 py-4">
-                    <div class="text-sm font-medium text-gray-900 dark:text-white">${inv.invoice_number || 'INV-' + inv.id.slice(0, 3)}</div>
+                    <div class="text-sm font-medium text-gray-900 dark:text-white">${inv.invoice_number || 'INV-' + inv.id.slice(0, 3)}${inv.is_recurring_parent ? ' <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">🔄 Progressive</span>' : ''}</div>
                 </td>
                 <td class="px-6 py-4">
                     <div class="text-sm font-medium text-gray-900 dark:text-white">${client?.name || 'Unknown'}</div>
