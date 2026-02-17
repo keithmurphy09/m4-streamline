@@ -649,23 +649,8 @@ async function renderAdmin() {
     
     let users = [];
     try {
-        // Get subscriptions
-        const { data: subs } = await supabaseClient.from('subscriptions').select('*').order('created_at', { ascending: false });
-        
-        // Get auth users for emails
-        const { data: authData } = await supabaseClient.auth.admin.listUsers();
-        
-        // Create email lookup
-        const emailMap = {};
-        if (authData?.users) {
-            authData.users.forEach(u => emailMap[u.id] = u.email);
-        }
-        
-        // Merge data
-        users = (subs || []).map(s => ({
-            ...s,
-            email: emailMap[s.user_id] || s.email || s.user_id
-        }));
+        const { data } = await supabaseClient.from('subscriptions').select('*').order('created_at', { ascending: false });
+        users = data || [];
     } catch (e) {
         console.error('Error:', e);
     }
