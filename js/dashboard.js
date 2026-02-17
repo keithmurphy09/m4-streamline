@@ -301,16 +301,16 @@ function renderDashboard() {
         <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-6">
             <h3 class="text-lg font-semibold dark:text-white mb-4">Quick Actions</h3>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <button onclick="openModal('quote', null, true)" class="bg-white text-teal-600 hover:bg-teal-50 px-4 py-3 rounded-lg font-medium transition-colors text-sm">
+                <button onclick="openModal('quote', null, true)" class="bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 px-4 py-3 rounded-lg font-medium transition-colors text-sm">
                     + Create Quote
                 </button>
-                <button onclick="openModal('invoice', null, true)" class="bg-white text-teal-600 hover:bg-teal-50 px-4 py-3 rounded-lg font-medium transition-colors text-sm">
+                <button onclick="openModal('invoice', null, true)" class="bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 px-4 py-3 rounded-lg font-medium transition-colors text-sm">
                     + Create Invoice
                 </button>
-                <button onclick="openModal('job', null, true)" class="bg-white text-teal-600 hover:bg-teal-50 px-4 py-3 rounded-lg font-medium transition-colors text-sm">
+                <button onclick="openModal('job', null, true)" class="bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 px-4 py-3 rounded-lg font-medium transition-colors text-sm">
                     + Schedule Job
                 </button>
-                <button onclick="openModal('expense', null, true)" class="bg-white text-teal-600 hover:bg-teal-50 px-4 py-3 rounded-lg font-medium transition-colors text-sm">
+                <button onclick="openModal('expense', null, true)" class="bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 px-4 py-3 rounded-lg font-medium transition-colors text-sm">
                     + Add Expense
                 </button>
             </div>
