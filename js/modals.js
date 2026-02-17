@@ -298,6 +298,33 @@ function renderModal() {
                 <label class="block text-sm font-medium mb-1 dark:text-gray-200">Due Date</label>
                 <input type="date" id="due_date" value="${dueDate}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
             </div>
+            ${!(editingItem && editingItem.id) ? `
+            <div class="mb-3 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                <div class="flex items-center justify-between mb-2">
+                    <div>
+                        <div class="text-sm font-medium dark:text-gray-200">🔄 Progressive Invoicing</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Auto-schedule repeat invoices for this client</div>
+                    </div>
+                    <input type="checkbox" id="is_progressive" onchange="toggleProgressiveOptions()" class="w-4 h-4 text-teal-600 rounded border-gray-300">
+                </div>
+                <div id="progressive-options" class="hidden mt-3 space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium mb-1 dark:text-gray-300">Send every</label>
+                        <select id="recurring_schedule" class="w-full px-3 py-2 border rounded text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                            <option value="weekly">1 Week</option>
+                            <option value="2-weekly">2 Weeks</option>
+                            <option value="3-weekly">3 Weeks</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1 dark:text-gray-300">Number of invoices</label>
+                        <input type="number" id="recurring_count" min="2" max="52" value="4" class="w-full px-3 py-2 border rounded text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                        <div class="text-xs text-gray-400 mt-1" id="progressive-summary"></div>
+                    </div>
+                </div>
+            </div>
+            ` : ''}
             <textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" rows="3">${notes}</textarea>
             <button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>
         `;
@@ -603,6 +630,27 @@ function autoFillJobAddress() {
     }
 }
 
+function toggleProgressiveOptions() {
+    const enabled = document.getElementById('is_progressive').checked;
+    const options = document.getElementById('progressive-options');
+    if (enabled) {
+        options.classList.remove('hidden');
+        updateProgressiveSummary();
+    } else {
+        options.classList.add('hidden');
+    }
+}
+
+function updateProgressiveSummary() {
+    const schedule = document.getElementById('recurring_schedule')?.value;
+    const count = parseInt(document.getElementById('recurring_count')?.value) || 0;
+    const summary = document.getElementById('progressive-summary');
+    if (!summary || !schedule || !count) return;
+    const labels = { 'weekly': 'week', '2-weekly': '2 weeks', '3-weekly': '3 weeks', 'monthly': 'month' };
+    const issueDate = document.getElementById('issue_date')?.value;
+    summary.textContent = `${count} invoices, one every ${labels[schedule]}${issueDate ? `, starting ${new Date(issueDate).toLocaleDateString()}` : ''}`;
+}
+
 async function saveInvoice() {
     const clientId = document.getElementById('client_id').value;
     const title = document.getElementById('title').value;
@@ -610,43 +658,49 @@ async function saveInvoice() {
     const issueDate = document.getElementById('issue_date').value;
     const dueDate = document.getElementById('due_date').value;
     const notes = document.getElementById('notes').value;
-    
+    const isProgressive = document.getElementById('is_progressive')?.checked || false;
+    const recurringSchedule = document.getElementById('recurring_schedule')?.value || null;
+    const recurringCount = parseInt(document.getElementById('recurring_count')?.value) || null;
+
     if (!clientId || !title || !total) {
         alert('Please select a client, enter a title and amount');
         return;
     }
-    
+
     try {
         isLoading = true;
         loadingMessage = 'Creating invoice...';
         renderApp();
-        
+
         const invoiceData = {
             user_id: currentUser.id,
             client_id: clientId,
             title: title,
             total: total,
             notes: notes || null,
-            status: 'unpaid'
+            status: 'unpaid',
+            is_recurring_parent: isProgressive,
+            recurring_schedule: isProgressive ? recurringSchedule : null,
+            recurring_count: isProgressive ? recurringCount : null,
+            recurring_start_date: isProgressive && issueDate ? new Date(issueDate).toISOString() : null
         };
-        
-        // Only add dates if they have values
+
         if (issueDate) invoiceData.issue_date = issueDate;
         if (dueDate) invoiceData.due_date = dueDate;
-        
+
         const { data, error } = await supabaseClient
             .from('invoices')
             .insert([invoiceData])
             .select();
-        
+
         if (error) throw error;
-        
+
         invoices.push(data[0]);
         closeModal();
         if (openedFromDashboard) {
             switchTab('invoices');
         }
-        showNotification('Invoice created successfully!');
+        showNotification(isProgressive ? `Progressive invoice created — ${recurringCount} invoices scheduled!` : 'Invoice created successfully!');
     } catch (error) {
         console.error('Error creating invoice:', error);
         showNotification('Failed to create invoice: ' + error.message, 'error');
