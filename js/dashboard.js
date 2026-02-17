@@ -298,8 +298,8 @@ function renderDashboard() {
         ${typeof renderInsightsWidget === 'function' ? renderInsightsWidget() : ''}
         
         <!-- Quick Actions -->
-        <div class="bg-gradient-to-r from-teal-500 to-teal-600 rounded-xl shadow-lg p-6">
-            <h3 class="text-lg font-semibold text-white mb-4">Quick Actions</h3>
+        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-6">
+            <h3 class="text-lg font-semibold dark:text-white mb-4">Quick Actions</h3>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <button onclick="openModal('quote', null, true)" class="bg-white text-teal-600 hover:bg-teal-50 px-4 py-3 rounded-lg font-medium transition-colors text-sm">
                     + Create Quote
