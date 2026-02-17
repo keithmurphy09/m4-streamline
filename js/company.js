@@ -627,7 +627,7 @@ function renderTeam() {
                         <td class="px-6 py-4">${m.email || '-'}</td>
                         <td class="px-6 py-4">${m.phone || '-'}</td>
                         <td class="px-6 py-4">
-                            <button onclick="window.editingItem = teamMembers.find(x => x.id === '${m.id}'); openModal('team_member')" class="px-3 py-1 bg-blue-600 text-white rounded text-sm mr-2">Edit</button>
+                            <button onclick="editTeamMember('${m.id}')" class="px-3 py-1 bg-blue-600 text-white rounded text-sm mr-2">Edit</button>
                             <button onclick="deleteTeamMember('${m.id}')" class="px-3 py-1 bg-red-600 text-white rounded text-sm">Delete</button>
                         </td>
                     </tr>`).join('')}
@@ -649,8 +649,23 @@ async function renderAdmin() {
     
     let users = [];
     try {
-        const { data } = await supabaseClient.from('subscriptions').select('*').order('created_at', { ascending: false });
-        users = data || [];
+        // Get subscriptions
+        const { data: subs } = await supabaseClient.from('subscriptions').select('*').order('created_at', { ascending: false });
+        
+        // Get auth users for emails
+        const { data: authData } = await supabaseClient.auth.admin.listUsers();
+        
+        // Create email lookup
+        const emailMap = {};
+        if (authData?.users) {
+            authData.users.forEach(u => emailMap[u.id] = u.email);
+        }
+        
+        // Merge data
+        users = (subs || []).map(s => ({
+            ...s,
+            email: emailMap[s.user_id] || s.email || s.user_id
+        }));
     } catch (e) {
         console.error('Error:', e);
     }
@@ -697,7 +712,7 @@ async function renderAdmin() {
                 </thead>
                 <tbody>
                     ${users.map(u => `<tr class="border-t dark:border-gray-700">
-                        <td class="px-6 py-4 font-medium">${u.email || 'No email'}</td>
+                        <td class="px-6 py-4 font-medium">${u.email}</td>
                         <td class="px-6 py-4"><span class="px-2 py-1 rounded text-xs ${u.account_type === 'business' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}">${u.account_type === 'business' ? 'Business' : 'Sole Trader'}</span></td>
                         <td class="px-6 py-4"><span class="px-2 py-1 rounded text-xs ${u.subscription_status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${u.subscription_status || 'trial'}</span></td>
                         <td class="px-6 py-4">${u.created_at ? new Date(u.created_at).toLocaleDateString() : '-'}</td>
@@ -709,6 +724,12 @@ async function renderAdmin() {
             </table>
         `}
     </div>`;
+}
+
+// Edit team member - safe lookup by ID
+function editTeamMember(id) {
+    const member = teamMembers.find(m => m.id === id);
+    openModal("team_member", member);
 }
 
 // Delete team member
