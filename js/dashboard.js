@@ -301,16 +301,16 @@ function renderDashboard() {
         <div class="bg-gradient-to-r from-teal-500 to-teal-600 rounded-xl shadow-lg p-6">
             <h3 class="text-lg font-semibold text-white mb-4">Quick Actions</h3>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <button onclick="openModal('quote', null, true)" class="bg-white/10 hover:bg-white/20 backdrop-blur text-white px-4 py-3 rounded-lg font-medium transition-colors text-sm">
+                <button onclick="openModal('quote', null, true)" class="bg-white text-teal-600 hover:bg-teal-50 px-4 py-3 rounded-lg font-medium transition-colors text-sm">
                     + Create Quote
                 </button>
-                <button onclick="openModal('invoice', null, true)" class="bg-white/10 hover:bg-white/20 backdrop-blur text-white px-4 py-3 rounded-lg font-medium transition-colors text-sm">
+                <button onclick="openModal('invoice', null, true)" class="bg-white text-teal-600 hover:bg-teal-50 px-4 py-3 rounded-lg font-medium transition-colors text-sm">
                     + Create Invoice
                 </button>
-                <button onclick="openModal('job', null, true)" class="bg-white/10 hover:bg-white/20 backdrop-blur text-white px-4 py-3 rounded-lg font-medium transition-colors text-sm">
+                <button onclick="openModal('job', null, true)" class="bg-white text-teal-600 hover:bg-teal-50 px-4 py-3 rounded-lg font-medium transition-colors text-sm">
                     + Schedule Job
                 </button>
-                <button onclick="openModal('expense', null, true)" class="bg-white/10 hover:bg-white/20 backdrop-blur text-white px-4 py-3 rounded-lg font-medium transition-colors text-sm">
+                <button onclick="openModal('expense', null, true)" class="bg-white text-teal-600 hover:bg-teal-50 px-4 py-3 rounded-lg font-medium transition-colors text-sm">
                     + Add Expense
                 </button>
             </div>
