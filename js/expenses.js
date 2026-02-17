@@ -61,8 +61,8 @@ function renderExpenses() {
                         ${months.map(m => `<option value="${m}" ${expenseFilter === m ? 'selected' : ''}>${getMonthLabel(m)}</option>`).join('')}
                     </select>
                 ` : ''}
-                <button onclick="exportToCSV('expenses')" class="bg-white text-gray-700 border border-gray-300 px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-50 text-sm whitespace-nowrap">Export CSV</button>
-                <button onclick="openModal('expense')" class="bg-white text-teal-600 border border-teal-400 px-3 sm:px-4 py-2 rounded-lg hover:bg-teal-50 text-sm whitespace-nowrap">+ Add Expense</button>
+                <button onclick="exportToCSV('expenses')" class="bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 px-3 sm:px-4 py-2 rounded-lg text-sm whitespace-nowrap transition-colors">Export CSV</button>
+                <button onclick="openModal('expense')" class="bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 px-3 sm:px-4 py-2 rounded-lg text-sm whitespace-nowrap transition-colors">+ Add Expense</button>
             </div>
         </div>
         
