@@ -55,14 +55,51 @@ function openJobFromQuote(quote) {
         title: quote.title,
         date: today,
         time: '06:00',
-        notes: `Quote: ${quote.title} - Total: $${quote.total.toFixed(2)}\n\n${quote.notes || ''}`
+        notes: `Quote: ${quote.title} - Total: $${quote.total.toFixed(2)}\n\n${quote.notes || ''}`,
+        _sourceQuote: quote  // store for recurring switch
     };
     modalType = 'job';
     showModal = true;
     renderApp();
-    
-    // Initialize autocomplete with delay for job modal
     setTimeout(() => initAllAddressAutocomplete(), 500);
+}
+
+function switchJobType(type) {
+    const stdBtn = document.getElementById('tab-standard');
+    const recBtn = document.getElementById('tab-recurring');
+    const formDiv = document.getElementById('job-type-form');
+
+    if (type === 'standard') {
+        stdBtn.classList.add('bg-white', 'dark:bg-gray-600', 'text-gray-900', 'dark:text-white', 'shadow');
+        stdBtn.classList.remove('text-gray-500', 'dark:text-gray-400');
+        recBtn.classList.remove('bg-white', 'dark:bg-gray-600', 'text-gray-900', 'dark:text-white', 'shadow');
+        recBtn.classList.add('text-gray-500', 'dark:text-gray-400');
+        if (formDiv) formDiv.style.display = '';
+    } else {
+        // Switch to recurring — close modal and open recurring modal with quote prefilled
+        recBtn.classList.add('bg-white', 'dark:bg-gray-600', 'text-gray-900', 'dark:text-white', 'shadow');
+        recBtn.classList.remove('text-gray-500', 'dark:text-gray-400');
+        stdBtn.classList.remove('bg-white', 'dark:bg-gray-600', 'text-gray-900', 'dark:text-white', 'shadow');
+        stdBtn.classList.add('text-gray-500', 'dark:text-gray-400');
+        if (formDiv) formDiv.style.display = 'none';
+
+        // Small delay then open recurring modal with prefilled data
+        const quote = editingItem?._sourceQuote;
+        setTimeout(() => {
+            closeModal();
+            openRecurringJobModal();
+            setTimeout(() => {
+                if (quote) {
+                    const titleEl = document.getElementById('recurring_title');
+                    const clientEl = document.getElementById('recurring_client');
+                    const addrEl = document.getElementById('recurring_address');
+                    if (titleEl) titleEl.value = quote.title || '';
+                    if (clientEl) clientEl.value = quote.client_id || '';
+                    if (addrEl) addrEl.value = quote.job_address || '';
+                }
+            }, 200);
+        }, 150);
+    }
 }
 
 function openNoteModal(relatedType, relatedId, clientId) {
@@ -145,7 +182,19 @@ function renderModal() {
             : '';
         
         title = editingItem && editingItem.id ? 'Edit Job' : 'Schedule Job';
+        const fromQuote = editingItem?._sourceQuote;
         form = `
+            ${fromQuote ? `
+            <div class="flex gap-2 mb-4 p-1 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                <button type="button" id="tab-standard" onclick="switchJobType('standard')" class="flex-1 px-4 py-2 text-sm font-medium rounded-md bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow transition-colors">
+                    📋 Standard Job
+                </button>
+                <button type="button" id="tab-recurring" onclick="switchJobType('recurring')" class="flex-1 px-4 py-2 text-sm font-medium rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+                    🔄 Recurring Job
+                </button>
+            </div>
+            <div id="job-type-form">
+            ` : ''}
             <select id="client_id" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" required onchange="updateQuotesForClient()">
                 <option value="">Select Client *</option>
                 ${clients.map(c => `<option value="${c.id}" ${c.id === clientId ? 'selected' : ''}>${c.name}</option>`).join('')}
@@ -179,6 +228,7 @@ function renderModal() {
             </select>
             <textarea id="notes" placeholder="Notes (optional)" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3" rows="3">${notes}</textarea>
             <button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400">${buttonText}</button>
+            ${fromQuote ? "</div>" : ""}
         `;
     }
     
