@@ -268,21 +268,39 @@ async function deleteRecurringSeries(seriesId, deleteType, fromDate = null) {
     }
 }
 
-// Prefill recurring modal from existing job
-function prefillFromJob(jobId) {
-    if (!jobId) return;
-    const job = jobs.find(j => j.id === jobId);
-    if (!job) return;
+// Prefill recurring modal from existing job or quote
+function prefillFromJob(value) {
+    if (!value) return;
+
+    let title, clientId, address, teamMemberId;
+
+    if (value.startsWith('quote_')) {
+        const quoteId = value.replace('quote_', '');
+        const quote = quotes.find(q => q.id === quoteId);
+        if (!quote) return;
+        title = quote.title;
+        clientId = quote.client_id;
+        address = quote.job_address || '';
+        teamMemberId = null;
+    } else {
+        const jobId = value.replace('job_', '');
+        const job = jobs.find(j => j.id === jobId);
+        if (!job) return;
+        title = job.title;
+        clientId = job.client_id;
+        address = job.job_address || '';
+        teamMemberId = job.team_member_id;
+    }
 
     const titleEl = document.getElementById('recurring_title');
     const clientEl = document.getElementById('recurring_client');
     const addressEl = document.getElementById('recurring_address');
     const teamEl = document.getElementById('recurring_team');
 
-    if (titleEl) titleEl.value = job.title || '';
-    if (clientEl) clientEl.value = job.client_id || '';
-    if (addressEl) addressEl.value = job.job_address || '';
-    if (teamEl && job.team_member_id) teamEl.value = job.team_member_id;
+    if (titleEl) titleEl.value = title || '';
+    if (clientEl) clientEl.value = clientId || '';
+    if (addressEl) addressEl.value = address;
+    if (teamEl && teamMemberId) teamEl.value = teamMemberId;
 }
 
 // Render Recurring Job Modal
@@ -307,10 +325,14 @@ function renderRecurringJobModal(baseJobData = null) {
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">🔗 Link to Existing Job (optional)</label>
                         <select id="recurring_linked_job" onchange="prefillFromJob(this.value)" class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 text-sm">
                             <option value="">— Start from scratch —</option>
-                            ${jobs.map(j => {
+                            ${quotes.length > 0 ? `<optgroup label="Quotes">` + quotes.filter(q => q.status !== 'converted').map(q => {
+                                const client = clients.find(c => c.id === q.client_id);
+                                return `<option value="quote_${q.id}">${q.quote_number || q.title}${client ? ' — ' + client.name : ''} (${q.status || 'pending'})</option>`;
+                            }).join('') + `</optgroup>` : ''}
+                            ${jobs.length > 0 ? `<optgroup label="Jobs">` + jobs.map(j => {
                                 const client = clients.find(c => c.id === j.client_id);
-                                return `<option value="${j.id}">${j.title}${client ? ' — ' + client.name : ''}</option>`;
-                            }).join('')}
+                                return `<option value="job_${j.id}">${j.title}${client ? ' — ' + client.name : ''}</option>`;
+                            }).join('') + `</optgroup>` : ''}
                         </select>
                         <div class="text-xs text-gray-400 mt-1">Selecting a job will prefill the details below</div>
                     </div>
