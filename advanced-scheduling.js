@@ -156,6 +156,7 @@ async function createRecurringJob(jobData, pattern, startDate, endDate, options 
         // Create individual job instances
         const jobInstances = dates.map(date => ({
             ...jobData,
+            user_id: currentUser.id,
             date: date.toISOString().split('T')[0],
             series_id: seriesId,
             instance_number: dates.indexOf(date) + 1,
