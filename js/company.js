@@ -649,8 +649,8 @@ async function renderAdmin() {
     
     let users = [];
     try {
-        const { data } = await supabaseClient.from('subscriptions').select('*').order('created_at', { ascending: false });
-        users = data || [];
+        const { data: subsData } = await supabaseClient.from('subscriptions').select('*').order('created_at', { ascending: false });
+        users = subsData || [];
     } catch (e) {
         console.error('Error:', e);
     }
