@@ -147,6 +147,7 @@ async function createRecurringJob(jobData, pattern, startDate, endDate, options 
                 end_date: endDate,
                 client_id: jobData.client_id,
                 team_member_id: jobData.team_member_id,
+                user_id: currentUser.id,
                 created_at: new Date().toISOString()
             });
         
