@@ -412,6 +412,37 @@ function generateActivityTimeline() {
         });
     });
     
+    // Upcoming progressive invoices (next 14 days)
+    const fourteenDaysFromNow = new Date();
+    fourteenDaysFromNow.setDate(fourteenDaysFromNow.getDate() + 14);
+
+    invoices.filter(i => i.is_recurring_parent && i.recurring_schedule && i.recurring_start_date).forEach(inv => {
+        const client = clients.find(c => c.id === inv.client_id);
+        const scheduleLabels = { 'weekly': 7, '2-weekly': 14, '3-weekly': 21, 'monthly': 30 };
+        const intervalDays = scheduleLabels[inv.recurring_schedule] || 7;
+        const start = new Date(inv.recurring_start_date);
+        const count = inv.recurring_count || 1;
+
+        for (let i = 1; i < count; i++) {
+            const nextDate = new Date(start);
+            nextDate.setDate(nextDate.getDate() + (intervalDays * i));
+            nextDate.setHours(0, 0, 0, 0);
+            if (nextDate >= today && nextDate <= fourteenDaysFromNow) {
+                const daysUntil = Math.ceil((nextDate - today) / (1000 * 60 * 60 * 24));
+                activities.push({
+                    date: nextDate,
+                    type: 'progressive_due',
+                    icon: '🔄',
+                    color: 'blue',
+                    title: `Progressive Invoice #${i + 1} Due ${daysUntil === 0 ? 'Today' : daysUntil === 1 ? 'Tomorrow' : 'in ' + daysUntil + ' days'}`,
+                    description: `${client?.name || 'Client'} — ${inv.title}`,
+                    amount: inv.total,
+                    itemId: inv.id
+                });
+            }
+        }
+    });
+
     // Sort by date (most recent first)
     activities.sort((a, b) => b.date - a.date);
     
