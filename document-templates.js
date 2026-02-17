@@ -508,6 +508,31 @@ function previewTemplate(templateId) {
     // In real implementation, show modal with full preview
 }
 
+// Apply template to open quote/invoice modal
+function applyTemplateToForm(templateId) {
+    const template = documentTemplates[templateId];
+    if (!template) {
+        console.error('Template not found:', templateId);
+        return;
+    }
+    
+    // Build item object matching what openModal expects
+    const prefill = {
+        ...template.fields,
+        items: template.fields.line_items  // map line_items → items
+    };
+    
+    // Close current modal if open, then open fresh with prefilled data
+    closeModal();
+    setTimeout(() => {
+        if (template.category === 'quotes') {
+            openModal('quote', prefill);
+        } else if (template.category === 'invoices') {
+            openModal('invoice', prefill);
+        }
+    }, 100);
+}
+
 // Load custom templates on startup
 loadCustomTemplates();
 
