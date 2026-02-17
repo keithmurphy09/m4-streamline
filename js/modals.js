@@ -220,6 +220,32 @@ function renderModal() {
                 <label class="block text-sm font-medium mb-1 dark:text-gray-200">Duration (days)</label>
                 <input type="number" id="duration" value="${duration}" min="1" max="30" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
             </div>
+            ${!(editingItem && editingItem.id) ? `
+            <div class="mb-3 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-sm font-medium dark:text-gray-200">🔄 Recurring Job</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Repeat this job on a schedule</div>
+                    </div>
+                    <input type="checkbox" id="is_recurring_job" onchange="toggleRecurringJobOptions()" class="w-4 h-4 text-teal-600 rounded border-gray-300">
+                </div>
+                <div id="recurring-job-options" class="hidden mt-3 space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium mb-1 dark:text-gray-300">Repeat every</label>
+                        <select id="job_recurring_schedule" class="w-full px-3 py-2 border rounded text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                            <option value="7">1 Week</option>
+                            <option value="14">2 Weeks</option>
+                            <option value="21">3 Weeks</option>
+                            <option value="30">Monthly</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1 dark:text-gray-300">Number of occurrences</label>
+                        <input type="number" id="job_recurring_count" min="2" max="52" value="4" class="w-full px-3 py-2 border rounded text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                    </div>
+                </div>
+            </div>
+            ` : ''}
             ${workerCheckboxes}
             <select id="jobStatus" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3">
                 <option value="scheduled" ${status === 'scheduled' ? 'selected' : ''}>Scheduled</option>
@@ -678,6 +704,11 @@ function autoFillJobAddress() {
             addressField.value = client.address;
         }
     }
+}
+
+function toggleRecurringJobOptions() {
+    const enabled = document.getElementById('is_recurring_job').checked;
+    document.getElementById('recurring-job-options').classList.toggle('hidden', !enabled);
 }
 
 function toggleProgressiveOptions() {
