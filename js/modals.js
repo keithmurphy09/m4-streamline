@@ -768,11 +768,10 @@ function updateQuotesForClient() {
     
     const acceptedQuotes = quotes.filter(q => 
         q.client_id === clientId && 
-        (q.accepted || q.status === 'accepted') &&
         q.status !== 'converted'
     );
     
-    quoteSelect.innerHTML = '<option value="">Or select from accepted quote (optional)</option>' +
+    quoteSelect.innerHTML = '<option value="">Or select from quote (optional)</option>' +
         acceptedQuotes.map(q => `<option value="${q.id}">${q.quote_number || q.title} - $${q.total.toFixed(2)}</option>`).join('');
 }
 
