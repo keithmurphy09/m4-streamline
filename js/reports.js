@@ -86,7 +86,7 @@ function renderReports() {
                 </div>
                 
                 <div class="flex gap-3 flex-wrap">
-                    <button onclick="openCustomReportBuilder()" class="px-4 py-2 bg-black text-white rounded-lg border border-teal-400 hover:bg-gray-900 transition-colors text-sm whitespace-nowrap">
+                    <button onclick="openCustomReportBuilder()" class="px-4 py-2 bg-white text-teal-600 border border-teal-400 rounded-lg hover:bg-teal-50 transition-colors text-sm whitespace-nowrap">
                         📝 Create Custom Report
                     </button>
                     <select onchange="reportRange=this.value; renderApp();" class="px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 bg-white text-sm">
