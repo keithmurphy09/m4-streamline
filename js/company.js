@@ -703,6 +703,24 @@ async function renderAdmin() {
                         <td class="px-6 py-4">${u.created_at ? new Date(u.created_at).toLocaleDateString() : '-'}</td>
                         <td class="px-6 py-4">
                             <button onclick="toggleUserStatus('${u.id}', '${u.subscription_status}')" class="px-3 py-1 bg-teal-600 text-white rounded text-xs">${u.subscription_status === 'active' ? 'Set Trial' : 'Activate'}</button>
+                                        <div class="mt-2 p-2 bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
+                                            <div class="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium">Discount</div>
+                                            <div class="flex items-center gap-1 mb-1">
+                                                <input type="number" id="discount_${u.id}" value="${u.discount_percent || 0}" min="0" max="100" class="w-14 px-2 py-1 border rounded text-xs dark:bg-gray-700 dark:text-white">
+                                                <span class="text-xs text-gray-500">%</span>
+                                                <select id="discount_months_${u.id}" class="px-2 py-1 border rounded text-xs dark:bg-gray-700 dark:text-white">
+                                                    <option value="">Indefinite</option>
+                                                    <option value="1" ${u.discount_months == 1 ? 'selected' : ''}>1 month</option>
+                                                    <option value="2" ${u.discount_months == 2 ? 'selected' : ''}>2 months</option>
+                                                    <option value="3" ${u.discount_months == 3 ? 'selected' : ''}>3 months</option>
+                                                    <option value="6" ${u.discount_months == 6 ? 'selected' : ''}>6 months</option>
+                                                    <option value="12" ${u.discount_months == 12 ? 'selected' : ''}>12 months</option>
+                                                </select>
+                                            </div>
+                                            ${u.discount_percent > 0 && u.discount_start_date ? `<div class="text-xs text-gray-400 mb-1">Started: ${new Date(u.discount_start_date).toLocaleDateString()}${u.discount_months ? ` · Ends: ${new Date(new Date(u.discount_start_date).setMonth(new Date(u.discount_start_date).getMonth() + u.discount_months)).toLocaleDateString()}` : ' · Indefinite'}</div>` : ''}
+                                            <button onclick="saveDiscount('${u.id}')" class="w-full px-2 py-1 bg-gray-700 text-white rounded text-xs hover:bg-gray-600">Save Discount</button>
+                                            ${u.discount_percent > 0 ? `<button onclick="removeDiscount('${u.id}')" class="w-full px-2 py-1 mt-1 bg-red-600 text-white rounded text-xs hover:bg-red-700">Remove Discount</button>` : ''}
+                                        </div>
                         </td>
                     </tr>`).join('')}
                 </tbody>
@@ -727,6 +745,39 @@ async function deleteTeamMember(id) {
         renderApp();
     } catch (e) {
         showNotification('Failed to delete', 'error');
+    }
+}
+
+// Save discount for a user
+async function saveDiscount(id) {
+    const percent = parseFloat(document.getElementById('discount_' + id).value) || 0;
+    const months = document.getElementById('discount_months_' + id).value;
+    if (percent < 0 || percent > 100) { showNotification('Discount must be 0-100%', 'error'); return; }
+    try {
+        await supabaseClient.from('subscriptions').update({
+            discount_percent: percent,
+            discount_months: months ? parseInt(months) : null,
+            discount_start_date: percent > 0 ? new Date().toISOString() : null
+        }).eq('id', id);
+        showNotification(`Discount set to ${percent}%${months ? ' for ' + months + ' months' : ' indefinitely'}`, 'success');
+        renderApp();
+    } catch (e) {
+        showNotification('Failed to save discount', 'error');
+    }
+}
+
+// Remove discount
+async function removeDiscount(id) {
+    try {
+        await supabaseClient.from('subscriptions').update({
+            discount_percent: 0,
+            discount_months: null,
+            discount_start_date: null
+        }).eq('id', id);
+        showNotification('Discount removed', 'success');
+        renderApp();
+    } catch (e) {
+        showNotification('Failed to remove discount', 'error');
     }
 }
 
