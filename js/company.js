@@ -597,7 +597,7 @@ function renderTeam() {
         return `<div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow">
             <h2 class="text-2xl font-bold mb-4 dark:text-white">Team Management</h2>
             <p class="text-gray-600 dark:text-gray-300">Only available for Business accounts</p>
-            <button onclick="switchTab('company')" class="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg">Back</button>
+            <button onclick="switchTab('company')" class="bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 mt-4 px-4 py-2 rounded-lg transition-colors">Back</button>
         </div>`;
     }
     
@@ -605,8 +605,8 @@ function renderTeam() {
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-2xl font-bold dark:text-white">Team Management</h1>
             <div class="flex gap-2">
-                <button onclick="editingItem = null; openModal('team_member')" class="px-4 py-2 bg-teal-600 text-white rounded-lg">+ Add Team Member</button>
-                <button onclick="switchTab('company')" class="px-4 py-2 border rounded-lg">Back</button>
+                <button onclick="editingItem = null; openModal('team_member')" class="bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 px-4 py-2 rounded-lg transition-colors">+ Add Team Member</button>
+                <button onclick="switchTab('company')" class="bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 px-4 py-2 rounded-lg transition-colors">Back</button>
             </div>
         </div>
         ${teamMembers.length === 0 ? '<p class="text-gray-500">No team members</p>' : `
@@ -643,7 +643,7 @@ async function renderAdmin() {
         return `<div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow">
             <h2 class="text-2xl font-bold mb-4 dark:text-white">Admin Panel</h2>
             <p class="text-gray-600 dark:text-gray-300">Admin access required</p>
-            <button onclick="switchTab('company')" class="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg">Back</button>
+            <button onclick="switchTab('company')" class="bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 mt-4 px-4 py-2 rounded-lg transition-colors">Back</button>
         </div>`;
     }
     
@@ -661,7 +661,7 @@ async function renderAdmin() {
     return `<div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-2xl font-bold dark:text-white">Admin Panel</h1>
-            <button onclick="switchTab('company')" class="px-4 py-2 border rounded-lg">Back</button>
+            <button onclick="switchTab('company')" class="bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 px-4 py-2 rounded-lg transition-colors">Back</button>
         </div>
         
         <div class="grid grid-cols-4 gap-4 mb-6">
