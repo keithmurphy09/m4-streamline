@@ -34,7 +34,7 @@ function renderSchedule() {
     
     if (scheduleView === 'calendar' || jobViewMode === 'calendar') {
         setTimeout(() => renderCalendar(), 100);
-        return `<div><div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold dark:text-teal-400">Schedule</h2><div class="flex flex-wrap gap-2 sm:gap-4">${workerFilter}${viewToggle}<button onclick="openRecurringJobModal()" class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 rounded-lg transition-colors shadow-sm whitespace-nowrap">🔄 Recurring</button><button onclick="openModal('job')" class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 rounded-lg transition-colors shadow-sm whitespace-nowrap">Schedule Job</button></div></div><div id="calendar" class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow dark:shadow-gray-700"></div></div>`;
+        return `<div><div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold dark:text-teal-400">Schedule</h2><div class="flex flex-wrap gap-2 sm:gap-4">${workerFilter}${viewToggle}<button onclick="openModal('job')" class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 rounded-lg transition-colors shadow-sm whitespace-nowrap">Schedule Job</button></div></div><div id="calendar" class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow dark:shadow-gray-700"></div></div>`;
     }
     
     if (jobViewMode === 'detail' && selectedJobForDetail) {
@@ -165,9 +165,6 @@ function renderJobsTable() {
                 </div>
                 <div class="flex gap-2">
                     ${viewToggle}
-                    <button onclick="openRecurringJobModal()" class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 rounded-lg transition-colors shadow-sm">
-                        🔄 Recurring
-                    </button>
                     <button onclick="openModal('job')" class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 rounded-lg transition-colors shadow-sm">
                         Schedule Job
                     </button>
