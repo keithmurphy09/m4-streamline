@@ -479,10 +479,10 @@ async function submitRecurringJob() {
     const jobData = {
         title,
         client_id: clientId,
-        address,
+        job_address: address,
         team_member_id: teamMemberId,
         status: 'scheduled',
-        user_id: (await supabaseClient.auth.getUser()).data.user.id
+        user_id: currentUser.id
     };
     
     await createRecurringJob(jobData, pattern, new Date(startDate), new Date(endDate), { interval });
