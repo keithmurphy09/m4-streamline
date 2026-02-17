@@ -405,6 +405,7 @@ function renderTemplateSelector(category) {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 ${categoryTemplates.map(([id, template]) => `
                     <button 
+                        id="template-btn-${id}"
                         onclick="applyTemplateToForm('${id}')"
                         class="text-left p-4 border-2 border-gray-200 dark:border-gray-700 hover:border-teal-400 rounded-lg transition-colors group"
                     >
@@ -515,22 +516,37 @@ function applyTemplateToForm(templateId) {
         console.error('Template not found:', templateId);
         return;
     }
-    
-    // Build item object matching what openModal expects
-    const prefill = {
-        ...template.fields,
-        items: template.fields.line_items  // map line_items → items
-    };
-    
-    // Close current modal if open, then open fresh with prefilled data
-    closeModal();
-    setTimeout(() => {
-        if (template.category === 'quotes') {
-            openModal('quote', prefill);
-        } else if (template.category === 'invoices') {
-            openModal('invoice', prefill);
-        }
-    }, 100);
+
+    // Highlight selected button, clear others
+    document.querySelectorAll('[id^="template-btn-"]').forEach(btn => {
+        btn.classList.remove('border-teal-400', 'bg-teal-50', 'dark:bg-teal-900/20');
+        btn.classList.add('border-gray-200', 'dark:border-gray-700');
+    });
+    const selected = document.getElementById('template-btn-' + templateId);
+    if (selected) {
+        selected.classList.remove('border-gray-200', 'dark:border-gray-700');
+        selected.classList.add('border-teal-400', 'bg-teal-50', 'dark:bg-teal-900/20');
+    }
+
+    // Populate existing open modal without closing/reopening (avoids flash)
+    const prefill = { ...template.fields, items: template.fields.line_items };
+
+    // Fill text fields if they exist in the DOM
+    const jobAddress = document.getElementById('job_address');
+    const notes = document.getElementById('notes');
+    const paymentTerms = document.getElementById('payment_terms');
+    const includeGst = document.getElementById('include_gst');
+
+    if (jobAddress && prefill.job_address) jobAddress.value = prefill.job_address;
+    if (notes && prefill.notes) notes.value = prefill.notes;
+    if (paymentTerms && prefill.payment_terms) paymentTerms.value = prefill.payment_terms;
+    if (includeGst && prefill.include_gst !== undefined) includeGst.checked = prefill.include_gst;
+
+    // Replace line items and re-render
+    if (prefill.items && typeof quoteItems !== 'undefined') {
+        quoteItems = prefill.items.map(i => ({ ...i }));
+        if (typeof renderQuoteItems === 'function') renderQuoteItems();
+    }
 }
 
 // Load custom templates on startup
