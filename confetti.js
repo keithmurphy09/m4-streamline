@@ -37,8 +37,8 @@ function triggerConfetti() {
             rotation: Math.random() * 360,
             rotationSpeed: Math.random() * 10 - 5,
             velocityX: Math.random() * 4 - 2,
-            velocityY: Math.random() * 3 + 2,
-            gravity: 0.15
+            velocityY: Math.random() * 2 + 1,
+            gravity: 0.12
         });
     }
     
@@ -96,8 +96,8 @@ function triggerConfetti() {
                     rotation: Math.random() * 360,
                     rotationSpeed: p.rotationSpeed,
                     velocityX: Math.random() * 4 - 2,
-                    velocityY: Math.random() * 3 + 2,
-                    gravity: 0.15
+                    velocityY: Math.random() * 2 + 1,
+                    gravity: 0.12
                 };
             }
         });
