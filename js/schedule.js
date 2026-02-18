@@ -182,7 +182,7 @@ function renderJobsTable() {
                        id="job-search-input"
                        placeholder="Search jobs by title, client, or worker..." 
                        value="${jobSearch}" 
-                       oninput="jobSearch = this.value; clearTimeout(window.jobSearchTimer); window.jobSearchTimer = setTimeout(() => { currentPage.jobs = 1; renderApp(); setTimeout(() => document.getElementById('job-search-input')?.focus(), 0); }, 300);" 
+                       oninput="jobSearch = this.value; saveSearchCursor('job-search-input'); clearTimeout(window.jobSearchTimer); window.jobSearchTimer = setTimeout(() => { currentPage.jobs = 1; renderApp(); setTimeout(() => restoreSearchCursor('job-search-input'), 0); }, 300);" 
                        class="flex-1 px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all">
                 <button onclick="exportToCSV('jobs')" class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors">
                     Export CSV
