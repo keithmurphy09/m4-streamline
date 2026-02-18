@@ -44,6 +44,20 @@ tbody tr * {
     transform: none !important;
 }
 
+/* Table row hover lift - shadow only, NO transform to keep dropdowns stable */
+tbody tr:hover {
+    background-color: rgba(20, 184, 166, 0.02) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease !important;
+    position: relative;
+    z-index: 1;
+}
+
+.dark tbody tr:hover {
+    background-color: rgba(20, 184, 166, 0.05) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
 /* Safe button hover - shadow only, NO transform */
 button:not(:disabled):not([id*="actions"]):hover {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
