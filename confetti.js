@@ -21,20 +21,24 @@ function triggerConfetti() {
     
     // Confetti particles
     const confetti = [];
-    const colors = ['#14b8a6', '#0d9488', '#2dd4bf', '#5eead4', '#99f6e4']; // Teal shades
-    const particleCount = 150;
+    const colors = ['#14b8a6', '#0d9488', '#2dd4bf', '#5eead4', '#99f6e4', '#f59e0b', '#ec4899', '#8b5cf6']; // Teal + accents
+    const shapes = ['square', 'circle', 'rectangle'];
+    const particleCount = 200;
     
     // Create particles
     for (let i = 0; i < particleCount; i++) {
         confetti.push({
             x: Math.random() * canvas.width,
             y: Math.random() * canvas.height - canvas.height,
-            r: Math.random() * 6 + 2,
-            d: Math.random() * particleCount,
+            w: Math.random() * 8 + 4,
+            h: Math.random() * 6 + 3,
             color: colors[Math.floor(Math.random() * colors.length)],
-            tilt: Math.floor(Math.random() * 10) - 10,
-            tiltAngleIncremental: Math.random() * 0.07 + 0.05,
-            tiltAngle: 0
+            shape: shapes[Math.floor(Math.random() * shapes.length)],
+            rotation: Math.random() * 360,
+            rotationSpeed: Math.random() * 10 - 5,
+            velocityX: Math.random() * 4 - 2,
+            velocityY: Math.random() * 3 + 2,
+            gravity: 0.15
         });
     }
     
@@ -53,29 +57,47 @@ function triggerConfetti() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
         confetti.forEach((p, i) => {
-            ctx.beginPath();
-            ctx.lineWidth = p.r / 2;
-            ctx.strokeStyle = p.color;
-            ctx.moveTo(p.x + p.tilt + p.r / 4, p.y);
-            ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 4);
-            ctx.stroke();
+            ctx.save();
+            ctx.translate(p.x + p.w / 2, p.y + p.h / 2);
+            ctx.rotate((p.rotation * Math.PI) / 180);
             
-            // Update
-            p.tiltAngle += p.tiltAngleIncremental;
-            p.y += (Math.cos(p.d) + 3 + p.r / 2) * 1.5;
-            p.tilt = Math.sin(p.tiltAngle) * 15;
+            ctx.fillStyle = p.color;
+            
+            if (p.shape === 'circle') {
+                ctx.beginPath();
+                ctx.arc(0, 0, p.w / 2, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (p.shape === 'square') {
+                ctx.fillRect(-p.w / 2, -p.w / 2, p.w, p.w);
+            } else {
+                ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+            }
+            
+            ctx.restore();
+            
+            // Update physics
+            p.velocityY += p.gravity;
+            p.x += p.velocityX;
+            p.y += p.velocityY;
+            p.rotation += p.rotationSpeed;
+            
+            // Add wave motion
+            p.x += Math.sin(p.y / 50) * 0.5;
             
             // Reset if off screen
             if (p.y > canvas.height) {
                 confetti[i] = {
                     x: Math.random() * canvas.width,
                     y: -20,
-                    r: p.r,
-                    d: p.d,
+                    w: p.w,
+                    h: p.h,
                     color: p.color,
-                    tilt: Math.floor(Math.random() * 10) - 10,
-                    tiltAngleIncremental: p.tiltAngleIncremental,
-                    tiltAngle: p.tiltAngle
+                    shape: p.shape,
+                    rotation: Math.random() * 360,
+                    rotationSpeed: p.rotationSpeed,
+                    velocityX: Math.random() * 4 - 2,
+                    velocityY: Math.random() * 3 + 2,
+                    gravity: 0.15
                 };
             }
         });
