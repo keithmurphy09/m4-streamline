@@ -86,7 +86,7 @@ function renderInvoicesTable() {
             
             let statusBadge = '';
             if (isPaid) {
-                statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-800">PAID</span>';
+                statusBadge = '<span class="inline-flex items-center px-3 py-1 text-xs font-bold text-teal-600 dark:text-teal-400 border-2 border-teal-600 dark:border-teal-400 rounded opacity-70" style="transform: rotate(-15deg); letter-spacing: 2px;">PAID</span>';
             } else if (isOverdue) {
                 statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">OVERDUE</span>';
             } else {
@@ -326,7 +326,7 @@ function renderInvoiceDetail() {
     
     let statusBadge = '';
     if (isPaid) {
-        statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-800">PAID</span>';
+        statusBadge = '<span class="inline-flex items-center px-4 py-2 text-sm font-bold text-teal-600 dark:text-teal-400 border-3 border-teal-600 dark:border-teal-400 rounded opacity-70" style="transform: rotate(-15deg); letter-spacing: 3px; border-width: 3px;">PAID</span>';
     } else if (isOverdue) {
         statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">OVERDUE</span>';
     } else {
@@ -576,6 +576,7 @@ async function markPaid(invoiceId) {
         if (invoice) {
             invoice.status = 'paid';
             invoice.paid_date = finalDate;
+            selectedInvoiceForDetail = invoice; // Update detail view
         }
         
         // Trigger confetti
@@ -611,6 +612,7 @@ async function markUnpaid(invoiceId) {
         if (invoice) {
             invoice.status = 'unpaid';
             invoice.paid_date = null;
+            selectedInvoiceForDetail = invoice; // Update detail view
         }
         
         showNotification('Invoice marked as unpaid', 'success');
