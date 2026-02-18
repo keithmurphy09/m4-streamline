@@ -739,13 +739,19 @@ function calculateSectionData(sectionId, range) {
         
         case 'expenses':
             const byCategory = {};
+            const expensesByCategory = {};
             periodExpenses.forEach(exp => {
                 const cat = exp.category || 'Other';
                 byCategory[cat] = (byCategory[cat] || 0) + parseFloat(exp.amount || 0);
+                if (!expensesByCategory[cat]) {
+                    expensesByCategory[cat] = [];
+                }
+                expensesByCategory[cat].push(exp);
             });
             return {
                 total: totalExpenses,
                 byCategory,
+                expensesByCategory, // Detailed items
                 range: range.label
             };
         
@@ -838,40 +844,56 @@ async function downloadCustomReportPDF(reportId) {
         const logoUrl = companySettings?.logo_url || 'https://i.imgur.com/dF4xRDK.jpeg';
         try {
             const img = await loadImageForPDF(logoUrl);
-            doc.addImage(img, 'JPEG', pageWidth - 45, 10, 35, 20);
+            doc.addImage(img, 'JPEG', 15, 10, 25, 25);
         } catch (error) {
             console.log('Logo load skipped:', error.message);
         }
         
         let y = 15;
         
-        // Company name
-        doc.setFontSize(20);
+        // Company name and tagline (centered on right side)
+        doc.setFontSize(24);
         doc.setFont(undefined, 'bold');
         doc.setTextColor(20, 184, 166);
-        doc.text(companySettings?.business_name || 'M4 STREAMLINE', 15, y);
+        doc.text('M4 STREAMLINE', pageWidth / 2, y, { align: 'center' });
         
         y += 8;
-        doc.setFontSize(10);
-        doc.setFont(undefined, 'normal');
-        doc.setTextColor(100, 100, 100);
-        doc.text('"streamlining your business"', 15, y);
+        doc.setFontSize(11);
+        doc.setFont(undefined, 'italic');
+        doc.setTextColor(20, 184, 166);
+        doc.text('"streamlining your business"', pageWidth / 2, y, { align: 'center' });
         
-        y += 15;
+        y += 20;
         
         // Report title
-        doc.setFontSize(16);
+        doc.setFontSize(20);
         doc.setFont(undefined, 'bold');
         doc.setTextColor(0, 0, 0);
-        doc.text(report.name, 15, y);
+        doc.text(report.name, pageWidth / 2, y, { align: 'center' });
         
-        y += 7;
-        doc.setFontSize(10);
+        y += 10;
+        doc.setFontSize(11);
         doc.setFont(undefined, 'normal');
         doc.setTextColor(100, 100, 100);
-        doc.text(`Generated: ${new Date().toLocaleDateString()}`, 15, y);
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const now = new Date();
+        const dateStr = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+        doc.text(`Generated: ${dateStr}`, pageWidth / 2, y, { align: 'center' });
         
         y += 15;
+        
+        // Company info (centered)
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text(companySettings?.business_name || 'M4 Streamline', pageWidth / 2, y, { align: 'center' });
+        y += 5;
+        if (companySettings?.abn) {
+            doc.text(`ABN: ${companySettings.abn}`, pageWidth / 2, y, { align: 'center' });
+            y += 5;
+        }
+        
+        y += 10;
         
         const sectionNames = {
             revenue: 'Revenue Summary',
@@ -883,195 +905,227 @@ async function downloadCustomReportPDF(reportId) {
             quotes: 'Quote Statistics'
         };
         
-        // Render each section with autoTable
+        // Render each section
         for (const section of report.sections) {
             const sectionData = data[section.id];
             if (!sectionData) continue;
             
             // Check if new page needed
-            if (y > pageHeight - 60) {
+            if (y > pageHeight - 40) {
                 doc.addPage();
                 y = 20;
             }
             
-            switch (section.id) {
-                case 'revenue':
-                    doc.autoTable({
-                        startY: y,
-                        head: [[sectionNames[section.id], '']],
-                        body: [
-                            ['Period', sectionData.range],
-                            ['Total Revenue', `$${sectionData.total.toFixed(2)}`],
-                            ['Invoices Paid', sectionData.count.toString()]
-                        ],
-                        theme: 'grid',
-                        headStyles: { fillColor: [20, 184, 166], fontSize: 12, fontStyle: 'bold' },
-                        styles: { fontSize: 10, cellPadding: 3 },
-                        margin: { left: 15, right: 15 }
-                    });
-                    y = doc.lastAutoTable.finalY + 10;
-                    break;
+            // Section header (teal bar)
+            doc.setFillColor(20, 184, 166);
+            doc.rect(15, y - 5, pageWidth - 30, 10, 'F');
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(255, 255, 255);
+            doc.text(sectionNames[section.id], 20, y + 2);
+            
+            y += 12;
+            
+            // Period
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'italic');
+            doc.setTextColor(100, 100, 100);
+            doc.text(`Period: ${sectionData.range}`, 20, y);
+            y += 10;
+            
+            if (section.id === 'expenses' && sectionData.expensesByCategory) {
+                // Total Expenses
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'bold');
+                doc.setTextColor(0, 0, 0);
+                doc.text(`Total Expenses: $${sectionData.total.toFixed(2)}`, 20, y);
+                y += 10;
                 
-                case 'expenses':
-                    const expenseRows = Object.entries(sectionData.byCategory)
-                        .sort((a, b) => b[1] - a[1])
-                        .map(([cat, amount]) => [cat, `$${amount.toFixed(2)}`]);
-                    expenseRows.push([
-                        { content: 'Total', styles: { fontStyle: 'bold' } },
-                        { content: `$${sectionData.total.toFixed(2)}`, styles: { fontStyle: 'bold' } }
-                    ]);
+                // Each category with detailed line items
+                const sortedCategories = Object.entries(sectionData.byCategory).sort((a, b) => b[1] - a[1]);
+                
+                for (const [category, total] of sortedCategories) {
+                    const categoryExpenses = sectionData.expensesByCategory[category];
                     
-                    doc.autoTable({
-                        startY: y,
-                        head: [[{ content: sectionNames[section.id], colSpan: 2 }]],
-                        body: [
-                            [{ content: `Period: ${sectionData.range}`, colSpan: 2, styles: { fontStyle: 'italic', fillColor: [245, 245, 245] } }],
-                            ...expenseRows
-                        ],
-                        theme: 'grid',
-                        headStyles: { fillColor: [20, 184, 166], fontSize: 12, fontStyle: 'bold' },
-                        styles: { fontSize: 10, cellPadding: 3 },
-                        columnStyles: {
-                            0: { cellWidth: 120 },
-                            1: { halign: 'right', cellWidth: 60 }
-                        },
-                        margin: { left: 15, right: 15 }
-                    });
-                    y = doc.lastAutoTable.finalY + 10;
-                    break;
-                
-                case 'profit':
-                    doc.autoTable({
-                        startY: y,
-                        head: [[sectionNames[section.id], '']],
-                        body: [
-                            ['Period', sectionData.range],
-                            ['Revenue', `$${sectionData.revenue.toFixed(2)}`],
-                            ['Expenses', `$${sectionData.expenses.toFixed(2)}`],
-                            ['', ''],
-                            [{ content: 'Net Profit', styles: { fontStyle: 'bold' } }, 
-                             { content: `$${sectionData.profit.toFixed(2)} (${sectionData.margin.toFixed(1)}%)`, 
-                               styles: { fontStyle: 'bold', textColor: sectionData.profit >= 0 ? [20, 184, 166] : [255, 140, 0] } }]
-                        ],
-                        theme: 'grid',
-                        headStyles: { fillColor: [20, 184, 166], fontSize: 12, fontStyle: 'bold' },
-                        styles: { fontSize: 10, cellPadding: 3 },
-                        columnStyles: {
-                            0: { cellWidth: 120 },
-                            1: { halign: 'right', cellWidth: 60 }
-                        },
-                        margin: { left: 15, right: 15 }
-                    });
-                    y = doc.lastAutoTable.finalY + 10;
-                    break;
-                
-                case 'gst':
-                    doc.autoTable({
-                        startY: y,
-                        head: [[sectionNames[section.id], '']],
-                        body: [
-                            ['Period', sectionData.range],
-                            ['GST Collected', `$${sectionData.collected.toFixed(2)}`],
-                            ['GST Paid', `$${sectionData.paid.toFixed(2)}`],
-                            ['', ''],
-                            [{ content: 'Net GST Payable', styles: { fontStyle: 'bold' } }, 
-                             { content: `$${sectionData.collected.toFixed(2)}`, styles: { fontStyle: 'bold', textColor: [20, 184, 166] } }]
-                        ],
-                        theme: 'grid',
-                        headStyles: { fillColor: [20, 184, 166], fontSize: 12, fontStyle: 'bold' },
-                        styles: { fontSize: 10, cellPadding: 3 },
-                        columnStyles: {
-                            0: { cellWidth: 120 },
-                            1: { halign: 'right', cellWidth: 60 }
-                        },
-                        margin: { left: 15, right: 15 }
-                    });
-                    y = doc.lastAutoTable.finalY + 10;
-                    break;
-                
-                case 'jobs':
-                    doc.autoTable({
-                        startY: y,
-                        head: [[sectionNames[section.id], '']],
-                        body: [
-                            ['Period', sectionData.range],
-                            ['Jobs Completed', sectionData.completed.toString()]
-                        ],
-                        theme: 'grid',
-                        headStyles: { fillColor: [20, 184, 166], fontSize: 12, fontStyle: 'bold' },
-                        styles: { fontSize: 10, cellPadding: 3 },
-                        margin: { left: 15, right: 15 }
-                    });
-                    y = doc.lastAutoTable.finalY + 10;
-                    break;
-                
-                case 'clients':
-                    const clientRows = sectionData.topClients.map(([name, revenue], i) => [
-                        `${i + 1}. ${name}`,
-                        `$${revenue.toFixed(2)}`
-                    ]);
+                    if (y > pageHeight - 60) {
+                        doc.addPage();
+                        y = 20;
+                    }
                     
-                    doc.autoTable({
-                        startY: y,
-                        head: [[{ content: sectionNames[section.id], colSpan: 2 }]],
-                        body: [
-                            [{ content: `Period: ${sectionData.range}`, colSpan: 2, styles: { fontStyle: 'italic', fillColor: [245, 245, 245] } }],
-                            ...clientRows
-                        ],
-                        theme: 'grid',
-                        headStyles: { fillColor: [20, 184, 166], fontSize: 12, fontStyle: 'bold' },
-                        styles: { fontSize: 10, cellPadding: 3 },
-                        columnStyles: {
-                            0: { cellWidth: 120 },
-                            1: { halign: 'right', cellWidth: 60 }
-                        },
-                        margin: { left: 15, right: 15 }
-                    });
-                    y = doc.lastAutoTable.finalY + 10;
-                    break;
+                    // Category header with gray background
+                    doc.setFillColor(240, 240, 240);
+                    doc.rect(15, y - 4, pageWidth - 30, 8, 'F');
+                    doc.setFontSize(11);
+                    doc.setFont(undefined, 'bold');
+                    doc.setTextColor(0, 0, 0);
+                    doc.text(category, 20, y + 2);
+                    doc.text(`$${total.toFixed(2)}`, pageWidth - 20, y + 2, { align: 'right' });
+                    y += 10;
+                    
+                    // Table header
+                    doc.setFontSize(9);
+                    doc.setFont(undefined, 'bold');
+                    doc.setTextColor(80, 80, 80);
+                    doc.text('Date', 20, y);
+                    doc.text('Description', 45, y);
+                    doc.text('Job', 120, y);
+                    doc.text('Amount', pageWidth - 20, y, { align: 'right' });
+                    y += 6;
+                    
+                    // Expense line items
+                    doc.setFont(undefined, 'normal');
+                    doc.setFontSize(8);
+                    doc.setTextColor(0, 0, 0);
+                    
+                    for (const exp of categoryExpenses) {
+                        if (y > pageHeight - 20) {
+                            doc.addPage();
+                            y = 20;
+                        }
+                        
+                        const date = new Date(exp.date).toLocaleDateString('en-GB');
+                        const description = doc.splitTextToSize(exp.description || '', 70);
+                        const job = exp.job_reference || '';
+                        const amount = `$${parseFloat(exp.amount || 0).toFixed(2)}`;
+                        
+                        doc.text(date, 20, y);
+                        doc.text(description[0] || '', 45, y);
+                        doc.text(job, 120, y);
+                        doc.text(amount, pageWidth - 20, y, { align: 'right' });
+                        
+                        y += 5;
+                    }
+                    
+                    y += 5; // Space before next category
+                }
                 
-                case 'quotes':
-                    doc.autoTable({
-                        startY: y,
-                        head: [[sectionNames[section.id], '']],
-                        body: [
-                            ['Period', sectionData.range],
-                            ['Total Quotes', sectionData.total.toString()],
-                            ['Accepted', sectionData.accepted.toString()],
-                            ['Conversion Rate', `${sectionData.conversionRate.toFixed(1)}%`]
-                        ],
-                        theme: 'grid',
-                        headStyles: { fillColor: [20, 184, 166], fontSize: 12, fontStyle: 'bold' },
-                        styles: { fontSize: 10, cellPadding: 3 },
-                        columnStyles: {
-                            0: { cellWidth: 120 },
-                            1: { halign: 'right', cellWidth: 60 }
-                        },
-                        margin: { left: 15, right: 15 }
-                    });
-                    y = doc.lastAutoTable.finalY + 10;
-                    break;
+            } else {
+                // Other sections use simple tables
+                switch (section.id) {
+                    case 'revenue':
+                        doc.autoTable({
+                            startY: y,
+                            body: [
+                                ['Total Revenue', `$${sectionData.total.toFixed(2)}`],
+                                ['Invoices Paid', sectionData.count.toString()]
+                            ],
+                            theme: 'plain',
+                            styles: { fontSize: 10, cellPadding: 2 },
+                            columnStyles: {
+                                0: { cellWidth: 120, fontStyle: 'bold' },
+                                1: { halign: 'right', cellWidth: 60 }
+                            },
+                            margin: { left: 20 }
+                        });
+                        y = doc.lastAutoTable.finalY + 10;
+                        break;
+                    
+                    case 'profit':
+                        doc.autoTable({
+                            startY: y,
+                            body: [
+                                ['Revenue', `$${sectionData.revenue.toFixed(2)}`],
+                                ['Expenses', `$${sectionData.expenses.toFixed(2)}`],
+                                [{ content: 'Net Profit', styles: { fontStyle: 'bold' } }, 
+                                 { content: `$${sectionData.profit.toFixed(2)} (${sectionData.margin.toFixed(1)}%)`, 
+                                   styles: { fontStyle: 'bold' } }]
+                            ],
+                            theme: 'plain',
+                            styles: { fontSize: 10, cellPadding: 2 },
+                            columnStyles: {
+                                0: { cellWidth: 120 },
+                                1: { halign: 'right', cellWidth: 60 }
+                            },
+                            margin: { left: 20 }
+                        });
+                        y = doc.lastAutoTable.finalY + 10;
+                        break;
+                    
+                    case 'gst':
+                        doc.autoTable({
+                            startY: y,
+                            body: [
+                                ['GST Collected', `$${sectionData.collected.toFixed(2)}`],
+                                ['GST Paid', `$${sectionData.paid.toFixed(2)}`],
+                                [{ content: 'Net GST Payable', styles: { fontStyle: 'bold' } }, 
+                                 { content: `$${sectionData.collected.toFixed(2)}`, styles: { fontStyle: 'bold' } }]
+                            ],
+                            theme: 'plain',
+                            styles: { fontSize: 10, cellPadding: 2 },
+                            columnStyles: {
+                                0: { cellWidth: 120 },
+                                1: { halign: 'right', cellWidth: 60 }
+                            },
+                            margin: { left: 20 }
+                        });
+                        y = doc.lastAutoTable.finalY + 10;
+                        break;
+                    
+                    case 'jobs':
+                        doc.setFontSize(10);
+                        doc.setFont(undefined, 'normal');
+                        doc.setTextColor(0, 0, 0);
+                        doc.text(`Jobs Completed: ${sectionData.completed}`, 20, y);
+                        y += 10;
+                        break;
+                    
+                    case 'clients':
+                        if (sectionData.topClients && sectionData.topClients.length > 0) {
+                            const clientRows = sectionData.topClients.map(([name, revenue], i) => [
+                                `${i + 1}. ${name}`,
+                                `$${revenue.toFixed(2)}`
+                            ]);
+                            
+                            doc.autoTable({
+                                startY: y,
+                                body: clientRows,
+                                theme: 'plain',
+                                styles: { fontSize: 10, cellPadding: 2 },
+                                columnStyles: {
+                                    0: { cellWidth: 120 },
+                                    1: { halign: 'right', cellWidth: 60 }
+                                },
+                                margin: { left: 20 }
+                            });
+                            y = doc.lastAutoTable.finalY + 10;
+                        }
+                        break;
+                    
+                    case 'quotes':
+                        doc.autoTable({
+                            startY: y,
+                            body: [
+                                ['Total Quotes', sectionData.total.toString()],
+                                ['Accepted', sectionData.accepted.toString()],
+                                ['Conversion Rate', `${sectionData.conversionRate.toFixed(1)}%`]
+                            ],
+                            theme: 'plain',
+                            styles: { fontSize: 10, cellPadding: 2 },
+                            columnStyles: {
+                                0: { cellWidth: 120 },
+                                1: { halign: 'right', cellWidth: 60 }
+                            },
+                            margin: { left: 20 }
+                        });
+                        y = doc.lastAutoTable.finalY + 10;
+                        break;
+                }
             }
+            
+            y += 5;
         }
         
-        // Footer
-        const totalPages = doc.internal.getNumberOfPages();
-        for (let i = 1; i <= totalPages; i++) {
-            doc.setPage(i);
-            doc.setFontSize(8);
-            doc.setTextColor(150, 150, 150);
-            doc.text(
-                `Page ${i} of ${totalPages}`,
-                pageWidth / 2,
-                pageHeight - 10,
-                { align: 'center' }
-            );
-            doc.text(
-                `Generated on ${new Date().toLocaleDateString()}`,
-                15,
-                pageHeight - 10
-            );
-        }
+        // Footer on last page
+        doc.setPage(doc.internal.getNumberOfPages());
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'italic');
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+            'Generated by M4 Streamline - Professional Business Management',
+            pageWidth / 2,
+            pageHeight - 10,
+            { align: 'center' }
+        );
         
         console.log('Saving PDF...');
         doc.save(`${report.name.replace(/\s/g, '-')}.pdf`);
