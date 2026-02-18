@@ -21,6 +21,16 @@ function closeInvoiceDetail() {
 function renderInvoices() {
     console.log('🔥 INVOICES V2.0 - viewMode:', invoiceViewMode, 'selected:', selectedInvoiceForDetail);
     
+    // Show shimmer while data loads
+    if (!isDataLoaded && invoices.length === 0) {
+        return `<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Invoices</h2>
+            <table class="w-full">
+                <tbody>${typeof renderTableShimmer === 'function' ? renderTableShimmer(8) : ''}</tbody>
+            </table>
+        </div>`;
+    }
+    
     // Reset to table view if no invoice is selected
     if (invoiceViewMode === 'detail' && !selectedInvoiceForDetail) {
         console.log('Resetting to table view');
