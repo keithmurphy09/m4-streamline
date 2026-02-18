@@ -2,17 +2,6 @@
 // M4 STREAMLINE - Utility Functions
 // ═══════════════════════════════════════════════════════════════════
 
-// Format Functions
-function formatCurrency(amount) {
-    return '$' + parseFloat(amount || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-}
-
-function formatDate(dateString) {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
 // Search Debouncing
 function debouncedSearch(searchType, value, resetPage = true) {
     if (searchType === 'client') clientSearch = value;
@@ -1016,6 +1005,25 @@ async function sendInvoiceEmail(invoice) {
     } catch (error) {
         console.error('Email error:', error);
         alert('❌ Failed to send email: ' + error.message);
+    }
+}
+
+// Cursor position tracker for search inputs
+let searchCursorPositions = {};
+
+function saveSearchCursor(inputId) {
+    const input = document.getElementById(inputId);
+    if (input) {
+        searchCursorPositions[inputId] = input.selectionStart;
+    }
+}
+
+function restoreSearchCursor(inputId) {
+    const input = document.getElementById(inputId);
+    const savedPosition = searchCursorPositions[inputId];
+    if (input && savedPosition !== undefined) {
+        input.focus();
+        input.setSelectionRange(savedPosition, savedPosition);
     }
 }
 
