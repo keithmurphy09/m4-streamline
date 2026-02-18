@@ -404,7 +404,7 @@ function getReportDateRange(rangeType) {
     }
 }
 
-// Download report as PDF
+// Download report as PDF with M4 branding and professional tables
 async function downloadReportPDF() {
     const range = getReportDateRange(reportRange);
     
@@ -433,88 +433,166 @@ async function downloadReportPDF() {
         expensesByCategory[cat] = (expensesByCategory[cat] || 0) + parseFloat(exp.amount || 0);
     });
     
-    // Generate PDF using jsPDF
+    // Generate PDF
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    
     const pageWidth = doc.internal.pageSize.getWidth();
-    let y = 20;
+    const pageHeight = doc.internal.pageSize.getHeight();
     
-    // Title
+    // Add M4 logo
+    const logoUrl = companySettings?.logo_url || 'https://i.imgur.com/dF4xRDK.jpeg';
+    try {
+        const img = await loadImageForPDF(logoUrl);
+        doc.addImage(img, 'JPEG', pageWidth - 45, 10, 35, 20);
+    } catch (error) {
+        console.log('Logo load skipped');
+    }
+    
+    let y = 15;
+    
+    // Company name
     doc.setFontSize(20);
     doc.setFont(undefined, 'bold');
-    doc.text('Financial Report', pageWidth / 2, y, { align: 'center' });
+    doc.setTextColor(20, 184, 166);
+    doc.text(companySettings?.business_name || 'M4 STREAMLINE', 15, y);
     
-    y += 10;
-    doc.setFontSize(12);
+    y += 8;
+    doc.setFontSize(10);
     doc.setFont(undefined, 'normal');
-    doc.text(range.label, pageWidth / 2, y, { align: 'center' });
+    doc.setTextColor(100, 100, 100);
+    doc.text('"streamlining your business"', 15, y);
     
     y += 15;
     
-    // Profit & Loss
-    doc.setFontSize(14);
+    // Report title
+    doc.setFontSize(16);
     doc.setFont(undefined, 'bold');
-    doc.text('Profit & Loss Statement', 20, y);
-    
-    y += 10;
-    doc.setFontSize(11);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Revenue:`, 20, y);
-    doc.text(`$${revenue.toFixed(2)}`, pageWidth - 20, y, { align: 'right' });
+    doc.setTextColor(0, 0, 0);
+    doc.text('Financial Report', 15, y);
     
     y += 7;
-    doc.text(`Total Expenses:`, 20, y);
-    doc.text(`$${totalExpenses.toFixed(2)}`, pageWidth - 20, y, { align: 'right' });
-    
-    y += 10;
-    doc.setFont(undefined, 'bold');
-    doc.text(`Net Profit:`, 20, y);
-    doc.text(`$${profit.toFixed(2)} (${margin.toFixed(1)}% margin)`, pageWidth - 20, y, { align: 'right' });
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(100, 100, 100);
+    doc.text(range.label, 15, y);
+    doc.text(`${range.start.toLocaleDateString()} - ${range.end.toLocaleDateString()}`, 15, y + 5);
     
     y += 15;
     
-    // GST Summary
-    doc.setFontSize(14);
-    doc.text('GST Summary', 20, y);
-    
-    y += 10;
-    doc.setFontSize(11);
-    doc.setFont(undefined, 'normal');
-    doc.text(`GST Collected:`, 20, y);
-    doc.text(`$${gstCollected.toFixed(2)}`, pageWidth - 20, y, { align: 'right' });
-    
-    y += 7;
-    doc.text(`GST Paid:`, 20, y);
-    doc.text(`$0.00`, pageWidth - 20, y, { align: 'right' });
-    
-    y += 10;
-    doc.setFont(undefined, 'bold');
-    doc.text(`Net GST Payable:`, 20, y);
-    doc.text(`$${gstCollected.toFixed(2)}`, pageWidth - 20, y, { align: 'right' });
-    
-    y += 15;
-    
-    // Expense Breakdown
-    doc.setFontSize(14);
-    doc.text('Expense Breakdown', 20, y);
-    
-    y += 10;
-    doc.setFontSize(11);
-    doc.setFont(undefined, 'normal');
-    
-    Object.entries(expensesByCategory).sort((a, b) => b[1] - a[1]).forEach(([cat, amount]) => {
-        if (y > 270) {
-            doc.addPage();
-            y = 20;
-        }
-        doc.text(cat, 20, y);
-        doc.text(`$${amount.toFixed(2)}`, pageWidth - 20, y, { align: 'right' });
-        y += 7;
+    // Profit & Loss Table
+    doc.autoTable({
+        startY: y,
+        head: [['Profit & Loss Statement', '']],
+        body: [
+            ['Revenue', `$${revenue.toFixed(2)}`],
+            ['Total Expenses', `$${totalExpenses.toFixed(2)}`],
+            ['', ''],
+            [{ content: 'Net Profit', styles: { fontStyle: 'bold' } }, 
+             { content: `$${profit.toFixed(2)} (${margin.toFixed(1)}% margin)`, styles: { fontStyle: 'bold', textColor: profit >= 0 ? [20, 184, 166] : [255, 140, 0] } }]
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: [20, 184, 166], fontSize: 12, fontStyle: 'bold' },
+        styles: { fontSize: 10, cellPadding: 3 },
+        columnStyles: {
+            0: { cellWidth: 120 },
+            1: { halign: 'right', cellWidth: 60 }
+        },
+        margin: { left: 15, right: 15 }
     });
+    
+    y = doc.lastAutoTable.finalY + 10;
+    
+    // GST Summary Table
+    doc.autoTable({
+        startY: y,
+        head: [['GST Summary', '']],
+        body: [
+            ['GST Collected (on sales)', `$${gstCollected.toFixed(2)}`],
+            ['GST Paid (on expenses)', '$0.00'],
+            ['', ''],
+            [{ content: 'Net GST Payable', styles: { fontStyle: 'bold' } }, 
+             { content: `$${gstCollected.toFixed(2)}`, styles: { fontStyle: 'bold', textColor: [20, 184, 166] } }]
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: [20, 184, 166], fontSize: 12, fontStyle: 'bold' },
+        styles: { fontSize: 10, cellPadding: 3 },
+        columnStyles: {
+            0: { cellWidth: 120 },
+            1: { halign: 'right', cellWidth: 60 }
+        },
+        margin: { left: 15, right: 15 }
+    });
+    
+    y = doc.lastAutoTable.finalY + 10;
+    
+    // Check if new page needed
+    if (y > pageHeight - 80) {
+        doc.addPage();
+        y = 20;
+    }
+    
+    // Expense Breakdown Table
+    const expenseRows = Object.entries(expensesByCategory)
+        .sort((a, b) => b[1] - a[1])
+        .map(([cat, amount]) => [
+            cat,
+            `$${amount.toFixed(2)}`,
+            `${revenue > 0 ? ((amount / revenue) * 100).toFixed(1) : '0.0'}%`
+        ]);
+    
+    expenseRows.push([
+        { content: 'Total', styles: { fontStyle: 'bold' } },
+        { content: `$${totalExpenses.toFixed(2)}`, styles: { fontStyle: 'bold' } },
+        { content: `${revenue > 0 ? ((totalExpenses / revenue) * 100).toFixed(1) : '0.0'}%`, styles: { fontStyle: 'bold' } }
+    ]);
+    
+    doc.autoTable({
+        startY: y,
+        head: [['Expense Breakdown by Category', 'Amount', '% of Revenue']],
+        body: expenseRows.length > 1 ? expenseRows : [['No expenses for this period', '', '']],
+        theme: 'grid',
+        headStyles: { fillColor: [20, 184, 166], fontSize: 12, fontStyle: 'bold' },
+        styles: { fontSize: 10, cellPadding: 3 },
+        columnStyles: {
+            0: { cellWidth: 90 },
+            1: { halign: 'right', cellWidth: 50 },
+            2: { halign: 'right', cellWidth: 40 }
+        },
+        margin: { left: 15, right: 15 }
+    });
+    
+    // Footer
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+            `Page ${i} of ${totalPages}`,
+            pageWidth / 2,
+            pageHeight - 10,
+            { align: 'center' }
+        );
+        doc.text(
+            `Generated on ${new Date().toLocaleDateString()}`,
+            15,
+            pageHeight - 10
+        );
+    }
     
     // Save PDF
     doc.save(`Financial-Report-${range.label.replace(/\s/g, '-')}.pdf`);
+}
+
+// Helper function to load images for PDF
+function loadImageForPDF(url) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = url;
+    });
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -727,7 +805,7 @@ function calculateSectionData(sectionId, range) {
 }
 
 // Download custom report as PDF
-function downloadCustomReportPDF(reportId) {
+async function downloadCustomReportPDF(reportId) {
     const report = customReports.find(r => r.id === reportId);
     if (!report) return;
     
@@ -741,115 +819,246 @@ function downloadCustomReportPDF(reportId) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    let y = 20;
+    const pageHeight = doc.internal.pageSize.getHeight();
     
-    // Title
+    // Add M4 logo
+    const logoUrl = companySettings?.logo_url || 'https://i.imgur.com/dF4xRDK.jpeg';
+    try {
+        const img = await loadImageForPDF(logoUrl);
+        doc.addImage(img, 'JPEG', pageWidth - 45, 10, 35, 20);
+    } catch (error) {
+        console.log('Logo load skipped');
+    }
+    
+    let y = 15;
+    
+    // Company name
     doc.setFontSize(20);
     doc.setFont(undefined, 'bold');
-    doc.text(report.name, pageWidth / 2, y, { align: 'center' });
+    doc.setTextColor(20, 184, 166);
+    doc.text(companySettings?.business_name || 'M4 STREAMLINE', 15, y);
     
-    y += 10;
+    y += 8;
     doc.setFontSize(10);
     doc.setFont(undefined, 'normal');
-    doc.text(`Generated: ${new Date(report.lastRun).toLocaleDateString()}`, pageWidth / 2, y, { align: 'center' });
+    doc.setTextColor(100, 100, 100);
+    doc.text('"streamlining your business"', 15, y);
     
     y += 15;
     
-    // Render each section
-    report.sections.forEach(section => {
+    // Report title
+    doc.setFontSize(16);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text(report.name, 15, y);
+    
+    y += 7;
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 15, y);
+    
+    y += 15;
+    
+    const sectionNames = {
+        revenue: 'Revenue Summary',
+        expenses: 'Expense Breakdown',
+        profit: 'Profit & Loss',
+        gst: 'GST Summary',
+        jobs: 'Jobs Completed',
+        clients: 'Top Clients',
+        quotes: 'Quote Statistics'
+    };
+    
+    // Render each section with autoTable
+    for (const section of report.sections) {
         const sectionData = data[section.id];
-        if (!sectionData) return;
+        if (!sectionData) continue;
         
-        const sectionNames = {
-            revenue: 'Revenue Summary',
-            expenses: 'Expense Breakdown',
-            profit: 'Profit & Loss',
-            gst: 'GST Summary',
-            jobs: 'Jobs Completed',
-            clients: 'Top Clients',
-            quotes: 'Quote Statistics'
-        };
-        
-        doc.setFontSize(14);
-        doc.setFont(undefined, 'bold');
-        doc.text(sectionNames[section.id] || section.id, 20, y);
-        
-        y += 7;
-        doc.setFontSize(10);
-        doc.setFont(undefined, 'italic');
-        doc.text(`Period: ${sectionData.range}`, 20, y);
-        
-        y += 10;
-        doc.setFont(undefined, 'normal');
-        
-        // Section-specific rendering
-        switch (section.id) {
-            case 'revenue':
-                doc.text(`Total Revenue: $${sectionData.total.toFixed(2)}`, 20, y);
-                y += 5;
-                doc.text(`Invoices Paid: ${sectionData.count}`, 20, y);
-                break;
-            
-            case 'expenses':
-                doc.text(`Total Expenses: $${sectionData.total.toFixed(2)}`, 20, y);
-                y += 7;
-                Object.entries(sectionData.byCategory).forEach(([cat, amount]) => {
-                    if (y > 270) {
-                        doc.addPage();
-                        y = 20;
-                    }
-                    doc.text(`  ${cat}: $${amount.toFixed(2)}`, 25, y);
-                    y += 5;
-                });
-                break;
-            
-            case 'profit':
-                doc.text(`Revenue: $${sectionData.revenue.toFixed(2)}`, 20, y);
-                y += 5;
-                doc.text(`Expenses: $${sectionData.expenses.toFixed(2)}`, 20, y);
-                y += 5;
-                doc.setFont(undefined, 'bold');
-                doc.text(`Net Profit: $${sectionData.profit.toFixed(2)} (${sectionData.margin.toFixed(1)}%)`, 20, y);
-                doc.setFont(undefined, 'normal');
-                break;
-            
-            case 'gst':
-                doc.text(`GST Collected: $${sectionData.collected.toFixed(2)}`, 20, y);
-                y += 5;
-                doc.text(`GST Paid: $${sectionData.paid.toFixed(2)}`, 20, y);
-                y += 5;
-                doc.setFont(undefined, 'bold');
-                doc.text(`Net GST Payable: $${sectionData.collected.toFixed(2)}`, 20, y);
-                doc.setFont(undefined, 'normal');
-                break;
-            
-            case 'jobs':
-                doc.text(`Jobs Completed: ${sectionData.completed}`, 20, y);
-                break;
-            
-            case 'clients':
-                sectionData.topClients.forEach(([name, revenue], i) => {
-                    doc.text(`${i + 1}. ${name}: $${revenue.toFixed(2)}`, 25, y);
-                    y += 5;
-                });
-                break;
-            
-            case 'quotes':
-                doc.text(`Total Quotes: ${sectionData.total}`, 20, y);
-                y += 5;
-                doc.text(`Accepted: ${sectionData.accepted}`, 20, y);
-                y += 5;
-                doc.text(`Conversion Rate: ${sectionData.conversionRate.toFixed(1)}%`, 20, y);
-                break;
-        }
-        
-        y += 12;
-        
-        if (y > 250) {
+        // Check if new page needed
+        if (y > pageHeight - 60) {
             doc.addPage();
             y = 20;
         }
-    });
+        
+        switch (section.id) {
+            case 'revenue':
+                doc.autoTable({
+                    startY: y,
+                    head: [[sectionNames[section.id], '']],
+                    body: [
+                        ['Period', sectionData.range],
+                        ['Total Revenue', `$${sectionData.total.toFixed(2)}`],
+                        ['Invoices Paid', sectionData.count.toString()]
+                    ],
+                    theme: 'grid',
+                    headStyles: { fillColor: [20, 184, 166], fontSize: 12, fontStyle: 'bold' },
+                    styles: { fontSize: 10, cellPadding: 3 },
+                    margin: { left: 15, right: 15 }
+                });
+                y = doc.lastAutoTable.finalY + 10;
+                break;
+            
+            case 'expenses':
+                const expenseRows = Object.entries(sectionData.byCategory)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([cat, amount]) => [cat, `$${amount.toFixed(2)}`]);
+                expenseRows.push([
+                    { content: 'Total', styles: { fontStyle: 'bold' } },
+                    { content: `$${sectionData.total.toFixed(2)}`, styles: { fontStyle: 'bold' } }
+                ]);
+                
+                doc.autoTable({
+                    startY: y,
+                    head: [[{ content: sectionNames[section.id], colSpan: 2 }]],
+                    body: [
+                        [{ content: `Period: ${sectionData.range}`, colSpan: 2, styles: { fontStyle: 'italic', fillColor: [245, 245, 245] } }],
+                        ...expenseRows
+                    ],
+                    theme: 'grid',
+                    headStyles: { fillColor: [20, 184, 166], fontSize: 12, fontStyle: 'bold' },
+                    styles: { fontSize: 10, cellPadding: 3 },
+                    columnStyles: {
+                        0: { cellWidth: 120 },
+                        1: { halign: 'right', cellWidth: 60 }
+                    },
+                    margin: { left: 15, right: 15 }
+                });
+                y = doc.lastAutoTable.finalY + 10;
+                break;
+            
+            case 'profit':
+                doc.autoTable({
+                    startY: y,
+                    head: [[sectionNames[section.id], '']],
+                    body: [
+                        ['Period', sectionData.range],
+                        ['Revenue', `$${sectionData.revenue.toFixed(2)}`],
+                        ['Expenses', `$${sectionData.expenses.toFixed(2)}`],
+                        ['', ''],
+                        [{ content: 'Net Profit', styles: { fontStyle: 'bold' } }, 
+                         { content: `$${sectionData.profit.toFixed(2)} (${sectionData.margin.toFixed(1)}%)`, 
+                           styles: { fontStyle: 'bold', textColor: sectionData.profit >= 0 ? [20, 184, 166] : [255, 140, 0] } }]
+                    ],
+                    theme: 'grid',
+                    headStyles: { fillColor: [20, 184, 166], fontSize: 12, fontStyle: 'bold' },
+                    styles: { fontSize: 10, cellPadding: 3 },
+                    columnStyles: {
+                        0: { cellWidth: 120 },
+                        1: { halign: 'right', cellWidth: 60 }
+                    },
+                    margin: { left: 15, right: 15 }
+                });
+                y = doc.lastAutoTable.finalY + 10;
+                break;
+            
+            case 'gst':
+                doc.autoTable({
+                    startY: y,
+                    head: [[sectionNames[section.id], '']],
+                    body: [
+                        ['Period', sectionData.range],
+                        ['GST Collected', `$${sectionData.collected.toFixed(2)}`],
+                        ['GST Paid', `$${sectionData.paid.toFixed(2)}`],
+                        ['', ''],
+                        [{ content: 'Net GST Payable', styles: { fontStyle: 'bold' } }, 
+                         { content: `$${sectionData.collected.toFixed(2)}`, styles: { fontStyle: 'bold', textColor: [20, 184, 166] } }]
+                    ],
+                    theme: 'grid',
+                    headStyles: { fillColor: [20, 184, 166], fontSize: 12, fontStyle: 'bold' },
+                    styles: { fontSize: 10, cellPadding: 3 },
+                    columnStyles: {
+                        0: { cellWidth: 120 },
+                        1: { halign: 'right', cellWidth: 60 }
+                    },
+                    margin: { left: 15, right: 15 }
+                });
+                y = doc.lastAutoTable.finalY + 10;
+                break;
+            
+            case 'jobs':
+                doc.autoTable({
+                    startY: y,
+                    head: [[sectionNames[section.id], '']],
+                    body: [
+                        ['Period', sectionData.range],
+                        ['Jobs Completed', sectionData.completed.toString()]
+                    ],
+                    theme: 'grid',
+                    headStyles: { fillColor: [20, 184, 166], fontSize: 12, fontStyle: 'bold' },
+                    styles: { fontSize: 10, cellPadding: 3 },
+                    margin: { left: 15, right: 15 }
+                });
+                y = doc.lastAutoTable.finalY + 10;
+                break;
+            
+            case 'clients':
+                const clientRows = sectionData.topClients.map(([name, revenue], i) => [
+                    `${i + 1}. ${name}`,
+                    `$${revenue.toFixed(2)}`
+                ]);
+                
+                doc.autoTable({
+                    startY: y,
+                    head: [[{ content: sectionNames[section.id], colSpan: 2 }]],
+                    body: [
+                        [{ content: `Period: ${sectionData.range}`, colSpan: 2, styles: { fontStyle: 'italic', fillColor: [245, 245, 245] } }],
+                        ...clientRows
+                    ],
+                    theme: 'grid',
+                    headStyles: { fillColor: [20, 184, 166], fontSize: 12, fontStyle: 'bold' },
+                    styles: { fontSize: 10, cellPadding: 3 },
+                    columnStyles: {
+                        0: { cellWidth: 120 },
+                        1: { halign: 'right', cellWidth: 60 }
+                    },
+                    margin: { left: 15, right: 15 }
+                });
+                y = doc.lastAutoTable.finalY + 10;
+                break;
+            
+            case 'quotes':
+                doc.autoTable({
+                    startY: y,
+                    head: [[sectionNames[section.id], '']],
+                    body: [
+                        ['Period', sectionData.range],
+                        ['Total Quotes', sectionData.total.toString()],
+                        ['Accepted', sectionData.accepted.toString()],
+                        ['Conversion Rate', `${sectionData.conversionRate.toFixed(1)}%`]
+                    ],
+                    theme: 'grid',
+                    headStyles: { fillColor: [20, 184, 166], fontSize: 12, fontStyle: 'bold' },
+                    styles: { fontSize: 10, cellPadding: 3 },
+                    columnStyles: {
+                        0: { cellWidth: 120 },
+                        1: { halign: 'right', cellWidth: 60 }
+                    },
+                    margin: { left: 15, right: 15 }
+                });
+                y = doc.lastAutoTable.finalY + 10;
+                break;
+        }
+    }
+    
+    // Footer
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+            `Page ${i} of ${totalPages}`,
+            pageWidth / 2,
+            pageHeight - 10,
+            { align: 'center' }
+        );
+        doc.text(
+            `Generated on ${new Date().toLocaleDateString()}`,
+            15,
+            pageHeight - 10
+        );
+    }
     
     doc.save(`${report.name.replace(/\s/g, '-')}.pdf`);
 }
