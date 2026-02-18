@@ -67,9 +67,9 @@ function renderEmailAutomationSettings() {
     ];
 
     return `
-        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm max-w-2xl mb-6">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow max-w-2xl mb-6">
             <!-- Header -->
-            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+            <div class="border-b border-gray-200 dark:border-gray-700 pb-4 mb-4">
                 <div class="flex items-center justify-between">
                     <div>
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Email Automation</h3>
@@ -87,8 +87,7 @@ function renderEmailAutomationSettings() {
             </div>
 
             <!-- Automation Toggles -->
-            <div class="p-6">
-                <div class="space-y-4">
+            <div class="space-y-4">
                     ${automations.map(auto => `
                         <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg ${!emailAutomationSettings.enabled ? 'opacity-50' : ''}">
                             <div class="flex-1">
@@ -114,7 +113,6 @@ function renderEmailAutomationSettings() {
                         Email templates can be customized in <code class="px-1 py-0.5 bg-blue-100 dark:bg-blue-900 rounded">email-automation.js</code>
                     </p>
                 </div>
-            </div>
         </div>
     `;
 }
