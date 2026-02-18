@@ -145,6 +145,9 @@ async function loadAllData() {
         clientNotes = notes.data || [];
         window.clientNotes = clientNotes; // Make globally available
         
+        // Mark data as loaded for shimmer states
+        isDataLoaded = true;
+        
         if (!subscription) {
             const { data: trialCheck } = await supabaseClient
                 .from('trial_emails')
