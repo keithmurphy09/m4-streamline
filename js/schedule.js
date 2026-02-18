@@ -66,7 +66,12 @@ function renderJobsTable() {
         );
     });
     
-    const sortedJobs = [...filteredJobs].sort((a, b) => {
+    // Apply smart filter if active
+    const smartFiltered = typeof getSmartFilteredData === 'function' 
+        ? getSmartFilteredData(filteredJobs, 'jobs')
+        : filteredJobs;
+    
+    const sortedJobs = [...smartFiltered].sort((a, b) => {
         const dateA = new Date(a.date + 'T' + (a.time || '00:00'));
         const dateB = new Date(b.date + 'T' + (b.time || '00:00'));
         return dateB - dateA;
@@ -184,6 +189,8 @@ function renderJobsTable() {
                 </button>
             </div>
         </div>
+        
+        ${typeof renderSmartFilterBar === 'function' ? renderSmartFilterBar('jobs') : ''}
         
         ${bulkActions}
         
