@@ -40,7 +40,7 @@ function triggerConfetti() {
     
     let animationFrame;
     let startTime = Date.now();
-    const duration = 2000; // 2 seconds
+    const duration = 3500; // 3.5 seconds
     
     function draw() {
         const elapsed = Date.now() - startTime;
@@ -62,7 +62,7 @@ function triggerConfetti() {
             
             // Update
             p.tiltAngle += p.tiltAngleIncremental;
-            p.y += (Math.cos(p.d) + 3 + p.r / 2) / 2;
+            p.y += (Math.cos(p.d) + 3 + p.r / 2) * 1.5;
             p.tilt = Math.sin(p.tiltAngle) * 15;
             
             // Reset if off screen
