@@ -68,51 +68,39 @@ function renderEmailAutomationSettings() {
 
     return `
         <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow max-w-2xl mb-6">
-            <!-- Header -->
-            <div class="border-b border-gray-200 dark:border-gray-700 pb-4 mb-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Email Automation</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Automatically send emails for key events</p>
-                    </div>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" ${emailAutomationSettings.enabled ? 'checked' : ''} 
-                               onchange="toggleEmailAutomationMaster()" class="sr-only peer">
-                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 dark:peer-focus:ring-teal-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-teal-600"></div>
-                        <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">
-                            ${emailAutomationSettings.enabled ? 'Enabled' : 'Disabled'}
-                        </span>
-                    </label>
-                </div>
+            <h3 class="text-lg font-bold dark:text-teal-400 mb-2">📧 Email Automation</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-300 mb-6">Automatically send emails for key events</p>
+            
+            <div class="flex items-center justify-between mb-6">
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Enable Email Automation</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" ${emailAutomationSettings.enabled ? 'checked' : ''} 
+                           onchange="toggleEmailAutomationMaster()" class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 dark:peer-focus:ring-teal-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-teal-600"></div>
+                    <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">
+                        ${emailAutomationSettings.enabled ? 'Enabled' : 'Disabled'}
+                    </span>
+                </label>
             </div>
 
-            <!-- Automation Toggles -->
             <div class="space-y-4">
-                    ${automations.map(auto => `
-                        <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg ${!emailAutomationSettings.enabled ? 'opacity-50' : ''}">
-                            <div class="flex-1">
-                                <h4 class="text-sm font-medium text-gray-900 dark:text-white">${auto.label}</h4>
-                                <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">${auto.description}</p>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" 
-                                       ${emailAutomationSettings.automations[auto.key] ? 'checked' : ''} 
-                                       ${!emailAutomationSettings.enabled ? 'disabled' : ''}
-                                       onchange="toggleEmailAutomation('${auto.key}')" 
-                                       class="sr-only peer">
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 dark:peer-focus:ring-teal-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-teal-600 peer-disabled:opacity-50"></div>
-                            </label>
+                ${automations.map(auto => `
+                    <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg ${!emailAutomationSettings.enabled ? 'opacity-50' : ''}">
+                        <div class="flex-1">
+                            <h4 class="text-sm font-medium text-gray-900 dark:text-white">${auto.label}</h4>
+                            <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">${auto.description}</p>
                         </div>
-                    `).join('')}
-                </div>
-
-                <!-- Custom Template Editor (Coming Soon) -->
-                <div class="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                    <h4 class="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-2">💡 Pro Tip</h4>
-                    <p class="text-sm text-blue-800 dark:text-blue-400">
-                        Email templates can be customized in <code class="px-1 py-0.5 bg-blue-100 dark:bg-blue-900 rounded">email-automation.js</code>
-                    </p>
-                </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" 
+                                   ${emailAutomationSettings.automations[auto.key] ? 'checked' : ''} 
+                                   ${!emailAutomationSettings.enabled ? 'disabled' : ''}
+                                   onchange="toggleEmailAutomation('${auto.key}')" 
+                                   class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 dark:peer-focus:ring-teal-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-teal-600 peer-disabled:opacity-50"></div>
+                        </label>
+                    </div>
+                `).join('')}
+            </div>
         </div>
     `;
 }
