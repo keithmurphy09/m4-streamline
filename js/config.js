@@ -25,6 +25,9 @@ let clients = [];
 let jobs = [];
 let quotes = [];
 let invoices = [];
+
+// Loading state for shimmer
+let isDataLoaded = false;
 let expenses = [];
 let teamMembers = [];
 let payments = [];
