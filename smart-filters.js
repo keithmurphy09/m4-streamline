@@ -136,10 +136,8 @@ function renderSmartFilterBar(dataType) {
                     <input 
                         type="text" 
                         id="smartFilterInput"
-                        value="${smartFilterQuery}"
                         placeholder="Natural language search: 'overdue this quarter' or 'unpaid over $5000'"
                         class="w-full px-4 py-2 pr-10 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:border-teal-500 dark:bg-gray-700 dark:text-white"
-                        oninput="smartFilterQuery = this.value"
                         onkeypress="if(event.key === 'Enter') { event.preventDefault(); activateSmartFilter('${dataType}'); }"
                     />
                     <svg class="w-5 h-5 absolute right-3 top-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -175,11 +173,21 @@ function renderSmartFilterBar(dataType) {
 
 // Activate smart filter
 function activateSmartFilter(dataType) {
-    if (!smartFilterQuery.trim()) return;
+    const input = document.getElementById('smartFilterInput');
+    if (!input) return;
+    
+    smartFilterQuery = input.value.trim();
+    if (!smartFilterQuery) return;
     
     smartFilterActive = true;
     smartFilterParsed = parseSmartFilter(smartFilterQuery, dataType);
     renderApp();
+    
+    // Restore value after render
+    setTimeout(() => {
+        const newInput = document.getElementById('smartFilterInput');
+        if (newInput && smartFilterQuery) newInput.value = smartFilterQuery;
+    }, 50);
 }
 
 // Clear smart filter
@@ -187,6 +195,8 @@ function clearSmartFilter() {
     smartFilterQuery = '';
     smartFilterActive = false;
     smartFilterParsed = null;
+    const input = document.getElementById('smartFilterInput');
+    if (input) input.value = '';
     renderApp();
 }
 
