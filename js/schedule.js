@@ -256,6 +256,11 @@ async function updateJobStatus(jobId, newStatus) {
         const job = jobs.find(j => j.id === jobId);
         if (job) job.status = newStatus;
         
+        // Trigger confetti when job completed
+        if (newStatus === 'completed' && typeof triggerConfetti === 'function') {
+            triggerConfetti();
+        }
+        
         renderApp();
         showToast(`Job marked as ${newStatus.replace('_', ' ')}`, 'success');
     } catch (error) {
