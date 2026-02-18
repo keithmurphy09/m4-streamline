@@ -167,6 +167,9 @@ function renderCompany() {
                 </div>
             </div>
             
+            <!-- Email Automation Settings -->
+            ${typeof renderEmailAutomationSettings === 'function' ? renderEmailAutomationSettings() : ''}
+            
             <!-- SMS Settings -->
             <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow max-w-2xl mb-6">
                 <h3 class="text-lg font-bold dark:text-teal-400 mb-2">📱 SMS Notifications (Twilio)</h3>
