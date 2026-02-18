@@ -372,94 +372,51 @@ function generateEmailData(type, item) {
     return data;
 }
 
-// Send Email via Supabase Edge Function (integrated with SendGrid)
+// Send Email (You'll need to implement with your email service)
 async function sendEmail(to, subject, body, type = 'general', itemId = null) {
-    // Check if email is configured
-    if (!emailSettings || !emailSettings.sendgrid_api_key) {
-        console.log('Email not configured - skipping send');
-        return false;
-    }
+    // This is a placeholder - integrate with your email service
+    // Options: SendGrid, Mailgun, AWS SES, Postmark, etc.
     
-    // Convert plain text to HTML
-    const htmlContent = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="text-align: center; margin-bottom: 30px; padding: 20px; background: #f9fafb; border-radius: 8px;">
-                <img src="${companySettings?.logo_url || 'https://i.imgur.com/dF4xRDK.jpeg'}" alt="Company Logo" style="max-width: 150px; max-height: 100px; margin-bottom: 10px; object-fit: contain;">
-                <h1 style="color: #14b8a6; margin: 10px 0; font-size: 24px;">${companySettings?.business_name || 'M4 STREAMLINE'}</h1>
-            </div>
-            <div style="white-space: pre-wrap; line-height: 1.6;">${body}</div>
-            <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
-            <p style="color: #6b7280; font-size: 12px; text-align: center;">
-                ${companySettings?.business_name || 'M4 STREAMLINE'}<br>
-                ${companySettings?.phone || ''} | ${companySettings?.email || ''}
-            </p>
-        </div>
-    `;
+    console.log('=== EMAIL TO SEND ===');
+    console.log('To:', to);
+    console.log('Subject:', subject);
+    console.log('Body:', body);
+    console.log('Type:', type);
+    console.log('===================');
     
+    // Log email in database
     try {
-        const response = await fetch('https://xviustrrsuhidzbcpgow.supabase.co/functions/v1/send-email', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aXVzdHJyc3VoaWR6YmNwZ293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3ODk1NDgsImV4cCI6MjA4NDM2NTU0OH0.CEcc50c1K2Qnh6rXt_1-_w30LzHvDniGLbqWhdOolRY'
-            },
-            body: JSON.stringify({
-                user_id: currentUser.id,
-                to_email: to,
-                to_name: to.split('@')[0], // Extract name from email if no name provided
-                subject: subject,
-                html_content: htmlContent
-            })
+        await supabaseClient.from('email_logs').insert({
+            recipient: to,
+            subject: subject,
+            body: body,
+            type: type,
+            item_id: itemId,
+            sent_at: new Date().toISOString(),
+            status: 'sent'
         });
-        
-        const result = await response.json();
-        
-        if (response.ok && result.success) {
-            console.log('✅ Email sent:', type, 'to', to);
-            
-            // Log email in database
-            try {
-                await supabaseClient.from('email_logs').insert({
-                    recipient: to,
-                    subject: subject,
-                    body: body,
-                    type: type,
-                    item_id: itemId,
-                    sent_at: new Date().toISOString(),
-                    status: 'sent',
-                    user_id: currentUser.id
-                });
-            } catch (logError) {
-                console.error('Error logging email:', logError);
-            }
-            
-            return true;
-        } else {
-            console.error('Email send error:', result);
-            
-            // Log failure
-            try {
-                await supabaseClient.from('email_logs').insert({
-                    recipient: to,
-                    subject: subject,
-                    body: body,
-                    type: type,
-                    item_id: itemId,
-                    sent_at: new Date().toISOString(),
-                    status: 'failed',
-                    error_message: result.error || 'Unknown error',
-                    user_id: currentUser.id
-                });
-            } catch (logError) {
-                console.error('Error logging email failure:', logError);
-            }
-            
-            return false;
-        }
     } catch (error) {
-        console.error('Email error:', error);
-        return false;
+        console.error('Error logging email:', error);
     }
+    
+    // Example SendGrid integration:
+    /*
+    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${SENDGRID_API_KEY}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            personalizations: [{ to: [{ email: to }] }],
+            from: { email: companySettings.email },
+            subject: subject,
+            content: [{ type: 'text/plain', value: body }]
+        })
+    });
+    */
+    
+    return true;
 }
 
 // Send Automated Email
@@ -601,7 +558,7 @@ async function triggerEmail(action, item) {
 // Render Email Automation Settings
 function renderEmailAutomationSettings() {
     return `
-        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow max-w-2xl mb-6">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Email Automations</h3>
             
             <div class="space-y-4">
@@ -636,7 +593,6 @@ const emailSystemSchema = `
 
 CREATE TABLE IF NOT EXISTS email_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID REFERENCES auth.users(id),
     recipient TEXT NOT NULL,
     subject TEXT NOT NULL,
     body TEXT NOT NULL,
@@ -647,7 +603,6 @@ CREATE TABLE IF NOT EXISTS email_logs (
     error_message TEXT
 );
 
-CREATE INDEX IF NOT EXISTS idx_email_logs_user ON email_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_email_logs_type ON email_logs(type);
 CREATE INDEX IF NOT EXISTS idx_email_logs_item ON email_logs(item_id);
 CREATE INDEX IF NOT EXISTS idx_email_logs_sent_at ON email_logs(sent_at);
