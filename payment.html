@@ -31,26 +31,50 @@
                 return;
             }
             
-            // Load invoice
-            const { data: inv } = await supabaseClient.from('invoices').select('*').eq('id', invoiceId).single();
-            if (!inv) {
+            // Load invoice via Edge Function (bypasses RLS securely)
+            const invoiceUrl = 'https://xviustrrsuhidzbcpgow.supabase.co/functions/v1/get-invoice-for-payment';
+            
+            const invoiceResponse = await fetch(invoiceUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aXVzdHJyc3VoaWR6YmNwZ293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3ODk1NDgsImV4cCI6MjA4NDM2NTU0OH0.CEcc50c1K2Qnh6rXt_1-_w30LzHvDniGLbqWhdOolRY'
+                },
+                body: JSON.stringify({ invoice_id: invoiceId })
+            });
+            
+            if (!invoiceResponse.ok) {
                 document.getElementById('app').innerHTML = '<div class="min-h-screen flex items-center justify-center"><div class="text-center"><h1 class="text-2xl font-bold text-red-600">Invoice not found</h1></div></div>';
                 return;
             }
             
-            invoice = inv;
+            const invoiceData = await invoiceResponse.json();
             
-            // Load client
-            const { data: cli } = await supabaseClient.from('clients').select('*').eq('id', invoice.client_id).single();
-            client = cli;
+            if (!invoiceData.invoice) {
+                document.getElementById('app').innerHTML = '<div class="min-h-screen flex items-center justify-center"><div class="text-center"><h1 class="text-2xl font-bold text-red-600">Invoice not found</h1></div></div>';
+                return;
+            }
             
-            // Load company settings
-            const { data: companySett } = await supabaseClient.from('company_settings').select('*').eq('user_id', invoice.user_id).single();
-            companySettings = companySett;
+            invoice = invoiceData.invoice;
+            client = invoiceData.client;
             
-            // Load stripe settings
-            const { data: stripeSett } = await supabaseClient.from('stripe_settings').select('*').eq('user_id', invoice.user_id).single();
-            stripeSettings = stripeSett;
+            // Load company settings and stripe settings via Edge Function
+            const settingsUrl = 'https://xviustrrsuhidzbcpgow.supabase.co/functions/v1/get-payment-settings';
+            
+            const settingsResponse = await fetch(settingsUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aXVzdHJyc3VoaWR6YmNwZ293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3ODk1NDgsImV4cCI6MjA4NDM2NTU0OH0.CEcc50c1K2Qnh6rXt_1-_w30LzHvDniGLbqWhdOolRY'
+                },
+                body: JSON.stringify({ user_id: invoice.user_id })
+            });
+            
+            if (settingsResponse.ok) {
+                const settingsData = await settingsResponse.json();
+                companySettings = settingsData.company_settings;
+                stripeSettings = settingsData.stripe_settings;
+            }
             
             if (!stripeSettings || !stripeSettings.publishable_key || stripeSettings.enabled === false) {
                 // Show invoice details even without Stripe or if disabled
