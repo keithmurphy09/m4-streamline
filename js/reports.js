@@ -844,7 +844,7 @@ async function downloadCustomReportPDF(reportId) {
         const logoUrl = companySettings?.logo_url || 'https://i.imgur.com/dF4xRDK.jpeg';
         try {
             const img = await loadImageForPDF(logoUrl);
-            doc.addImage(img, 'JPEG', 15, 13, 25, 25);
+            doc.addImage(img, 'JPEG', 15, 7, 25, 25);
         } catch (error) {
             console.log('Logo load skipped:', error.message);
         }
