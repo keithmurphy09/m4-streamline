@@ -74,14 +74,45 @@ async function updateClient(id) {
 }
 
 async function deleteClient(id) {
-    if (!confirm('Are you sure you want to delete this client? This will also delete all related quotes, jobs, invoices, and expenses.')) {
-        return;
-    }
-    
     try {
-        const { error } = await supabaseClient.from('clients').delete().eq('id', id);
+        // Check for related records first
+        const relatedQuotes = quotes.filter(q => q.client_id === id);
+        const relatedJobs = jobs.filter(j => j.client_id === id);
+        const relatedInvoices = invoices.filter(i => i.client_id === id);
+        
+        if (relatedQuotes.length > 0 || relatedJobs.length > 0 || relatedInvoices.length > 0) {
+            const message = `Cannot delete client. They have:\n` +
+                `${relatedQuotes.length} quote(s)\n` +
+                `${relatedJobs.length} job(s)\n` +
+                `${relatedInvoices.length} invoice(s)\n\n` +
+                `Please delete these items first.`;
+            showNotification(message, 'error');
+            return;
+        }
+        
+        if (!confirm('Are you sure you want to delete this client?')) {
+            return;
+        }
+        
+        // Delete client notes first
+        const { error: notesError } = await supabaseClient
+            .from('client_notes')
+            .delete()
+            .eq('client_id', id);
+        
+        if (notesError) {
+            console.error('Error deleting client notes:', notesError);
+        }
+        
+        // Delete the client
+        const { error } = await supabaseClient
+            .from('clients')
+            .delete()
+            .eq('id', id);
+            
         if (error) throw error;
         
+        // Remove from local array
         const index = clients.findIndex(c => c.id === id);
         if (index > -1) clients.splice(index, 1);
         
@@ -89,7 +120,7 @@ async function deleteClient(id) {
         renderApp();
     } catch (error) {
         console.error('Error deleting client:', error);
-        showNotification('Error deleting client', 'error');
+        showNotification('Error deleting client: ' + error.message, 'error');
     }
 }
 
