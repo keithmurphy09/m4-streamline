@@ -76,48 +76,36 @@
                 // Show simple loading message
                 document.getElementById('app').innerHTML = '<div class="loading">Loading quote...</div>';
 
-                // Query database
-                const response = await supabaseClient
-                    .from('quotes')
-                    .select('*')
-                    .eq('share_token', shareToken);
+                // Call Edge Function to fetch quote (bypasses RLS securely)
+                const functionUrl = 'https://xviustrrsuhidzbcpgow.supabase.co/functions/v1/get-quote-by-token';
+                
+                const response = await fetch(functionUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ share_token: shareToken })
+                });
 
-                if (response.error) {
-                    console.error('Database error:', response.error);
-                    document.getElementById('app').innerHTML = '<div class="error">Error loading quote: ' + response.error.message + '</div>';
-                    return;
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to load quote');
                 }
 
-                if (!response.data || response.data.length === 0) {
+                const data = await response.json();
+                
+                if (!data.quote) {
                     document.getElementById('app').innerHTML = '<div class="error">Quote not found</div>';
                     return;
                 }
 
-                // Get the quote
-                const quote = response.data.length > 1 
-                    ? response.data.sort((a, b) => new Date(b.date) - new Date(a.date))[0]
-                    : response.data[0];
-
-                currentQuote = quote;
-
-                const clientResponse = await supabaseClient
-                    .from('clients')
-                    .select('*')
-                    .eq('id', quote.client_id)
-                    .single();
-
-                if (clientResponse.error) {
-                    console.error('Client error:', clientResponse.error);
-                    // Continue anyway with no client data
-                }
-
-                currentClient = clientResponse.data;
+                currentQuote = data.quote;
+                currentClient = data.client;
 
                 renderQuote();
             } catch (error) {
                 console.error('Error loading quote:', error);
                 document.getElementById('app').innerHTML = '<div class="error">Error loading quote: ' + error.message + '</div>';
-                // Don't retry - just show error
             }
         }
 
@@ -305,18 +293,33 @@
             messageDiv.innerHTML = '<p style="color: #14b8a6; font-weight: bold;">Processing...</p>';
             
             try {
-                // Update quote status
-                const { error } = await supabaseClient
-                    .from('quotes')
-                    .update({ accepted: true, status: 'accepted' })
-                    .eq('share_token', currentQuote.share_token);
+                // Call Edge Function to accept quote
+                const acceptUrl = 'https://xviustrrsuhidzbcpgow.supabase.co/functions/v1/accept-quote';
                 
-                if (error) throw error;
+                const response = await fetch(acceptUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        share_token: currentQuote.share_token
+                    })
+                });
                 
-                // Call the edge function to send notification email
-                const functionUrl = 'https://xviustrrsuhidzbcpgow.supabase.co/functions/v1/notify-quote-accepted';
+                if (!response.ok) {
+                    throw new Error('Failed to accept quote');
+                }
                 
-                await fetch(functionUrl, {
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to accept quote');
+                }
+                
+                // Call the notify edge function to send email
+                const notifyUrl = 'https://xviustrrsuhidzbcpgow.supabase.co/functions/v1/notify-quote-accepted';
+                
+                await fetch(notifyUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -327,75 +330,16 @@
                     })
                 });
                 
-                // Check if deposit needs to be paid
-                console.log('Checking deposit:', currentQuote.deposit_percentage);
-                
-                if (currentQuote.deposit_percentage && currentQuote.deposit_percentage > 0) {
+                // Check if deposit was created
+                if (data.depositInvoiceId) {
                     console.log('Has deposit - redirecting to payment');
                     messageDiv.innerHTML = '<p style="color: #10b981; font-weight: bold; font-size: 18px;">✓ Quote Accepted!</p><p style="margin-top: 10px;">Redirecting to deposit payment...</p>';
                     
-                    // Calculate deposit amount
-                    const depositAmount = parseFloat(currentQuote.total) * (parseFloat(currentQuote.deposit_percentage) / 100);
-                    
-                    // Create a deposit invoice and redirect to payment
-                    setTimeout(async () => {
-                        try {
-                            // Generate invoice number
-                            const invoiceNumber = `INV-DEP-${Date.now()}`;
-                            
-                            console.log('Creating deposit invoice:', invoiceNumber);
-                            
-                            // Create deposit invoice
-                            const depositInvoice = {
-                                client_id: currentQuote.client_id,
-                                title: currentQuote.title + ' - Deposit',
-                                items: [{
-                                    description: `Deposit (${currentQuote.deposit_percentage}%)`,
-                                    quantity: 1,
-                                    price: depositAmount
-                                }],
-                                notes: `Deposit for quote: ${currentQuote.title}\nRemaining balance: $${(currentQuote.total - depositAmount).toFixed(2)}`,
-                                subtotal: depositAmount,
-                                gst: 0,
-                                total: depositAmount,
-                                invoice_number: invoiceNumber,
-                                status: 'unpaid',
-                                issue_date: new Date().toISOString().split('T')[0],
-                                due_date: new Date().toISOString().split('T')[0],
-                                user_id: currentQuote.user_id
-                            };
-                            
-                            console.log('Inserting invoice:', depositInvoice);
-                            
-                            const { data: invoiceData, error: invoiceError } = await supabaseClient
-                                .from('invoices')
-                                .insert([depositInvoice])
-                                .select();
-                            
-                            if (invoiceError) {
-                                console.error('Invoice creation error:', invoiceError);
-                                messageDiv.innerHTML = '<p style="color: red;">Error creating deposit invoice: ' + invoiceError.message + '</p>';
-                                return;
-                            }
-                            
-                            console.log('Invoice created:', invoiceData);
-                            
-                            if (invoiceData && invoiceData[0]) {
-                                console.log('Redirecting to payment page');
-                                // Redirect to payment page
-                                window.location.href = `payment.html?invoice=${invoiceData[0].id}`;
-                            } else {
-                                console.error('No invoice data returned');
-                                messageDiv.innerHTML = '<p style="color: red;">Error: No invoice created</p>';
-                            }
-                        } catch (error) {
-                            console.error('Error in deposit flow:', error);
-                            messageDiv.innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
-                        }
+                    setTimeout(() => {
+                        window.location.href = `payment.html?invoice=${data.depositInvoiceId}`;
                     }, 1500);
                 } else {
                     console.log('No deposit - showing success only');
-                    // No deposit - just show success
                     messageDiv.innerHTML = '<p style="color: #10b981; font-weight: bold; font-size: 18px;">✓ Quote Accepted! The tradesperson has been notified.</p>';
                     
                     setTimeout(() => {
