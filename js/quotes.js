@@ -38,24 +38,18 @@ function getDepositStatusHTML(quote) {
         const isPaid = depositInvoice.status === 'paid';
         
         if (isPaid) {
-            return `<div class="text-xs mt-1">
-                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">
-                    ✓ Deposit Paid: ${formatCurrency(depositAmount)}
-                </span>
-                <div class="text-gray-500 dark:text-gray-400 mt-0.5">Balance: ${formatCurrency(remainingBalance)}</div>
+            return `<div class="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">
+                ✓ Dep: ${formatCurrency(depositAmount)} • Bal: ${formatCurrency(remainingBalance)}
             </div>`;
         } else {
-            return `<div class="text-xs mt-1">
-                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800">
-                    ⏳ Awaiting Deposit: ${formatCurrency(depositAmount)}
-                </span>
-                <div class="text-gray-500 dark:text-gray-400 mt-0.5">Balance: ${formatCurrency(remainingBalance)}</div>
+            return `<div class="text-xs text-yellow-600 dark:text-yellow-400 mt-1 font-medium">
+                ⏳ Dep: ${formatCurrency(depositAmount)} • Bal: ${formatCurrency(remainingBalance)}
             </div>`;
         }
     } else {
         // Deposit required but no invoice created yet
         return `<div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Deposit: ${formatCurrency(depositAmount)} (${quote.deposit_percentage}%)
+            ${quote.deposit_percentage}% deposit (${formatCurrency(depositAmount)})
         </div>`;
     }
 }
