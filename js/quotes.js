@@ -18,14 +18,13 @@ function formatDate(dateString) {
     return date.toLocaleDateString('en-US', options);
 }
 
-// Get deposit status HTML for a quote
-function getDepositStatusHTML(quote) {
+// Get deposit icon HTML for a quote
+function getDepositIconHTML(quote) {
     if (!quote.deposit_percentage || quote.deposit_percentage === 0) {
-        return ''; // No deposit required
+        return '<span class="text-gray-300 dark:text-gray-600">—</span>'; // No deposit required
     }
     
     const depositAmount = quote.total * (quote.deposit_percentage / 100);
-    const remainingBalance = quote.total - depositAmount;
     
     // Find deposit invoice for this quote
     const depositInvoice = invoices.find(inv => 
@@ -38,19 +37,13 @@ function getDepositStatusHTML(quote) {
         const isPaid = depositInvoice.status === 'paid';
         
         if (isPaid) {
-            return `<div class="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">
-                ✓ Dep: ${formatCurrency(depositAmount)} • Bal: ${formatCurrency(remainingBalance)}
-            </div>`;
+            return `<span class="text-green-600 dark:text-green-400 text-lg" title="Deposit paid: ${formatCurrency(depositAmount)}">✓</span>`;
         } else {
-            return `<div class="text-xs text-yellow-600 dark:text-yellow-400 mt-1 font-medium">
-                ⏳ Dep: ${formatCurrency(depositAmount)} • Bal: ${formatCurrency(remainingBalance)}
-            </div>`;
+            return `<span class="text-yellow-600 dark:text-yellow-400 text-lg" title="Awaiting deposit: ${formatCurrency(depositAmount)}">⏳</span>`;
         }
     } else {
         // Deposit required but no invoice created yet
-        return `<div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            ${quote.deposit_percentage}% deposit (${formatCurrency(depositAmount)})
-        </div>`;
+        return `<span class="text-gray-400 dark:text-gray-500 text-xs" title="Deposit required: ${formatCurrency(depositAmount)} (${quote.deposit_percentage}%)">●</span>`;
     }
 }
 
@@ -138,7 +131,9 @@ function renderQuotesTable() {
                 </td>
                 <td class="px-6 py-4 text-right">
                     <div class="text-sm font-semibold text-gray-900 dark:text-white">${formatCurrency(q.total)}</div>
-                    ${getDepositStatusHTML(q)}
+                </td>
+                <td class="px-6 py-4 text-center">
+                    ${getDepositIconHTML(q)}
                 </td>
                 <td class="px-6 py-4 text-right" onclick="event.stopPropagation()">
                     <div class="relative inline-block">
@@ -224,6 +219,7 @@ function renderQuotesTable() {
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Date</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Status</th>
                         <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Amount</th>
+                        <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Deposit</th>
                         <th class="px-6 py-3 w-12"></th>
                     </tr>
                 </thead>
