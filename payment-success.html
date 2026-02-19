@@ -64,10 +64,38 @@
         // Get invoice ID from URL and display it
         const params = new URLSearchParams(window.location.search);
         const invoiceId = params.get('invoice');
+        
         if (invoiceId) {
             document.getElementById('invoice-id').textContent = invoiceId;
+            
+            // Mark invoice as paid in database
+            markInvoicePaid(invoiceId);
         } else {
             document.getElementById('invoice-id').textContent = 'N/A';
+        }
+        
+        async function markInvoicePaid(invoiceId) {
+            try {
+                const response = await fetch('https://xviustrrsuhidzbcpgow.supabase.co/functions/v1/mark-invoice-paid', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aXVzdHJyc3VoaWR6YmNwZ293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3ODk1NDgsImV4cCI6MjA4NDM2NTU0OH0.CEcc50c1K2Qnh6rXt_1-_w30LzHvDniGLbqWhdOolRY'
+                    },
+                    body: JSON.stringify({ 
+                        invoice_id: invoiceId,
+                        payment_date: new Date().toISOString().split('T')[0]
+                    })
+                });
+                
+                if (response.ok) {
+                    console.log('Invoice marked as paid successfully');
+                } else {
+                    console.error('Failed to mark invoice as paid');
+                }
+            } catch (error) {
+                console.error('Error marking invoice as paid:', error);
+            }
         }
         
         // Auto-close after 30 seconds (optional)
