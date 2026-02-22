@@ -419,8 +419,8 @@
     }
     
     /* ═══════════════════════════════════════════════════════════════
-       QUOTE DETAIL PAGE - MOBILE OPTIMIZATION
-       Makes detail view compact with collapsible sections
+       QUOTE DETAIL PAGE - MOBILE OPTIMIZATION  
+       Makes detail view compact with proper table handling
        ═══════════════════════════════════════════════════════════ */
     
     /* Quote Detail: Compact header */
@@ -436,23 +436,28 @@
         font-size: 1.75rem !important; /* Smaller amount */
     }
     
-    /* Action buttons: Stack vertically, better spacing */
+    /* Action buttons: Show only first 4, then "Show More" */
     .bg-white.rounded-xl .flex-wrap {
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
         gap: 8px !important;
     }
     
-    .bg-white.rounded-xl .flex-wrap button,
-    .bg-white.rounded-xl .flex-wrap input {
-        font-size: 12px !important;
-        padding: 8px 12px !important;
+    .bg-white.rounded-xl .flex-wrap button {
+        font-size: 13px !important;
+        padding: 10px 12px !important;
         white-space: nowrap;
+        min-height: 44px !important;
     }
     
-    /* Hide less important actions on mobile (show via "More" later) */
-    .bg-white.rounded-xl .flex-wrap button:nth-child(n+5) {
-        display: none;
+    /* Hide actions after position 4 (Schedule, Convert, PDF, Email) */
+    .bg-white.rounded-xl .flex-wrap button:nth-child(5),
+    .bg-white.rounded-xl .flex-wrap button:nth-child(6),
+    .bg-white.rounded-xl .flex-wrap button:nth-child(7),
+    .bg-white.rounded-xl .flex-wrap button:nth-child(8),
+    .bg-white.rounded-xl .flex-wrap button:nth-child(9),
+    .bg-white.rounded-xl .flex-wrap input {
+        display: none !important;
     }
     
     /* Grid layout: Force single column on mobile */
@@ -460,33 +465,49 @@
         grid-template-columns: 1fr !important;
     }
     
-    /* Sections: Add collapse functionality */
-    .space-y-6 > div {
-        border-radius: 8px;
+    /* Line Items Table: CRITICAL FIX - Enable horizontal scroll */
+    .space-y-6 > div:has(table) {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
     }
     
-    /* Make tables scrollable horizontally */
     .space-y-6 table {
-        display: block;
-        overflow-x: auto;
+        min-width: 600px !important; /* Force minimum width to enable scroll */
+        display: table !important; /* Ensure table layout */
+        width: 100% !important;
+    }
+    
+    /* Compact table text but keep readable */
+    .space-y-6 table td,
+    .space-y-6 table th {
+        font-size: 13px !important;
+        padding: 10px 8px !important;
         white-space: nowrap;
     }
     
-    /* Compact table text */
-    .space-y-6 table td,
-    .space-y-6 table th {
-        font-size: 12px !important;
-        padding: 8px !important;
+    /* Table totals: Keep prominent */
+    .space-y-6 table tfoot td {
+        font-size: 14px !important;
+        font-weight: 600 !important;
     }
     
-    /* Profit section: Compact */
+    /* Profit section: Compact but readable */
     .space-y-3 .flex {
         font-size: 13px !important;
     }
     
+    .space-y-3 .text-lg {
+        font-size: 16px !important;
+    }
+    
     /* Client info: Compact */
     .space-y-6 .text-sm {
-        font-size: 12px !important;
+        font-size: 13px !important;
+    }
+    
+    /* Section headers: Slightly smaller */
+    .space-y-6 h3 {
+        font-size: 14px !important;
     }
 }
 
