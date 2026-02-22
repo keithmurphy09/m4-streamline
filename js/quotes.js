@@ -202,31 +202,100 @@ function renderQuotesTable() {
         
         ${bulkActions}
         
-        <!-- Table -->
-        <div class="overflow-x-auto overflow-y-visible">
-            <table class="w-full">
-                <thead>
-                    <tr class="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                        <th class="px-6 py-3 text-left w-12">
-                            <input type="checkbox" 
-                                   ${selectedQuotes.length === quotes.length && quotes.length > 0 ? 'checked' : ''} 
-                                   onchange="toggleSelectAll('quotes')" 
-                                   class="w-4 h-4 text-teal-600 rounded border-gray-300 focus:ring-teal-500">
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Quote #</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Client</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Description</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Date</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Amount</th>
-                        <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Deposit</th>
-                        <th class="px-6 py-3 w-12"></th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-50 dark:divide-gray-700/50">
-                    ${quoteRows}
-                </tbody>
-            </table>
+        <!-- Desktop Table View -->
+        <div class="quotes-desktop-table">
+            <div class="overflow-x-auto overflow-y-visible">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                            <th class="px-6 py-3 text-left w-12">
+                                <input type="checkbox" 
+                                       ${selectedQuotes.length === quotes.length && quotes.length > 0 ? 'checked' : ''} 
+                                       onchange="toggleSelectAll('quotes')" 
+                                       class="w-4 h-4 text-teal-600 rounded border-gray-300 focus:ring-teal-500">
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Quote #</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Client</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Description</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Amount</th>
+                            <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Deposit</th>
+                            <th class="px-6 py-3 w-12"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50 dark:divide-gray-700/50">
+                        ${quoteRows}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Mobile Cards View -->
+        <div class="quotes-mobile-cards" style="display: none;">
+            ${paginatedQuotes.length === 0 
+                ? '<div class="text-center py-12 text-gray-500 dark:text-gray-400">No quotes found</div>'
+                : paginatedQuotes.map(q => {
+                    const client = clients.find(c => c.id === q.client_id);
+                    const isAccepted = q.accepted || q.status === 'accepted';
+                    const isConverted = q.status === 'converted';
+                    
+                    let statusBadge = '';
+                    if (isConverted) {
+                        statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600">CONVERTED</span>';
+                    } else if (isAccepted) {
+                        statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-800">ACCEPTED</span>';
+                    } else {
+                        statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600">PENDING</span>';
+                    }
+                    
+                    const depositInfo = getDepositIconHTML(q);
+                    
+                    return `
+                        <div class="quote-card" onclick="openQuoteDetail(${JSON.stringify(q).replace(/"/g, '&quot;')})">
+                            <div class="quote-card-header">
+                                <div>
+                                    <div class="quote-card-number">${q.quote_number || 'QT-' + q.id.slice(0, 3)}</div>
+                                    <div class="quote-card-date">${formatDate(q.created_at)}</div>
+                                </div>
+                                <div class="quote-card-amount">${formatCurrency(q.total)}</div>
+                            </div>
+                            
+                            <div class="quote-card-client">${client?.name || 'Unknown'}</div>
+                            ${q.job_address ? `<div class="quote-card-address">${q.job_address}</div>` : ''}
+                            <div class="quote-card-title">${q.title}</div>
+                            
+                            <div class="quote-card-status-row">
+                                ${statusBadge}
+                                ${depositInfo ? `<span class="quote-card-deposit">${depositInfo}</span>` : ''}
+                            </div>
+                            
+                            <div class="quote-card-actions" onclick="event.stopPropagation()">
+                                <button onclick="generatePDF('quote', ${JSON.stringify(q).replace(/"/g, '&quot;')})" class="quote-card-action-btn">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                    </svg>
+                                    PDF
+                                </button>
+                                <button onclick="sendQuoteEmail(${JSON.stringify(q).replace(/"/g, '&quot;')})" class="quote-card-action-btn">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                    </svg>
+                                    Email
+                                </button>
+                                ${client?.phone && smsSettings?.enabled ? `
+                                <button onclick="sendQuoteSMS(${JSON.stringify(q).replace(/"/g, '&quot;')})" class="quote-card-action-btn">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                                    </svg>
+                                    SMS
+                                </button>
+                                ` : '<div></div>'}
+                            </div>
+                        </div>
+                    `;
+                }).join('')
+            }
         </div>
         
         <!-- Pagination -->
