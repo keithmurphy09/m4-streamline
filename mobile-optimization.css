@@ -417,6 +417,77 @@
         min-width: 16px;
         min-height: 16px;
     }
+    
+    /* ═══════════════════════════════════════════════════════════════
+       QUOTE DETAIL PAGE - MOBILE OPTIMIZATION
+       Makes detail view compact with collapsible sections
+       ═══════════════════════════════════════════════════════════ */
+    
+    /* Quote Detail: Compact header */
+    .bg-white.rounded-xl h1 {
+        font-size: 1.5rem !important; /* Smaller quote number */
+    }
+    
+    .bg-white.rounded-xl h2 {
+        font-size: 1rem !important; /* Smaller title */
+    }
+    
+    .bg-white.rounded-xl .text-4xl {
+        font-size: 1.75rem !important; /* Smaller amount */
+    }
+    
+    /* Action buttons: Stack vertically, better spacing */
+    .bg-white.rounded-xl .flex-wrap {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+    }
+    
+    .bg-white.rounded-xl .flex-wrap button,
+    .bg-white.rounded-xl .flex-wrap input {
+        font-size: 12px !important;
+        padding: 8px 12px !important;
+        white-space: nowrap;
+    }
+    
+    /* Hide less important actions on mobile (show via "More" later) */
+    .bg-white.rounded-xl .flex-wrap button:nth-child(n+5) {
+        display: none;
+    }
+    
+    /* Grid layout: Force single column on mobile */
+    .grid.lg\\:grid-cols-3 {
+        grid-template-columns: 1fr !important;
+    }
+    
+    /* Sections: Add collapse functionality */
+    .space-y-6 > div {
+        border-radius: 8px;
+    }
+    
+    /* Make tables scrollable horizontally */
+    .space-y-6 table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    
+    /* Compact table text */
+    .space-y-6 table td,
+    .space-y-6 table th {
+        font-size: 12px !important;
+        padding: 8px !important;
+    }
+    
+    /* Profit section: Compact */
+    .space-y-3 .flex {
+        font-size: 13px !important;
+    }
+    
+    /* Client info: Compact */
+    .space-y-6 .text-sm {
+        font-size: 12px !important;
+    }
 }
 
 /* SWIPE GESTURES HINT */
