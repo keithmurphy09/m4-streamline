@@ -2,6 +2,39 @@
 // M4 STREAMLINE - App Core (Full Version)
 // ═══════════════════════════════════════════════════════════════════
 
+// Mobile menu state
+let mobileMenuOpen = false;
+
+function toggleMobileMenu() {
+    mobileMenuOpen = !mobileMenuOpen;
+    const menu = document.getElementById('mobile-menu');
+    const overlay = document.getElementById('mobile-menu-overlay');
+    
+    if (mobileMenuOpen) {
+        menu.classList.remove('-translate-x-full');
+        menu.classList.add('translate-x-0');
+        overlay.classList.remove('hidden');
+    } else {
+        menu.classList.remove('translate-x-0');
+        menu.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+    }
+}
+
+function closeMobileMenu() {
+    mobileMenuOpen = false;
+    const menu = document.getElementById('mobile-menu');
+    const overlay = document.getElementById('mobile-menu-overlay');
+    menu.classList.remove('translate-x-0');
+    menu.classList.add('-translate-x-full');
+    overlay.classList.add('hidden');
+}
+
+function switchTabMobile(tab) {
+    switchTab(tab);
+    closeMobileMenu();
+}
+
 async function renderApp() {
     // Calculate trial banner
     let trialBanner = '';
@@ -120,7 +153,14 @@ async function renderApp() {
             <div class="bg-white dark:bg-gray-800 border-b border-teal-400">
                 <div class="max-w-7xl mx-auto px-4">
                     <div class="flex items-center justify-between h-16">
-                        <div class="flex items-center gap-8">
+                        <div class="flex items-center gap-3 md:gap-8">
+                            <!-- Hamburger Menu (Mobile Only) -->
+                            <button onclick="toggleMobileMenu()" class="md:hidden p-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                                </svg>
+                            </button>
+                            
                             <div class="text-teal-400 text-2xl font-bold cursor-pointer" onclick="switchTab('dashboard')">M4</div>
                             
                             <nav class="hidden md:flex gap-1">
@@ -186,6 +226,90 @@ async function renderApp() {
                                 </div>
                             </nav>
                         </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mobile Slide-Out Menu -->
+            <div id="mobile-menu-overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" onclick="closeMobileMenu()"></div>
+            <div id="mobile-menu" class="fixed top-0 left-0 h-full w-80 bg-white dark:bg-gray-800 transform -translate-x-full transition-transform duration-300 z-50 md:hidden overflow-y-auto">
+                <div class="p-6">
+                    <!-- Close Button -->
+                    <button onclick="closeMobileMenu()" class="absolute top-4 right-4 p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                    
+                    <!-- Logo -->
+                    <div class="mb-8 mt-2">
+                        <div class="text-teal-400 text-2xl font-bold">M4 STREAMLINE</div>
+                        <div class="text-teal-400 text-xs italic">"streamlining your business"</div>
+                    </div>
+                    
+                    <!-- Navigation Items -->
+                    <div class="space-y-1">
+                        <button onclick="switchTabMobile('dashboard')" class="w-full text-left px-4 py-3 text-base font-medium ${activeTab === 'dashboard' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-600' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'} rounded-r">
+                            Dashboard
+                        </button>
+                        
+                        <button onclick="switchTabMobile('schedule')" class="w-full text-left px-4 py-3 text-base font-medium ${activeTab === 'schedule' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-600' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'} rounded-r">
+                            Schedule
+                        </button>
+                        
+                        <div class="pt-4 pb-2 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Customers</div>
+                        
+                        <button onclick="switchTabMobile('clients')" class="w-full text-left px-4 py-3 text-base ${activeTab === 'clients' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-600' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'} rounded-r">
+                            Clients
+                        </button>
+                        
+                        <button onclick="switchTabMobile('quotes')" class="w-full text-left px-4 py-3 text-base ${activeTab === 'quotes' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-600' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'} rounded-r">
+                            Quotes
+                        </button>
+                        
+                        <button onclick="switchTabMobile('invoices')" class="w-full text-left px-4 py-3 text-base ${activeTab === 'invoices' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-600' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'} rounded-r">
+                            Invoices
+                        </button>
+                        
+                        <div class="pt-4 pb-2 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Accounts</div>
+                        
+                        <button onclick="switchTabMobile('analytics')" class="w-full text-left px-4 py-3 text-base ${activeTab === 'analytics' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-600' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'} rounded-r">
+                            Analytics
+                        </button>
+                        
+                        <button onclick="switchTabMobile('expenses')" class="w-full text-left px-4 py-3 text-base ${activeTab === 'expenses' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-600' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'} rounded-r">
+                            Expenses
+                        </button>
+                        
+                        <button onclick="switchTabMobile('cashflow')" class="w-full text-left px-4 py-3 text-base ${activeTab === 'cashflow' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-600' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'} rounded-r">
+                            Cash Flow
+                        </button>
+                        
+                        <button onclick="switchTabMobile('budget')" class="w-full text-left px-4 py-3 text-base ${activeTab === 'budget' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-600' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'} rounded-r">
+                            Budget
+                        </button>
+                        
+                        <button onclick="switchTabMobile('reports')" class="w-full text-left px-4 py-3 text-base ${activeTab === 'reports' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-600' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'} rounded-r">
+                            Reports
+                        </button>
+                        
+                        <div class="pt-4 pb-2 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Company</div>
+                        
+                        <button onclick="switchTabMobile('company')" class="w-full text-left px-4 py-3 text-base ${activeTab === 'company' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-600' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'} rounded-r">
+                            Company Info
+                        </button>
+                        
+                        ${getAccountType() === 'business' ? `
+                        <button onclick="switchTabMobile('team')" class="w-full text-left px-4 py-3 text-base ${activeTab === 'team' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-600' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'} rounded-r">
+                            Team
+                        </button>
+                        ` : ''}
+                        
+                        ${isAdmin ? `
+                        <button onclick="switchTabMobile('admin')" class="w-full text-left px-4 py-3 text-base ${activeTab === 'admin' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-600' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'} rounded-r">
+                            Admin Panel
+                        </button>
+                        ` : ''}
                     </div>
                 </div>
             </div>
@@ -260,34 +384,23 @@ function toggleSettingsMenu() {
 }
 
 async function switchTab(tab) {
-    console.log('🔥 switchTab called:', tab);
     activeTab = tab;
     localStorage.setItem('activeTab', tab);
     
     // Close any detail views when switching tabs
     if (typeof selectedQuoteForDetail !== 'undefined') selectedQuoteForDetail = null;
-    if (typeof selectedInvoiceForDetail !== 'undefined') {
-        console.log('🔥 Resetting selectedInvoiceForDetail to null');
-        selectedInvoiceForDetail = null;
-    }
+    if (typeof selectedInvoiceForDetail !== 'undefined') selectedInvoiceForDetail = null;
     
     renderApp();
 }
 
 async function renderContent() {
-    console.log('🔥 renderContent called - activeTab:', activeTab);
-    
     // Route to appropriate render function
     if (activeTab === 'dashboard') return renderDashboard();
     if (activeTab === 'schedule') return renderSchedule();
     if (activeTab === 'clients') return renderClients();
     if (activeTab === 'quotes') return renderQuotes();
-    if (activeTab === 'invoices') {
-        console.log('🔥 Calling renderInvoices()');
-        const result = renderInvoices();
-        console.log('🔥 renderInvoices returned:', result ? result.substring(0, 50) : 'undefined/null');
-        return result;
-    }
+    if (activeTab === 'invoices') return renderInvoices();
     if (activeTab === 'expenses') return renderExpenses();
     if (activeTab === 'analytics') return renderAnalytics();
     if (activeTab === 'cashflow') return renderCashFlow();
@@ -315,5 +428,4 @@ document.addEventListener('click', function(event) {
     }
 });
 
-console.log('✅ App core loaded (full version)');
-console.log('🔥🔥🔥 APP.JS VERSION 2.0 - DEBUG MODE 🔥🔥🔥');
+console.log('✅ App core loaded (full version');
