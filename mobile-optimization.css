@@ -231,6 +231,194 @@
     }
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   QUOTES MODULE - MOBILE CARD LAYOUT (App-Style)
+   Replaces table with cards on mobile for better UX
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Desktop: Show table, hide cards */
+@media (min-width: 769px) {
+    .quotes-mobile-cards {
+        display: none !important;
+    }
+    
+    .quotes-desktop-table {
+        display: block !important;
+    }
+}
+
+/* Mobile: Hide table, show cards */
+@media (max-width: 768px) {
+    /* Hide desktop table */
+    .quotes-desktop-table {
+        display: none !important;
+    }
+    
+    /* Show mobile cards */
+    .quotes-mobile-cards {
+        display: block !important;
+    }
+    
+    /* Quote Card Styling */
+    .quote-card {
+        background: white;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border-left: 4px solid #14b8a6;
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+        -webkit-tap-highlight-color: rgba(20, 184, 166, 0.1);
+    }
+    
+    .quote-card:active {
+        transform: scale(0.98) !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .dark .quote-card {
+        background: #1f2937;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* Card Header */
+    .quote-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 12px;
+    }
+    
+    .quote-card-number {
+        font-size: 14px;
+        font-weight: 600;
+        color: #14b8a6;
+    }
+    
+    .quote-card-amount {
+        font-size: 20px;
+        font-weight: 700;
+        color: #111827;
+    }
+    
+    .dark .quote-card-amount {
+        color: #f9fafb;
+    }
+    
+    /* Card Body */
+    .quote-card-client {
+        font-size: 16px;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 4px;
+    }
+    
+    .dark .quote-card-client {
+        color: #f9fafb;
+    }
+    
+    .quote-card-address {
+        font-size: 13px;
+        color: #6b7280;
+        margin-bottom: 8px;
+    }
+    
+    .dark .quote-card-address {
+        color: #9ca3af;
+    }
+    
+    .quote-card-title {
+        font-size: 14px;
+        color: #374151;
+        margin-bottom: 12px;
+    }
+    
+    .dark .quote-card-title {
+        color: #d1d5db;
+    }
+    
+    /* Card Status Row */
+    .quote-card-status-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+    
+    .quote-card-date {
+        font-size: 12px;
+        color: #6b7280;
+    }
+    
+    .dark .quote-card-date {
+        color: #9ca3af;
+    }
+    
+    /* Card Actions */
+    .quote-card-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 8px;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #e5e7eb;
+    }
+    
+    .dark .quote-card-actions {
+        border-top-color: #374151;
+    }
+    
+    .quote-card-action-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 10px 12px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #14b8a6;
+        background: #f0fdfa;
+        border: 1px solid #99f6e4;
+        border-radius: 8px;
+        transition: all 0.2s;
+        min-height: 44px;
+        cursor: pointer;
+        -webkit-tap-highlight-color: rgba(20, 184, 166, 0.1);
+    }
+    
+    .quote-card-action-btn:active {
+        background: #ccfbf1 !important;
+        transform: scale(0.95) !important;
+    }
+    
+    .dark .quote-card-action-btn {
+        background: #134e4a;
+        border-color: #115e59;
+        color: #5eead4;
+    }
+    
+    .dark .quote-card-action-btn:active {
+        background: #0f3f3c !important;
+    }
+    
+    /* Deposit Badge in Card */
+    .quote-card-deposit {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    /* Icon sizing in cards */
+    .quote-card svg {
+        min-width: 16px;
+        min-height: 16px;
+    }
+}
+
 /* SWIPE GESTURES HINT */
 .swipe-hint {
     display: none;
