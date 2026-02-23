@@ -32,11 +32,20 @@ function renderTeam() {
                         <p class="mb-4">No team members yet. Add your first worker!</p>
                         <p class="text-sm">Team members can be assigned to jobs and track expenses</p>
                     </div>
-                ` : teamMembers.map(member => `
+                ` : teamMembers.map(member => {
+                    const role = member.role || 'tradesperson';
+                    const roleBadge = role === 'salesperson' 
+                        ? '<span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800">SALES</span>'
+                        : '<span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800">TRADES</span>';
+                    
+                    return `
                     <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow border-l-4" style="border-color: ${member.color || '#3b82f6'}">
                         <div class="flex justify-between items-center">
                             <div>
-                                <h3 class="text-lg font-semibold dark:text-white">${member.name}</h3>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h3 class="text-lg font-semibold dark:text-white">${member.name}</h3>
+                                    ${roleBadge}
+                                </div>
                                 ${member.occupation ? `<p class="text-sm text-gray-600 dark:text-gray-300 font-medium">${member.occupation}</p>` : ''}
                                 <p class="text-sm text-gray-600 dark:text-gray-300">${member.email || 'No email'}</p>
                                 <p class="text-sm text-gray-600 dark:text-gray-300">${member.phone || 'No phone'}</p>
@@ -55,7 +64,7 @@ function renderTeam() {
                             </div>
                         </div>
                     </div>
-                `).join('')}
+                `}).join('')}
             </div>
         </div>
     `;
@@ -101,7 +110,8 @@ async function updateTeamMember(id) {
             email: document.getElementById('team_email').value,
             phone: document.getElementById('team_phone').value,
             occupation: document.getElementById('team_occupation').value,
-            color: document.getElementById('team_color').value
+            color: document.getElementById('team_color').value,
+            role: document.getElementById('team_role')?.value || 'tradesperson' // NEW: Handle role (defaults to tradesperson)
         };
         
         const { data, error } = await supabaseClient
