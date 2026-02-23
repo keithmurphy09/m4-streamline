@@ -157,6 +157,13 @@
         justify-content: space-around;
     }
     
+    /* CRITICAL: Add padding to content so bottom nav doesn't cover it */
+    .max-w-7xl,
+    main,
+    #app {
+        padding-bottom: 100px !important;
+    }
+    
     .mobile-nav-item {
         display: flex;
         flex-direction: column;
@@ -273,6 +280,11 @@
 
 /* Mobile: Hide table, show cards */
 @media (max-width: 768px) {
+    /* CRITICAL: Add padding to content so bottom nav doesn't cover it */
+    .max-w-7xl {
+        padding-bottom: 100px !important;
+    }
+    
     /* Hide desktop table */
     .quotes-desktop-table {
         display: none !important;
