@@ -436,7 +436,7 @@
         font-size: 1.75rem !important; /* Smaller amount */
     }
     
-    /* Action buttons: Show only first 4, then "Show More" */
+    /* Action buttons: Grid layout for mobile */
     .bg-white.rounded-xl .flex-wrap {
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
@@ -448,16 +448,6 @@
         padding: 10px 12px !important;
         white-space: nowrap;
         min-height: 44px !important;
-    }
-    
-    /* Hide actions after position 4 (Schedule, Convert, PDF, Email) */
-    .bg-white.rounded-xl .flex-wrap button:nth-child(5),
-    .bg-white.rounded-xl .flex-wrap button:nth-child(6),
-    .bg-white.rounded-xl .flex-wrap button:nth-child(7),
-    .bg-white.rounded-xl .flex-wrap button:nth-child(8),
-    .bg-white.rounded-xl .flex-wrap button:nth-child(9),
-    .bg-white.rounded-xl .flex-wrap input {
-        display: none !important;
     }
     
     /* Grid layout: Force single column on mobile */
