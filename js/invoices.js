@@ -209,30 +209,107 @@ function renderInvoicesTable() {
         
         ${bulkActions}
         
-        <!-- Table -->
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead>
-                    <tr class="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                        <th class="px-6 py-3 text-left w-12">
-                            <input type="checkbox" 
-                                   ${selectedInvoices.length === invoices.length && invoices.length > 0 ? 'checked' : ''} 
-                                   onchange="toggleSelectAll('invoices')" 
-                                   class="w-4 h-4 text-teal-600 rounded border-gray-300 focus:ring-teal-500">
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Invoice #</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Client</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Description</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Date</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Amount</th>
-                        <th class="px-6 py-3 w-12"></th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-50 dark:divide-gray-700/50">
-                    ${invoiceRows}
-                </tbody>
-            </table>
+        <!-- Desktop Table View -->
+        <div class="invoices-desktop-table">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                            <th class="px-6 py-3 text-left w-12">
+                                <input type="checkbox" 
+                                       ${selectedInvoices.length === invoices.length && invoices.length > 0 ? 'checked' : ''} 
+                                       onchange="toggleSelectAll('invoices')" 
+                                       class="w-4 h-4 text-teal-600 rounded border-gray-300 focus:ring-teal-500">
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Invoice #</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Client</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Description</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Amount</th>
+                            <th class="px-6 py-3 w-12"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50 dark:divide-gray-700/50">
+                        ${invoiceRows}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Mobile Cards View -->
+        <div class="invoices-mobile-cards" style="display: none;">
+            ${paginatedInvoices.length === 0 
+                ? '<div class="text-center py-12 text-gray-500 dark:text-gray-400">No invoices found</div>'
+                : paginatedInvoices.map(inv => {
+                    const client = clients.find(c => c.id === inv.client_id);
+                    const relatedQuote = quotes.find(q => q.id === inv.quote_id);
+                    const jobAddress = inv.job_address || relatedQuote?.job_address || client?.address || '';
+                    const isPaid = inv.status === 'paid';
+                    const isOverdue = inv.status === 'unpaid' && inv.due_date && new Date(inv.due_date) < new Date();
+                    
+                    let statusBadge = '';
+                    if (isPaid) {
+                        statusBadge = '<span class="inline-flex items-center px-3 py-1 text-xs font-bold text-teal-600 dark:text-teal-400 border-2 border-teal-600 dark:border-teal-400 rounded opacity-70" style="transform: rotate(-15deg); letter-spacing: 2px;">PAID</span>';
+                    } else if (isOverdue) {
+                        statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">OVERDUE</span>';
+                    } else {
+                        statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800">UNPAID</span>';
+                    }
+                    
+                    return `
+                        <div class="invoice-card" onclick="openInvoiceDetail(${JSON.stringify(inv).replace(/"/g, '&quot;')})">
+                            <div class="invoice-card-header">
+                                <div>
+                                    <div class="invoice-card-number">${inv.invoice_number || 'INV-' + inv.id.slice(0, 3)}</div>
+                                    <div class="invoice-card-date">${formatDate(inv.issue_date || inv.created_at)}</div>
+                                    ${inv.due_date ? `<div class="invoice-card-due">Due ${formatDate(inv.due_date)}</div>` : ''}
+                                </div>
+                                <div class="invoice-card-amount">${formatCurrency(inv.total)}</div>
+                            </div>
+                            
+                            <div class="invoice-card-client">${client?.name || 'Unknown'}</div>
+                            ${jobAddress ? `<div class="invoice-card-address">${jobAddress}</div>` : ''}
+                            <div class="invoice-card-title">${inv.title}</div>
+                            
+                            <div class="invoice-card-status-row">
+                                ${statusBadge}
+                                ${inv.is_recurring_parent ? '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">🔄 Progressive</span>' : ''}
+                            </div>
+                            
+                            <div class="invoice-card-actions" onclick="event.stopPropagation()">
+                                <button onclick="generatePDF('invoice', ${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="invoice-card-action-btn">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                    </svg>
+                                    PDF
+                                </button>
+                                <button onclick="sendInvoiceEmail(${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="invoice-card-action-btn">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                    </svg>
+                                    Email
+                                </button>
+                                ${isPaid ? `
+                                <button onclick="markUnpaid('${inv.id}')" class="invoice-card-action-btn" style="background: #fef3c7; border-color: #fbbf24; color: #92400e;">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    Unpaid
+                                </button>
+                                ` : `
+                                <button onclick="markPaid('${inv.id}')" class="invoice-card-action-btn" style="background: #d1fae5; border-color: #34d399; color: #065f46;">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    Paid
+                                </button>
+                                `}
+                            </div>
+                        </div>
+                    `;
+                }).join('')
+            }
         </div>
         
         <!-- Pagination -->
