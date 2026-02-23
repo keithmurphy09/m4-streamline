@@ -1061,6 +1061,117 @@
     .dark .expense-mobile-total-amount {
         color: #ef4444;
     }
+    
+    /* ═══════════════════════════════════════════════════════════════
+       SCHEDULE CALENDAR - MOBILE OPTIMIZATION
+       Makes FullCalendar responsive and touch-friendly
+       ═══════════════════════════════════════════════════════════════ */
+    
+    /* Calendar container - prevent overflow */
+    #calendar {
+        overflow: hidden !important;
+        max-width: 100vw !important;
+    }
+    
+    /* FullCalendar mobile optimizations */
+    .fc {
+        font-size: 11px !important;
+    }
+    
+    /* Calendar header toolbar - compact */
+    .fc-header-toolbar {
+        flex-direction: column !important;
+        gap: 8px !important;
+        margin-bottom: 12px !important;
+    }
+    
+    .fc-toolbar-chunk {
+        display: flex !important;
+        gap: 4px !important;
+    }
+    
+    /* Calendar title - smaller */
+    .fc-toolbar-title {
+        font-size: 16px !important;
+        font-weight: 600 !important;
+    }
+    
+    /* Calendar buttons - touch-friendly */
+    .fc-button {
+        padding: 6px 10px !important;
+        font-size: 11px !important;
+        min-height: 36px !important;
+    }
+    
+    /* Day headers - compact */
+    .fc-col-header-cell {
+        padding: 4px 2px !important;
+        font-size: 10px !important;
+    }
+    
+    /* Day cells - smaller */
+    .fc-daygrid-day {
+        min-height: 40px !important;
+    }
+    
+    .fc-daygrid-day-number {
+        padding: 2px !important;
+        font-size: 11px !important;
+    }
+    
+    /* Events - compact */
+    .fc-event {
+        font-size: 9px !important;
+        padding: 1px 2px !important;
+        margin-bottom: 1px !important;
+        border-radius: 3px !important;
+        cursor: pointer !important;
+    }
+    
+    .fc-event-title {
+        font-weight: 500 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    
+    /* Hide time grid on mobile (month view only) */
+    .fc-timeGridWeek-button {
+        display: none !important;
+    }
+    
+    /* Dark mode calendar fixes */
+    .dark .fc {
+        color: #f9fafb !important;
+    }
+    
+    .dark .fc-theme-standard td,
+    .dark .fc-theme-standard th {
+        border-color: #374151 !important;
+    }
+    
+    .dark .fc-button {
+        background: #374151 !important;
+        border-color: #4b5563 !important;
+        color: #f9fafb !important;
+    }
+    
+    .dark .fc-button:hover {
+        background: #4b5563 !important;
+    }
+    
+    .dark .fc-button-active {
+        background: #14b8a6 !important;
+        border-color: #14b8a6 !important;
+    }
+    
+    .dark .fc-daygrid-day-number {
+        color: #f9fafb !important;
+    }
+    
+    .dark .fc-col-header-cell-cushion {
+        color: #9ca3af !important;
+    }
 }
 
 /* SWIPE GESTURES HINT */
