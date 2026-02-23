@@ -21,6 +21,11 @@ function renderExpenses() {
             return monthKey === expenseFilter;
         });
     
+    // NEW: Filter by tradesperson (team member)
+    if (window.expenseTeamFilter && window.expenseTeamFilter !== 'all') {
+        filteredExpenses = filteredExpenses.filter(exp => exp.team_member_id === window.expenseTeamFilter);
+    }
+    
     if (expenseSearch) {
         filteredExpenses = filteredExpenses.filter(exp => {
             const teamMember = teamMembers.find(m => m.id === exp.team_member_id);
@@ -59,6 +64,12 @@ function renderExpenses() {
                     <select onchange="expenseFilter=this.value; renderApp();" class="px-3 py-2 border rounded bg-white dark:bg-gray-700 dark:text-white text-sm">
                         <option value="all" ${expenseFilter === 'all' ? 'selected' : ''}>All Months</option>
                         ${months.map(m => `<option value="${m}" ${expenseFilter === m ? 'selected' : ''}>${getMonthLabel(m)}</option>`).join('')}
+                    </select>
+                ` : ''}
+                ${getAccountType() === 'business' && teamMembers.filter(tm => tm.role !== 'salesperson').length > 0 ? `
+                    <select onchange="window.expenseTeamFilter=this.value; renderApp();" class="px-3 py-2 border rounded bg-white dark:bg-gray-700 dark:text-white text-sm">
+                        <option value="all" ${!window.expenseTeamFilter || window.expenseTeamFilter === 'all' ? 'selected' : ''}>All Tradespeople</option>
+                        ${teamMembers.filter(tm => tm.role !== 'salesperson').map(tm => `<option value="${tm.id}" ${window.expenseTeamFilter === tm.id ? 'selected' : ''}>${tm.name}</option>`).join('')}
                     </select>
                 ` : ''}
                 <button onclick="exportToCSV('expenses')" class="bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 px-3 sm:px-4 py-2 rounded-lg text-sm whitespace-nowrap transition-colors">Export CSV</button>
