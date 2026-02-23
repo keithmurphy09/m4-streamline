@@ -253,6 +253,22 @@
     .invoices-desktop-table {
         display: block !important;
     }
+    
+    .clients-mobile-view {
+        display: none !important;
+    }
+    
+    .clients-desktop-view {
+        display: block !important;
+    }
+    
+    .expenses-mobile-cards {
+        display: none !important;
+    }
+    
+    .expenses-desktop-table {
+        display: block !important;
+    }
 }
 
 /* Mobile: Hide table, show cards */
@@ -848,6 +864,202 @@
     /* Section headers: Slightly smaller */
     .space-y-6 h3 {
         font-size: 14px !important;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════════
+       EXPENSES - MOBILE CARD LAYOUT
+       ═══════════════════════════════════════════════════════════════ */
+    
+    /* Hide desktop table on mobile, show cards */
+    .expenses-desktop-table {
+        display: none !important;
+    }
+    
+    /* Show mobile cards */
+    .expenses-mobile-cards {
+        display: block !important;
+        padding: 12px;
+    }
+    
+    /* Expense Card Styling */
+    .expense-card {
+        background: white;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border-left: 4px solid #dc2626;
+    }
+    
+    .dark .expense-card {
+        background: #1f2937;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* Expense Card Header */
+    .expense-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 12px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .dark .expense-card-header {
+        border-bottom-color: #374151;
+    }
+    
+    .expense-card-date {
+        font-size: 12px;
+        color: #6b7280;
+        margin-bottom: 4px;
+    }
+    
+    .dark .expense-card-date {
+        color: #9ca3af;
+    }
+    
+    .expense-card-category {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        border: 1px solid;
+    }
+    
+    .expense-card-amount {
+        font-size: 20px;
+        font-weight: 700;
+        color: #dc2626;
+    }
+    
+    .dark .expense-card-amount {
+        color: #ef4444;
+    }
+    
+    /* Expense Card Body */
+    .expense-card-description {
+        font-size: 14px;
+        color: #374151;
+        margin-bottom: 8px;
+    }
+    
+    .dark .expense-card-description {
+        color: #d1d5db;
+    }
+    
+    .expense-card-job,
+    .expense-card-team {
+        font-size: 13px;
+        color: #6b7280;
+        margin-bottom: 4px;
+    }
+    
+    .dark .expense-card-job,
+    .dark .expense-card-team {
+        color: #9ca3af;
+    }
+    
+    .expense-card-receipt {
+        font-size: 13px;
+        margin-top: 8px;
+    }
+    
+    .expense-card-receipt a {
+        color: #14b8a6;
+        text-decoration: none;
+    }
+    
+    .dark .expense-card-receipt a {
+        color: #5eead4;
+    }
+    
+    /* Expense Card Actions */
+    .expense-card-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #e5e7eb;
+    }
+    
+    .dark .expense-card-actions {
+        border-top-color: #374151;
+    }
+    
+    .expense-card-action-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 10px 12px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #14b8a6;
+        background: #f0fdfa;
+        border: 1px solid #99f6e4;
+        border-radius: 8px;
+        transition: all 0.2s;
+        min-height: 44px;
+        cursor: pointer;
+        -webkit-tap-highlight-color: rgba(20, 184, 166, 0.1);
+    }
+    
+    .expense-card-action-btn:active {
+        transform: scale(0.95) !important;
+    }
+    
+    .dark .expense-card-action-btn {
+        background: #134e4a;
+        border-color: #115e59;
+        color: #5eead4;
+    }
+    
+    /* Icon sizing in expense cards */
+    .expense-card svg {
+        min-width: 16px;
+        min-height: 16px;
+    }
+    
+    /* Mobile Total */
+    .expense-mobile-total {
+        background: #fee2e2;
+        border: 2px solid #dc2626;
+        border-radius: 12px;
+        padding: 16px;
+        margin-top: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .dark .expense-mobile-total {
+        background: #7f1d1d;
+        border-color: #dc2626;
+    }
+    
+    .expense-mobile-total-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #991b1b;
+        text-transform: uppercase;
+    }
+    
+    .dark .expense-mobile-total-label {
+        color: #fca5a5;
+    }
+    
+    .expense-mobile-total-amount {
+        font-size: 24px;
+        font-weight: 700;
+        color: #dc2626;
+    }
+    
+    .dark .expense-mobile-total-amount {
+        color: #ef4444;
     }
 }
 
