@@ -2,6 +2,12 @@
 // M4 STREAMLINE - Authentication Module
 // ═══════════════════════════════════════════════════════════════════
 
+// Stripe Price IDs (for future payment integration)
+const STRIPE_PRICES = {
+    sole_trader: 'price_1T3y5pRyQRluLLu54EqUiRky',  // $49.95/month
+    business: 'price_1T3y6NRyQRluLLu5b4DycH9p'      // $89.95/month
+};
+
 async function checkAuth() {
     const urlParams = new URLSearchParams(window.location.search);
     const quoteToken = urlParams.get('quote');
