@@ -603,6 +603,153 @@
     }
     
     /* ═══════════════════════════════════════════════════════════════
+       CLIENTS - MOBILE OPTIMIZATION
+       Optimize existing client cards for mobile
+       ═══════════════════════════════════════════════════════════════ */
+    
+    /* Client cards - better mobile styling */
+    #clientsList > div {
+        padding: 20px !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12) !important;
+        border-radius: 12px !important;
+        margin-bottom: 16px !important;
+        border-left: 4px solid #14b8a6;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .dark #clientsList > div {
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    /* Card press effect */
+    #clientsList > div:active {
+        transform: scale(0.98);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    /* Client name - bigger and bolder */
+    #clientsList h3 {
+        font-size: 19px !important;
+        font-weight: 700 !important;
+        margin-bottom: 10px !important;
+        color: #111827;
+    }
+    
+    .dark #clientsList h3 {
+        color: #f9fafb !important;
+    }
+    
+    /* Contact info - clearer text */
+    #clientsList p.text-sm {
+        font-size: 15px !important;
+        margin-bottom: 6px !important;
+        line-height: 1.6 !important;
+    }
+    
+    /* Notes - better visibility */
+    #clientsList p.italic {
+        font-size: 14px !important;
+        padding: 14px !important;
+        margin-top: 14px !important;
+        background: #fef3c7 !important;
+        border-left: 4px solid #f59e0b !important;
+        border-radius: 8px !important;
+    }
+    
+    .dark #clientsList p.italic {
+        background: #78350f !important;
+        border-left-color: #fbbf24 !important;
+        color: #fef3c7 !important;
+    }
+    
+    /* Checkbox - bigger for easier tapping */
+    #clientsList input[type="checkbox"] {
+        width: 28px !important;
+        height: 28px !important;
+    }
+    
+    /* Action buttons container - stack vertically */
+    #clientsList .flex-1 .flex.sm\\:flex-col {
+        flex-direction: column !important;
+        gap: 10px !important;
+        width: 100% !important;
+        margin-top: 16px !important;
+        padding-top: 16px !important;
+        border-top: 1px solid #e5e7eb;
+    }
+    
+    .dark #clientsList .flex-1 .flex.sm\\:flex-col {
+        border-top-color: #374151;
+    }
+    
+    /* All action buttons - bigger touch targets */
+    #clientsList .flex.sm\\:flex-col button {
+        width: 100% !important;
+        min-height: 50px !important;
+        font-size: 15px !important;
+        font-weight: 600 !important;
+        padding: 14px 18px !important;
+        border-radius: 10px !important;
+        transition: all 0.2s !important;
+        border-width: 2px !important;
+    }
+    
+    /* Button press effect */
+    #clientsList .flex.sm\\:flex-col button:active {
+        transform: scale(0.97) !important;
+    }
+    
+    /* New Quote button - green */
+    #clientsList button.hover\\:bg-green-50 {
+        background: #d1fae5 !important;
+        border-color: #34d399 !important;
+        color: #065f46 !important;
+    }
+    
+    .dark #clientsList button.hover\\:bg-green-50 {
+        background: #064e3b !important;
+        border-color: #059669 !important;
+        color: #6ee7b7 !important;
+    }
+    
+    /* Edit button - teal */
+    #clientsList button.hover\\:bg-teal-50 {
+        background: #ccfbf1 !important;
+        border-color: #14b8a6 !important;
+        color: #115e59 !important;
+    }
+    
+    .dark #clientsList button.hover\\:bg-teal-50 {
+        background: #134e4a !important;
+        border-color: #14b8a6 !important;
+        color: #5eead4 !important;
+    }
+    
+    /* Delete button - red */
+    #clientsList button.text-red-600 {
+        background: #fee2e2 !important;
+        border-color: #ef4444 !important;
+        color: #991b1b !important;
+    }
+    
+    .dark #clientsList button.text-red-600 {
+        background: #7f1d1d !important;
+        border-color: #dc2626 !important;
+        color: #fca5a5 !important;
+    }
+    
+    /* Select all checkbox */
+    .flex.items-center.gap-2.mb-4 input[type="checkbox"] {
+        width: 26px !important;
+        height: 26px !important;
+    }
+    
+    .flex.items-center.gap-2.mb-4 label {
+        font-size: 16px !important;
+        font-weight: 600 !important;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════════
        QUOTE DETAIL PAGE - MOBILE OPTIMIZATION  
        Makes detail view compact with proper table handling
        ═══════════════════════════════════════════════════════════ */
