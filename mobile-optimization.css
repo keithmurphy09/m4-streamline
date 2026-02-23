@@ -1206,6 +1206,90 @@
     .dark .fc-col-header-cell-cushion {
         color: #9ca3af !important;
     }
+    
+    /* ═══════════════════════════════════════════════════════════════
+       COMPANY & TEAM PAGES - MOBILE OPTIMIZATION
+       Better forms and cards on mobile
+       ═══════════════════════════════════════════════════════════════ */
+    
+    /* Company Settings - Form improvements */
+    .max-w-2xl {
+        max-width: 100% !important;
+    }
+    
+    /* Forms - Better mobile spacing */
+    .space-y-4 > div {
+        margin-bottom: 1rem;
+    }
+    
+    /* Grid columns - Stack on mobile */
+    .grid.grid-cols-2 {
+        grid-template-columns: 1fr !important;
+    }
+    
+    /* Form inputs - Touch-friendly */
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="number"],
+    textarea,
+    select {
+        min-height: 44px !important;
+        font-size: 16px !important; /* Prevents zoom on iOS */
+    }
+    
+    /* Labels - Better spacing */
+    label {
+        margin-bottom: 0.5rem;
+        font-size: 14px;
+    }
+    
+    /* Buttons - Touch-friendly */
+    button {
+        min-height: 44px !important;
+        padding: 12px 16px !important;
+    }
+    
+    /* Team member cards - Mobile optimization */
+    .bg-white.p-4.rounded-lg.shadow {
+        padding: 16px !important;
+    }
+    
+    /* Team member actions - Stack vertically */
+    .bg-white.p-4.rounded-lg.shadow .flex.gap-2 {
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+    
+    .bg-white.p-4.rounded-lg.shadow .flex.gap-2 button {
+        width: 100% !important;
+    }
+    
+    /* Team member info - Better mobile layout */
+    .bg-white.p-4.rounded-lg.shadow .flex.justify-between {
+        flex-direction: column !important;
+        gap: 16px !important;
+    }
+    
+    /* File upload area - Better mobile */
+    .border-dashed {
+        padding: 1rem !important;
+    }
+    
+    /* Logo preview - Smaller on mobile */
+    .h-32 {
+        height: 80px !important;
+    }
+    
+    /* Stripe/Email/SMS sections - Compact */
+    .bg-white.dark\\:bg-gray-800.p-6 {
+        padding: 1rem !important;
+    }
+    
+    /* Section headers - Smaller on mobile */
+    h3 {
+        font-size: 16px !important;
+    }
 }
 
 /* SWIPE GESTURES HINT */
