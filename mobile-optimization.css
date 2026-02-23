@@ -465,29 +465,48 @@
         grid-template-columns: 1fr !important;
     }
     
-    /* Line Items Table: CRITICAL FIX - Enable horizontal scroll */
+    /* Line Items Section: CRITICAL FIX for horizontal scroll */
+    .space-y-6 .bg-white:has(table),
     .space-y-6 > div:has(table) {
         overflow-x: auto !important;
         -webkit-overflow-scrolling: touch !important;
+        border-radius: 12px;
     }
     
+    /* Force table to be wide enough to scroll */
     .space-y-6 table {
-        min-width: 600px !important; /* Force minimum width to enable scroll */
-        display: table !important; /* Ensure table layout */
+        min-width: 650px !important;
         width: 100% !important;
     }
     
     /* Compact table text but keep readable */
     .space-y-6 table td,
     .space-y-6 table th {
-        font-size: 13px !important;
-        padding: 10px 8px !important;
-        white-space: nowrap;
+        font-size: 12px !important;
+        padding: 8px 6px !important;
+        white-space: normal !important;
+    }
+    
+    /* Description column: Allow wrapping */
+    .space-y-6 table td:first-child,
+    .space-y-6 table th:first-child {
+        min-width: 150px;
+        white-space: normal !important;
+    }
+    
+    /* Number columns: Keep tight */
+    .space-y-6 table td:nth-child(2),
+    .space-y-6 table td:nth-child(3),
+    .space-y-6 table td:nth-child(4),
+    .space-y-6 table th:nth-child(2),
+    .space-y-6 table th:nth-child(3),
+    .space-y-6 table th:nth-child(4) {
+        white-space: nowrap !important;
     }
     
     /* Table totals: Keep prominent */
     .space-y-6 table tfoot td {
-        font-size: 14px !important;
+        font-size: 13px !important;
         font-weight: 600 !important;
     }
     
