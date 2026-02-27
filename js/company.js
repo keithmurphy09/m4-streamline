@@ -612,39 +612,100 @@ function renderTeam() {
                 <button onclick="switchTab('company')" class="bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 px-4 py-2 rounded-lg transition-colors">Back</button>
             </div>
         </div>
+        
         ${teamMembers.length === 0 ? '<p class="text-gray-500">No team members</p>' : `
-            <table class="w-full">
-                <thead class="bg-gray-100 dark:bg-gray-900">
-                    <tr>
-                        <th class="px-6 py-3 text-left">Name</th>
-                        <th class="px-6 py-3 text-left">Role</th>
-                        <th class="px-6 py-3 text-left">Occupation</th>
-                        <th class="px-6 py-3 text-left">Email</th>
-                        <th class="px-6 py-3 text-left">Phone</th>
-                        <th class="px-6 py-3 text-left">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${teamMembers.map(m => {
-                        const role = m.role || 'tradesperson';
-                        const roleBadge = role === 'salesperson' 
-                            ? '<span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800">SALES</span>'
-                            : '<span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800">TRADES</span>';
-                        
-                        return `<tr class="border-t dark:border-gray-700">
-                            <td class="px-6 py-4">${m.name}</td>
-                            <td class="px-6 py-4">${roleBadge}</td>
-                            <td class="px-6 py-4 text-teal-600">${m.occupation || '-'}</td>
-                            <td class="px-6 py-4">${m.email || '-'}</td>
-                            <td class="px-6 py-4">${m.phone || '-'}</td>
-                            <td class="px-6 py-4">
-                                <button onclick="editTeamMember('${m.id}')" class="px-3 py-1 bg-blue-600 text-white rounded text-sm mr-2">Edit</button>
-                                <button onclick="deleteTeamMember('${m.id}')" class="px-3 py-1 bg-red-600 text-white rounded text-sm">Delete</button>
-                            </td>
-                        </tr>`;
-                    }).join('')}
-                </tbody>
-            </table>
+            <!-- DESKTOP TABLE VIEW -->
+            <div class="team-desktop-table">
+                <table class="w-full">
+                    <thead class="bg-gray-100 dark:bg-gray-900">
+                        <tr>
+                            <th class="px-6 py-3 text-left">Name</th>
+                            <th class="px-6 py-3 text-left">Role</th>
+                            <th class="px-6 py-3 text-left">Occupation</th>
+                            <th class="px-6 py-3 text-left">Email</th>
+                            <th class="px-6 py-3 text-left">Phone</th>
+                            <th class="px-6 py-3 text-left">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${teamMembers.map(m => {
+                            const role = m.role || 'tradesperson';
+                            const roleBadge = role === 'salesperson' 
+                                ? '<span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800">SALES</span>'
+                                : '<span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800">TRADES</span>';
+                            
+                            return `<tr class="border-t dark:border-gray-700">
+                                <td class="px-6 py-4">${m.name}</td>
+                                <td class="px-6 py-4">${roleBadge}</td>
+                                <td class="px-6 py-4 text-teal-600">${m.occupation || '-'}</td>
+                                <td class="px-6 py-4">${m.email || '-'}</td>
+                                <td class="px-6 py-4">${m.phone || '-'}</td>
+                                <td class="px-6 py-4">
+                                    <button onclick="editTeamMember('${m.id}')" class="px-3 py-1 bg-blue-600 text-white rounded text-sm mr-2">Edit</button>
+                                    <button onclick="deleteTeamMember('${m.id}')" class="px-3 py-1 bg-red-600 text-white rounded text-sm">Delete</button>
+                                </td>
+                            </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- MOBILE CARDS VIEW -->
+            <div class="team-mobile-cards">
+                ${teamMembers.map(m => {
+                    const role = m.role || 'tradesperson';
+                    const roleBadge = role === 'salesperson' 
+                        ? '<span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800">SALES</span>'
+                        : '<span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800">TRADES</span>';
+                    
+                    return `
+                        <div class="team-card">
+                            <div class="team-card-header">
+                                <div>
+                                    <div class="team-card-name">${m.name}</div>
+                                    ${m.occupation ? `<div class="team-card-occupation">${m.occupation}</div>` : ''}
+                                </div>
+                                ${roleBadge}
+                            </div>
+                            
+                            <div class="team-card-body">
+                                ${m.email ? `
+                                    <div class="team-card-contact">
+                                        <svg class="team-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                        </svg>
+                                        ${m.email}
+                                    </div>
+                                ` : ''}
+                                
+                                ${m.phone ? `
+                                    <div class="team-card-contact">
+                                        <svg class="team-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                                        </svg>
+                                        ${m.phone}
+                                    </div>
+                                ` : ''}
+                            </div>
+                            
+                            <div class="team-card-actions">
+                                <button onclick="editTeamMember('${m.id}')" class="team-card-action-btn team-card-edit">
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                    </svg>
+                                    Edit
+                                </button>
+                                <button onclick="deleteTeamMember('${m.id}')" class="team-card-action-btn team-card-delete">
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
         `}
     </div>`;
 }
