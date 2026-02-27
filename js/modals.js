@@ -297,6 +297,18 @@ function renderModal() {
                 <input type="text" id="job_address" placeholder="Job site address (start typing for suggestions)" value="${jobAddress}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">💡 Defaults to client address</p>
             </div>
+            ${getAccountType() === 'business' && teamMembers.filter(tm => tm.role === 'salesperson').length > 0 ? `
+                <div class="mb-3">
+                    <label class="block text-sm font-medium mb-1 dark:text-gray-200">Salesperson (Optional)</label>
+                    <select id="quote_salesperson" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                        <option value="">None</option>
+                        ${teamMembers.filter(tm => tm.role === 'salesperson').map(tm => 
+                            `<option value="${tm.id}" ${editingItem?.salesperson_id === tm.id ? 'selected' : ''}>${tm.name}</option>`
+                        ).join('')}
+                    </select>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">💡 Track quote performance by salesperson</p>
+                </div>
+            ` : ''}
             <div id="items-list"></div>
             <button onclick="addQuoteItem()" class="text-teal-500 text-sm mb-3">+ Add Item</button>
             <div id="quote-total" class="font-bold mb-3">Total: $0</div>
