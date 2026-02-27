@@ -672,7 +672,21 @@ function renderTeamPerformance() {
         const tpStats = tradespeople.map(tp => {
             const tpExpenses = expenses.filter(e => e.team_member_id === tp.id);
             const total = tpExpenses.reduce((s, e) => s + parseFloat(e.amount || 0), 0);
-            const jobIds = [...new Set(tpExpenses.filter(e => e.job_id).map(e => e.job_id))];
+            
+            // Get unique job IDs - check both job_id and jobId fields, filter out null/empty
+            const jobIds = [...new Set(
+                tpExpenses
+                    .map(e => e.job_id || e.jobId)  // Try both field names
+                    .filter(id => id && id !== '' && id !== 'null')  // Remove null/empty/string "null"
+            )];
+            
+            // Debug logging - remove after testing
+            if (tpExpenses.length > 0) {
+                console.log(`[Analytics] ${tp.name}: ${tpExpenses.length} expenses, ${jobIds.length} jobs`);
+                console.log(`[Analytics] Sample expense:`, tpExpenses[0]);
+                console.log(`[Analytics] Job IDs found:`, jobIds);
+            }
+            
             const avgPerJob = jobIds.length > 0 ? total / jobIds.length : 0;
             return { name: tp.name, expenses: tpExpenses.length, jobs: jobIds.length, total, avgPerJob };
         });
