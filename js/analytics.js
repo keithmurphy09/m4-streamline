@@ -673,22 +673,41 @@ function renderTeamPerformance() {
             const tpExpenses = expenses.filter(e => e.team_member_id === tp.id);
             const total = tpExpenses.reduce((s, e) => s + parseFloat(e.amount || 0), 0);
             
-            // Get unique job IDs - check both job_id and jobId fields, filter out null/empty
-            const jobIds = [...new Set(
-                tpExpenses
-                    .map(e => e.job_id || e.jobId)  // Try both field names
-                    .filter(id => id && id !== '' && id !== 'null')  // Remove null/empty/string "null"
-            )];
+            // Get unique job/quote identifiers from BOTH job_id field AND description parsing
+            const jobIdentifiers = new Set();
+            
+            tpExpenses.forEach(exp => {
+                // First try: job_id field
+                if (exp.job_id && exp.job_id !== '' && exp.job_id !== 'null') {
+                    jobIdentifiers.add(exp.job_id);
+                }
+                // Second try: Parse description for [Related to: ...]
+                else if (exp.description) {
+                    const match = exp.description.match(/\[Related to: ([^\]]+)\]/);
+                    if (match) {
+                        let title = match[1];
+                        // Remove (Quote) or (Scheduled) suffix
+                        title = title.replace(/\s*\((?:Quote|Scheduled)\)\s*$/, '');
+                        // Extract the quote/job number (first part before ' - ')
+                        const parts = title.split(' - ');
+                        const identifier = parts[0] || title;
+                        if (identifier && identifier.trim()) {
+                            jobIdentifiers.add(identifier.trim());
+                        }
+                    }
+                }
+            });
+            
+            const jobCount = jobIdentifiers.size;
             
             // Debug logging - remove after testing
             if (tpExpenses.length > 0) {
-                console.log(`[Analytics] ${tp.name}: ${tpExpenses.length} expenses, ${jobIds.length} jobs`);
-                console.log(`[Analytics] Sample expense:`, tpExpenses[0]);
-                console.log(`[Analytics] Job IDs found:`, jobIds);
+                console.log(`[Analytics] ${tp.name}: ${tpExpenses.length} expenses, ${jobCount} jobs`);
+                console.log(`[Analytics] Jobs/Quotes found:`, Array.from(jobIdentifiers));
             }
             
-            const avgPerJob = jobIds.length > 0 ? total / jobIds.length : 0;
-            return { name: tp.name, expenses: tpExpenses.length, jobs: jobIds.length, total, avgPerJob };
+            const avgPerJob = jobCount > 0 ? total / jobCount : 0;
+            return { name: tp.name, expenses: tpExpenses.length, jobs: jobCount, total, avgPerJob };
         });
         
         html += `
