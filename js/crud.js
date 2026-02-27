@@ -769,13 +769,104 @@ async function saveTeamMember() {
         email: document.getElementById('team_email').value.trim(),
         phone: document.getElementById('team_phone').value.trim(),
         occupation: document.getElementById('team_occupation').value.trim(),
-        color: document.getElementById('team_color').value
+        color: document.getElementById('team_color').value,
+        role: document.getElementById('team_role')?.value || 'tradesperson' // NEW: Include role
     };
     
     if (editingItem) {
-        await updateTeamMember(editingItem.id);
+        await updateTeamMember(editingItem.id, member);
     } else {
         await addTeamMember(member);
+    }
+}
+
+// ADD TEAM MEMBER (NEW FUNCTION)
+async function addTeamMember(member) {
+    try {
+        const { data, error } = await supabaseClient
+            .from('team_members')
+            .insert([{
+                ...member,
+                account_owner_id: currentUser.id
+            }])
+            .select();
+        
+        if (error) throw error;
+        
+        if (data) {
+            teamMembers.push(data[0]);
+            showNotification('Team member added successfully!', 'success');
+        }
+        
+        closeModal();
+        renderApp();
+    } catch (error) {
+        console.error('Error adding team member:', error);
+        showNotification('Error adding team member: ' + error.message, 'error');
+    }
+}
+
+// UPDATE TEAM MEMBER (NEW FUNCTION)
+async function updateTeamMember(id, member) {
+    try {
+        const { data, error } = await supabaseClient
+            .from('team_members')
+            .update(member)
+            .eq('id', id)
+            .select();
+        
+        if (error) throw error;
+        
+        if (data) {
+            const index = teamMembers.findIndex(m => m.id === id);
+            if (index !== -1) {
+                teamMembers[index] = data[0];
+            }
+            showNotification('Team member updated successfully!', 'success');
+        }
+        
+        closeModal();
+        renderApp();
+    } catch (error) {
+        console.error('Error updating team member:', error);
+        showNotification('Error updating team member: ' + error.message, 'error');
+    }
+}
+
+// DELETE TEAM MEMBER (NEW FUNCTION)
+async function deleteTeamMember(id) {
+    try {
+        if (!confirm('Delete this team member? This action cannot be undone.')) {
+            return;
+        }
+        
+        isLoading = true;
+        loadingMessage = 'Deleting team member...';
+        renderApp();
+        
+        const { error } = await supabaseClient
+            .from('team_members')
+            .delete()
+            .eq('id', id);
+        
+        if (error) throw error;
+        
+        teamMembers = teamMembers.filter(m => m.id !== id);
+        showNotification('Team member deleted successfully!', 'success');
+    } catch (error) {
+        console.error('Error deleting team member:', error);
+        showNotification('Failed to delete team member: ' + error.message, 'error');
+    } finally {
+        isLoading = false;
+        renderApp();
+    }
+}
+
+// EDIT TEAM MEMBER (NEW FUNCTION)
+function editTeamMember(id) {
+    const member = teamMembers.find(m => m.id === id);
+    if (member) {
+        openModal('team_member', member);
     }
 }
 
