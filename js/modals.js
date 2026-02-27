@@ -266,7 +266,7 @@ function renderModal() {
         const jobAddress = editingItem?.job_address || '';
         const includeGst = editingItem?.include_gst || false;
         const depositPercentage = editingItem?.deposit_percentage || 0;
-        const paymentTerms = editingItem?.payment_terms || 'Full payment (COD) to be paid on completion';
+        const paymentTerms = editingItem?.payment_terms || '';
         const isEditing = editingItem && editingItem.id;
         const buttonText = isEditing ? 'Update Quote' : 'Create Quote';
         
@@ -567,7 +567,6 @@ function renderModal() {
         const color = editingItem?.color || '#3b82f6';
         const role = editingItem?.role || 'tradesperson'; // NEW: Get role (defaults to tradesperson)
         const buttonText = editingItem ? 'Update Team Member' : 'Add Team Member';
-        const action = editingItem ? `updateTeamMember('${editingItem.id}')` : `saveTeamMember()`;
         
         title = editingItem ? 'Edit Team Member' : 'Add Team Member';
         form = `
@@ -593,7 +592,7 @@ function renderModal() {
                     <span class="text-sm text-gray-600 dark:text-gray-300">Choose a color for this team member's jobs</span>
                 </div>
             </div>
-            <button onclick="${action}" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400 hover:bg-gray-800">${buttonText}</button>
+            <button onclick="saveTeamMember()" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400 hover:bg-gray-800">${buttonText}</button>
         `;
     }
     
