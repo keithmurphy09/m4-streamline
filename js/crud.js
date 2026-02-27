@@ -136,6 +136,7 @@ function saveQuote() {
     const includeGst = document.getElementById('include_gst').checked;
     const depositPercentage = parseInt(document.getElementById('deposit_percentage').value) || 0;
     const paymentTerms = document.getElementById('payment_terms').value.trim();
+    const salespersonId = document.getElementById('quote_salesperson')?.value || null;
     
     if (!clientId || !title || quoteItems.length === 0) {
         showNotification('Please fill in all required fields and add at least one item', 'error');
@@ -159,6 +160,7 @@ function saveQuote() {
         include_gst: includeGst,
         deposit_percentage: depositPercentage,
         payment_terms: paymentTerms,
+        salesperson_id: salespersonId,
         status: 'pending'
     });
 }
@@ -195,6 +197,7 @@ async function updateQuote(id) {
     const includeGst = document.getElementById('include_gst').checked;
     const depositPercentage = parseInt(document.getElementById('deposit_percentage').value) || 0;
     const paymentTerms = document.getElementById('payment_terms').value.trim();
+    const salespersonId = document.getElementById('quote_salesperson')?.value || null;
     
     if (!title || quoteItems.length === 0) {
         showNotification('Please fill in all required fields', 'error');
@@ -219,7 +222,8 @@ async function updateQuote(id) {
                 notes,
                 include_gst: includeGst,
                 deposit_percentage: depositPercentage,
-                payment_terms: paymentTerms
+                payment_terms: paymentTerms,
+                salesperson_id: salespersonId
             })
             .eq('id', id);
             
@@ -238,7 +242,8 @@ async function updateQuote(id) {
                 notes,
                 include_gst: includeGst,
                 deposit_percentage: depositPercentage,
-                payment_terms: paymentTerms
+                payment_terms: paymentTerms,
+                salesperson_id: salespersonId
             });
         }
         
@@ -766,11 +771,11 @@ async function saveTeamMember() {
     
     const member = {
         name: name,
-        email: document.getElementById('team_email').value.trim(),
-        phone: document.getElementById('team_phone').value.trim(),
-        occupation: document.getElementById('team_occupation').value.trim(),
-        color: document.getElementById('team_color').value,
-        role: document.getElementById('team_role')?.value || 'tradesperson' // NEW: Include role
+        email: document.getElementById('team_email').value.trim() || null,
+        phone: document.getElementById('team_phone').value.trim() || null,
+        occupation: document.getElementById('team_occupation').value.trim() || null,
+        color: document.getElementById('team_color').value || '#3b82f6',
+        role: document.getElementById('team_role')?.value || 'tradesperson'
     };
     
     if (editingItem) {
