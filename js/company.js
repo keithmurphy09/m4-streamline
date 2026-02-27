@@ -617,6 +617,7 @@ function renderTeam() {
                 <thead class="bg-gray-100 dark:bg-gray-900">
                     <tr>
                         <th class="px-6 py-3 text-left">Name</th>
+                        <th class="px-6 py-3 text-left">Role</th>
                         <th class="px-6 py-3 text-left">Occupation</th>
                         <th class="px-6 py-3 text-left">Email</th>
                         <th class="px-6 py-3 text-left">Phone</th>
@@ -624,16 +625,24 @@ function renderTeam() {
                     </tr>
                 </thead>
                 <tbody>
-                    ${teamMembers.map(m => `<tr class="border-t dark:border-gray-700">
-                        <td class="px-6 py-4">${m.name}</td>
-                        <td class="px-6 py-4 text-teal-600">${m.occupation || '-'}</td>
-                        <td class="px-6 py-4">${m.email || '-'}</td>
-                        <td class="px-6 py-4">${m.phone || '-'}</td>
-                        <td class="px-6 py-4">
-                            <button onclick="editTeamMember('${m.id}')" class="px-3 py-1 bg-blue-600 text-white rounded text-sm mr-2">Edit</button>
-                            <button onclick="deleteTeamMember('${m.id}')" class="px-3 py-1 bg-red-600 text-white rounded text-sm">Delete</button>
-                        </td>
-                    </tr>`).join('')}
+                    ${teamMembers.map(m => {
+                        const role = m.role || 'tradesperson';
+                        const roleBadge = role === 'salesperson' 
+                            ? '<span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800">SALES</span>'
+                            : '<span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800">TRADES</span>';
+                        
+                        return `<tr class="border-t dark:border-gray-700">
+                            <td class="px-6 py-4">${m.name}</td>
+                            <td class="px-6 py-4">${roleBadge}</td>
+                            <td class="px-6 py-4 text-teal-600">${m.occupation || '-'}</td>
+                            <td class="px-6 py-4">${m.email || '-'}</td>
+                            <td class="px-6 py-4">${m.phone || '-'}</td>
+                            <td class="px-6 py-4">
+                                <button onclick="editTeamMember('${m.id}')" class="px-3 py-1 bg-blue-600 text-white rounded text-sm mr-2">Edit</button>
+                                <button onclick="deleteTeamMember('${m.id}')" class="px-3 py-1 bg-red-600 text-white rounded text-sm">Delete</button>
+                            </td>
+                        </tr>`;
+                    }).join('')}
                 </tbody>
             </table>
         `}
