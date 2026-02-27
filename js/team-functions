@@ -1,0 +1,121 @@
+// ═══════════════════════════════════════════════════════════════════
+// M4 STREAMLINE - Team Management Module (WITH ROLE SUPPORT)
+// ═══════════════════════════════════════════════════════════════════
+
+// SAVE NEW TEAM MEMBER (includes role)
+async function saveTeamMember() {
+    try {
+        const member = {
+            account_owner_id: currentUser.id,
+            name: document.getElementById('team_name').value,
+            email: document.getElementById('team_email').value || null,
+            phone: document.getElementById('team_phone').value || null,
+            occupation: document.getElementById('team_occupation').value || null,
+            color: document.getElementById('team_color').value || '#3b82f6',
+            role: document.getElementById('team_role')?.value || 'tradesperson'
+        };
+        
+        if (!member.name) {
+            showNotification('Name is required', 'error');
+            return;
+        }
+        
+        const { data, error } = await supabaseClient
+            .from('team_members')
+            .insert([member])
+            .select();
+        
+        if (error) throw error;
+        
+        if (data) {
+            teamMembers.push(data[0]);
+            showNotification('Team member added successfully!', 'success');
+        }
+        
+        closeModal();
+        renderApp();
+    } catch (error) {
+        console.error('Error adding team member:', error);
+        showNotification('Error adding team member: ' + error.message, 'error');
+    }
+}
+
+// UPDATE EXISTING TEAM MEMBER (includes role)
+async function updateTeamMember(id) {
+    try {
+        const updatedMember = {
+            name: document.getElementById('team_name').value,
+            email: document.getElementById('team_email').value || null,
+            phone: document.getElementById('team_phone').value || null,
+            occupation: document.getElementById('team_occupation').value || null,
+            color: document.getElementById('team_color').value || '#3b82f6',
+            role: document.getElementById('team_role')?.value || 'tradesperson'
+        };
+        
+        if (!updatedMember.name) {
+            showNotification('Name is required', 'error');
+            return;
+        }
+        
+        const { data, error } = await supabaseClient
+            .from('team_members')
+            .update(updatedMember)
+            .eq('id', id)
+            .select();
+        
+        if (error) throw error;
+        
+        if (data) {
+            const index = teamMembers.findIndex(m => m.id === id);
+            if (index !== -1) {
+                teamMembers[index] = data[0];
+            }
+            showNotification('Team member updated successfully!', 'success');
+        }
+        
+        closeModal();
+        renderApp();
+    } catch (error) {
+        console.error('Error updating team member:', error);
+        showNotification('Error updating team member: ' + error.message, 'error');
+    }
+}
+
+// DELETE TEAM MEMBER
+async function deleteTeamMember(id) {
+    try {
+        if (!confirm('Delete this team member? This action cannot be undone.')) {
+            return;
+        }
+        
+        isLoading = true;
+        loadingMessage = 'Deleting team member...';
+        renderApp();
+        
+        const { error } = await supabaseClient
+            .from('team_members')
+            .delete()
+            .eq('id', id);
+        
+        if (error) throw error;
+        
+        teamMembers = teamMembers.filter(m => m.id !== id);
+        showNotification('Team member deleted successfully!', 'success');
+    } catch (error) {
+        console.error('Error deleting team member:', error);
+        showNotification('Failed to delete team member: ' + error.message, 'error');
+    } finally {
+        isLoading = false;
+        renderApp();
+    }
+}
+
+// EDIT TEAM MEMBER (opens modal with existing data)
+function editTeamMember(id) {
+    const member = teamMembers.find(m => m.id === id);
+    if (member) {
+        openModal('team_member', member);
+    }
+}
+
+console.log('✅ Team management functions loaded with role support');
