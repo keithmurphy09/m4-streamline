@@ -553,6 +553,7 @@ function renderModal() {
         const phone = editingItem?.phone || '';
         const occupation = editingItem?.occupation || '';
         const color = editingItem?.color || '#3b82f6';
+        const role = editingItem?.role || 'tradesperson'; // NEW: Get role (defaults to tradesperson)
         const buttonText = editingItem ? 'Update Team Member' : 'Add Team Member';
         const action = editingItem ? `updateTeamMember('${editingItem.id}')` : `saveTeamMember()`;
         
@@ -562,6 +563,17 @@ function renderModal() {
             <input type="email" id="team_email" placeholder="Email (optional)" value="${email}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3">
             <input type="tel" id="team_phone" placeholder="Phone (optional)" value="${phone}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3">
             <input type="text" id="team_occupation" placeholder="Occupation (e.g., Painter, Electrician)" value="${occupation}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-3">
+            <div class="mb-3">
+                <label class="block text-sm font-medium mb-2 dark:text-gray-200">Role</label>
+                <select id="team_role" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                    <option value="tradesperson" ${role === 'tradesperson' ? 'selected' : ''}>Tradesperson</option>
+                    <option value="salesperson" ${role === 'salesperson' ? 'selected' : ''}>Salesperson</option>
+                </select>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <strong>Tradesperson:</strong> Assigned to jobs, tracked in expenses<br>
+                    <strong>Salesperson:</strong> Tracked in quote performance (future analytics)
+                </p>
+            </div>
             <div class="mb-3">
                 <label class="block text-sm font-medium mb-2 dark:text-gray-200">Calendar Color</label>
                 <div class="flex items-center gap-3">
