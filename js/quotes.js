@@ -1184,9 +1184,6 @@ async function updateQuoteStatus(quoteId) {
         if (status === 'won') {
             updateData.accepted = true;
             updateData.status = 'accepted';
-            if (!updateData.accepted_at) {
-                updateData.accepted_at = new Date().toISOString();
-            }
         }
         
         const { error } = await supabaseClient
@@ -1204,9 +1201,6 @@ async function updateQuoteStatus(quoteId) {
             if (status === 'won') {
                 quote.accepted = true;
                 quote.status = 'accepted';
-                if (!quote.accepted_at) {
-                    quote.accepted_at = new Date().toISOString();
-                }
             }
         }
         
@@ -1217,9 +1211,6 @@ async function updateQuoteStatus(quoteId) {
             if (status === 'won') {
                 selectedQuoteForDetail.accepted = true;
                 selectedQuoteForDetail.status = 'accepted';
-                if (!selectedQuoteForDetail.accepted_at) {
-                    selectedQuoteForDetail.accepted_at = new Date().toISOString();
-                }
             }
         }
         
@@ -1249,8 +1240,7 @@ async function markQuoteAsWon(quoteId, skipNotification = false) {
             .update({
                 quote_status: 'won',
                 accepted: true,
-                status: 'accepted',
-                accepted_at: new Date().toISOString()
+                status: 'accepted'
             })
             .eq('id', quoteId);
         
@@ -1262,9 +1252,6 @@ async function markQuoteAsWon(quoteId, skipNotification = false) {
             quote.quote_status = 'won';
             quote.accepted = true;
             quote.status = 'accepted';
-            if (!quote.accepted_at) {
-                quote.accepted_at = new Date().toISOString();
-            }
         }
         
         if (!skipNotification) {
