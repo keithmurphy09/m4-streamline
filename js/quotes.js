@@ -825,6 +825,33 @@ function renderQuoteDetail() {
                 </div>
                 ` : ''}
                 
+                <!-- Quote Status -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+                    <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">Quote Status</h3>
+                    <div class="space-y-3">
+                        <select id="quote-status-${q.id}" onchange="toggleLostReason('${q.id}')" class="w-full px-3 py-2 text-sm border rounded-lg dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                            <option value="pending" ${(q.quote_status || 'pending') === 'pending' ? 'selected' : ''}>⏳ Pending</option>
+                            <option value="won" ${q.quote_status === 'won' ? 'selected' : ''}>✅ Won</option>
+                            <option value="lost" ${q.quote_status === 'lost' ? 'selected' : ''}>❌ Lost</option>
+                        </select>
+                        
+                        <div id="lost-reason-${q.id}" class="${q.quote_status === 'lost' ? '' : 'hidden'} space-y-2">
+                            <label class="block text-xs text-gray-600 dark:text-gray-400">Reason for loss:</label>
+                            <textarea id="lost-reason-text-${q.id}" placeholder="e.g., Price too high, chose competitor, timing..." class="w-full px-3 py-2 text-sm border rounded-lg dark:bg-gray-700 dark:text-white dark:border-gray-600" rows="3">${q.lost_reason || ''}</textarea>
+                        </div>
+                        
+                        <button onclick="updateQuoteStatus('${q.id}')" class="w-full px-3 py-2 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors">
+                            Update Status
+                        </button>
+                        
+                        <div class="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                            <p><strong>Won:</strong> Quote accepted/converted</p>
+                            <p><strong>Lost:</strong> Client declined (include reason)</p>
+                            <p><strong>Pending:</strong> Awaiting response</p>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Notes -->
                 ${q.notes ? `<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
                     <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">Notes</h3>
@@ -1087,6 +1114,146 @@ function toggleMoreActions(quoteId) {
                 Show More
             `;
         }
+    }
+}
+
+// Toggle lost reason field visibility
+function toggleLostReason(quoteId) {
+    const selectElement = document.getElementById(`quote-status-${quoteId}`);
+    const lostReasonDiv = document.getElementById(`lost-reason-${quoteId}`);
+    
+    if (!selectElement || !lostReasonDiv) return;
+    
+    const status = selectElement.value;
+    
+    if (status === 'lost') {
+        lostReasonDiv.classList.remove('hidden');
+    } else {
+        lostReasonDiv.classList.add('hidden');
+    }
+}
+
+// Update quote status (won/lost/pending)
+async function updateQuoteStatus(quoteId) {
+    const selectElement = document.getElementById(`quote-status-${quoteId}`);
+    const lostReasonText = document.getElementById(`lost-reason-text-${quoteId}`);
+    
+    if (!selectElement) {
+        showNotification('Could not find status selector', 'error');
+        return;
+    }
+    
+    const status = selectElement.value;
+    const lostReason = status === 'lost' ? (lostReasonText?.value.trim() || null) : null;
+    
+    // Validate: if lost, require a reason
+    if (status === 'lost' && !lostReason) {
+        showNotification('Please provide a reason for losing this quote', 'error');
+        lostReasonText?.focus();
+        return;
+    }
+    
+    try {
+        const updateData = {
+            quote_status: status,
+            lost_reason: lostReason
+        };
+        
+        // If status is won, also set accepted flag for compatibility
+        if (status === 'won') {
+            updateData.accepted = true;
+            updateData.status = 'accepted';
+            if (!updateData.accepted_at) {
+                updateData.accepted_at = new Date().toISOString();
+            }
+        }
+        
+        const { error } = await supabaseClient
+            .from('quotes')
+            .update(updateData)
+            .eq('id', quoteId);
+        
+        if (error) throw error;
+        
+        // Update local data
+        const quote = quotes.find(q => q.id === quoteId);
+        if (quote) {
+            quote.quote_status = status;
+            quote.lost_reason = lostReason;
+            if (status === 'won') {
+                quote.accepted = true;
+                quote.status = 'accepted';
+                if (!quote.accepted_at) {
+                    quote.accepted_at = new Date().toISOString();
+                }
+            }
+        }
+        
+        // Update selected quote if it's the current one
+        if (selectedQuoteForDetail && selectedQuoteForDetail.id === quoteId) {
+            selectedQuoteForDetail.quote_status = status;
+            selectedQuoteForDetail.lost_reason = lostReason;
+            if (status === 'won') {
+                selectedQuoteForDetail.accepted = true;
+                selectedQuoteForDetail.status = 'accepted';
+                if (!selectedQuoteForDetail.accepted_at) {
+                    selectedQuoteForDetail.accepted_at = new Date().toISOString();
+                }
+            }
+        }
+        
+        let message = '';
+        if (status === 'won') {
+            message = '✅ Quote marked as WON!';
+        } else if (status === 'lost') {
+            message = '❌ Quote marked as LOST (reason saved)';
+        } else {
+            message = '⏳ Quote status set to PENDING';
+        }
+        
+        showNotification(message, 'success');
+        renderApp();
+    } catch (error) {
+        console.error('Error updating quote status:', error);
+        showNotification('Error updating status: ' + error.message, 'error');
+    }
+}
+
+// Helper: Auto-set quote to Won when customer accepts
+// Call this from wherever your quote acceptance logic is
+async function markQuoteAsWon(quoteId, skipNotification = false) {
+    try {
+        const { error } = await supabaseClient
+            .from('quotes')
+            .update({
+                quote_status: 'won',
+                accepted: true,
+                status: 'accepted',
+                accepted_at: new Date().toISOString()
+            })
+            .eq('id', quoteId);
+        
+        if (error) throw error;
+        
+        // Update local data
+        const quote = quotes.find(q => q.id === quoteId);
+        if (quote) {
+            quote.quote_status = 'won';
+            quote.accepted = true;
+            quote.status = 'accepted';
+            if (!quote.accepted_at) {
+                quote.accepted_at = new Date().toISOString();
+            }
+        }
+        
+        if (!skipNotification) {
+            showNotification('✅ Quote automatically marked as WON!', 'success');
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('Error marking quote as won:', error);
+        return false;
     }
 }
 
