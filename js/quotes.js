@@ -105,7 +105,7 @@ function renderQuotesTable() {
             const isAccepted = q.accepted || q.status === 'accepted';
             const isConverted = q.status === 'converted';
             
-            // Status badge - prioritize quote_status
+            // Status badge - quote_status is PRIORITY, old fields for backwards compatibility only
             let statusBadge = '';
             const quoteStatus = q.quote_status || 'pending';
             
@@ -113,6 +113,8 @@ function renderQuotesTable() {
                 statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">WON</span>';
             } else if (quoteStatus === 'lost') {
                 statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">LOST</span>';
+            } else if (quoteStatus === 'pending') {
+                statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600">PENDING</span>';
             } else if (isConverted) {
                 statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600">CONVERTED</span>';
             } else if (isAccepted) {
@@ -253,7 +255,7 @@ function renderQuotesTable() {
                     const isAccepted = q.accepted || q.status === 'accepted';
                     const isConverted = q.status === 'converted';
                     
-                    // Status badge - prioritize quote_status
+                    // Status badge - quote_status is PRIORITY, old fields for backwards compatibility only
                     let statusBadge = '';
                     const quoteStatus = q.quote_status || 'pending';
                     
@@ -261,6 +263,8 @@ function renderQuotesTable() {
                         statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">WON</span>';
                     } else if (quoteStatus === 'lost') {
                         statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">LOST</span>';
+                    } else if (quoteStatus === 'pending') {
+                        statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600">PENDING</span>';
                     } else if (isConverted) {
                         statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600">CONVERTED</span>';
                     } else if (isAccepted) {
@@ -359,7 +363,7 @@ function renderQuoteDetail() {
     const isAccepted = q.accepted || q.status === 'accepted';
     const isConverted = q.status === 'converted';
     
-    // Status badge - prioritize quote_status over old accepted/converted logic
+    // Status badge - quote_status is PRIORITY over old accepted/converted fields
     let statusBadge = '';
     const quoteStatus = q.quote_status || 'pending';
     
@@ -367,6 +371,8 @@ function renderQuoteDetail() {
         statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">WON</span>';
     } else if (quoteStatus === 'lost') {
         statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">LOST</span>';
+    } else if (quoteStatus === 'pending') {
+        statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600">PENDING</span>';
     } else if (isConverted) {
         statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600">CONVERTED</span>';
     } else if (isAccepted) {
