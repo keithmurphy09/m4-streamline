@@ -806,6 +806,25 @@ function renderQuoteDetail() {
                     </div>
                 </div>
                 
+                <!-- Salesperson -->
+                ${getAccountType() === 'business' && teamMembers.filter(tm => tm.role === 'salesperson').length > 0 ? `
+                <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+                    <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">Salesperson</h3>
+                    <div class="space-y-3">
+                        <select id="quote-salesperson-${q.id}" class="w-full px-3 py-2 text-sm border rounded-lg dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                            <option value="">None</option>
+                            ${teamMembers.filter(tm => tm.role === 'salesperson').map(tm => 
+                                `<option value="${tm.id}" ${q.salesperson_id === tm.id ? 'selected' : ''}>${tm.name}</option>`
+                            ).join('')}
+                        </select>
+                        <button onclick="updateQuoteSalesperson('${q.id}')" class="w-full px-3 py-2 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors">
+                            Update Salesperson
+                        </button>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Track quote performance by salesperson in Analytics</p>
+                    </div>
+                </div>
+                ` : ''}
+                
                 <!-- Notes -->
                 ${q.notes ? `<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
                     <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">Notes</h3>
@@ -1068,6 +1087,48 @@ function toggleMoreActions(quoteId) {
                 Show More
             `;
         }
+    }
+}
+
+// Update salesperson for a quote
+async function updateQuoteSalesperson(quoteId) {
+    const selectElement = document.getElementById(`quote-salesperson-${quoteId}`);
+    if (!selectElement) {
+        showNotification('Could not find salesperson selector', 'error');
+        return;
+    }
+    
+    const salespersonId = selectElement.value || null;
+    
+    try {
+        const { error } = await supabaseClient
+            .from('quotes')
+            .update({ salesperson_id: salespersonId })
+            .eq('id', quoteId);
+        
+        if (error) throw error;
+        
+        // Update local data
+        const quote = quotes.find(q => q.id === quoteId);
+        if (quote) {
+            quote.salesperson_id = salespersonId;
+        }
+        
+        // Update selected quote if it's the current one
+        if (selectedQuoteForDetail && selectedQuoteForDetail.id === quoteId) {
+            selectedQuoteForDetail.salesperson_id = salespersonId;
+        }
+        
+        const salesperson = teamMembers.find(tm => tm.id === salespersonId);
+        const message = salesperson 
+            ? `Salesperson set to ${salesperson.name}`
+            : 'Salesperson removed';
+        
+        showNotification(message, 'success');
+        renderApp();
+    } catch (error) {
+        console.error('Error updating salesperson:', error);
+        showNotification('Error updating salesperson: ' + error.message, 'error');
     }
 }
 
