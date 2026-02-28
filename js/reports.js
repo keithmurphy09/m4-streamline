@@ -15,7 +15,9 @@ let customReportSections = {
     profit: false,
     gst: false,
     expenseBreakdown: false,
-    topClients: false
+    topClients: false,
+    salespeople: false,
+    tradespeople: false
 };
 
 // Expandable sections state
@@ -315,6 +317,40 @@ function renderReports() {
                             </select>
                             ` : ''}
                         </div>
+                        
+                        ${getAccountType() === 'business' && teamMembers.filter(tm => tm.role === 'salesperson').length > 0 ? `
+                        <div class="flex items-center justify-between p-4 border rounded dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <div class="flex items-center gap-3">
+                                <input type="checkbox" ${customReportSections.salespeople ? 'checked' : ''} onchange="toggleCustomSection('salespeople')" class="w-5 h-5">
+                                <span class="font-medium dark:text-white">💼 Salesperson Performance</span>
+                            </div>
+                            ${customReportSections.salespeople ? `
+                            <select onchange="updateSectionDateRange('salespeople', this.value)" class="px-3 py-1 border rounded text-sm dark:bg-gray-700 dark:border-gray-600">
+                                <option value="current">This Month</option>
+                                <option value="quarter">This Quarter</option>
+                                <option value="year">This Year</option>
+                                <option value="all">All Time</option>
+                            </select>
+                            ` : ''}
+                        </div>
+                        ` : ''}
+                        
+                        ${getAccountType() === 'business' && teamMembers.filter(tm => tm.role === 'tradesperson' || !tm.role).length > 0 ? `
+                        <div class="flex items-center justify-between p-4 border rounded dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <div class="flex items-center gap-3">
+                                <input type="checkbox" ${customReportSections.tradespeople ? 'checked' : ''} onchange="toggleCustomSection('tradespeople')" class="w-5 h-5">
+                                <span class="font-medium dark:text-white">🔧 Tradesperson Performance</span>
+                            </div>
+                            ${customReportSections.tradespeople ? `
+                            <select onchange="updateSectionDateRange('tradespeople', this.value)" class="px-3 py-1 border rounded text-sm dark:bg-gray-700 dark:border-gray-600">
+                                <option value="current">This Month</option>
+                                <option value="quarter">This Quarter</option>
+                                <option value="year">This Year</option>
+                                <option value="all">All Time</option>
+                            </select>
+                            ` : ''}
+                        </div>
+                        ` : ''}
                     </div>
                     
                     <div class="flex gap-3 mt-6">
@@ -345,7 +381,17 @@ function renderReports() {
                                 <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">Sections:</p>
                                 <div class="flex flex-wrap gap-1">
                                     ${report.sections.map(s => {
-                                        const names = { revenue: '💰', expenses: '💸', profit: '📊', gst: '🧾', jobs: '✅', clients: '👥', quotes: '📋' };
+                                        const names = { 
+                                            revenue: '💰', 
+                                            expenses: '💸', 
+                                            profit: '📊', 
+                                            gst: '🧾', 
+                                            jobs: '✅', 
+                                            clients: '👥', 
+                                            quotes: '📋',
+                                            salespeople: '💼',
+                                            tradespeople: '🔧'
+                                        };
                                         return `<span class="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">${names[s.id] || s.id}</span>`;
                                     }).join('')}
                                 </div>
@@ -623,7 +669,9 @@ function openCustomReportBuilder() {
         gst: false,
         jobs: false,
         clients: false,
-        quotes: false
+        quotes: false,
+        salespeople: false,
+        tradespeople: false
     };
     renderApp();
 }
@@ -805,6 +853,85 @@ function calculateSectionData(sectionId, range) {
                 range: range.label
             };
         
+        case 'salespeople':
+            const salespeople = teamMembers.filter(tm => tm.role === 'salesperson');
+            const spStats = salespeople.map(sp => {
+                const periodSpQuotes = quotes.filter(q => {
+                    const date = new Date(q.created_at);
+                    return date >= range.start && date <= range.end && q.salesperson_id === sp.id;
+                });
+                const won = periodSpQuotes.filter(q => q.quote_status === 'won').length;
+                const lost = periodSpQuotes.filter(q => q.quote_status === 'lost').length;
+                const pending = periodSpQuotes.filter(q => !q.quote_status || q.quote_status === 'pending').length;
+                const winRate = (won + lost) > 0 ? ((won / (won + lost)) * 100) : 0;
+                const wonValue = periodSpQuotes.filter(q => q.quote_status === 'won').reduce((s, q) => s + parseFloat(q.total || 0), 0);
+                
+                // Lost quotes with reasons
+                const lostQuotes = periodSpQuotes.filter(q => q.quote_status === 'lost');
+                const lostReasons = {};
+                lostQuotes.forEach(q => {
+                    const reason = q.lost_reason || 'No reason provided';
+                    if (!lostReasons[reason]) {
+                        lostReasons[reason] = [];
+                    }
+                    lostReasons[reason].push(q);
+                });
+                
+                return {
+                    name: sp.name,
+                    totalQuotes: periodSpQuotes.length,
+                    won,
+                    lost,
+                    pending,
+                    winRate: winRate.toFixed(1),
+                    wonValue,
+                    lostReasons
+                };
+            });
+            return {
+                salespeople: spStats,
+                range: range.label
+            };
+        
+        case 'tradespeople':
+            const tradespeople = teamMembers.filter(tm => tm.role === 'tradesperson' || !tm.role);
+            const tpStats = tradespeople.map(tp => {
+                const tpExpenses = periodExpenses.filter(e => e.team_member_id === tp.id);
+                const total = tpExpenses.reduce((s, e) => s + parseFloat(e.amount || 0), 0);
+                
+                // Get unique job/quote identifiers
+                const jobIdentifiers = new Set();
+                tpExpenses.forEach(exp => {
+                    if (exp.job_id && exp.job_id !== '' && exp.job_id !== 'null') {
+                        jobIdentifiers.add(exp.job_id);
+                    } else if (exp.description) {
+                        const match = exp.description.match(/\[Related to: ([^\]]+)\]/);
+                        if (match) {
+                            let title = match[1].replace(/\s*\((?:Quote|Scheduled)\)\s*$/, '');
+                            const identifier = title.split(' - ')[0] || title;
+                            if (identifier && identifier.trim()) {
+                                jobIdentifiers.add(identifier.trim());
+                            }
+                        }
+                    }
+                });
+                
+                const jobCount = jobIdentifiers.size;
+                const avgPerJob = jobCount > 0 ? total / jobCount : 0;
+                
+                return {
+                    name: tp.name,
+                    expenses: tpExpenses.length,
+                    jobs: jobCount,
+                    total,
+                    avgPerJob
+                };
+            });
+            return {
+                tradespeople: tpStats,
+                range: range.label
+            };
+        
         default:
             return {};
     }
@@ -902,7 +1029,9 @@ async function downloadCustomReportPDF(reportId) {
             gst: 'GST Summary',
             jobs: 'Jobs Completed',
             clients: 'Top Clients',
-            quotes: 'Quote Statistics'
+            quotes: 'Quote Statistics',
+            salespeople: 'Salesperson Performance',
+            tradespeople: 'Tradesperson Performance'
         };
         
         // Render each section
@@ -1108,6 +1237,109 @@ async function downloadCustomReportPDF(reportId) {
                             margin: { left: 20 }
                         });
                         y = doc.lastAutoTable.finalY + 10;
+                        break;
+                    
+                    case 'salespeople':
+                        if (sectionData.salespeople && sectionData.salespeople.length > 0) {
+                            // Performance table
+                            const spRows = sectionData.salespeople.map(sp => [
+                                sp.name,
+                                sp.totalQuotes.toString(),
+                                sp.won.toString(),
+                                sp.lost.toString(),
+                                `${sp.winRate}%`,
+                                `$${sp.wonValue.toFixed(0)}`
+                            ]);
+                            
+                            doc.autoTable({
+                                startY: y,
+                                head: [['Name', 'Quotes', 'Won', 'Lost', 'Win Rate', 'Won Value']],
+                                body: spRows,
+                                theme: 'striped',
+                                styles: { fontSize: 9, cellPadding: 3 },
+                                headStyles: { fillColor: [20, 184, 166], textColor: 255, fontSize: 9 },
+                                margin: { left: 20 },
+                                columnStyles: {
+                                    0: { cellWidth: 40 },
+                                    1: { cellWidth: 25, halign: 'center' },
+                                    2: { cellWidth: 20, halign: 'center' },
+                                    3: { cellWidth: 20, halign: 'center' },
+                                    4: { cellWidth: 30, halign: 'center' },
+                                    5: { cellWidth: 35, halign: 'right' }
+                                }
+                            });
+                            y = doc.lastAutoTable.finalY + 10;
+                            
+                            // Lost reasons analysis
+                            sectionData.salespeople.forEach(sp => {
+                                if (Object.keys(sp.lostReasons).length > 0) {
+                                    if (y > pageHeight - 60) {
+                                        doc.addPage();
+                                        y = 20;
+                                    }
+                                    
+                                    doc.setFontSize(10);
+                                    doc.setFont(undefined, 'bold');
+                                    doc.setTextColor(200, 50, 50);
+                                    doc.text(`${sp.name} - Lost Quotes (${sp.lost})`, 20, y);
+                                    y += 6;
+                                    
+                                    const lostRows = Object.entries(sp.lostReasons)
+                                        .sort((a, b) => b[1].length - a[1].length)
+                                        .map(([reason, quotesList]) => [
+                                            reason,
+                                            quotesList.length.toString(),
+                                            `$${quotesList.reduce((s, q) => s + parseFloat(q.total || 0), 0).toFixed(0)}`
+                                        ]);
+                                    
+                                    doc.autoTable({
+                                        startY: y,
+                                        head: [['Reason', 'Count', 'Value']],
+                                        body: lostRows,
+                                        theme: 'plain',
+                                        styles: { fontSize: 8, cellPadding: 2 },
+                                        headStyles: { fontStyle: 'bold', textColor: 100 },
+                                        margin: { left: 25 },
+                                        columnStyles: {
+                                            0: { cellWidth: 100 },
+                                            1: { cellWidth: 20, halign: 'center' },
+                                            2: { cellWidth: 30, halign: 'right' }
+                                        }
+                                    });
+                                    y = doc.lastAutoTable.finalY + 8;
+                                }
+                            });
+                        }
+                        break;
+                    
+                    case 'tradespeople':
+                        if (sectionData.tradespeople && sectionData.tradespeople.length > 0) {
+                            const tpRows = sectionData.tradespeople.map(tp => [
+                                tp.name,
+                                tp.expenses.toString(),
+                                tp.jobs.toString(),
+                                `$${tp.total.toFixed(0)}`,
+                                `$${tp.avgPerJob.toFixed(0)}`
+                            ]);
+                            
+                            doc.autoTable({
+                                startY: y,
+                                head: [['Name', 'Expenses', 'Jobs', 'Total Cost', 'Avg/Job']],
+                                body: tpRows,
+                                theme: 'striped',
+                                styles: { fontSize: 9, cellPadding: 3 },
+                                headStyles: { fillColor: [20, 184, 166], textColor: 255, fontSize: 9 },
+                                margin: { left: 20 },
+                                columnStyles: {
+                                    0: { cellWidth: 50 },
+                                    1: { cellWidth: 30, halign: 'center' },
+                                    2: { cellWidth: 25, halign: 'center' },
+                                    3: { cellWidth: 35, halign: 'right' },
+                                    4: { cellWidth: 30, halign: 'right' }
+                                }
+                            });
+                            y = doc.lastAutoTable.finalY + 10;
+                        }
                         break;
                 }
             }
