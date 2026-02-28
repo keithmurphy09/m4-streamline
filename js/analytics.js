@@ -626,14 +626,77 @@ function renderTeamPerformance() {
     
     let html = '<div class="mt-6">';
     
+    // QUOTE STATUS OVERVIEW
+    const wonQuotes = quotes.filter(q => q.quote_status === 'won');
+    const lostQuotes = quotes.filter(q => q.quote_status === 'lost');
+    const pendingQuotes = quotes.filter(q => !q.quote_status || q.quote_status === 'pending');
+    const totalQuotes = quotes.length;
+    
+    const winRate = totalQuotes > 0 ? ((wonQuotes.length / totalQuotes) * 100).toFixed(1) : 0;
+    const wonValue = wonQuotes.reduce((s, q) => s + parseFloat(q.total || 0), 0);
+    const lostValue = lostQuotes.reduce((s, q) => s + parseFloat(q.total || 0), 0);
+    
+    // Analyze lost reasons
+    const lostReasons = {};
+    lostQuotes.forEach(q => {
+        const reason = q.lost_reason || 'No reason provided';
+        lostReasons[reason] = (lostReasons[reason] || 0) + 1;
+    });
+    const topLostReasons = Object.entries(lostReasons)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+    
+    html += `
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-4">
+            <h3 class="text-sm font-bold text-teal-600 dark:text-teal-400 mb-3">📊 Quote Status Overview</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div class="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                    <div class="text-2xl font-bold text-green-600 dark:text-green-400">${wonQuotes.length}</div>
+                    <div class="text-xs text-gray-600 dark:text-gray-300 mt-1">Won Quotes</div>
+                    <div class="text-xs text-green-600 dark:text-green-400 font-semibold mt-1">$${wonValue.toFixed(0)}</div>
+                </div>
+                <div class="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                    <div class="text-2xl font-bold text-red-600 dark:text-red-400">${lostQuotes.length}</div>
+                    <div class="text-xs text-gray-600 dark:text-gray-300 mt-1">Lost Quotes</div>
+                    <div class="text-xs text-red-600 dark:text-red-400 font-semibold mt-1">$${lostValue.toFixed(0)}</div>
+                </div>
+                <div class="text-center p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                    <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">${pendingQuotes.length}</div>
+                    <div class="text-xs text-gray-600 dark:text-gray-300 mt-1">Pending Quotes</div>
+                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">Awaiting response</div>
+                </div>
+            </div>
+            <div class="text-center p-3 bg-teal-50 dark:bg-teal-900/20 rounded-lg border border-teal-200 dark:border-teal-800">
+                <div class="text-lg font-bold text-teal-600 dark:text-teal-400">Win Rate: ${winRate}%</div>
+                <div class="text-xs text-gray-600 dark:text-gray-300 mt-1">${wonQuotes.length} won out of ${wonQuotes.length + lostQuotes.length} decided (${pendingQuotes.length} still pending)</div>
+            </div>
+            ${lostQuotes.length > 0 ? `
+                <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <h4 class="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">Top Reasons for Lost Quotes:</h4>
+                    <div class="space-y-1">
+                        ${topLostReasons.map(([reason, count]) => `
+                            <div class="flex justify-between text-xs">
+                                <span class="text-gray-600 dark:text-gray-400">${reason}</span>
+                                <span class="font-semibold text-gray-900 dark:text-white">${count} ${count === 1 ? 'quote' : 'quotes'}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+    `;
+    
     // SALESPERSON TABLE
     if (salespeople.length > 0) {
         const spStats = salespeople.map(sp => {
             const spQuotes = quotes.filter(q => q.salesperson_id === sp.id);
-            const won = spQuotes.filter(q => jobs.some(j => j.title === q.title && j.client_id === q.client_id) || invoices.some(i => i.title === q.title && i.client_id === q.client_id)).length;
-            const winRate = spQuotes.length > 0 ? ((won / spQuotes.length) * 100).toFixed(0) : 0;
+            const won = spQuotes.filter(q => q.quote_status === 'won').length;
+            const lost = spQuotes.filter(q => q.quote_status === 'lost').length;
+            const pending = spQuotes.filter(q => !q.quote_status || q.quote_status === 'pending').length;
+            const winRate = (won + lost) > 0 ? ((won / (won + lost)) * 100).toFixed(0) : 0;
             const totalValue = spQuotes.reduce((s, q) => s + parseFloat(q.total || 0), 0);
-            return { name: sp.name, quotes: spQuotes.length, won, winRate, value: totalValue };
+            const wonValue = spQuotes.filter(q => q.quote_status === 'won').reduce((s, q) => s + parseFloat(q.total || 0), 0);
+            return { name: sp.name, quotes: spQuotes.length, won, lost, pending, winRate, value: totalValue, wonValue };
         });
         
         html += `
@@ -644,10 +707,12 @@ function renderTeamPerformance() {
                         <thead class="bg-gray-50 dark:bg-gray-700">
                             <tr>
                                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Name</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Quotes</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Total</th>
                                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Won</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Lost</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Pending</th>
                                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Win Rate</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Total Value</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Won Value</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -655,9 +720,11 @@ function renderTeamPerformance() {
                                 <tr>
                                     <td class="px-3 py-2 dark:text-white">${s.name}</td>
                                     <td class="px-3 py-2 dark:text-gray-300">${s.quotes}</td>
-                                    <td class="px-3 py-2 dark:text-gray-300">${s.won}</td>
+                                    <td class="px-3 py-2 font-semibold text-green-600 dark:text-green-400">${s.won}</td>
+                                    <td class="px-3 py-2 font-semibold text-red-600 dark:text-red-400">${s.lost}</td>
+                                    <td class="px-3 py-2 text-yellow-600 dark:text-yellow-400">${s.pending}</td>
                                     <td class="px-3 py-2 font-semibold ${s.winRate >= 50 ? 'text-green-600' : s.winRate >= 30 ? 'text-yellow-600' : 'text-gray-600'}">${s.winRate}%</td>
-                                    <td class="px-3 py-2 font-semibold text-teal-600 dark:text-teal-400">$${s.value.toFixed(0)}</td>
+                                    <td class="px-3 py-2 font-semibold text-teal-600 dark:text-teal-400">$${s.wonValue.toFixed(0)}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
