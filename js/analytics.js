@@ -696,7 +696,22 @@ function renderTeamPerformance() {
             const winRate = (won + lost) > 0 ? ((won / (won + lost)) * 100).toFixed(0) : 0;
             const totalValue = spQuotes.reduce((s, q) => s + parseFloat(q.total || 0), 0);
             const wonValue = spQuotes.filter(q => q.quote_status === 'won').reduce((s, q) => s + parseFloat(q.total || 0), 0);
-            return { name: sp.name, quotes: spQuotes.length, won, lost, pending, winRate, value: totalValue, wonValue };
+            
+            // Get lost quotes with reasons
+            const lostQuotes = spQuotes.filter(q => q.quote_status === 'lost');
+            
+            return { 
+                id: sp.id, 
+                name: sp.name, 
+                quotes: spQuotes.length, 
+                won, 
+                lost, 
+                pending, 
+                winRate, 
+                value: totalValue, 
+                wonValue,
+                lostQuotes: lostQuotes
+            };
         });
         
         html += `
@@ -717,8 +732,12 @@ function renderTeamPerformance() {
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                             ${spStats.map(s => `
-                                <tr>
-                                    <td class="px-3 py-2 dark:text-white">${s.name}</td>
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                    <td class="px-3 py-2">
+                                        <button onclick='showSalespersonDetail(${JSON.stringify(s).replace(/'/g, "\\'")})'  class="text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium hover:underline cursor-pointer">
+                                            ${s.name}
+                                        </button>
+                                    </td>
                                     <td class="px-3 py-2 dark:text-gray-300">${s.quotes}</td>
                                     <td class="px-3 py-2 font-semibold text-green-600 dark:text-green-400">${s.won}</td>
                                     <td class="px-3 py-2 font-semibold text-red-600 dark:text-red-400">${s.lost}</td>
@@ -810,6 +829,133 @@ function renderTeamPerformance() {
     
     html += '</div>';
     return html;
+}
+
+// Show detailed salesperson stats in modal
+function showSalespersonDetail(stats) {
+    const lostReasons = {};
+    stats.lostQuotes.forEach(q => {
+        const reason = q.lost_reason || 'No reason provided';
+        if (!lostReasons[reason]) {
+            lostReasons[reason] = [];
+        }
+        lostReasons[reason].push(q);
+    });
+    
+    const lostReasonsList = Object.entries(lostReasons)
+        .sort((a, b) => b[1].length - a[1].length)
+        .map(([reason, quotesList]) => `
+            <div class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div class="flex justify-between items-start mb-2">
+                    <span class="text-sm font-medium text-gray-900 dark:text-white">${reason}</span>
+                    <span class="text-xs font-semibold text-red-600 dark:text-red-400">${quotesList.length} ${quotesList.length === 1 ? 'quote' : 'quotes'}</span>
+                </div>
+                <div class="space-y-1">
+                    ${quotesList.map(q => {
+                        const client = clients.find(c => c.id === q.client_id);
+                        return `
+                            <div class="text-xs text-gray-600 dark:text-gray-400 flex justify-between">
+                                <span>${q.quote_number || q.title} - ${client?.name || 'Unknown'}</span>
+                                <span class="font-semibold">$${parseFloat(q.total || 0).toFixed(0)}</span>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `).join('');
+    
+    const modalContent = `
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onclick="if(event.target === this) closeSalespersonModal()">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <!-- Header -->
+                <div class="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900 dark:text-white">${stats.name}</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Detailed Performance Analysis</p>
+                    </div>
+                    <button onclick="closeSalespersonModal()" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Stats Grid -->
+                <div class="p-6 space-y-6">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="text-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                            <div class="text-2xl font-bold text-gray-900 dark:text-white">${stats.quotes}</div>
+                            <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">Total Quotes</div>
+                        </div>
+                        <div class="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                            <div class="text-2xl font-bold text-green-600 dark:text-green-400">${stats.won}</div>
+                            <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">Won</div>
+                        </div>
+                        <div class="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                            <div class="text-2xl font-bold text-red-600 dark:text-red-400">${stats.lost}</div>
+                            <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">Lost</div>
+                        </div>
+                        <div class="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                            <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">${stats.pending}</div>
+                            <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">Pending</div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="p-4 bg-teal-50 dark:bg-teal-900/20 rounded-lg border border-teal-200 dark:border-teal-800">
+                            <div class="text-sm text-gray-600 dark:text-gray-400">Win Rate</div>
+                            <div class="text-3xl font-bold text-teal-600 dark:text-teal-400 mt-2">${stats.winRate}%</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${stats.won} won of ${stats.won + stats.lost} decided</div>
+                        </div>
+                        <div class="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                            <div class="text-sm text-gray-600 dark:text-gray-400">Won Value</div>
+                            <div class="text-3xl font-bold text-purple-600 dark:text-purple-400 mt-2">$${stats.wonValue.toFixed(0)}</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Total revenue from won quotes</div>
+                        </div>
+                    </div>
+                    
+                    ${stats.lost > 0 ? `
+                    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            Lost Quotes Analysis (${stats.lost} total)
+                        </h3>
+                        <div class="space-y-3">
+                            ${lostReasonsList}
+                        </div>
+                    </div>
+                    ` : `
+                    <div class="text-center p-8 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                        <div class="text-green-600 dark:text-green-400 text-2xl mb-2">🎉</div>
+                        <div class="font-medium text-green-800 dark:text-green-400">No lost quotes!</div>
+                        <div class="text-sm text-green-600 dark:text-green-500 mt-1">Perfect track record so far</div>
+                    </div>
+                    `}
+                    
+                    <div class="flex gap-2">
+                        <button onclick="closeSalespersonModal()" class="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add modal to page
+    const modalDiv = document.createElement('div');
+    modalDiv.id = 'salesperson-modal';
+    modalDiv.innerHTML = modalContent;
+    document.body.appendChild(modalDiv);
+}
+
+function closeSalespersonModal() {
+    const modal = document.getElementById('salesperson-modal');
+    if (modal) {
+        modal.remove();
+    }
 }
 
 console.log('✅ Enhanced Analytics module loaded');
