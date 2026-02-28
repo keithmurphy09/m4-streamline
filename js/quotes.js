@@ -99,13 +99,20 @@ function renderQuotesTable() {
             const isAccepted = q.accepted || q.status === 'accepted';
             const isConverted = q.status === 'converted';
             
+            // Status badge - prioritize quote_status
             let statusBadge = '';
-            if (isConverted) {
+            const quoteStatus = q.quote_status || 'pending';
+            
+            if (quoteStatus === 'won') {
+                statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">✅ WON</span>';
+            } else if (quoteStatus === 'lost') {
+                statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">❌ LOST</span>';
+            } else if (isConverted) {
                 statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600">CONVERTED</span>';
             } else if (isAccepted) {
                 statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-800">ACCEPTED</span>';
             } else {
-                statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600">PENDING</span>';
+                statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800">⏳ PENDING</span>';
             }
             
             return `<tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors ${isSelected ? 'bg-teal-50/50 dark:bg-teal-900/10' : ''}" onclick="openQuoteDetail(${JSON.stringify(q).replace(/"/g, '&quot;')})">
@@ -240,13 +247,20 @@ function renderQuotesTable() {
                     const isAccepted = q.accepted || q.status === 'accepted';
                     const isConverted = q.status === 'converted';
                     
+                    // Status badge - prioritize quote_status
                     let statusBadge = '';
-                    if (isConverted) {
+                    const quoteStatus = q.quote_status || 'pending';
+                    
+                    if (quoteStatus === 'won') {
+                        statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">✅ WON</span>';
+                    } else if (quoteStatus === 'lost') {
+                        statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">❌ LOST</span>';
+                    } else if (isConverted) {
                         statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600">CONVERTED</span>';
                     } else if (isAccepted) {
                         statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-800">ACCEPTED</span>';
                     } else {
-                        statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600">PENDING</span>';
+                        statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800">⏳ PENDING</span>';
                     }
                     
                     const depositInfo = getDepositIconHTML(q);
@@ -339,13 +353,20 @@ function renderQuoteDetail() {
     const isAccepted = q.accepted || q.status === 'accepted';
     const isConverted = q.status === 'converted';
     
+    // Status badge - prioritize quote_status over old accepted/converted logic
     let statusBadge = '';
-    if (isConverted) {
+    const quoteStatus = q.quote_status || 'pending';
+    
+    if (quoteStatus === 'won') {
+        statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">✅ WON</span>';
+    } else if (quoteStatus === 'lost') {
+        statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">❌ LOST</span>';
+    } else if (isConverted) {
         statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600">CONVERTED</span>';
     } else if (isAccepted) {
         statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-800">ACCEPTED</span>';
     } else {
-        statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600">PENDING</span>';
+        statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800">⏳ PENDING</span>';
     }
     
     // Calculate profit/loss - find related job and expenses
