@@ -70,11 +70,17 @@ function renderQuotesTable() {
     const filteredQuotes = quotes.filter(q => {
         const client = clients.find(c => c.id === q.client_id);
         const searchTerm = quoteSearch.toLowerCase();
+        const quoteStatus = q.quote_status || 'pending';
+        
         return q.title.toLowerCase().includes(searchTerm) ||
                q.quote_number?.toLowerCase().includes(searchTerm) ||
                client?.name.toLowerCase().includes(searchTerm) ||
                q.total?.toString().includes(searchTerm) ||
-               q.job_address?.toLowerCase().includes(searchTerm);
+               q.job_address?.toLowerCase().includes(searchTerm) ||
+               quoteStatus.toLowerCase().includes(searchTerm) ||
+               (searchTerm === 'won' && quoteStatus === 'won') ||
+               (searchTerm === 'lost' && quoteStatus === 'lost') ||
+               (searchTerm === 'pending' && quoteStatus === 'pending');
     });
     
     // Apply smart filter if active
@@ -104,15 +110,15 @@ function renderQuotesTable() {
             const quoteStatus = q.quote_status || 'pending';
             
             if (quoteStatus === 'won') {
-                statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">✅ WON</span>';
+                statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">WON</span>';
             } else if (quoteStatus === 'lost') {
-                statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">❌ LOST</span>';
+                statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">LOST</span>';
             } else if (isConverted) {
                 statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600">CONVERTED</span>';
             } else if (isAccepted) {
                 statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-800">ACCEPTED</span>';
             } else {
-                statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800">⏳ PENDING</span>';
+                statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600">PENDING</span>';
             }
             
             return `<tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors ${isSelected ? 'bg-teal-50/50 dark:bg-teal-900/10' : ''}" onclick="openQuoteDetail(${JSON.stringify(q).replace(/"/g, '&quot;')})">
@@ -252,15 +258,15 @@ function renderQuotesTable() {
                     const quoteStatus = q.quote_status || 'pending';
                     
                     if (quoteStatus === 'won') {
-                        statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">✅ WON</span>';
+                        statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">WON</span>';
                     } else if (quoteStatus === 'lost') {
-                        statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">❌ LOST</span>';
+                        statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">LOST</span>';
                     } else if (isConverted) {
                         statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600">CONVERTED</span>';
                     } else if (isAccepted) {
                         statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-800">ACCEPTED</span>';
                     } else {
-                        statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800">⏳ PENDING</span>';
+                        statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600">PENDING</span>';
                     }
                     
                     const depositInfo = getDepositIconHTML(q);
@@ -358,15 +364,15 @@ function renderQuoteDetail() {
     const quoteStatus = q.quote_status || 'pending';
     
     if (quoteStatus === 'won') {
-        statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">✅ WON</span>';
+        statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">WON</span>';
     } else if (quoteStatus === 'lost') {
-        statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">❌ LOST</span>';
+        statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">LOST</span>';
     } else if (isConverted) {
         statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600">CONVERTED</span>';
     } else if (isAccepted) {
         statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-800">ACCEPTED</span>';
     } else {
-        statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800">⏳ PENDING</span>';
+        statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600">PENDING</span>';
     }
     
     // Calculate profit/loss - find related job and expenses
@@ -851,9 +857,9 @@ function renderQuoteDetail() {
                     <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">Quote Status</h3>
                     <div class="space-y-3">
                         <select id="quote-status-${q.id}" onchange="toggleLostReason('${q.id}')" class="w-full px-3 py-2 text-sm border rounded-lg dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                            <option value="pending" ${(q.quote_status || 'pending') === 'pending' ? 'selected' : ''}>⏳ Pending</option>
-                            <option value="won" ${q.quote_status === 'won' ? 'selected' : ''}>✅ Won</option>
-                            <option value="lost" ${q.quote_status === 'lost' ? 'selected' : ''}>❌ Lost</option>
+                            <option value="pending" ${(q.quote_status || 'pending') === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="won" ${q.quote_status === 'won' ? 'selected' : ''}>Won</option>
+                            <option value="lost" ${q.quote_status === 'lost' ? 'selected' : ''}>Lost</option>
                         </select>
                         
                         <div id="lost-reason-${q.id}" class="${q.quote_status === 'lost' ? '' : 'hidden'} space-y-2">
