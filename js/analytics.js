@@ -600,7 +600,7 @@ function initExpensesCategoryChart() {
             plugins: {
                 legend: {
                     display: true,
-                    position: 'right'
+                    position: window.innerWidth < 768 ? 'bottom' : 'right'
                 },
                 tooltip: {
                     callbacks: {
@@ -717,37 +717,76 @@ function renderTeamPerformance() {
         html += `
             <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-4">
                 <h3 class="text-sm font-bold text-purple-600 dark:text-purple-400 mb-3">💼 Salesperson Performance</h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead class="bg-gray-50 dark:bg-gray-700">
-                            <tr>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Name</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Total</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Won</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Lost</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Pending</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Win Rate</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Won Value</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                            ${spStats.map(s => `
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                                    <td class="px-3 py-2">
-                                        <button onclick='showSalespersonDetail(${JSON.stringify(s).replace(/'/g, "\\'")})'  class="text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium hover:underline cursor-pointer">
-                                            ${s.name}
-                                        </button>
-                                    </td>
-                                    <td class="px-3 py-2 dark:text-gray-300">${s.quotes}</td>
-                                    <td class="px-3 py-2 font-semibold text-green-600 dark:text-green-400">${s.won}</td>
-                                    <td class="px-3 py-2 font-semibold text-red-600 dark:text-red-400">${s.lost}</td>
-                                    <td class="px-3 py-2 text-yellow-600 dark:text-yellow-400">${s.pending}</td>
-                                    <td class="px-3 py-2 font-semibold ${s.winRate >= 50 ? 'text-green-600' : s.winRate >= 30 ? 'text-yellow-600' : 'text-gray-600'}">${s.winRate}%</td>
-                                    <td class="px-3 py-2 font-semibold text-teal-600 dark:text-teal-400">$${s.wonValue.toFixed(0)}</td>
+                <!-- Desktop Table -->
+                <div class="sp-desktop-table">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Name</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Total</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Won</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Lost</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Pending</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Win Rate</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Won Value</th>
                                 </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                ${spStats.map(s => `
+                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                        <td class="px-3 py-2">
+                                            <button onclick='showSalespersonDetail(${JSON.stringify(s).replace(/'/g, "\\'")})'  class="text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium hover:underline cursor-pointer">
+                                                ${s.name}
+                                            </button>
+                                        </td>
+                                        <td class="px-3 py-2 dark:text-gray-300">${s.quotes}</td>
+                                        <td class="px-3 py-2 font-semibold text-green-600 dark:text-green-400">${s.won}</td>
+                                        <td class="px-3 py-2 font-semibold text-red-600 dark:text-red-400">${s.lost}</td>
+                                        <td class="px-3 py-2 text-yellow-600 dark:text-yellow-400">${s.pending}</td>
+                                        <td class="px-3 py-2 font-semibold ${s.winRate >= 50 ? 'text-green-600' : s.winRate >= 30 ? 'text-yellow-600' : 'text-gray-600'}">${s.winRate}%</td>
+                                        <td class="px-3 py-2 font-semibold text-teal-600 dark:text-teal-400">$${s.wonValue.toFixed(0)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Mobile Cards -->
+                <div class="sp-mobile-cards" style="display: none;">
+                    ${spStats.map(s => `
+                        <div class="sp-card" onclick='showSalespersonDetail(${JSON.stringify(s).replace(/'/g, "\\'")})'>
+                            <div class="sp-card-header">
+                                <div>
+                                    <div class="sp-card-name">${s.name}</div>
+                                    <div class="sp-card-subtitle">${s.quotes} quote${s.quotes !== 1 ? 's' : ''} total</div>
+                                </div>
+                                <div class="sp-card-winrate ${s.winRate >= 50 ? 'sp-winrate-good' : s.winRate >= 30 ? 'sp-winrate-ok' : 'sp-winrate-low'}">${s.winRate}%</div>
+                            </div>
+                            <div class="sp-card-stats">
+                                <div class="sp-card-stat">
+                                    <span class="sp-card-stat-value text-green-600 dark:text-green-400">${s.won}</span>
+                                    <span class="sp-card-stat-label">Won</span>
+                                </div>
+                                <div class="sp-card-stat">
+                                    <span class="sp-card-stat-value text-red-600 dark:text-red-400">${s.lost}</span>
+                                    <span class="sp-card-stat-label">Lost</span>
+                                </div>
+                                <div class="sp-card-stat">
+                                    <span class="sp-card-stat-value text-yellow-600 dark:text-yellow-400">${s.pending}</span>
+                                    <span class="sp-card-stat-label">Pending</span>
+                                </div>
+                                <div class="sp-card-stat">
+                                    <span class="sp-card-stat-value text-teal-600 dark:text-teal-400">$${s.wonValue.toFixed(0)}</span>
+                                    <span class="sp-card-stat-label">Won Value</span>
+                                </div>
+                            </div>
+                            <div class="sp-card-tap-hint">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                Tap for details
+                            </div>
+                        </div>
+                    `).join('')}
                 </div>
             </div>
         `;
@@ -799,29 +838,57 @@ function renderTeamPerformance() {
         html += `
             <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
                 <h3 class="text-sm font-bold text-blue-600 dark:text-blue-400 mb-3">🔧 Tradesperson Costs</h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead class="bg-gray-50 dark:bg-gray-700">
-                            <tr>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Name</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Expenses</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Jobs</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Total Cost</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Avg/Job</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                            ${tpStats.map(s => `
+                <!-- Desktop Table -->
+                <div class="tp-desktop-table">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
                                 <tr>
-                                    <td class="px-3 py-2 dark:text-white">${s.name}</td>
-                                    <td class="px-3 py-2 dark:text-gray-300">${s.expenses}</td>
-                                    <td class="px-3 py-2 dark:text-gray-300">${s.jobs}</td>
-                                    <td class="px-3 py-2 font-semibold text-red-600 dark:text-red-400">$${s.total.toFixed(0)}</td>
-                                    <td class="px-3 py-2 dark:text-gray-300">$${s.avgPerJob.toFixed(0)}</td>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Name</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Expenses</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Jobs</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Total Cost</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Avg/Job</th>
                                 </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                ${tpStats.map(s => `
+                                    <tr>
+                                        <td class="px-3 py-2 dark:text-white">${s.name}</td>
+                                        <td class="px-3 py-2 dark:text-gray-300">${s.expenses}</td>
+                                        <td class="px-3 py-2 dark:text-gray-300">${s.jobs}</td>
+                                        <td class="px-3 py-2 font-semibold text-red-600 dark:text-red-400">$${s.total.toFixed(0)}</td>
+                                        <td class="px-3 py-2 dark:text-gray-300">$${s.avgPerJob.toFixed(0)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Mobile Cards -->
+                <div class="tp-mobile-cards" style="display: none;">
+                    ${tpStats.map(s => `
+                        <div class="tp-card">
+                            <div class="tp-card-header">
+                                <div class="tp-card-name">${s.name}</div>
+                                <div class="tp-card-total">$${s.total.toFixed(0)}</div>
+                            </div>
+                            <div class="tp-card-stats">
+                                <div class="tp-card-stat">
+                                    <span class="tp-card-stat-value">${s.expenses}</span>
+                                    <span class="tp-card-stat-label">Expenses</span>
+                                </div>
+                                <div class="tp-card-stat">
+                                    <span class="tp-card-stat-value">${s.jobs}</span>
+                                    <span class="tp-card-stat-label">Jobs</span>
+                                </div>
+                                <div class="tp-card-stat">
+                                    <span class="tp-card-stat-value">$${s.avgPerJob.toFixed(0)}</span>
+                                    <span class="tp-card-stat-label">Avg/Job</span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
                 </div>
             </div>
         `;
@@ -866,7 +933,7 @@ function showSalespersonDetail(stats) {
     
     const modalContent = `
         <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onclick="if(event.target === this) closeSalespersonModal()">
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full overflow-y-auto" style="max-height: 90vh;">
                 <!-- Header -->
                 <div class="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center">
                     <div>
