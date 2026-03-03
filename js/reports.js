@@ -204,7 +204,7 @@ function renderReports() {
             <!-- Custom Report Builder Modal -->
             ${showCustomReportBuilder ? `
             <div class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50" onclick="if(event.target===this)closeCustomReportBuilder()">
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full overflow-y-auto p-6" style="max-height: 90vh;">
                     <div class="flex justify-between items-center mb-6">
                         <h3 class="text-xl font-bold dark:text-white">Create Custom Report</h3>
                         <button onclick="closeCustomReportBuilder()" class="text-2xl leading-none dark:text-gray-300">×</button>
