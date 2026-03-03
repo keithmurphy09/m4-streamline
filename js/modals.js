@@ -631,7 +631,7 @@ function renderModal() {
     
     return `
         <div class="fixed inset-0 bg-black bg-opacity-70 dark:bg-opacity-80 flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto" onclick="if(event.target===this)closeModal()">
-            <div class="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 max-w-2xl w-full my-4 max-h-[90vh] overflow-y-auto">
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 max-w-2xl w-full my-4 overflow-y-auto" style="max-height: 90vh;">
                 <div class="flex justify-between mb-4">
                     <h3 class="text-lg sm:text-xl font-bold dark:text-white">${title}</h3>
                     <button onclick="closeModal()" class="text-2xl leading-none dark:text-gray-300">×</button>
