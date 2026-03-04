@@ -8,36 +8,46 @@ function renderClients() {
         c.email.toLowerCase().includes(clientSearch.toLowerCase()) ||
         c.phone.includes(clientSearch) ||
         (c.address && c.address.toLowerCase().includes(clientSearch.toLowerCase()))
-    );
+    ).sort((a, b) => a.name.localeCompare(b.name));
     
     const totalClients = filteredClients.length;
     const startIndex = (currentPage.clients - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const paginatedClients = filteredClients.slice(startIndex, endIndex);
     
+    const seenLetters = new Set();
     const clientsList = paginatedClients.length === 0 
         ? '<div class="text-center py-12 text-gray-500 dark:text-gray-400">No clients found</div>' 
         : paginatedClients.map(c => {
             const isSelected = selectedClients.includes(c.id);
-            return `<div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow ${isSelected ? 'ring-2 ring-blue-400' : ''}">
+            const firstLetter = c.name.charAt(0).toUpperCase();
+            const letterAnchor = !seenLetters.has(firstLetter) ? ` id="client-${firstLetter}"` : '';
+            seenLetters.add(firstLetter);
+            return `<div${letterAnchor} class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow ${isSelected ? 'ring-2 ring-blue-400' : ''}">
                 <div class="flex gap-3">
                     <div class="flex items-start pt-1">
                         <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelection('clients', '${c.id}')" class="w-5 h-5 text-blue-600 rounded">
                     </div>
                     <div class="flex-1">
-                        <div class="flex flex-col sm:flex-row sm:justify-between gap-3">
-                            <div class="flex-1">
+                        <div class="flex justify-between items-start gap-3">
+                            <div class="flex-1 min-w-0">
                                 <h3 class="text-lg font-semibold dark:text-white cursor-pointer hover:text-teal-600 dark:hover:text-teal-400 transition-colors" onclick="openClientQuickView('${c.id}')">${c.name}</h3>
                                 <p class="text-sm text-gray-600 dark:text-gray-300">${c.email}</p>
                                 <p class="text-sm text-gray-600 dark:text-gray-300">${c.phone}</p>
                                 ${c.address ? `<p class="text-sm text-gray-600 dark:text-gray-300 mt-1">📍 ${c.address}</p>` : ''}
-                                ${c.notes ? `<p class="text-sm text-gray-700 italic mt-3 p-2 bg-yellow-50 border-l-4 border-yellow-400 rounded">📝 ${c.notes}</p>` : ''}
+                                ${c.notes ? `<p class="text-sm text-gray-700 italic mt-3 p-2 bg-yellow-50 border-l-4 border-yellow-400 rounded dark:bg-yellow-900/20 dark:text-gray-300">📝 ${c.notes}</p>` : ''}
                             </div>
-                            <div class="flex sm:flex-col gap-2">
-                                <button onclick="openClientQuickView('${c.id}')" class="flex-1 sm:w-24 px-3 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900/30 border border-gray-200 dark:border-gray-600 hover:border-blue-500 rounded text-sm whitespace-nowrap transition-colors">View</button>
-                                <button onclick='openQuoteForClient(${JSON.stringify(c).replace(/"/g, "&quot;")})' class="flex-1 sm:w-24 px-3 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-green-900/30 border border-gray-200 dark:border-gray-600 hover:border-green-500 rounded text-sm whitespace-nowrap transition-colors">New Quote</button>
-                                <button onclick='openModal("client", ${JSON.stringify(c).replace(/"/g, "&quot;")})' class="flex-1 sm:w-24 px-3 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 rounded text-sm transition-colors">Edit</button>
-                                <button onclick="deleteClient('${c.id}')" class="flex-1 sm:w-24 px-3 py-1 text-red-600 border border-red-200 rounded text-sm">Delete</button>
+                            <div class="relative flex-shrink-0">
+                                <button onclick="toggleClientMenu('${c.id}')" class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path></svg>
+                                </button>
+                                <div id="client-menu-${c.id}" class="hidden absolute right-0 mt-1 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-30 py-1">
+                                    <button onclick="openClientQuickView('${c.id}'); closeAllClientMenus();" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">View</button>
+                                    <button onclick='closeAllClientMenus(); openQuoteForClient(${JSON.stringify(c).replace(/"/g, "&quot;")})' class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">New Quote</button>
+                                    <button onclick='closeAllClientMenus(); openModal("client", ${JSON.stringify(c).replace(/"/g, "&quot;")})' class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">Edit</button>
+                                    <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+                                    <button onclick="closeAllClientMenus(); deleteClient('${c.id}')" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">Delete</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -61,10 +71,65 @@ function renderClients() {
         </div>
     ` : '';
     
-    return `<div><div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold dark:text-teal-400">Clients</h2><div class="flex flex-wrap gap-2"><button onclick="exportToCSV('clients')" class="bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 px-3 sm:px-4 py-2 rounded-lg text-sm whitespace-nowrap transition-colors">Export CSV</button><button onclick="openModal('client')" class="bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-green-900/30 border border-gray-200 dark:border-gray-600 hover:border-green-500 px-3 sm:px-4 py-2 rounded-lg text-sm whitespace-nowrap transition-colors">+ Add Client</button></div></div><div class="mb-4"><input type="text" id="clientSearchInput" placeholder="Search clients..." value="${clientSearch}" oninput="clientSearch = this.value; saveSearchCursor('clientSearchInput'); clearTimeout(window.clientSearchTimer); window.clientSearchTimer = setTimeout(() => { currentPage.clients = 1; renderApp(); setTimeout(() => restoreSearchCursor('clientSearchInput'), 0); }, 300);" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600-lg dark:bg-gray-700 dark:text-white dark:border-gray-600 text-sm" /></div>${bulkActions}${selectAllCheckbox}<div id="clientsList" class="grid gap-4">${clientsList}</div>${pagination}</div>`;
+    // Build alphabet sidebar - only show letters that have clients
+    const usedLetters = new Set(filteredClients.map(c => c.name.charAt(0).toUpperCase()));
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    const alphabetSidebar = totalClients >= 10 ? `
+        <div class="hidden md:flex fixed right-2 top-1/2 -translate-y-1/2 flex-col items-center z-30 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 py-2 px-1" style="font-size: 11px; line-height: 1;">
+            ${alphabet.map(letter => {
+                const hasClients = usedLetters.has(letter);
+                return `<button onclick="scrollToClientLetter('${letter}')" class="w-6 h-5 flex items-center justify-center rounded-full text-xs font-medium transition-colors ${hasClients ? 'text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/30 cursor-pointer' : 'text-gray-300 dark:text-gray-600 cursor-default'}" ${!hasClients ? 'disabled' : ''}>${letter}</button>`;
+            }).join('')}
+        </div>
+    ` : '';
+    
+    return `<div class="relative">${alphabetSidebar}<div class="${totalClients >= 10 ? 'md:pr-10' : ''}"><div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6"><h2 class="text-2xl font-bold dark:text-teal-400">Clients</h2><div class="flex flex-wrap gap-2"><button onclick="exportToCSV('clients')" class="bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 px-3 sm:px-4 py-2 rounded-lg text-sm whitespace-nowrap transition-colors">Export CSV</button><button onclick="openModal('client')" class="bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-green-900/30 border border-gray-200 dark:border-gray-600 hover:border-green-500 px-3 sm:px-4 py-2 rounded-lg text-sm whitespace-nowrap transition-colors">+ Add Client</button></div></div><div class="mb-4"><input type="text" id="clientSearchInput" placeholder="Search clients..." value="${clientSearch}" oninput="clientSearch = this.value; saveSearchCursor('clientSearchInput'); clearTimeout(window.clientSearchTimer); window.clientSearchTimer = setTimeout(() => { currentPage.clients = 1; renderApp(); setTimeout(() => restoreSearchCursor('clientSearchInput'), 0); }, 300);" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 text-sm" /></div>${bulkActions}${selectAllCheckbox}<div id="clientsList" class="grid gap-4">${clientsList}</div>${pagination}</div></div>`;
 }
 
 console.log('✅ Clients module loaded');
+
+// ═══════════════════════════════════════════════════════════════════
+// CLIENT MENU HELPERS
+// ═══════════════════════════════════════════════════════════════════
+
+function toggleClientMenu(clientId) {
+    // Close all other menus first
+    document.querySelectorAll('[id^="client-menu-"]').forEach(menu => {
+        if (menu.id !== 'client-menu-' + clientId) {
+            menu.classList.add('hidden');
+        }
+    });
+    const menu = document.getElementById('client-menu-' + clientId);
+    if (menu) menu.classList.toggle('hidden');
+}
+
+function closeAllClientMenus() {
+    document.querySelectorAll('[id^="client-menu-"]').forEach(menu => {
+        menu.classList.add('hidden');
+    });
+}
+
+// Close menus when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('[id^="client-menu-"]') && !e.target.closest('button[onclick^="toggleClientMenu"]')) {
+        closeAllClientMenus();
+    }
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// ALPHABET SIDEBAR SCROLL
+// ═══════════════════════════════════════════════════════════════════
+
+function scrollToClientLetter(letter) {
+    const target = document.getElementById('client-' + letter);
+    if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Brief highlight
+        target.style.transition = 'box-shadow 0.3s ease';
+        target.style.boxShadow = '0 0 0 2px rgb(20 184 166)';
+        setTimeout(() => { target.style.boxShadow = ''; }, 1500);
+    }
+}
 
 // ═══════════════════════════════════════════════════════════════════
 // CLIENT QUICK-VIEW
