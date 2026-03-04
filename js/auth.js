@@ -34,6 +34,7 @@ async function checkAuth() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (session) {
         currentUser = session.user;
+        await detectTeamMember();
         await loadAllData();
         setupSessionTimeout();
         renderApp();
@@ -52,7 +53,38 @@ async function handleLogin() {
         password: document.getElementById('password').value 
     });
     if (error) document.getElementById('auth-error').textContent = error.message;
-    else { currentUser = data.user; await loadAllData(); renderApp(); }
+    else { currentUser = data.user; await detectTeamMember(); await loadAllData(); renderApp(); }
+}
+
+// Detect if logged-in user is a team member (not a boss/owner)
+async function detectTeamMember() {
+    try {
+        const { data: teamRecord } = await supabaseClient
+            .from('team_members')
+            .select('*')
+            .eq('auth_user_id', currentUser.id)
+            .eq('can_login', true)
+            .single();
+        
+        if (teamRecord) {
+            isTeamMember = true;
+            teamMemberData = teamRecord;
+            teamMemberPermissions = teamRecord.permissions || {};
+            accountOwnerId = teamRecord.account_owner_id;
+            console.log('✅ Team member login detected:', teamRecord.name, 'Permissions:', teamMemberPermissions);
+        } else {
+            isTeamMember = false;
+            teamMemberData = null;
+            teamMemberPermissions = {};
+            accountOwnerId = currentUser.id;
+        }
+    } catch (e) {
+        // Not a team member — normal boss login
+        isTeamMember = false;
+        teamMemberData = null;
+        teamMemberPermissions = {};
+        accountOwnerId = currentUser.id;
+    }
 }
 
 async function handleSignup() {
@@ -95,6 +127,10 @@ async function handleLogout() {
     clearTimeout(sessionTimeout);
     await supabaseClient.auth.signOut(); 
     currentUser = null;
+    isTeamMember = false;
+    teamMemberData = null;
+    teamMemberPermissions = {};
+    accountOwnerId = null;
     activeTab = 'dashboard';
     localStorage.setItem('activeTab', 'dashboard');
     renderAuth(); 
@@ -116,22 +152,24 @@ async function loadAllData() {
             return;
         }
         
+        const ownerId = accountOwnerId || currentUser.id;
+        
         const [c, j, q, i, e, s, sub, admin, team, stripe, pay, email, sms, recurring, notes] = await Promise.all([
             supabaseClient.from('clients').select('*'), 
             supabaseClient.from('jobs').select('*'), 
             supabaseClient.from('quotes').select('*'), 
             supabaseClient.from('invoices').select('*'),
             supabaseClient.from('expenses').select('*'),
-            supabaseClient.from('company_settings').select('*').eq('user_id', currentUser.id).single(),
-            supabaseClient.from('subscriptions').select('*').eq('user_id', currentUser.id).single(),
-            supabaseClient.from('admin_users').select('*').eq('user_id', currentUser.id).single(),
-            supabaseClient.from('team_members').select('*').eq('account_owner_id', currentUser.id),
-            supabaseClient.from('stripe_settings').select('*').eq('user_id', currentUser.id).single(),
+            supabaseClient.from('company_settings').select('*').eq('user_id', ownerId).single(),
+            supabaseClient.from('subscriptions').select('*').eq('user_id', ownerId).single(),
+            supabaseClient.from('admin_users').select('*').eq('user_id', ownerId).single(),
+            supabaseClient.from('team_members').select('*').eq('account_owner_id', ownerId),
+            supabaseClient.from('stripe_settings').select('*').eq('user_id', ownerId).single(),
             supabaseClient.from('payments').select('*'),
-            supabaseClient.from('email_settings').select('*').eq('user_id', currentUser.id).single(),
-            supabaseClient.from('sms_settings').select('*').eq('user_id', currentUser.id).single(),
+            supabaseClient.from('email_settings').select('*').eq('user_id', ownerId).single(),
+            supabaseClient.from('sms_settings').select('*').eq('user_id', ownerId).single(),
             supabaseClient.from('recurring_invoices').select('*'),
-            supabaseClient.from('client_notes').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false })
+            supabaseClient.from('client_notes').select('*').eq('user_id', ownerId).order('created_at', { ascending: false })
         ]);
         
         clients = c.data || []; 
@@ -154,7 +192,7 @@ async function loadAllData() {
         // Mark data as loaded for shimmer states
         isDataLoaded = true;
         
-        if (!subscription) {
+        if (!subscription && !isTeamMember) {
             const { data: trialCheck } = await supabaseClient
                 .from('trial_emails')
                 .select('email')
