@@ -23,33 +23,15 @@ function renderClients() {
             const firstLetter = c.name.charAt(0).toUpperCase();
             const letterAnchor = !seenLetters.has(firstLetter) ? ` id="client-${firstLetter}"` : '';
             seenLetters.add(firstLetter);
-            return `<div${letterAnchor} class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow ${isSelected ? 'ring-2 ring-blue-400' : ''}">
-                <div class="flex gap-3">
-                    <div class="flex items-start pt-1">
-                        <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelection('clients', '${c.id}')" class="w-5 h-5 text-blue-600 rounded">
-                    </div>
-                    <div class="flex-1">
-                        <div class="flex justify-between items-start gap-3">
-                            <div class="flex-1 min-w-0">
-                                <h3 class="text-lg font-semibold dark:text-white cursor-pointer hover:text-teal-600 dark:hover:text-teal-400 transition-colors" onclick="openClientQuickView('${c.id}')">${c.name}</h3>
-                                <p class="text-sm text-gray-600 dark:text-gray-300">${c.email}</p>
-                                <p class="text-sm text-gray-600 dark:text-gray-300">${c.phone}</p>
-                                ${c.address ? `<p class="text-sm text-gray-600 dark:text-gray-300 mt-1">📍 ${c.address}</p>` : ''}
-                                ${c.notes ? `<p class="text-sm text-gray-700 italic mt-3 p-2 bg-yellow-50 border-l-4 border-yellow-400 rounded dark:bg-yellow-900/20 dark:text-gray-300">📝 ${c.notes}</p>` : ''}
-                            </div>
-                            <div class="relative flex-shrink-0">
-                                <button onclick="toggleClientMenu('${c.id}')" class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path></svg>
-                                </button>
-                                <div id="client-menu-${c.id}" class="hidden absolute right-0 mt-1 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-30 py-1">
-                                    <button onclick="openClientQuickView('${c.id}'); closeAllClientMenus();" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">View</button>
-                                    <button onclick='closeAllClientMenus(); openQuoteForClient(${JSON.stringify(c).replace(/"/g, "&quot;")})' class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">New Quote</button>
-                                    <button onclick='closeAllClientMenus(); openModal("client", ${JSON.stringify(c).replace(/"/g, "&quot;")})' class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">Edit</button>
-                                    <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
-                                    <button onclick="closeAllClientMenus(); deleteClient('${c.id}')" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">Delete</button>
-                                </div>
-                            </div>
-                        </div>
+            return `<div${letterAnchor} class="bg-white dark:bg-gray-800 px-4 py-3 rounded-lg shadow ${isSelected ? 'ring-2 ring-blue-400' : ''}">
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelection('clients', '${c.id}')" class="w-5 h-5 text-blue-600 rounded flex-shrink-0">
+                    <h3 class="text-base font-semibold dark:text-white cursor-pointer hover:text-teal-600 dark:hover:text-teal-400 transition-colors flex-1 min-w-0 truncate" onclick="openClientQuickView('${c.id}')">${c.name}</h3>
+                    <div class="flex gap-2 flex-shrink-0">
+                        <button onclick="openClientQuickView('${c.id}')" class="px-3 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 rounded text-sm whitespace-nowrap" style="transition: box-shadow 0.2s ease, border-color 0.2s ease;" onmouseenter="this.style.boxShadow='0 0 10px rgba(45,212,191,0.4)';this.style.borderColor='#2dd4bf'" onmouseleave="this.style.boxShadow='none';this.style.borderColor=''">View</button>
+                        <button onclick='openQuoteForClient(${JSON.stringify(c).replace(/"/g, "&quot;")})' class="px-3 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 rounded text-sm whitespace-nowrap" style="transition: box-shadow 0.2s ease, border-color 0.2s ease;" onmouseenter="this.style.boxShadow='0 0 10px rgba(45,212,191,0.4)';this.style.borderColor='#2dd4bf'" onmouseleave="this.style.boxShadow='none';this.style.borderColor=''">New Quote</button>
+                        <button onclick='openModal("client", ${JSON.stringify(c).replace(/"/g, "&quot;")})' class="px-3 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 rounded text-sm whitespace-nowrap" style="transition: box-shadow 0.2s ease, border-color 0.2s ease;" onmouseenter="this.style.boxShadow='0 0 10px rgba(45,212,191,0.4)';this.style.borderColor='#2dd4bf'" onmouseleave="this.style.boxShadow='none';this.style.borderColor=''">Edit</button>
+                        <button onclick="deleteClient('${c.id}')" class="px-3 py-1.5 text-red-600 border border-red-200 dark:border-red-800 rounded text-sm whitespace-nowrap" style="transition: box-shadow 0.2s ease, border-color 0.2s ease;" onmouseenter="this.style.boxShadow='0 0 10px rgba(239,68,68,0.3)';this.style.borderColor='#f87171'" onmouseleave="this.style.boxShadow='none';this.style.borderColor=''">Delete</button>
                     </div>
                 </div>
             </div>`;
