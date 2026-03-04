@@ -769,19 +769,109 @@ async function saveTeamMember() {
         return;
     }
     
+    const email = document.getElementById('team_email').value.trim() || null;
+    const canLogin = document.getElementById('team_can_login')?.checked || false;
+    const loginPassword = document.getElementById('team_login_password')?.value || '';
+    
+    // Validate: if enabling login, email is required
+    if (canLogin && !email) {
+        showNotification('Email is required to enable login access', 'error');
+        return;
+    }
+    
+    // Validate: if new login (no existing auth), password is required
+    if (canLogin && !editingItem?.auth_user_id && !loginPassword) {
+        showNotification('Please set a password for the team member', 'error');
+        return;
+    }
+    
+    // Validate password strength if provided
+    if (loginPassword) {
+        if (loginPassword.length < 8) { showNotification('Password must be at least 8 characters', 'error'); return; }
+        if (!/[A-Z]/.test(loginPassword)) { showNotification('Password must contain an uppercase letter', 'error'); return; }
+        if (!/[a-z]/.test(loginPassword)) { showNotification('Password must contain a lowercase letter', 'error'); return; }
+        if (!/[0-9]/.test(loginPassword)) { showNotification('Password must contain a number', 'error'); return; }
+    }
+    
+    // Build permissions object
+    const permissions = {
+        dashboard: document.getElementById('perm_dashboard')?.checked || false,
+        schedule: document.getElementById('perm_schedule')?.checked || false,
+        clients: document.getElementById('perm_clients')?.checked || false,
+        quotes: document.getElementById('perm_quotes')?.checked || false,
+        invoices: document.getElementById('perm_invoices')?.checked || false,
+        expenses: document.getElementById('perm_expenses')?.checked || false,
+        analytics: document.getElementById('perm_analytics')?.checked || false,
+        cashflow: document.getElementById('perm_cashflow')?.checked || false,
+        budget: document.getElementById('perm_budget')?.checked || false,
+        reports: document.getElementById('perm_reports')?.checked || false
+    };
+    
     const member = {
         name: name,
-        email: document.getElementById('team_email').value.trim() || null,
+        email: email,
         phone: document.getElementById('team_phone').value.trim() || null,
         occupation: document.getElementById('team_occupation').value.trim() || null,
         color: document.getElementById('team_color').value || '#3b82f6',
-        role: document.getElementById('team_role')?.value || 'tradesperson'
+        role: document.getElementById('team_role')?.value || 'tradesperson',
+        can_login: canLogin,
+        permissions: permissions
     };
+    
+    // If enabling login for first time, create Supabase auth account
+    if (canLogin && loginPassword && !editingItem?.auth_user_id) {
+        try {
+            isLoading = true;
+            loadingMessage = 'Creating login account...';
+            renderApp();
+            
+            const { data: signUpData, error: signUpError } = await supabaseClient.auth.signUp({
+                email: email,
+                password: loginPassword
+            });
+            
+            if (signUpError) {
+                isLoading = false;
+                showNotification('Error creating login: ' + signUpError.message, 'error');
+                renderApp();
+                return;
+            }
+            
+            member.auth_user_id = signUpData.user.id;
+            console.log('✅ Auth account created for team member:', email, 'ID:', signUpData.user.id);
+            
+            isLoading = false;
+        } catch (err) {
+            isLoading = false;
+            showNotification('Error creating login account: ' + err.message, 'error');
+            renderApp();
+            return;
+        }
+    }
+    
+    // If disabling login, keep auth_user_id but mark can_login false
+    if (!canLogin && editingItem?.auth_user_id) {
+        member.auth_user_id = editingItem.auth_user_id;
+    }
     
     if (editingItem) {
         await updateTeamMember(editingItem.id, member);
+        
+        // Show verification reminder if new account was just created
+        if (canLogin && loginPassword && !editingItem?.auth_user_id) {
+            setTimeout(() => {
+                showNotification('📧 Verification email sent to ' + email + '. They must click the link before logging in.', 'success');
+            }, 500);
+        }
     } else {
         await addTeamMember(member);
+        
+        // Show verification reminder if account was created
+        if (canLogin && loginPassword) {
+            setTimeout(() => {
+                showNotification('📧 Verification email sent to ' + email + '. They must click the link before logging in.', 'success');
+            }, 500);
+        }
     }
 }
 
