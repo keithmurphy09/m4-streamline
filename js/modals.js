@@ -592,7 +592,105 @@ function renderModal() {
                     <span class="text-sm text-gray-600 dark:text-gray-300">Choose a color for this team member's jobs</span>
                 </div>
             </div>
-            <button onclick="saveTeamMember()" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400 hover:bg-gray-800">${buttonText}</button>
+            
+            ${(() => {
+                const canLogin = editingItem?.can_login || false;
+                const hasAuthId = editingItem?.auth_user_id || false;
+                const perms = editingItem?.permissions || {};
+                return `
+                <div class="mt-4 pt-4 border-t-2 border-gray-200 dark:border-gray-700">
+                    <h4 class="text-sm font-bold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        Login Access
+                    </h4>
+                    
+                    <div class="flex items-center gap-3 mb-3">
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="team_can_login" ${canLogin ? 'checked' : ''} onchange="document.getElementById('team-login-fields').classList.toggle('hidden', !this.checked)" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                        </label>
+                        <span class="text-sm font-medium dark:text-gray-200">Allow this person to log in</span>
+                    </div>
+                    
+                    <div id="team-login-fields" class="${canLogin ? '' : 'hidden'}">
+                        ${!hasAuthId ? `
+                        <div class="mb-3">
+                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Set Password for Team Member</label>
+                            <div class="relative">
+                                <input type="password" id="team_login_password" placeholder="Minimum 8 characters" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 pr-16">
+                                <button type="button" onclick="const p=document.getElementById('team_login_password');p.type=p.type==='password'?'text':'password';this.textContent=p.type==='password'?'View':'Hide'" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-600 hover:text-gray-800 underline dark:text-gray-400">View</button>
+                            </div>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Must have 8+ chars, uppercase, lowercase & number. They'll get a verification email first.</p>
+                        </div>
+                        ` : `
+                        <div class="mb-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded">
+                            <p class="text-sm text-green-700 dark:text-green-400 font-medium">✅ Login account created</p>
+                            <p class="text-xs text-green-600 dark:text-green-500 mt-1">This team member can sign in with their email and password.</p>
+                        </div>
+                        `}
+                        
+                        <div class="mb-3">
+                            <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide">Module Permissions</label>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">Choose what this team member can see when they log in.</p>
+                            
+                            <div class="space-y-2">
+                                <label class="flex items-center gap-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
+                                    <input type="checkbox" id="perm_dashboard" ${perms.dashboard !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
+                                    <span class="text-sm dark:text-gray-200">📊 Dashboard</span>
+                                </label>
+                                
+                                <label class="flex items-center gap-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
+                                    <input type="checkbox" id="perm_schedule" ${perms.schedule !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
+                                    <span class="text-sm dark:text-gray-200">📅 Schedule</span>
+                                </label>
+                                
+                                <label class="flex items-center gap-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
+                                    <input type="checkbox" id="perm_clients" ${perms.clients ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
+                                    <span class="text-sm dark:text-gray-200">👥 Clients</span>
+                                </label>
+                                
+                                <label class="flex items-center gap-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
+                                    <input type="checkbox" id="perm_quotes" ${perms.quotes ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
+                                    <span class="text-sm dark:text-gray-200">📝 Quotes</span>
+                                </label>
+                                
+                                <label class="flex items-center gap-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
+                                    <input type="checkbox" id="perm_invoices" ${perms.invoices ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
+                                    <span class="text-sm dark:text-gray-200">💰 Invoices</span>
+                                </label>
+                                
+                                <label class="flex items-center gap-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
+                                    <input type="checkbox" id="perm_expenses" ${perms.expenses !== false ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
+                                    <span class="text-sm dark:text-gray-200">💸 Expenses</span>
+                                </label>
+                                
+                                <label class="flex items-center gap-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
+                                    <input type="checkbox" id="perm_analytics" ${perms.analytics ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
+                                    <span class="text-sm dark:text-gray-200">📈 Analytics</span>
+                                </label>
+                                
+                                <label class="flex items-center gap-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
+                                    <input type="checkbox" id="perm_cashflow" ${perms.cashflow ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
+                                    <span class="text-sm dark:text-gray-200">💵 Cash Flow</span>
+                                </label>
+                                
+                                <label class="flex items-center gap-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
+                                    <input type="checkbox" id="perm_budget" ${perms.budget ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
+                                    <span class="text-sm dark:text-gray-200">🎯 Budget</span>
+                                </label>
+                                
+                                <label class="flex items-center gap-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
+                                    <input type="checkbox" id="perm_reports" ${perms.reports ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded">
+                                    <span class="text-sm dark:text-gray-200">📋 Reports</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                `;
+            })()}
+            
+            <button onclick="saveTeamMember()" class="w-full bg-black text-white px-4 py-2 rounded border border-teal-400 hover:bg-gray-800 mt-4">${buttonText}</button>
         `;
     }
     
