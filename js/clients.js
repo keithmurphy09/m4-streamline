@@ -275,12 +275,37 @@ function openClientQuickView(clientId) {
             <div class="px-5 pb-6">
                 <h3 class="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider mb-3">Communication Notes</h3>
                 <div class="space-y-2">
-                    ${notes.slice(0, 5).map(n => `
+                    ${notes.slice(0, 5).map(n => {
+                        let relatedLabel = '';
+                        let relatedClick = '';
+                        let relatedIcon = '';
+                        if (n.related_type === 'quote' && n.related_id) {
+                            const relQuote = quotes.find(q => q.id === n.related_id);
+                            if (relQuote) {
+                                relatedLabel = relQuote.title || 'Quote';
+                                relatedIcon = '📝';
+                                relatedClick = `switchTab('quotes'); setTimeout(() => { const q = quotes.find(x => x.id === '${n.related_id}'); if (q) openQuoteDetail(q); }, 100); closeClientQuickView();`;
+                            }
+                        } else if (n.related_type === 'invoice' && n.related_id) {
+                            const relInv = invoices.find(i => i.id === n.related_id);
+                            if (relInv) {
+                                relatedLabel = relInv.invoice_number || relInv.title || 'Invoice';
+                                relatedIcon = '💰';
+                                relatedClick = `switchTab('invoices'); setTimeout(() => { const inv = invoices.find(x => x.id === '${n.related_id}'); if (inv) openInvoiceDetail(inv); }, 100); closeClientQuickView();`;
+                            }
+                        }
+                        return `
                         <div class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-700">
+                            ${relatedLabel ? `
+                            <div class="flex items-center gap-1.5 mb-2 cursor-pointer hover:opacity-80 transition-opacity" onclick="${relatedClick}">
+                                <span class="text-sm">${relatedIcon}</span>
+                                <span class="text-xs font-semibold text-teal-600 dark:text-teal-400 hover:underline">${relatedLabel} →</span>
+                            </div>
+                            ` : ''}
                             <div class="text-sm text-gray-700 dark:text-gray-300">${n.note_text || n.content || ''}</div>
                             <div class="text-xs text-gray-400 dark:text-gray-500 mt-1">${new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
                         </div>
-                    `).join('')}
+                    `}).join('')}
                 </div>
             </div>
             ` : ''}
