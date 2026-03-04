@@ -279,27 +279,29 @@ function openClientQuickView(clientId) {
                         let relatedLabel = '';
                         let relatedClick = '';
                         let relatedIcon = '';
+                        
                         if (n.related_type === 'quote' && n.related_id) {
                             const relQuote = quotes.find(q => q.id === n.related_id);
-                            if (relQuote) {
-                                relatedLabel = relQuote.title || 'Quote';
-                                relatedIcon = '📝';
-                                relatedClick = `switchTab('quotes'); setTimeout(() => { const q = quotes.find(x => x.id === '${n.related_id}'); if (q) openQuoteDetail(q); }, 100); closeClientQuickView();`;
-                            }
+                            relatedLabel = relQuote ? (relQuote.title || relQuote.quote_number || 'Quote') : 'Quote';
+                            relatedIcon = '📝';
+                            relatedClick = `switchTab('quotes'); setTimeout(() => { const q = quotes.find(x => x.id === '${n.related_id}'); if (q) openQuoteDetail(q); }, 100); closeClientQuickView();`;
                         } else if (n.related_type === 'invoice' && n.related_id) {
                             const relInv = invoices.find(i => i.id === n.related_id);
-                            if (relInv) {
-                                relatedLabel = relInv.invoice_number || relInv.title || 'Invoice';
-                                relatedIcon = '💰';
-                                relatedClick = `switchTab('invoices'); setTimeout(() => { const inv = invoices.find(x => x.id === '${n.related_id}'); if (inv) openInvoiceDetail(inv); }, 100); closeClientQuickView();`;
-                            }
+                            relatedLabel = relInv ? (relInv.invoice_number || relInv.title || 'Invoice') : 'Invoice';
+                            relatedIcon = '💰';
+                            relatedClick = `switchTab('invoices'); setTimeout(() => { const inv = invoices.find(x => x.id === '${n.related_id}'); if (inv) openInvoiceDetail(inv); }, 100); closeClientQuickView();`;
+                        } else if (n.related_type && n.related_id) {
+                            relatedLabel = n.related_type.charAt(0).toUpperCase() + n.related_type.slice(1);
+                            relatedIcon = '🔗';
+                            relatedClick = '';
                         }
+                        
                         return `
                         <div class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-700">
                             ${relatedLabel ? `
-                            <div class="flex items-center gap-1.5 mb-2 cursor-pointer hover:opacity-80 transition-opacity" onclick="${relatedClick}">
+                            <div class="flex items-center gap-1.5 mb-2 ${relatedClick ? 'cursor-pointer hover:opacity-80' : ''} transition-opacity" ${relatedClick ? `onclick="${relatedClick}"` : ''}>
                                 <span class="text-sm">${relatedIcon}</span>
-                                <span class="text-xs font-semibold text-teal-600 dark:text-teal-400 hover:underline">${relatedLabel} →</span>
+                                <span class="text-xs font-semibold text-teal-600 dark:text-teal-400 ${relatedClick ? 'hover:underline' : ''}">${relatedLabel} ${relatedClick ? '→' : ''}</span>
                             </div>
                             ` : ''}
                             <div class="text-sm text-gray-700 dark:text-gray-300">${n.note_text || n.content || ''}</div>
