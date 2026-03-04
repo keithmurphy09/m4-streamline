@@ -128,7 +128,7 @@ async function renderApp() {
                                 </svg>
                             </button>
                             
-                            <div id="settings-menu" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+                            <div id="settings-menu" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
                                 <div class="py-1">
                                     <button onclick="handleLogout()" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -154,6 +154,29 @@ async function renderApp() {
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                                             </svg>
                                             Upgrade to Business
+                                        </button>
+                                    ` : ''}
+                                    ${subscription?.account_type === 'business' && !isTeamMember ? `
+                                        <button onclick="confirmDowngradeToSoleTrader()" class="w-full text-left px-4 py-2 text-sm text-yellow-600 hover:bg-yellow-50 dark:hover:bg-gray-700 flex items-center gap-2">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                            </svg>
+                                            Downgrade to Sole Trader
+                                        </button>
+                                    ` : ''}
+                                    ${!isTeamMember ? `
+                                        <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                                        <button onclick="confirmCancelSubscription()" class="w-full text-left px-4 py-2 text-sm text-orange-600 hover:bg-orange-50 dark:hover:bg-gray-700 flex items-center gap-2">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            Cancel Subscription
+                                        </button>
+                                        <button onclick="confirmDeleteAccount()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-gray-700 flex items-center gap-2">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                            Delete Account
                                         </button>
                                     ` : ''}
                                 </div>
@@ -441,6 +464,193 @@ function toggleSettingsMenu() {
     const menu = document.getElementById('settings-menu');
     if (menu) {
         menu.classList.toggle('hidden');
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SUBSCRIPTION MANAGEMENT
+// ═══════════════════════════════════════════════════════════════════
+
+function confirmDowngradeToSoleTrader() {
+    toggleSettingsMenu();
+    const modal = document.createElement('div');
+    modal.id = 'subscription-modal';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    modal.innerHTML = `
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 class="text-lg font-bold mb-3 dark:text-white">⬇️ Downgrade to Sole Trader</h3>
+            <div class="text-sm text-gray-600 dark:text-gray-300 mb-4 space-y-2">
+                <p>Your plan will change from <strong>Business ($89.95/mo)</strong> to <strong>Sole Trader ($49.95/mo)</strong>.</p>
+                <p>What happens:</p>
+                <p class="text-yellow-600 dark:text-yellow-400">⚠️ Team member logins will be disabled</p>
+                <p>• Team member data is kept but they can't log in</p>
+                <p>• All your quotes, invoices, and data stays intact</p>
+                <p>• You can upgrade back anytime</p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="executeDowngrade()" class="flex-1 bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 font-medium text-sm">Confirm Downgrade</button>
+                <button onclick="document.getElementById('subscription-modal').remove()" class="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 text-sm">Cancel</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+async function executeDowngrade() {
+    try {
+        const { error } = await supabaseClient
+            .from('subscriptions')
+            .update({ 
+                account_type: 'sole_trader',
+                monthly_rate: 49.95
+            })
+            .eq('user_id', currentUser.id);
+        
+        if (error) throw error;
+        
+        subscription.account_type = 'sole_trader';
+        subscription.monthly_rate = 49.95;
+        document.getElementById('subscription-modal')?.remove();
+        showNotification('Downgraded to Sole Trader. Team logins disabled.', 'success');
+        renderApp();
+    } catch (error) {
+        console.error('Error downgrading:', error);
+        showNotification('Error downgrading: ' + error.message, 'error');
+    }
+}
+
+function confirmCancelSubscription() {
+    toggleSettingsMenu();
+    const modal = document.createElement('div');
+    modal.id = 'subscription-modal';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    modal.innerHTML = `
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 class="text-lg font-bold mb-3 dark:text-white">⏸️ Cancel Subscription</h3>
+            <div class="text-sm text-gray-600 dark:text-gray-300 mb-4 space-y-2">
+                <p>We're sorry to see you go!</p>
+                <p>What happens:</p>
+                <p>• Your account will be <strong>paused</strong>, not deleted</p>
+                <p>• Your data is kept for <strong>30 days</strong> in case you come back</p>
+                <p>• After 30 days, data may be permanently removed</p>
+                <p>• You can reactivate anytime within 30 days</p>
+            </div>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Type <strong>CANCEL</strong> to confirm:</p>
+            <input type="text" id="cancel-confirm-input" placeholder="Type CANCEL" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 mb-4">
+            <div class="flex gap-3">
+                <button onclick="executeCancelSubscription()" class="flex-1 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 font-medium text-sm">Cancel Subscription</button>
+                <button onclick="document.getElementById('subscription-modal').remove()" class="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 text-sm">Keep Subscription</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+async function executeCancelSubscription() {
+    const confirmInput = document.getElementById('cancel-confirm-input')?.value;
+    if (confirmInput !== 'CANCEL') {
+        showNotification('Please type CANCEL to confirm', 'error');
+        return;
+    }
+    
+    try {
+        const { error } = await supabaseClient
+            .from('subscriptions')
+            .update({ 
+                subscription_status: 'cancelled',
+                cancelled_at: new Date().toISOString()
+            })
+            .eq('user_id', currentUser.id);
+        
+        if (error) throw error;
+        
+        document.getElementById('subscription-modal')?.remove();
+        showNotification('Subscription cancelled. Your data is saved for 30 days.', 'success');
+        
+        setTimeout(async () => {
+            await handleLogout();
+        }, 2000);
+    } catch (error) {
+        console.error('Error cancelling:', error);
+        showNotification('Error cancelling subscription: ' + error.message, 'error');
+    }
+}
+
+function confirmDeleteAccount() {
+    toggleSettingsMenu();
+    const modal = document.createElement('div');
+    modal.id = 'subscription-modal';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    modal.innerHTML = `
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 class="text-lg font-bold mb-3 text-red-600">🗑️ Delete Account Permanently</h3>
+            <div class="text-sm text-gray-600 dark:text-gray-300 mb-4 space-y-2">
+                <p class="text-red-600 dark:text-red-400 font-bold">⚠️ This cannot be undone!</p>
+                <p>This will permanently delete:</p>
+                <p>• All your clients, quotes, invoices</p>
+                <p>• All jobs, expenses, and reports</p>
+                <p>• All team members and their login access</p>
+                <p>• Your company settings and logo</p>
+                <p>• Your login account</p>
+            </div>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Type <strong>DELETE MY ACCOUNT</strong> to confirm:</p>
+            <input type="text" id="delete-confirm-input" placeholder="Type DELETE MY ACCOUNT" class="w-full px-4 py-2 border border-red-300 rounded dark:bg-gray-700 dark:text-white dark:border-red-600 mb-4">
+            <div class="flex gap-3">
+                <button onclick="executeDeleteAccount()" class="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 font-medium text-sm">Delete Everything</button>
+                <button onclick="document.getElementById('subscription-modal').remove()" class="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 text-sm">Keep Account</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+async function executeDeleteAccount() {
+    const confirmInput = document.getElementById('delete-confirm-input')?.value;
+    if (confirmInput !== 'DELETE MY ACCOUNT') {
+        showNotification('Please type DELETE MY ACCOUNT to confirm', 'error');
+        return;
+    }
+    
+    try {
+        isLoading = true;
+        loadingMessage = 'Deleting account...';
+        renderApp();
+        
+        const userId = currentUser.id;
+        
+        // Delete all user data in order (child tables first)
+        await supabaseClient.from('client_notes').delete().eq('user_id', userId);
+        await supabaseClient.from('payments').delete().eq('user_id', userId);
+        await supabaseClient.from('recurring_invoices').delete().eq('user_id', userId);
+        await supabaseClient.from('expenses').delete().eq('user_id', userId);
+        await supabaseClient.from('invoices').delete().eq('user_id', userId);
+        await supabaseClient.from('jobs').delete().eq('user_id', userId);
+        await supabaseClient.from('quotes').delete().eq('user_id', userId);
+        await supabaseClient.from('clients').delete().eq('user_id', userId);
+        await supabaseClient.from('team_members').delete().eq('account_owner_id', userId);
+        await supabaseClient.from('company_settings').delete().eq('user_id', userId);
+        await supabaseClient.from('email_settings').delete().eq('user_id', userId);
+        await supabaseClient.from('sms_settings').delete().eq('user_id', userId);
+        await supabaseClient.from('stripe_settings').delete().eq('user_id', userId);
+        await supabaseClient.from('subscriptions').delete().eq('user_id', userId);
+        await supabaseClient.from('admin_users').delete().eq('user_id', userId);
+        
+        document.getElementById('subscription-modal')?.remove();
+        isLoading = false;
+        
+        showNotification('Account deleted. Goodbye!', 'success');
+        
+        setTimeout(async () => {
+            await handleLogout();
+        }, 2000);
+    } catch (error) {
+        isLoading = false;
+        console.error('Error deleting account:', error);
+        showNotification('Error deleting account: ' + error.message, 'error');
+        renderApp();
     }
 }
 
