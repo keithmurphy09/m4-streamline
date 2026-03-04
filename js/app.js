@@ -5,6 +5,13 @@
 // Mobile menu state
 let mobileMenuOpen = false;
 
+// Permission check — bosses always have full access
+function canAccessTab(tab) {
+    if (!isTeamMember) return true;
+    // Team members need explicit permission
+    return teamMemberPermissions[tab] === true;
+}
+
 function toggleMobileMenu() {
     mobileMenuOpen = !mobileMenuOpen;
     const menu = document.getElementById('mobile-menu');
@@ -75,8 +82,14 @@ async function renderApp() {
                     <div class="flex items-center gap-3 justify-center md:justify-start">
                         <img src="final_logo.png" alt="M4 Logo" class="h-20 w-20 md:h-32 md:w-32 object-contain">
                         <div class="text-xs md:text-sm">
-                            <div class="text-xs text-teal-400">Logged in:</div>
-                            <div class="font-medium text-teal-400 truncate">${currentUser.email}</div>
+                            ${isTeamMember ? `
+                                <div class="text-xs text-purple-400">Team Member</div>
+                                <div class="font-medium text-teal-400 truncate">${teamMemberData.name}</div>
+                                <div class="text-xs text-gray-400">${teamMemberData.role === 'salesperson' ? 'Salesperson' : 'Tradesperson'}</div>
+                            ` : `
+                                <div class="text-xs text-teal-400">Logged in:</div>
+                                <div class="font-medium text-teal-400 truncate">${currentUser.email}</div>
+                            `}
                         </div>
                     </div>
                     
@@ -88,9 +101,10 @@ async function renderApp() {
                     
                     <!-- Controls -->
                     <div class="flex items-center justify-center md:justify-end gap-3 md:gap-4">
-                        ${isAdmin ? '<span class="bg-red-600 px-2 py-1 rounded text-xs font-bold">ADMIN</span>' : ''}
+                        ${isTeamMember ? '<span class="bg-purple-600 px-2 py-1 rounded text-xs font-bold">TEAM</span>' : ''}
+                        ${isAdmin && !isTeamMember ? '<span class="bg-red-600 px-2 py-1 rounded text-xs font-bold">ADMIN</span>' : ''}
                         
-                        ${isAdmin ? `
+                        ${isAdmin && !isTeamMember ? `
                             <button onclick="enterDemoMode('sole_trader');" class="no-glow px-3 py-2 md:px-4 md:py-2 bg-white rounded-lg text-xs border border-teal-400 text-gray-700" style="transition: box-shadow 0.2s ease;">
                                 Sole Trader
                             </button>
@@ -134,7 +148,7 @@ async function renderApp() {
                                         </svg>
                                         📚 User Guide
                                     </button>
-                                    ${subscription?.account_type === 'sole_trader' ? `
+                                    ${subscription?.account_type === 'sole_trader' && !isTeamMember ? `
                                         <button onclick="confirmUpgradeToBusiness()" class="w-full text-left px-4 py-2 text-sm text-teal-600 hover:bg-teal-50 dark:hover:bg-gray-700 flex items-center gap-2">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
@@ -164,15 +178,20 @@ async function renderApp() {
                             <div class="text-teal-400 text-2xl font-bold cursor-pointer" onclick="switchTab('dashboard')">M4</div>
                             
                             <nav class="hidden md:flex gap-1">
+                                ${canAccessTab('dashboard') ? `
                                 <button onclick="switchTab('dashboard')" class="px-4 py-2 text-sm font-medium ${activeTab === 'dashboard' ? 'text-teal-400 bg-gray-100 dark:bg-gray-700' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'} rounded transition-colors">
                                     Dashboard
                                 </button>
+                                ` : ''}
                                 
+                                ${canAccessTab('schedule') ? `
                                 <button onclick="switchTab('schedule')" class="px-4 py-2 text-sm font-medium ${activeTab === 'schedule' ? 'text-teal-400 bg-gray-100 dark:bg-gray-700' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'} rounded transition-colors">
                                     Schedule
                                 </button>
+                                ` : ''}
                                 
                                 <!-- Customers Dropdown -->
+                                ${(canAccessTab('clients') || canAccessTab('quotes') || canAccessTab('invoices')) ? `
                                 <div class="relative group">
                                     <button class="px-4 py-2 text-sm font-medium ${['clients', 'quotes', 'invoices'].includes(activeTab) ? 'text-teal-400 bg-gray-100 dark:bg-gray-700' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'} rounded transition-colors flex items-center gap-1">
                                         Customers
@@ -182,16 +201,18 @@ async function renderApp() {
                                     </button>
                                     <div class="hidden group-hover:block absolute top-full left-0 pt-2 -mt-2 w-48 z-50">
                                         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2">
-                                            <button onclick="switchTab('clients')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'clients' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Clients</button>
-                                            <button onclick="switchTab('quotes')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'quotes' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Quotes</button>
-                                            <button onclick="switchTab('invoices')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'invoices' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Invoices</button>
+                                            ${canAccessTab('clients') ? `<button onclick="switchTab('clients')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'clients' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Clients</button>` : ''}
+                                            ${canAccessTab('quotes') ? `<button onclick="switchTab('quotes')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'quotes' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Quotes</button>` : ''}
+                                            ${canAccessTab('invoices') ? `<button onclick="switchTab('invoices')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'invoices' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Invoices</button>` : ''}
                                         </div>
                                     </div>
                                 </div>
+                                ` : ''}
                                 
                                 <!-- Accounts Dropdown -->
+                                ${(canAccessTab('analytics') || canAccessTab('expenses') || canAccessTab('cashflow') || canAccessTab('budget') || canAccessTab('reports')) ? `
                                 <div class="relative group">
-                                    <button class="px-4 py-2 text-sm font-medium ${['analytics', 'expenses', 'cashflow'].includes(activeTab) ? 'text-teal-400 bg-gray-100 dark:bg-gray-700' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'} rounded transition-colors flex items-center gap-1">
+                                    <button class="px-4 py-2 text-sm font-medium ${['analytics', 'expenses', 'cashflow', 'budget', 'reports'].includes(activeTab) ? 'text-teal-400 bg-gray-100 dark:bg-gray-700' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'} rounded transition-colors flex items-center gap-1">
                                         Accounts
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -199,16 +220,18 @@ async function renderApp() {
                                     </button>
                                     <div class="hidden group-hover:block absolute top-full left-0 pt-2 -mt-2 w-48 z-50">
                                         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2">
-                                            <button onclick="switchTab('analytics')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'analytics' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Analytics</button>
-                                            <button onclick="switchTab('expenses')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'expenses' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Expenses</button>
-                                            <button onclick="switchTab('cashflow')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'cashflow' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Cash Flow</button>
-                                            <button onclick="switchTab('budget')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'budget' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Budget</button>
-                                            <button onclick="switchTab('reports')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'reports' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Reports</button>
+                                            ${canAccessTab('analytics') ? `<button onclick="switchTab('analytics')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'analytics' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Analytics</button>` : ''}
+                                            ${canAccessTab('expenses') ? `<button onclick="switchTab('expenses')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'expenses' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Expenses</button>` : ''}
+                                            ${canAccessTab('cashflow') ? `<button onclick="switchTab('cashflow')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'cashflow' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Cash Flow</button>` : ''}
+                                            ${canAccessTab('budget') ? `<button onclick="switchTab('budget')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'budget' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Budget</button>` : ''}
+                                            ${canAccessTab('reports') ? `<button onclick="switchTab('reports')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${activeTab === 'reports' ? 'bg-teal-50 dark:bg-teal-900/20 border-l-2 border-teal-500' : ''}">Reports</button>` : ''}
                                         </div>
                                     </div>
                                 </div>
+                                ` : ''}
                                 
-                                <!-- Company Dropdown -->
+                                <!-- Company Dropdown (Boss only) -->
+                                ${!isTeamMember ? `
                                 <div class="relative group">
                                     <button class="px-4 py-2 text-sm font-medium ${['company', 'team', 'admin'].includes(activeTab) ? 'text-teal-400 bg-gray-100 dark:bg-gray-700' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'} rounded transition-colors flex items-center gap-1">
                                         Company
@@ -224,6 +247,7 @@ async function renderApp() {
                                         </div>
                                     </div>
                                 </div>
+                                ` : ''}
                             </nav>
                         </div>
                     </div>
@@ -250,56 +274,81 @@ async function renderApp() {
                     <!-- Navigation Items -->
                     <div class="space-y-1">
                         <!-- DASHBOARD Section -->
+                        ${canAccessTab('dashboard') ? `
                         <div class="pt-2 pb-2 px-4 text-sm font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider">Dashboard</div>
                         <button onclick="switchTabMobile('dashboard')" class="w-full text-left px-4 py-3 text-base font-medium ${activeTab === 'dashboard' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-600' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'} rounded-r">
                             Dashboard
                         </button>
+                        ` : ''}
                         
                         <!-- SCHEDULE Section -->
+                        ${canAccessTab('schedule') ? `
                         <div class="pt-4 pb-2 px-4 text-sm font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider">Schedule</div>
                         <button onclick="switchTabMobile('schedule')" class="w-full text-left px-4 py-3 text-base font-medium ${activeTab === 'schedule' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-600' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'} rounded-r">
                             Schedule
                         </button>
+                        ` : ''}
                         
                         <!-- CUSTOMERS Section -->
+                        ${(canAccessTab('clients') || canAccessTab('quotes') || canAccessTab('invoices')) ? `
                         <div class="pt-4 pb-2 px-4 text-sm font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider">Customers</div>
+                        ` : ''}
                         
+                        ${canAccessTab('clients') ? `
                         <button onclick="switchTabMobile('clients')" class="w-full text-left px-4 py-3 text-base ${activeTab === 'clients' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-600' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'} rounded-r">
                             Clients
                         </button>
+                        ` : ''}
                         
+                        ${canAccessTab('quotes') ? `
                         <button onclick="switchTabMobile('quotes')" class="w-full text-left px-4 py-3 text-base ${activeTab === 'quotes' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-600' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'} rounded-r">
                             Quotes
                         </button>
+                        ` : ''}
                         
+                        ${canAccessTab('invoices') ? `
                         <button onclick="switchTabMobile('invoices')" class="w-full text-left px-4 py-3 text-base ${activeTab === 'invoices' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-600' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'} rounded-r">
                             Invoices
                         </button>
+                        ` : ''}
                         
                         <!-- ACCOUNTS Section -->
+                        ${(canAccessTab('analytics') || canAccessTab('expenses') || canAccessTab('cashflow') || canAccessTab('budget') || canAccessTab('reports')) ? `
                         <div class="pt-4 pb-2 px-4 text-sm font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider">Accounts</div>
+                        ` : ''}
                         
+                        ${canAccessTab('analytics') ? `
                         <button onclick="switchTabMobile('analytics')" class="w-full text-left px-4 py-3 text-base ${activeTab === 'analytics' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-600' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'} rounded-r">
                             Analytics
                         </button>
+                        ` : ''}
                         
+                        ${canAccessTab('expenses') ? `
                         <button onclick="switchTabMobile('expenses')" class="w-full text-left px-4 py-3 text-base ${activeTab === 'expenses' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-600' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'} rounded-r">
                             Expenses
                         </button>
+                        ` : ''}
                         
+                        ${canAccessTab('cashflow') ? `
                         <button onclick="switchTabMobile('cashflow')" class="w-full text-left px-4 py-3 text-base ${activeTab === 'cashflow' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-600' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'} rounded-r">
                             Cash Flow
                         </button>
+                        ` : ''}
                         
+                        ${canAccessTab('budget') ? `
                         <button onclick="switchTabMobile('budget')" class="w-full text-left px-4 py-3 text-base ${activeTab === 'budget' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-600' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'} rounded-r">
                             Budget
                         </button>
+                        ` : ''}
                         
+                        ${canAccessTab('reports') ? `
                         <button onclick="switchTabMobile('reports')" class="w-full text-left px-4 py-3 text-base ${activeTab === 'reports' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-600' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'} rounded-r">
                             Reports
                         </button>
+                        ` : ''}
                         
-                        <!-- COMPANY Section -->
+                        <!-- COMPANY Section (Boss only) -->
+                        ${!isTeamMember ? `
                         <div class="pt-4 pb-2 px-4 text-sm font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider">Company</div>
                         
                         <button onclick="switchTabMobile('company')" class="w-full text-left px-4 py-3 text-base ${activeTab === 'company' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-600' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'} rounded-r">
@@ -316,6 +365,7 @@ async function renderApp() {
                         <button onclick="switchTabMobile('admin')" class="w-full text-left px-4 py-3 text-base ${activeTab === 'admin' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-600' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'} rounded-r">
                             Admin Panel
                         </button>
+                        ` : ''}
                         ` : ''}
                     </div>
                 </div>
@@ -406,6 +456,19 @@ async function switchTab(tab) {
 }
 
 async function renderContent() {
+    // Enforce permissions for team members
+    if (isTeamMember && !canAccessTab(activeTab) && !['dashboard'].includes(activeTab)) {
+        // Find first permitted tab
+        const allowedTabs = ['dashboard', 'schedule', 'clients', 'quotes', 'invoices', 'expenses', 'analytics', 'cashflow', 'budget', 'reports'];
+        const firstAllowed = allowedTabs.find(t => canAccessTab(t)) || 'dashboard';
+        activeTab = firstAllowed;
+    }
+    
+    // Block team members from company/team/admin entirely
+    if (isTeamMember && ['company', 'team', 'admin'].includes(activeTab)) {
+        activeTab = 'dashboard';
+    }
+    
     // Route to appropriate render function
     if (activeTab === 'dashboard') return renderDashboard();
     if (activeTab === 'schedule') return renderSchedule();
