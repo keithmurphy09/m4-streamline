@@ -11,6 +11,12 @@ let currentUser = null;
 let subscription = null;
 let isAdmin = false;
 
+// Team Member Login State
+let isTeamMember = false;
+let teamMemberData = null;
+let teamMemberPermissions = {};
+let accountOwnerId = null;
+
 // Application State
 let activeTab = localStorage.getItem('activeTab') || 'dashboard';
 let darkMode = localStorage.getItem('darkMode') === 'true' || false;
