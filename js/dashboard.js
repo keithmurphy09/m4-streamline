@@ -234,7 +234,7 @@ function renderDashboard() {
                             <div class="flex items-start justify-between">
                                 <div class="flex-1">
                                     <div class="text-sm font-medium text-gray-900 dark:text-white">${job.title}</div>
-                                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${client?.name || 'Unknown'}</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 cursor-pointer hover:text-teal-600 dark:hover:text-teal-400 transition-colors" onclick="event.stopPropagation(); if(typeof openClientQuickView==='function') openClientQuickView('${job.client_id}')">${client?.name || 'Unknown'}</div>
                                 </div>
                                 <div class="text-right ml-4">
                                     <div class="text-xs font-medium text-gray-900 dark:text-white">${jobDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})}</div>
@@ -279,7 +279,7 @@ function renderDashboard() {
                                         </span>
                                         ` : ''}
                                     </div>
-                                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${client?.name || 'Unknown'}</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 cursor-pointer hover:text-teal-600 dark:hover:text-teal-400 transition-colors" onclick="event.stopPropagation(); if(typeof openClientQuickView==='function') openClientQuickView('${inv.client_id}')">${client?.name || 'Unknown'}</div>
                                 </div>
                                 <div class="text-right ml-4">
                                     <div class="text-sm font-semibold text-gray-900 dark:text-white">$${(inv.total || 0).toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</div>
