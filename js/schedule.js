@@ -6,9 +6,10 @@
 let jobViewMode = 'table'; // 'table', 'detail', or 'calendar'
 let selectedJobForDetail = null;
 
-function openJobDetail(job) {
+async function openJobDetail(job) {
     selectedJobForDetail = job;
     jobViewMode = 'detail';
+    await loadJobTasks();
     renderApp();
 }
 
@@ -445,6 +446,58 @@ function renderJobDetail() {
         </div>
     ` : '';
     
+    // Task/To-Do List Section
+    const jobTasks = (window.jobTasks || []).filter(t => t.job_id === job.id).sort((a, b) => {
+        // Incomplete first, then by created date
+        if (a.completed !== b.completed) return a.completed ? 1 : -1;
+        return new Date(b.created_at) - new Date(a.created_at);
+    });
+    const completedCount = jobTasks.filter(t => t.completed).length;
+    const totalTasks = jobTasks.length;
+    const progressPercent = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
+    
+    const taskSection = `
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Tasks</h3>
+                ${totalTasks > 0 ? `<span class="text-xs font-medium ${progressPercent === 100 ? 'text-teal-600 dark:text-teal-400' : 'text-gray-500 dark:text-gray-400'}">${completedCount}/${totalTasks} done</span>` : ''}
+            </div>
+            
+            ${totalTasks > 0 ? `
+            <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2 mb-4">
+                <div class="h-2 rounded-full transition-all duration-500 ${progressPercent === 100 ? 'bg-teal-500' : 'bg-blue-500'}" style="width: ${progressPercent}%"></div>
+            </div>
+            ` : ''}
+            
+            <!-- Add Task Input -->
+            <div class="flex gap-2 mb-4">
+                <input type="text" id="new-task-input-${job.id}" placeholder="Add a task..." 
+                    onkeydown="if(event.key==='Enter'){addJobTask('${job.id}');}" 
+                    class="flex-1 px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent">
+                <button onclick="addJobTask('${job.id}')" class="px-4 py-2 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors whitespace-nowrap">Add</button>
+            </div>
+            
+            <!-- Task List -->
+            <div class="space-y-1">
+                ${jobTasks.length === 0 ? `
+                    <div class="text-center py-6 text-gray-400 dark:text-gray-500 text-sm">
+                        No tasks yet. Add your first task above.
+                    </div>
+                ` : jobTasks.map(task => `
+                    <div class="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group ${task.completed ? 'opacity-60' : ''}">
+                        <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleJobTask('${task.id}', this.checked)" 
+                            class="w-4 h-4 text-teal-600 rounded border-gray-300 focus:ring-teal-500 flex-shrink-0 cursor-pointer">
+                        <span class="flex-1 text-sm ${task.completed ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-700 dark:text-gray-200'}">${task.title}</span>
+                        ${task.assigned_to_name ? `<span class="text-xs text-gray-400 dark:text-gray-500 hidden sm:inline">${task.assigned_to_name}</span>` : ''}
+                        <button onclick="deleteJobTask('${task.id}')" class="text-gray-300 hover:text-red-500 dark:text-gray-600 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    
     return `<div class="space-y-6">
         <!-- Back Button -->
         <button onclick="closeJobDetail()" class="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
@@ -484,6 +537,7 @@ function renderJobDetail() {
             <!-- Left Column (2/3) -->
             <div class="lg:col-span-2 space-y-6">
                 ${profitLossSection}
+                ${taskSection}
                 ${photosSection}
             </div>
             
@@ -616,11 +670,8 @@ function renderCalendar() {
         eventClick: function(info) {
             const job = jobs.find(j => j.id === info.event.extendedProps.jobId);
             if (job) {
-                // Switch to list view first, then show detail
                 scheduleView = 'list';
-                selectedJobForDetail = job;
-                jobViewMode = 'detail';
-                renderApp();
+                openJobDetail(job);
             }
         },
         eventDidMount: function(info) {
@@ -674,6 +725,103 @@ function closeRecurringJobModal() {
     const container = document.getElementById('recurringJobModalContainer');
     if (container) {
         container.remove();
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// JOB TASKS / TO-DO LIST
+// ═══════════════════════════════════════════════════════════════════
+
+// Initialize task storage
+if (!window.jobTasks) window.jobTasks = [];
+let jobTasksLoaded = false;
+
+async function loadJobTasks() {
+    if (jobTasksLoaded) return;
+    try {
+        const ownerId = accountOwnerId || currentUser?.id;
+        if (!ownerId) return;
+        const { data, error } = await supabaseClient
+            .from('job_tasks')
+            .select('*')
+            .eq('user_id', ownerId)
+            .order('created_at', { ascending: true });
+        if (!error && data) {
+            window.jobTasks = data;
+            jobTasksLoaded = true;
+            console.log('✅ Job tasks loaded:', data.length);
+        }
+    } catch (e) {
+        console.log('ℹ️ Job tasks table not available yet — run migration');
+        window.jobTasks = [];
+    }
+}
+
+async function addJobTask(jobId) {
+    const input = document.getElementById('new-task-input-' + jobId);
+    if (!input) return;
+    const title = input.value.trim();
+    if (!title) return;
+    
+    try {
+        const ownerId = accountOwnerId || currentUser.id;
+        const { data, error } = await supabaseClient
+            .from('job_tasks')
+            .insert([{
+                job_id: jobId,
+                user_id: ownerId,
+                title: title,
+                completed: false
+            }])
+            .select();
+        
+        if (error) throw error;
+        
+        if (data && data[0]) {
+            window.jobTasks.push(data[0]);
+        }
+        
+        input.value = '';
+        renderApp();
+    } catch (error) {
+        console.error('Error adding task:', error);
+        showNotification('Error adding task: ' + error.message, 'error');
+    }
+}
+
+async function toggleJobTask(taskId, completed) {
+    try {
+        const { error } = await supabaseClient
+            .from('job_tasks')
+            .update({ completed: completed })
+            .eq('id', taskId);
+        
+        if (error) throw error;
+        
+        const task = window.jobTasks.find(t => t.id === taskId);
+        if (task) task.completed = completed;
+        
+        renderApp();
+    } catch (error) {
+        console.error('Error updating task:', error);
+        showNotification('Error updating task', 'error');
+    }
+}
+
+async function deleteJobTask(taskId) {
+    try {
+        const { error } = await supabaseClient
+            .from('job_tasks')
+            .delete()
+            .eq('id', taskId);
+        
+        if (error) throw error;
+        
+        window.jobTasks = window.jobTasks.filter(t => t.id !== taskId);
+        renderApp();
+    } catch (error) {
+        console.error('Error deleting task:', error);
+        showNotification('Error deleting task', 'error');
     }
 }
 
