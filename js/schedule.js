@@ -458,7 +458,7 @@ function renderJobDetail() {
     const progressPercent = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
     
     const taskSection = `
-        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+        <div id="job-tasks-section" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Tasks</h3>
                 ${totalTasks > 0 ? `<span class="text-xs font-medium ${progressPercent === 100 ? 'text-teal-600 dark:text-teal-400' : 'text-gray-500 dark:text-gray-400'}">${completedCount}/${totalTasks} done</span>` : ''}
@@ -503,7 +503,7 @@ function renderJobDetail() {
     const jobLogs = (window.dailyLogs || []).filter(l => l.job_id === job.id).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     
     const dailyLogSection = `
-        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+        <div id="job-dailylog-section" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Daily Log</h3>
                 <span class="text-xs text-gray-500 dark:text-gray-400">${jobLogs.length} ${jobLogs.length === 1 ? 'entry' : 'entries'}</span>
@@ -602,6 +602,8 @@ function renderJobDetail() {
             <div class="flex flex-wrap gap-2 pt-4 border-t border-gray-100 dark:border-gray-700">
                 <button onclick='openModal("job", ${JSON.stringify(job).replace(/"/g, "&quot;")})' class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors">Edit Job</button>
                 ${job.status !== 'completed' ? `<button onclick="updateJobStatus('${job.id}', '${job.status === 'scheduled' ? 'in_progress' : 'completed'}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors">Mark ${job.status === 'scheduled' ? 'In Progress' : 'Complete'}</button>` : ''}
+                <button onclick="document.getElementById('job-tasks-section')?.scrollIntoView({behavior:'smooth', block:'start'})" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors">Tasks${totalTasks > 0 ? ` (${completedCount}/${totalTasks})` : ''}</button>
+                <button onclick="document.getElementById('job-dailylog-section')?.scrollIntoView({behavior:'smooth', block:'start'})" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors">Daily Log${jobLogs.length > 0 ? ` (${jobLogs.length})` : ''}</button>
                 <label class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors cursor-pointer">
                     <input type="file" accept="image/*" onchange="uploadJobPhoto(this, '${job.id}')" class="hidden" />
                     Add Photo
@@ -628,7 +630,7 @@ function renderJobDetail() {
                     <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">Client</h3>
                     <div class="space-y-3">
                         <div>
-                            <div class="text-sm font-medium text-gray-900 dark:text-white">${client?.name || 'Unknown'}</div>
+                            <div class="text-sm font-medium text-gray-900 dark:text-white cursor-pointer hover:text-teal-600 dark:hover:text-teal-400 transition-colors" onclick="if(typeof openClientQuickView==='function') openClientQuickView('${job.client_id}')">${client?.name || 'Unknown'}</div>
                         </div>
                         ${client?.phone ? `<div>
                             <div class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Phone</div>
