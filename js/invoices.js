@@ -111,7 +111,7 @@ function renderInvoicesTable() {
                     <div class="text-sm font-medium text-gray-900 dark:text-white">${inv.invoice_number || 'INV-' + inv.id.slice(0, 3)}${inv.is_recurring_parent ? ' <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">🔄 Progressive</span>' : ''}</div>
                 </td>
                 <td class="px-6 py-4">
-                    <div class="text-sm font-medium text-gray-900 dark:text-white">${client?.name || 'Unknown'}</div>
+                    <div class="text-sm font-medium text-gray-900 dark:text-white cursor-pointer hover:text-teal-600 dark:hover:text-teal-400 transition-colors" onclick="event.stopPropagation(); if(typeof openClientQuickView==='function') openClientQuickView('${inv.client_id}')">${client?.name || 'Unknown'}</div>
                     <div class="text-xs text-gray-400 dark:text-gray-500">${jobAddress}</div>
                 </td>
                 <td class="px-6 py-4">
@@ -268,7 +268,7 @@ function renderInvoicesTable() {
                                 <div class="invoice-card-amount">${formatCurrency(inv.total)}</div>
                             </div>
                             
-                            <div class="invoice-card-client">${client?.name || 'Unknown'}</div>
+                            <div class="invoice-card-client cursor-pointer hover:text-teal-600 dark:hover:text-teal-400 transition-colors" onclick="event.stopPropagation(); if(typeof openClientQuickView==='function') openClientQuickView('${inv.client_id}')">${client?.name || 'Unknown'}</div>
                             ${jobAddress ? `<div class="invoice-card-address">${jobAddress}</div>` : ''}
                             <div class="invoice-card-title">${inv.title}</div>
                             
@@ -574,7 +574,7 @@ function renderInvoiceDetail() {
                     <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">Client</h3>
                     <div class="space-y-3">
                         <div>
-                            <div class="text-sm font-medium text-gray-900 dark:text-white">${client?.name || 'Unknown'}</div>
+                            <div class="text-sm font-medium text-gray-900 dark:text-white cursor-pointer hover:text-teal-600 dark:hover:text-teal-400 transition-colors" onclick="if(typeof openClientQuickView==='function') openClientQuickView('${inv.client_id}')">${client?.name || 'Unknown'}</div>
                         </div>
                         ${client?.email ? `<div>
                             <div class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Email</div>
