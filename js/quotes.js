@@ -131,7 +131,7 @@ function renderQuotesTable() {
                     <div class="text-sm font-medium text-gray-900 dark:text-white">${q.quote_number || 'QT-' + q.id.slice(0, 3)}</div>
                 </td>
                 <td class="px-6 py-4">
-                    <div class="text-sm font-medium text-gray-900 dark:text-white">${client?.name || 'Unknown'}</div>
+                    <div class="text-sm font-medium text-gray-900 dark:text-white cursor-pointer hover:text-teal-600 dark:hover:text-teal-400 transition-colors" onclick="event.stopPropagation(); if(typeof openClientQuickView==='function') openClientQuickView('${q.client_id}')">${client?.name || 'Unknown'}</div>
                     <div class="text-xs text-gray-400 dark:text-gray-500">${client?.email || ''}</div>
                 </td>
                 <td class="px-6 py-4">
@@ -285,7 +285,7 @@ function renderQuotesTable() {
                                 <div class="quote-card-amount">${formatCurrency(q.total)}</div>
                             </div>
                             
-                            <div class="quote-card-client">${client?.name || 'Unknown'}</div>
+                            <div class="quote-card-client cursor-pointer hover:text-teal-600 dark:hover:text-teal-400 transition-colors" onclick="event.stopPropagation(); if(typeof openClientQuickView==='function') openClientQuickView('${q.client_id}')">${client?.name || 'Unknown'}</div>
                             ${q.job_address ? `<div class="quote-card-address">${q.job_address}</div>` : ''}
                             <div class="quote-card-title">${q.title}</div>
                             
@@ -822,7 +822,7 @@ function renderQuoteDetail() {
                     <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">Client</h3>
                     <div class="space-y-3">
                         <div>
-                            <div class="text-sm font-medium text-gray-900 dark:text-white">${client?.name || 'Unknown'}</div>
+                            <div class="text-sm font-medium text-gray-900 dark:text-white cursor-pointer hover:text-teal-600 dark:hover:text-teal-400 transition-colors" onclick="if(typeof openClientQuickView==='function') openClientQuickView('${q.client_id}')">${client?.name || 'Unknown'}</div>
                         </div>
                         ${client?.email ? `<div>
                             <div class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Email</div>
