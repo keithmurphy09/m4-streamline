@@ -821,9 +821,12 @@ async function saveTeamMember() {
     // If enabling login for first time, create Supabase auth account
     if (canLogin && loginPassword && !editingItem?.auth_user_id) {
         try {
-            isLoading = true;
-            loadingMessage = 'Creating login account...';
-            renderApp();
+            // Show loading on the save button instead of full renderApp
+            const saveBtn = document.querySelector('button[onclick="saveTeamMember()"]');
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.textContent = 'Creating login account...';
+            }
             
             const { data: signUpData, error: signUpError } = await supabaseClient.auth.signUp({
                 email: email,
@@ -831,20 +834,22 @@ async function saveTeamMember() {
             });
             
             if (signUpError) {
-                isLoading = false;
+                if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = editingItem ? 'Update Team Member' : 'Add Team Member'; }
                 showNotification('Error creating login: ' + signUpError.message, 'error');
-                renderApp();
                 return;
             }
             
             member.auth_user_id = signUpData.user.id;
             console.log('✅ Auth account created for team member:', email, 'ID:', signUpData.user.id);
             
-            isLoading = false;
+            // Re-authenticate boss in case signUp affected the session
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session || session.user.id !== currentUser.id) {
+                console.log('⚠️ Session changed after signUp, refreshing...');
+                await supabaseClient.auth.refreshSession();
+            }
         } catch (err) {
-            isLoading = false;
             showNotification('Error creating login account: ' + err.message, 'error');
-            renderApp();
             return;
         }
     }
