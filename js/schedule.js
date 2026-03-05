@@ -10,6 +10,7 @@ async function openJobDetail(job) {
     selectedJobForDetail = job;
     jobViewMode = 'detail';
     await loadJobTasks();
+    await loadDailyLogs();
     renderApp();
 }
 
@@ -498,6 +499,84 @@ function renderJobDetail() {
         </div>
     `;
     
+    // Daily Log Section
+    const jobLogs = (window.dailyLogs || []).filter(l => l.job_id === job.id).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    
+    const dailyLogSection = `
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Daily Log</h3>
+                <span class="text-xs text-gray-500 dark:text-gray-400">${jobLogs.length} ${jobLogs.length === 1 ? 'entry' : 'entries'}</span>
+            </div>
+            
+            <!-- Add Log Entry -->
+            <div class="mb-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-600">
+                <textarea id="daily-log-text-${job.id}" placeholder="What happened on site today?" rows="2"
+                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none mb-2"></textarea>
+                <div class="flex items-center justify-between gap-2">
+                    <label class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        Attach Photo
+                        <input type="file" accept="image/*" onchange="attachDailyLogPhoto(this, '${job.id}')" class="hidden" id="daily-log-photo-${job.id}" />
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <span id="daily-log-photo-name-${job.id}" class="text-xs text-gray-400 dark:text-gray-500 truncate max-w-32"></span>
+                        <button onclick="addDailyLog('${job.id}')" class="px-4 py-1.5 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors">Post Log</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Log Timeline -->
+            <div class="space-y-3">
+                ${jobLogs.length === 0 ? `
+                    <div class="text-center py-6 text-gray-400 dark:text-gray-500 text-sm">
+                        No daily logs yet. Record your first site update above.
+                    </div>
+                ` : jobLogs.map(log => {
+                    const logDate = new Date(log.created_at);
+                    const timeStr = logDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                    const dateStr = logDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                    const authorName = log.author_name || 'You';
+                    
+                    return `
+                    <div class="relative pl-6 pb-4 border-l-2 border-gray-200 dark:border-gray-700 last:border-l-0 last:pb-0 group">
+                        <!-- Timeline dot -->
+                        <div class="absolute -left-2 top-0 w-4 h-4 rounded-full bg-teal-500 border-2 border-white dark:border-gray-800"></div>
+                        
+                        <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 ml-2">
+                            <!-- Header -->
+                            <div class="flex items-start justify-between mb-2">
+                                <div>
+                                    <span class="text-xs font-semibold text-teal-600 dark:text-teal-400">${dateStr}</span>
+                                    <span class="text-xs text-gray-400 dark:text-gray-500 ml-2">${timeStr}</span>
+                                    <span class="text-xs text-gray-400 dark:text-gray-500 ml-2">by ${authorName}</span>
+                                </div>
+                                <button onclick="deleteDailyLog('${log.id}')" class="text-gray-300 hover:text-red-500 dark:text-gray-600 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                </button>
+                            </div>
+                            
+                            <!-- Note text -->
+                            <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">${log.note_text}</p>
+                            
+                            <!-- Photo if attached -->
+                            ${log.photo_url ? `
+                            <div class="mt-3">
+                                <img src="${log.photo_url}" class="w-full max-w-sm h-40 object-cover rounded-lg border border-gray-200 dark:border-gray-600 cursor-pointer" onclick="window.open('${log.photo_url}', '_blank')" />
+                            </div>
+                            ` : ''}
+                            
+                            ${log.weather ? `
+                            <div class="mt-2 text-xs text-gray-400 dark:text-gray-500">🌤 ${log.weather}</div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    `;
+    
     return `<div class="space-y-6">
         <!-- Back Button -->
         <button onclick="closeJobDetail()" class="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
@@ -538,6 +617,7 @@ function renderJobDetail() {
             <div class="lg:col-span-2 space-y-6">
                 ${profitLossSection}
                 ${taskSection}
+                ${dailyLogSection}
                 ${photosSection}
             </div>
             
@@ -822,6 +902,137 @@ async function deleteJobTask(taskId) {
     } catch (error) {
         console.error('Error deleting task:', error);
         showNotification('Error deleting task', 'error');
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// DAILY LOGS
+// ═══════════════════════════════════════════════════════════════════
+
+if (!window.dailyLogs) window.dailyLogs = [];
+let dailyLogsLoaded = false;
+window._pendingLogPhoto = null;
+
+async function loadDailyLogs() {
+    if (dailyLogsLoaded) return;
+    try {
+        const ownerId = accountOwnerId || currentUser?.id;
+        if (!ownerId) return;
+        const { data, error } = await supabaseClient
+            .from('daily_logs')
+            .select('*')
+            .eq('user_id', ownerId)
+            .order('created_at', { ascending: false });
+        if (!error && data) {
+            window.dailyLogs = data;
+            dailyLogsLoaded = true;
+            console.log('✅ Daily logs loaded:', data.length);
+        }
+    } catch (e) {
+        console.log('ℹ️ Daily logs table not available yet — run migration');
+        window.dailyLogs = [];
+    }
+}
+
+function attachDailyLogPhoto(input, jobId) {
+    const file = input.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+        showNotification('Please select an image file', 'error');
+        return;
+    }
+    window._pendingLogPhoto = file;
+    const nameEl = document.getElementById('daily-log-photo-name-' + jobId);
+    if (nameEl) nameEl.textContent = '📷 ' + file.name.slice(0, 20);
+}
+
+async function addDailyLog(jobId) {
+    const textarea = document.getElementById('daily-log-text-' + jobId);
+    if (!textarea) return;
+    const noteText = textarea.value.trim();
+    if (!noteText) {
+        showNotification('Please write a note for the daily log', 'error');
+        return;
+    }
+    
+    try {
+        const ownerId = accountOwnerId || currentUser.id;
+        let photoUrl = null;
+        
+        // Upload photo if attached
+        if (window._pendingLogPhoto) {
+            const file = window._pendingLogPhoto;
+            const fileExt = file.name.split('.').pop();
+            const fileName = `daily-log-${jobId}-${Date.now()}.${fileExt}`;
+            const filePath = `daily-logs/${fileName}`;
+            
+            const storageClient = typeof supabaseClient !== 'undefined' ? supabaseClient : supabase;
+            const { data: uploadData, error: uploadError } = await storageClient.storage
+                .from('job-photos')
+                .upload(filePath, file);
+            
+            if (uploadError) {
+                console.error('Photo upload error:', uploadError);
+                // Continue without photo rather than failing
+            } else {
+                const { data: urlData } = storageClient.storage
+                    .from('job-photos')
+                    .getPublicUrl(filePath);
+                photoUrl = urlData?.publicUrl || null;
+            }
+            window._pendingLogPhoto = null;
+        }
+        
+        const authorName = isTeamMember && teamMemberData ? teamMemberData.name : (companySettings?.business_name || currentUser.email);
+        
+        const logEntry = {
+            job_id: jobId,
+            user_id: ownerId,
+            note_text: noteText,
+            photo_url: photoUrl,
+            author_name: authorName
+        };
+        
+        const { data, error } = await supabaseClient
+            .from('daily_logs')
+            .insert([logEntry])
+            .select();
+        
+        if (error) throw error;
+        
+        if (data && data[0]) {
+            window.dailyLogs.unshift(data[0]);
+        }
+        
+        textarea.value = '';
+        const nameEl = document.getElementById('daily-log-photo-name-' + jobId);
+        if (nameEl) nameEl.textContent = '';
+        const photoInput = document.getElementById('daily-log-photo-' + jobId);
+        if (photoInput) photoInput.value = '';
+        
+        showNotification('Daily log posted', 'success');
+        renderApp();
+    } catch (error) {
+        console.error('Error adding daily log:', error);
+        showNotification('Error posting daily log: ' + error.message, 'error');
+    }
+}
+
+async function deleteDailyLog(logId) {
+    if (!confirm('Delete this log entry?')) return;
+    try {
+        const { error } = await supabaseClient
+            .from('daily_logs')
+            .delete()
+            .eq('id', logId);
+        
+        if (error) throw error;
+        
+        window.dailyLogs = window.dailyLogs.filter(l => l.id !== logId);
+        renderApp();
+    } catch (error) {
+        console.error('Error deleting daily log:', error);
+        showNotification('Error deleting log', 'error');
     }
 }
 
