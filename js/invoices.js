@@ -666,6 +666,36 @@ async function markPaid(invoiceId) {
             selectedInvoiceForDetail = invoice; // Update detail view
         }
         
+        // If this is a deposit invoice, adjust the remaining/total invoice
+        if (invoice && invoice.quote_id && invoice.title && invoice.title.toLowerCase().includes('deposit')) {
+            const remainingInvoice = invoices.find(inv => 
+                inv.quote_id === invoice.quote_id && 
+                inv.id !== invoice.id && 
+                inv.status === 'unpaid' &&
+                (!inv.title || !inv.title.toLowerCase().includes('deposit'))
+            );
+            
+            if (remainingInvoice) {
+                const depositAmount = parseFloat(invoice.total || 0);
+                const originalTotal = parseFloat(remainingInvoice.total || 0);
+                const newTotal = Math.max(0, originalTotal - depositAmount);
+                
+                // Update in Supabase
+                const { error: updateError } = await supabaseClient
+                    .from('invoices')
+                    .update({ total: newTotal })
+                    .eq('id', remainingInvoice.id);
+                
+                if (!updateError) {
+                    remainingInvoice.total = newTotal;
+                    console.log(`✅ Remaining invoice adjusted: $${originalTotal} → $${newTotal} (deposit: $${depositAmount})`);
+                    showNotification(`Remaining invoice adjusted to ${formatCurrency(newTotal)} after deposit`, 'success');
+                } else {
+                    console.error('Error adjusting remaining invoice:', updateError);
+                }
+            }
+        }
+        
         // Trigger confetti
         if (typeof triggerConfetti === 'function') {
             triggerConfetti();
@@ -688,6 +718,8 @@ async function markUnpaid(invoiceId) {
     if (!confirm('Mark invoice as unpaid?')) return;
     
     try {
+        const invoice = invoices.find(i => i.id === invoiceId);
+        
         const { error } = await supabaseClient
             .from('invoices')
             .update({ status: 'unpaid', paid_date: null })
@@ -695,11 +727,36 @@ async function markUnpaid(invoiceId) {
             
         if (error) throw error;
         
-        const invoice = invoices.find(i => i.id === invoiceId);
         if (invoice) {
             invoice.status = 'unpaid';
             invoice.paid_date = null;
-            selectedInvoiceForDetail = invoice; // Update detail view
+            selectedInvoiceForDetail = invoice;
+        }
+        
+        // If this is a deposit invoice being unmarked, restore the remaining invoice total
+        if (invoice && invoice.quote_id && invoice.title && invoice.title.toLowerCase().includes('deposit')) {
+            const remainingInvoice = invoices.find(inv => 
+                inv.quote_id === invoice.quote_id && 
+                inv.id !== invoice.id &&
+                (!inv.title || !inv.title.toLowerCase().includes('deposit'))
+            );
+            
+            if (remainingInvoice) {
+                const depositAmount = parseFloat(invoice.total || 0);
+                const currentTotal = parseFloat(remainingInvoice.total || 0);
+                const restoredTotal = currentTotal + depositAmount;
+                
+                const { error: updateError } = await supabaseClient
+                    .from('invoices')
+                    .update({ total: restoredTotal })
+                    .eq('id', remainingInvoice.id);
+                
+                if (!updateError) {
+                    remainingInvoice.total = restoredTotal;
+                    console.log(`✅ Remaining invoice restored: $${currentTotal} → $${restoredTotal}`);
+                    showNotification(`Remaining invoice restored to ${formatCurrency(restoredTotal)}`, 'success');
+                }
+            }
         }
         
         showNotification('Invoice marked as unpaid', 'success');
