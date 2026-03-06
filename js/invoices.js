@@ -428,6 +428,14 @@ function renderInvoiceDetail() {
     const profitMargin = revenue > 0 ? ((profit / revenue) * 100).toFixed(1) : 0;
     
     // Line items table
+    // Check for paid deposit on this quote
+    const paidDeposit = inv.quote_id ? invoices.find(di => 
+        di.quote_id === inv.quote_id && 
+        di.id !== inv.id && 
+        di.status === 'paid' && 
+        di.title && di.title.toLowerCase().includes('deposit')
+    ) : null;
+    
     const lineItemsTable = inv.items && inv.items.length > 0 ? `
         <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Line Items</h3>
@@ -459,8 +467,12 @@ function renderInvoiceDetail() {
                         <td colspan="3" class="py-2 text-right text-sm text-gray-600 dark:text-gray-400">GST (10%):</td>
                         <td class="py-2 text-right text-sm text-gray-600 dark:text-gray-400">${formatCurrency(inv.gst)}</td>
                     </tr>` : ''}
+                    ${paidDeposit ? `<tr class="bg-green-50 dark:bg-green-900/10">
+                        <td colspan="3" class="py-3 text-right text-sm font-medium text-green-700 dark:text-green-400">Less Deposit Paid (${paidDeposit.invoice_number || 'Deposit'}) ✓</td>
+                        <td class="py-3 text-right text-sm font-medium text-green-700 dark:text-green-400">-${formatCurrency(paidDeposit.total)}</td>
+                    </tr>` : ''}
                     <tr class="border-t border-gray-200 dark:border-gray-600">
-                        <td colspan="3" class="py-4 text-right text-lg font-bold text-gray-900 dark:text-white">Total:</td>
+                        <td colspan="3" class="py-4 text-right text-lg font-bold text-gray-900 dark:text-white">${paidDeposit ? 'Balance Due:' : 'Total:'}</td>
                         <td class="py-4 text-right text-lg font-bold text-gray-900 dark:text-white">${formatCurrency(inv.total)}</td>
                     </tr>
                 </tfoot>
