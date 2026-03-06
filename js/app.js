@@ -481,7 +481,7 @@ function confirmDowngradeToSoleTrader() {
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
             <h3 class="text-lg font-bold mb-3 dark:text-white">⬇️ Downgrade to Sole Trader</h3>
             <div class="text-sm text-gray-600 dark:text-gray-300 mb-4 space-y-2">
-                <p>Your plan will change from <strong>Business ($89.95/mo)</strong> to <strong>Sole Trader ($49.95/mo)</strong>.</p>
+                <p>Your plan will change from <strong>Business ($149/mo)</strong> to <strong>Sole Trader ($79/mo)</strong>.</p>
                 <p>What happens:</p>
                 <p class="text-yellow-600 dark:text-yellow-400">⚠️ Team member logins will be disabled</p>
                 <p>• Team member data is kept but they can't log in</p>
@@ -503,14 +503,14 @@ async function executeDowngrade() {
             .from('subscriptions')
             .update({ 
                 account_type: 'sole_trader',
-                monthly_rate: 49.95
+                monthly_rate: 79
             })
             .eq('user_id', currentUser.id);
         
         if (error) throw error;
         
         subscription.account_type = 'sole_trader';
-        subscription.monthly_rate = 49.95;
+        subscription.monthly_rate = 79;
         document.getElementById('subscription-modal')?.remove();
         showNotification('Downgraded to Sole Trader. Team logins disabled.', 'success');
         renderApp();
