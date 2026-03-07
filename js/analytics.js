@@ -378,14 +378,14 @@ function renderAnalytics() {
                 ${topProfitableClients.length > 0 ? `
                     <div class="space-y-3">
                         ${topProfitableClients.map((client, index) => `
-                            <div onclick="switchTab('invoices'); clientSearch='${client.name}'; renderApp();" class="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 rounded-lg hover:shadow-md transition-shadow cursor-pointer">
+                            <div onclick="if(typeof openClientQuickView==='function') openClientQuickView('${client.clientId}');" class="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 rounded-lg hover:shadow-md transition-shadow cursor-pointer">
                                 <div class="flex items-center gap-4 flex-1">
                                     <div class="w-10 h-10 rounded-full ${index === 0 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' : index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-500' : index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600' : 'bg-teal-100 dark:bg-teal-900'} flex items-center justify-center font-bold text-white shadow-md">
                                         ${index + 1}
                                     </div>
                                     <div class="flex-1">
                                         <div class="font-semibold dark:text-white">${client.name}</div>
-                                        <div class="text-xs text-gray-500 dark:text-gray-400">${client.jobs} job${client.jobs !== 1 ? 's' : ''} • ${client.margin.toFixed(1)}% margin • Click to view invoices</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">${client.jobs} job${client.jobs !== 1 ? 's' : ''} • ${client.margin.toFixed(1)}% margin • Click to view profile</div>
                                     </div>
                                 </div>
                                 <div class="text-right">
