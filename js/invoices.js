@@ -138,6 +138,7 @@ function renderInvoicesTable() {
                             <div class="py-1">
                                 <button onclick="generatePDF('invoice', ${JSON.stringify(inv).replace(/"/g, '&quot;')}); toggleInvoiceActions('${inv.id}')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">Download PDF</button>
                                 <button onclick="sendInvoiceEmail(${JSON.stringify(inv).replace(/"/g, '&quot;')}); toggleInvoiceActions('${inv.id}')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">Email Invoice</button>
+                                ${client?.phone && smsSettings?.enabled ? `<button onclick="sendInvoiceSMS(${JSON.stringify(inv).replace(/"/g, '&quot;')}); toggleInvoiceActions('${inv.id}')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">SMS Invoice</button>` : ''}
                                 <button onclick="openNoteModal('invoice', '${inv.id}', '${inv.client_id}'); toggleInvoiceActions('${inv.id}')" class="block w-full text-left px-4 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700">📝 Add Note</button>
                                 ${isPaid ? `<button onclick="markUnpaid('${inv.id}'); toggleInvoiceActions('${inv.id}')" class="block w-full text-left px-4 py-2 text-sm text-orange-600 dark:text-orange-400 hover:bg-gray-50 dark:hover:bg-gray-700">Mark Unpaid</button>` : `<button onclick="markPaid('${inv.id}'); toggleInvoiceActions('${inv.id}')" class="block w-full text-left px-4 py-2 text-sm text-teal-600 dark:text-teal-400 hover:bg-gray-50 dark:hover:bg-gray-700">Mark Paid</button>`}
                                 <button onclick="deleteInvoice('${inv.id}'); toggleInvoiceActions('${inv.id}')" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">Delete</button>
@@ -290,6 +291,14 @@ function renderInvoicesTable() {
                                     </svg>
                                     Email
                                 </button>
+                                ${client?.phone && smsSettings?.enabled ? `
+                                <button onclick="sendInvoiceSMS(${JSON.stringify(inv).replace(/"/g, '&quot;')})" class="invoice-card-action-btn">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                                    </svg>
+                                    SMS
+                                </button>
+                                ` : ''}
                                 ${isPaid ? `
                                 <button onclick="markUnpaid('${inv.id}')" class="invoice-card-action-btn" style="background: #fef3c7; border-color: #fbbf24; color: #92400e;">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -565,6 +574,7 @@ function renderInvoiceDetail() {
                 ${!isPaid ? `<button onclick="markPaid('${inv.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 rounded-lg transition-colors">Mark as Paid</button>` : `<button onclick="markUnpaid('${inv.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-orange-50 dark:hover:bg-orange-900/30 border border-gray-200 dark:border-gray-600 hover:border-orange-400 rounded-lg transition-colors">Mark as Unpaid</button>`}
                 <button onclick='generatePDF("invoice", ${JSON.stringify(inv).replace(/"/g, '&quot;')})' class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 rounded-lg transition-colors">Download PDF</button>
                 <button onclick='sendInvoiceEmail(${JSON.stringify(inv).replace(/"/g, '&quot;')})' class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 rounded-lg transition-colors">Email Invoice</button>
+                ${client?.phone && smsSettings?.enabled ? `<button onclick='sendInvoiceSMS(${JSON.stringify(inv).replace(/"/g, '&quot;')})' class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 rounded-lg transition-colors">SMS Invoice</button>` : ''}
                 <button onclick="toggleInvoiceCommunications('${inv.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 rounded-lg transition-colors">Communications</button>
                 <button onclick="deleteInvoice('${inv.id}')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 bg-white dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors ml-auto">Delete</button>
             </div>
