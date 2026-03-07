@@ -1008,6 +1008,52 @@ async function sendInvoiceEmail(invoice) {
     }
 }
 
+async function sendInvoiceSMS(invoice) {
+    const client = clients.find(c => c.id === invoice.client_id);
+    
+    if (!client?.phone) {
+        showNotification('Client has no phone number', 'error');
+        return;
+    }
+    
+    if (!smsSettings?.enabled) {
+        showNotification('SMS is not configured', 'error');
+        return;
+    }
+    
+    const baseUrl = window.location.href.split('?')[0].replace('index.html', '').replace(/\/[^\/]*$/, '/');
+    const paymentLink = baseUrl + 'payment.html?invoice=' + invoice.id;
+    
+    const message = `Hi ${client.name}, your invoice ${invoice.invoice_number || invoice.title} for $${invoice.total.toFixed(2)} is ready. View & pay here: ${paymentLink}`;
+    
+    try {
+        const response = await fetch('https://xviustrrsuhidzbcpgow.supabase.co/functions/v1/send-sms', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aXVzdHJyc3VoaWR6YmNwZ293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3ODk1NDgsImV4cCI6MjA4NDM2NTU0OH0.CEcc50c1K2Qnh6rXt_1-_w30LzHvDniGLbqWhdOolRY'
+            },
+            body: JSON.stringify({
+                user_id: currentUser.id,
+                to_number: client.phone,
+                message: message
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            showNotification('SMS sent successfully to ' + client.phone, 'success');
+        } else {
+            console.error('SMS send error:', result);
+            showNotification('Failed to send SMS: ' + (result.error || 'Unknown error'), 'error');
+        }
+    } catch (error) {
+        console.error('Error sending SMS:', error);
+        showNotification('Failed to send SMS: ' + error.message, 'error');
+    }
+}
+
 // Cursor position tracker for search inputs
 let searchCursorPositions = {};
 
