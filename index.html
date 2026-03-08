@@ -11,6 +11,7 @@
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCksBsfkY_17GI_uvi3suaeGa19LSKkUQA&libraries=places&callback=Function.prototype" async defer></script>
     <link rel="stylesheet" href="micro-interactions.css">
     <link rel="stylesheet" href="mobile-optimization.css">
+    <link rel="stylesheet" href="calendar-style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         [x-cloak]{display:none!important}
@@ -463,7 +464,7 @@
     <div class="lp-nav-links">
         <a href="#lp-features">Features</a>
         <a href="#lp-pricing">Pricing</a>
-        <a href="mailto:m4projectsanddesigns@gmail.com">Contact</a>
+        <a href="/cdn-cgi/l/email-protection#e38ed793918c8986809790828d878786908a848d90a3848e828a8fcd808c8e">Contact</a>
     </div>
     <div class="lp-nav-right">
         <button onclick="hideLanding()" class="lp-btn-ghost">Sign In</button>
@@ -793,7 +794,7 @@
     <p>Join tradies across Australia who've ditched the spreadsheets.</p>
     <div class="lp-hero-btns">
         <button onclick="hideLanding()" class="lp-btn-hero">Start Your Free 14-Day Trial →</button>
-        <a href="mailto:m4projectsanddesigns@gmail.com" class="lp-btn-hero-ghost">Talk to us</a>
+        <a href="/cdn-cgi/l/email-protection#a8c59cd8dac7c2cdcbdcdbc9c6cccccddbc1cfc6dbe8cfc5c9c1c486cbc7c5" class="lp-btn-hero-ghost">Talk to us</a>
     </div>
     <p class="lp-hero-note" style="margin-top:20px">No credit card required · Setup in 2 minutes · Cancel anytime</p>
 </section>
@@ -816,14 +817,14 @@
     <div class="lp-footer-links">
         <a href="#lp-features">Features</a>
         <a href="#lp-pricing">Pricing</a>
-        <a href="mailto:m4projectsanddesigns@gmail.com">Contact</a>
+        <a href="/cdn-cgi/l/email-protection#6e035a1e1c01040b0d1a1d0f000a0a0b1d0709001d2e09030f0702400d0103">Contact</a>
     </div>
 </footer>
 
 </div><!-- end #landing -->
 
 <!-- ALL ORIGINAL SCRIPTS — UNTOUCHED -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
@@ -837,6 +838,7 @@
 <script src="js/team-functions.js"></script>
 <script src="js/invoices.js"></script>
 <script src="js/schedule.js"></script>
+<script src="js/calendar-override.js"></script>
 <script src="js/expenses.js"></script>
 <script src="js/company.js"></script>
 <script src="js/analytics.js"></script>
@@ -873,11 +875,3 @@
 
     window.addEventListener('load', async()=>{
         try{
-            const {data:{session}} = await supabaseClient.auth.getSession();
-            if(session){ if(typeof checkAuth==='function') checkAuth(); return; }
-        }catch(e){}
-        document.getElementById('landing').style.display='block';
-    });
-</script>
-</body>
-</html>
