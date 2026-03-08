@@ -2,6 +2,10 @@
 (function(){
 try {
 
+var st = document.createElement('style');
+st.textContent = '.fc .fc-daygrid-event .fc-event-title{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;font-size:.7rem!important;line-height:1.4!important}.fc .fc-daygrid-event{padding:2px 6px!important;border-radius:3px!important;border:none!important;cursor:pointer!important}.fc .fc-event-time{display:none!important}';
+document.head.appendChild(st);
+
 var colors = [
 {bg:'#DBEAFE',t:'#1e40af'},
 {bg:'#FED7AA',t:'#9a3412'},
