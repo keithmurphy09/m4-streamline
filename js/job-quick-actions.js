@@ -241,7 +241,7 @@ window.openPhotoModal = function(jobId) {
   var overlay = document.createElement('div');
   overlay.id = 'photo-modal';
   overlay.className = 'fixed inset-0 bg-black bg-opacity-70 dark:bg-opacity-80 flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto';
-  overlay.setAttribute('onclick', 'if(event.target===this)closePhotoModal()');
+  overlay.setAttribute('onclick', 'if(event.target===this)donePhotoModal()');
 
   overlay.innerHTML =
     '<div class="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 max-w-lg w-full my-4" style="max-height:90vh;overflow-y:auto;">' +
@@ -250,7 +250,7 @@ window.openPhotoModal = function(jobId) {
           '<h3 class="text-lg sm:text-xl font-bold dark:text-white">Add Photo</h3>' +
           '<p class="text-sm text-gray-500 dark:text-gray-400 mt-1">' + escH(job.title) + (cl ? ' - ' + escH(cl.name) : '') + '</p>' +
         '</div>' +
-        '<button onclick="closePhotoModal()" class="text-2xl leading-none dark:text-gray-300 hover:text-gray-600">&times;</button>' +
+        '<button onclick="donePhotoModal()" class="text-2xl leading-none dark:text-gray-300 hover:text-gray-600">&times;</button>' +
       '</div>' +
       photosHtml +
       '<div class="space-y-3">' +
@@ -271,7 +271,7 @@ window.openPhotoModal = function(jobId) {
       '</div>' +
       '<div class="flex gap-3 mt-6">' +
         '<button id="upload-photo-btn" onclick="savePhotoFromModal(\'' + jobId + '\')" class="flex-1 bg-teal-600 text-white px-4 py-2.5 rounded-lg font-medium hover:bg-teal-700 transition-colors opacity-50 cursor-not-allowed" disabled>Upload Photo</button>' +
-        '<button onclick="closePhotoModal()" class="px-6 py-2.5 rounded-lg font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">Done</button>' +
+        '<button onclick="donePhotoModal()" class="px-6 py-2.5 rounded-lg font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">Done</button>' +
       '</div>' +
     '</div>';
 
@@ -282,6 +282,11 @@ window.closePhotoModal = function() {
   var m = document.getElementById('photo-modal');
   if (m) m.remove();
   window._modalPhotoFile = null;
+};
+
+// Called by the Done button - closes modal AND re-renders page
+window.donePhotoModal = function() {
+  closePhotoModal();
   renderApp();
 };
 
@@ -469,6 +474,8 @@ window.deletePhotoFromLightbox = async function() {
       if (_lbIdx >= _lbPhotos.length) _lbIdx = _lbPhotos.length - 1;
       renderLbContent();
       showNotification('Photo deleted', 'success');
+      // Update the grid behind the lightbox
+      renderApp();
     }
   } catch (error) {
     console.error('Error deleting photo:', error);
@@ -518,20 +525,74 @@ lbCss2.textContent = [
 ].join('\n');
 document.head.appendChild(lbCss2);
 
-// Wrap photo thumbnails with delete button
+// Manage photos section + wrap thumbnails with delete X
 function wrapPhotoThumbs() {
   var jobId = getJobId();
   if (!jobId) return;
 
-  // Find photos in the job detail grid (not modal, not lightbox)
-  var imgs = document.querySelectorAll('img[src*="job-photos"]');
+  var taskSection = document.getElementById('job-tasks-section');
+  var dailyLogSection = document.getElementById('job-dailylog-section');
+  var leftCol = taskSection ? taskSection.parentElement : (dailyLogSection ? dailyLogSection.parentElement : null);
+  if (!leftCol) return;
+
+  // Step 1: Remove ALL original photo sections (no ID) from schedule.js
+  var allDivs = leftCol.children;
+  for (var di = allDivs.length - 1; di >= 0; di--) {
+    var div = allDivs[di];
+    if (div.id === 'job-photos-section') continue;
+    if (div.id === 'job-tasks-section') continue;
+    if (div.id === 'job-dailylog-section') continue;
+    var h3 = div.querySelector('h3');
+    if (h3 && h3.textContent.indexOf('Job Photos') !== -1) {
+      div.remove();
+    }
+  }
+
+  // Step 2: Get current photo data
+  var job = null;
+  for (var j = 0; j < jobs.length; j++) {
+    if (jobs[j].id === jobId) { job = jobs[j]; break; }
+  }
+  var photos = (job && job.photos) ? job.photos : [];
+
+  // Step 3: Remove our existing section if it exists (will rebuild fresh)
+  var existing = document.getElementById('job-photos-section');
+  if (existing) existing.remove();
+
+  // Step 4: Build fresh photos section
+  var section = document.createElement('div');
+  section.id = 'job-photos-section';
+  section.className = 'bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6';
+
+  if (photos.length > 0) {
+    var gridHtml = '<div class="grid grid-cols-2 sm:grid-cols-3 gap-3">';
+    for (var p = 0; p < photos.length; p++) {
+      gridHtml += '<img src="' + escH(photos[p]) + '" class="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-700" />';
+    }
+    gridHtml += '</div>';
+    section.innerHTML =
+      '<div class="flex justify-between items-center mb-4">' +
+        '<h3 class="text-lg font-semibold text-gray-900 dark:text-white">Job Photos (' + photos.length + ')</h3>' +
+        '<button onclick="openPhotoModal(\'' + jobId + '\')" class="text-sm text-teal-600 dark:text-teal-400 hover:underline">+ Add Photo</button>' +
+      '</div>' + gridHtml;
+  } else {
+    section.innerHTML =
+      '<div class="flex justify-between items-center mb-4">' +
+        '<h3 class="text-lg font-semibold text-gray-900 dark:text-white">Job Photos</h3>' +
+      '</div>' +
+      '<div class="text-center py-6">' +
+        '<svg class="w-10 h-10 mx-auto mb-2 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>' +
+        '<p class="text-sm text-gray-400 dark:text-gray-500 mb-3">No photos yet</p>' +
+        '<button onclick="openPhotoModal(\'' + jobId + '\')" class="px-4 py-2 text-sm font-medium text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/30 border border-teal-200 dark:border-teal-800 rounded-lg transition-colors">Add Photo</button>' +
+      '</div>';
+  }
+  leftCol.appendChild(section);
+
+  // Step 5: Wrap photo imgs with delete X
+  var imgs = section.querySelectorAll('img[src*="job-photos"]');
   for (var i = 0; i < imgs.length; i++) {
     var img = imgs[i];
-    // Skip if already wrapped, or inside modal/lightbox
     if (img.closest('.photo-thumb-wrap')) continue;
-    if (img.closest('#photo-modal')) continue;
-    if (img.closest('#photo-lightbox')) continue;
-    if (img.id === 'photo-preview-img') continue;
 
     var src = img.getAttribute('src') || '';
     var wrap = document.createElement('div');
@@ -576,9 +637,15 @@ window.deletePhotoThumb = async function(photoSrc) {
 
 // Hook into observer to wrap photos after render
 var _thumbTimer = null;
+var _thumbRunning = false;
 var _thumbObs = new MutationObserver(function() {
+  if (_thumbRunning) return;
   if (_thumbTimer) clearTimeout(_thumbTimer);
-  _thumbTimer = setTimeout(wrapPhotoThumbs, 150);
+  _thumbTimer = setTimeout(function() {
+    _thumbRunning = true;
+    wrapPhotoThumbs();
+    _thumbRunning = false;
+  }, 150);
 });
 _thumbObs.observe(document.body, { childList: true, subtree: true });
 
