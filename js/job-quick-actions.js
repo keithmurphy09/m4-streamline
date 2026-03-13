@@ -506,10 +506,81 @@ document.addEventListener('click', function(e) {
   openPhotoLightbox(photos, clickedIdx);
 }, true);
 
-// Make job photos look clickable
+// Make job photos look clickable + add delete X overlay
 var lbCss2 = document.createElement('style');
-lbCss2.textContent = 'img[src*="job-photos"]{cursor:pointer;transition:transform 0.15s,box-shadow 0.15s}img[src*="job-photos"]:hover{transform:scale(1.03);box-shadow:0 4px 12px rgba(0,0,0,0.15)}';
+lbCss2.textContent = [
+'img[src*="job-photos"]{cursor:pointer;transition:transform 0.15s,box-shadow 0.15s}',
+'img[src*="job-photos"]:hover{transform:scale(1.03);box-shadow:0 4px 12px rgba(0,0,0,0.15)}',
+'.photo-thumb-wrap{position:relative;display:inline-block}',
+'.photo-thumb-del{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.6);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;opacity:0;transition:opacity 0.15s,background 0.15s;z-index:2}',
+'.photo-thumb-wrap:hover .photo-thumb-del{opacity:1}',
+'.photo-thumb-del:hover{background:rgba(220,38,38,0.9)}'
+].join('\n');
 document.head.appendChild(lbCss2);
+
+// Wrap photo thumbnails with delete button
+function wrapPhotoThumbs() {
+  var jobId = getJobId();
+  if (!jobId) return;
+
+  // Find photos in the job detail grid (not modal, not lightbox)
+  var imgs = document.querySelectorAll('img[src*="job-photos"]');
+  for (var i = 0; i < imgs.length; i++) {
+    var img = imgs[i];
+    // Skip if already wrapped, or inside modal/lightbox
+    if (img.closest('.photo-thumb-wrap')) continue;
+    if (img.closest('#photo-modal')) continue;
+    if (img.closest('#photo-lightbox')) continue;
+    if (img.id === 'photo-preview-img') continue;
+
+    var src = img.getAttribute('src') || '';
+    var wrap = document.createElement('div');
+    wrap.className = 'photo-thumb-wrap';
+
+    var delBtn = document.createElement('button');
+    delBtn.className = 'photo-thumb-del';
+    delBtn.innerHTML = '&times;';
+    delBtn.title = 'Delete photo';
+    delBtn.setAttribute('data-photo-src', src);
+    delBtn.setAttribute('onclick', "event.stopPropagation();deletePhotoThumb(this.getAttribute('data-photo-src'))");
+
+    img.parentNode.insertBefore(wrap, img);
+    wrap.appendChild(img);
+    wrap.appendChild(delBtn);
+  }
+}
+
+window.deletePhotoThumb = async function(photoSrc) {
+  if (!confirm('Delete this photo?')) return;
+  var jobId = getJobId();
+  if (!jobId) return;
+
+  try {
+    var job = null;
+    for (var i = 0; i < jobs.length; i++) {
+      if (jobs[i].id === jobId) { job = jobs[i]; break; }
+    }
+    if (!job) throw new Error('Job not found');
+
+    var updatedPhotos = (job.photos || []).filter(function(p) { return p !== photoSrc; });
+    var result = await supabaseClient.from('jobs').update({ photos: updatedPhotos }).eq('id', jobId);
+    if (result.error) throw result.error;
+    job.photos = updatedPhotos;
+    showNotification('Photo deleted', 'success');
+    renderApp();
+  } catch (error) {
+    console.error('Error deleting photo:', error);
+    showNotification('Error: ' + error.message, 'error');
+  }
+};
+
+// Hook into observer to wrap photos after render
+var _thumbTimer = null;
+var _thumbObs = new MutationObserver(function() {
+  if (_thumbTimer) clearTimeout(_thumbTimer);
+  _thumbTimer = setTimeout(wrapPhotoThumbs, 150);
+});
+_thumbObs.observe(document.body, { childList: true, subtree: true });
 
 console.log('Job quick actions modals loaded');
 
