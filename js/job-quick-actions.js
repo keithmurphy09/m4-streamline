@@ -1,6 +1,6 @@
 // M4 Job Quick Actions - Popup modals for Daily Log and Add Photo
-// Replaces scroll-to-section and bare file picker with proper modals
-// Additive only - intercepts buttons via MutationObserver
+// Uses document-level event capturing to intercept buttons
+// Additive only
 (function(){
 try {
 
@@ -8,6 +8,49 @@ function escH(s) {
   if (!s) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
+
+// ============ EVENT INTERCEPTION ============
+// Capture phase fires BEFORE the inline onclick handlers
+document.addEventListener('click', function(e) {
+  var target = e.target;
+
+  // --- DAILY LOG BUTTON ---
+  // Match: button whose onclick contains 'job-dailylog-section'
+  var logBtn = target.closest('button[onclick*="job-dailylog-section"]');
+  if (logBtn) {
+    e.stopPropagation();
+    e.preventDefault();
+    // Remove inline onclick so it never fires
+    logBtn.removeAttribute('onclick');
+    var jobId = selectedJobForDetail ? selectedJobForDetail.id : null;
+    if (jobId) openDailyLogModal(jobId);
+    return;
+  }
+
+  // --- ADD PHOTO LABEL / INPUT ---
+  // The label contains a hidden file input. Intercept clicks on the label text.
+  // Check if we clicked inside a label that contains uploadJobPhoto
+  var photoLabel = null;
+  var el = target;
+  for (var i = 0; i < 4; i++) {
+    if (!el) break;
+    if (el.tagName === 'LABEL') {
+      var inp = el.querySelector('input[onchange*="uploadJobPhoto"]');
+      if (inp) { photoLabel = el; break; }
+    }
+    el = el.parentElement;
+  }
+  if (photoLabel) {
+    e.stopPropagation();
+    e.preventDefault();
+    // Prevent the hidden file input from opening
+    var hiddenInput = photoLabel.querySelector('input[type="file"]');
+    if (hiddenInput) hiddenInput.onclick = function(ev) { ev.preventDefault(); };
+    var jobId2 = selectedJobForDetail ? selectedJobForDetail.id : null;
+    if (jobId2) openPhotoModal(jobId2);
+    return;
+  }
+}, true); // true = capture phase
 
 // ============ DAILY LOG MODAL ============
 window.openDailyLogModal = function(jobId) {
@@ -22,7 +65,6 @@ window.openDailyLogModal = function(jobId) {
     if (clients[c].id === job.client_id) { cl = clients[c]; break; }
   }
 
-  // Recent logs for context
   var recentLogs = (window.dailyLogs || [])
     .filter(function(l) { return l.job_id === jobId; })
     .sort(function(a, b) { return new Date(b.created_at) - new Date(a.created_at); })
@@ -33,10 +75,10 @@ window.openDailyLogModal = function(jobId) {
     recentHtml = '<div class="mb-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">' +
       '<p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Recent Entries</p>' +
       '<div class="space-y-2">';
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     for (var r = 0; r < recentLogs.length; r++) {
       var log = recentLogs[r];
       var ld = new Date(log.created_at);
-      var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
       var ds = months[ld.getMonth()] + ' ' + ld.getDate() + ', ' + ld.getFullYear();
       var preview = (log.note_text || '').substring(0, 80);
       if ((log.note_text || '').length > 80) preview += '...';
@@ -237,7 +279,6 @@ window.openPhotoModal = function(jobId) {
               '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>' +
             '</svg>' +
             '<p class="text-sm text-gray-500 dark:text-gray-400">Click to select a photo</p>' +
-            '<p class="text-xs text-gray-400 dark:text-gray-500 mt-1">or drag and drop</p>' +
           '</div>' +
           '<input type="file" accept="image/*" id="modal-photo-file" onchange="onModalPhotoSelected(this)" class="hidden" />' +
         '</label>' +
@@ -272,19 +313,17 @@ window.onModalPhotoSelected = function(input) {
   var nameEl = document.getElementById('modal-photo-name');
   if (nameEl) nameEl.textContent = file.name;
 
-  // Show preview
   var previewArea = document.getElementById('photo-preview-area');
   var previewImg = document.getElementById('photo-preview-img');
   if (previewArea && previewImg) {
     var reader = new FileReader();
-    reader.onload = function(e) {
-      previewImg.src = e.target.result;
+    reader.onload = function(ev) {
+      previewImg.src = ev.target.result;
       previewArea.classList.remove('hidden');
     };
     reader.readAsDataURL(file);
   }
 
-  // Enable upload button
   var btn = document.getElementById('upload-photo-btn');
   if (btn) {
     btn.disabled = false;
@@ -321,7 +360,10 @@ window.savePhotoFromModal = async function(jobId) {
     var photoUrl = urlResult.data ? urlResult.data.publicUrl : null;
     if (!photoUrl) throw new Error('Could not get photo URL');
 
-    var job = jobs.find(function(j) { return j.id === jobId; });
+    var job = null;
+    for (var i = 0; i < jobs.length; i++) {
+      if (jobs[i].id === jobId) { job = jobs[i]; break; }
+    }
     var currentPhotos = (job && job.photos) ? job.photos : [];
     var updatedPhotos = currentPhotos.concat([photoUrl]);
 
@@ -344,67 +386,6 @@ window.savePhotoFromModal = async function(jobId) {
     if (btn) { btn.textContent = 'Upload Photo'; btn.disabled = false; }
   }
 };
-
-// ============ INTERCEPT JOB DETAIL BUTTONS ============
-function enhanceJobDetailButtons() {
-  // Find the job detail actions bar
-  var backBtn = document.querySelector('button[onclick="closeJobDetail()"]');
-  if (!backBtn) return;
-
-  // Get the actions bar
-  var actionsBar = document.querySelector('.flex.flex-wrap.gap-2.pt-4.border-t');
-  if (!actionsBar || actionsBar.dataset.quickActionsAdded) return;
-  actionsBar.dataset.quickActionsAdded = 'true';
-
-  // Get job ID from the edit button
-  var editBtn = actionsBar.querySelector('button[onclick*="openModal"]');
-  if (!editBtn) return;
-  var editOc = editBtn.getAttribute('onclick') || '';
-  var idMatch = editOc.match(/"id"\s*:\s*"([^"]+)"/);
-  if (!idMatch) return;
-  var jobId = idMatch[1];
-
-  var buttons = actionsBar.querySelectorAll('button, label');
-
-  for (var i = 0; i < buttons.length; i++) {
-    var el = buttons[i];
-    var text = el.textContent.trim();
-    var onclick = el.getAttribute('onclick') || '';
-
-    // Replace Daily Log scroll button with modal opener
-    if (text.indexOf('Daily Log') !== -1 && onclick.indexOf('scrollIntoView') !== -1) {
-      var newLogBtn = document.createElement('button');
-      newLogBtn.className = el.className;
-      // Copy hover effects
-      newLogBtn.setAttribute('style', el.getAttribute('style') || '');
-      newLogBtn.setAttribute('onmouseenter', el.getAttribute('onmouseenter') || '');
-      newLogBtn.setAttribute('onmouseleave', el.getAttribute('onmouseleave') || '');
-      newLogBtn.innerHTML = el.innerHTML;
-      newLogBtn.setAttribute('onclick', 'openDailyLogModal(\'' + jobId + '\')');
-      el.parentNode.replaceChild(newLogBtn, el);
-    }
-
-    // Replace Add Photo label with modal opener
-    if (text.indexOf('Add Photo') !== -1 && el.tagName === 'LABEL') {
-      var newPhotoBtn = document.createElement('button');
-      newPhotoBtn.className = el.className.replace('cursor-pointer', '');
-      newPhotoBtn.textContent = 'Add Photo';
-      newPhotoBtn.setAttribute('onclick', 'openPhotoModal(\'' + jobId + '\')');
-      newPhotoBtn.classList.add('cursor-pointer');
-      el.parentNode.replaceChild(newPhotoBtn, el);
-    }
-  }
-}
-
-// ============ OBSERVER ============
-var _qaTimer = null;
-var _qaObs = new MutationObserver(function() {
-  if (_qaTimer) clearTimeout(_qaTimer);
-  _qaTimer = setTimeout(function() {
-    enhanceJobDetailButtons();
-  }, 200);
-});
-_qaObs.observe(document.body, { childList: true, subtree: true });
 
 console.log('Job quick actions modals loaded');
 
