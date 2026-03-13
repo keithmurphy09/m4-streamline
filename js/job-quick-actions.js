@@ -363,16 +363,25 @@ lbCss.textContent = [
 '.photo-lb-nav:hover{background:rgba(255,255,255,0.3)}',
 '.photo-lb-prev{left:16px}',
 '.photo-lb-next{right:16px}',
-'.photo-lb-count{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.7);font-size:14px}'
+'.photo-lb-count{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.7);font-size:14px}',
+'.photo-lb-del{position:absolute;top:16px;left:20px;color:#fff;font-size:13px;cursor:pointer;background:rgba(220,38,38,0.7);border:none;border-radius:8px;padding:8px 16px;display:flex;align-items:center;gap:6px;transition:background 0.15s;font-weight:600}',
+'.photo-lb-del:hover{background:rgba(220,38,38,1)}'
 ].join('\n');
 document.head.appendChild(lbCss);
 
 var _lbPhotos = [];
 var _lbIdx = 0;
+var _lbJobId = null;
 
-window.openPhotoLightbox = function(photos, index) {
+window.openPhotoLightbox = function(photos, index, jobId) {
   _lbPhotos = photos || [];
   _lbIdx = index || 0;
+  _lbJobId = jobId || null;
+
+  // Auto-detect jobId from selectedJobForDetail
+  if (!_lbJobId && typeof selectedJobForDetail !== 'undefined' && selectedJobForDetail) {
+    _lbJobId = selectedJobForDetail.id;
+  }
   if (_lbPhotos.length === 0) return;
   if (document.getElementById('photo-lightbox')) return;
 
@@ -399,6 +408,7 @@ function renderLbContent(lb) {
   var multi = _lbPhotos.length > 1;
   lb.innerHTML =
     '<button class="photo-lb-close" onclick="closePhotoLightbox()">&times;</button>' +
+    (_lbJobId ? '<button class="photo-lb-del" onclick="event.stopPropagation();deletePhotoFromLightbox()"><svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>Delete</button>' : '') +
     (multi ? '<button class="photo-lb-nav photo-lb-prev" onclick="event.stopPropagation();navLightbox(-1)">&#8249;</button>' : '') +
     '<img src="' + escH(photo) + '" onclick="event.stopPropagation()" />' +
     (multi ? '<button class="photo-lb-nav photo-lb-next" onclick="event.stopPropagation();navLightbox(1)">&#8250;</button>' : '') +
@@ -419,6 +429,50 @@ window.closePhotoLightbox = function() {
   if (window._lbKeyFn) {
     document.removeEventListener('keydown', window._lbKeyFn);
     window._lbKeyFn = null;
+  }
+};
+
+window.deletePhotoFromLightbox = async function() {
+  if (!_lbJobId || _lbPhotos.length === 0) return;
+  if (!confirm('Delete this photo?')) return;
+
+  var photoToDelete = _lbPhotos[_lbIdx];
+
+  try {
+    // Find job and remove photo from array
+    var job = null;
+    for (var i = 0; i < jobs.length; i++) {
+      if (jobs[i].id === _lbJobId) { job = jobs[i]; break; }
+    }
+    if (!job) throw new Error('Job not found');
+
+    var updatedPhotos = (job.photos || []).filter(function(p) { return p !== photoToDelete; });
+
+    var result = await supabaseClient
+      .from('jobs')
+      .update({ photos: updatedPhotos })
+      .eq('id', _lbJobId);
+
+    if (result.error) throw result.error;
+
+    // Update local state
+    job.photos = updatedPhotos;
+
+    // Update lightbox
+    _lbPhotos = _lbPhotos.filter(function(p) { return p !== photoToDelete; });
+
+    if (_lbPhotos.length === 0) {
+      closePhotoLightbox();
+      showNotification('Photo deleted', 'success');
+      renderApp();
+    } else {
+      if (_lbIdx >= _lbPhotos.length) _lbIdx = _lbPhotos.length - 1;
+      renderLbContent();
+      showNotification('Photo deleted', 'success');
+    }
+  } catch (error) {
+    console.error('Error deleting photo:', error);
+    showNotification('Error: ' + error.message, 'error');
   }
 };
 
