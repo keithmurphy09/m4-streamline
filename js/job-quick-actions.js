@@ -1,5 +1,5 @@
 // M4 Job Quick Actions - Popup modals for Daily Log and Add Photo
-// Directly rewrites button onclick attributes after each render
+// Uses setAttribute to directly overwrite inline onclick handlers
 // Additive only
 (function(){
 try {
@@ -19,51 +19,47 @@ function rewriteButtons() {
   var jobId = getJobId();
   if (!jobId) return;
 
-  // Find ALL buttons in the page
+  // DAILY LOG: button with onclick containing 'job-dailylog-section'
   var allBtns = document.querySelectorAll('button');
-
   for (var i = 0; i < allBtns.length; i++) {
     var btn = allBtns[i];
     var oc = btn.getAttribute('onclick') || '';
-
-    // DAILY LOG: has onclick containing 'job-dailylog-section' and scrollIntoView
-    if (oc.indexOf('job-dailylog-section') !== -1 && !btn.dataset.qaRewritten) {
-      btn.dataset.qaRewritten = 'true';
-      btn.removeAttribute('onclick');
-      btn.onclick = function() { openDailyLogModal(getJobId()); };
-      console.log('Rewrote Daily Log button');
+    if (oc.indexOf('job-dailylog-section') !== -1) {
+      // Overwrite the onclick attribute entirely
+      btn.setAttribute('onclick', "openDailyLogModal('" + jobId + "')");
     }
   }
 
-  // ADD PHOTO: its a <label> containing input[onchange*="uploadJobPhoto"]
+  // ADD PHOTO: label containing input[onchange*="uploadJobPhoto"]
   var photoInputs = document.querySelectorAll('input[onchange*="uploadJobPhoto"]');
   for (var p = 0; p < photoInputs.length; p++) {
     var inp = photoInputs[p];
     var label = inp.closest('label');
-    if (!label || label.dataset.qaRewritten) continue;
-    label.dataset.qaRewritten = 'true';
+    if (!label || label.dataset.qaSwapped) continue;
+    label.dataset.qaSwapped = 'true';
 
-    // Replace the label with a button
     var newBtn = document.createElement('button');
     newBtn.className = label.className;
     newBtn.textContent = 'Add Photo';
-    newBtn.onclick = function() { openPhotoModal(getJobId()); };
+    newBtn.setAttribute('onclick', "openPhotoModal('" + jobId + "')");
     label.parentNode.replaceChild(newBtn, label);
-    console.log('Rewrote Add Photo button');
   }
 }
 
-// Run after every DOM change (debounced)
+// Run after every DOM change
 var _qaTimer = null;
 var _qaObs = new MutationObserver(function() {
   if (_qaTimer) clearTimeout(_qaTimer);
-  _qaTimer = setTimeout(rewriteButtons, 120);
+  _qaTimer = setTimeout(rewriteButtons, 80);
 });
 _qaObs.observe(document.body, { childList: true, subtree: true });
 
 // ============ DAILY LOG MODAL ============
 window.openDailyLogModal = function(jobId) {
   if (!jobId) return;
+  // Prevent duplicates
+  if (document.getElementById('dailylog-modal')) return;
+
   var job = null;
   for (var i = 0; i < jobs.length; i++) {
     if (jobs[i].id === jobId) { job = jobs[i]; break; }
@@ -150,6 +146,7 @@ window.closeDailyLogModal = function() {
   var m = document.getElementById('dailylog-modal');
   if (m) m.remove();
   window._modalLogPhoto = null;
+  renderApp();
 };
 
 window.onModalLogPhotoSelected = function(input) {
@@ -204,7 +201,6 @@ window.saveDailyLogFromModal = async function(jobId) {
 
     closeDailyLogModal();
     showNotification('Daily log posted', 'success');
-    renderApp();
   } catch (error) {
     console.error('Error adding daily log:', error);
     showNotification('Error: ' + error.message, 'error');
@@ -214,6 +210,8 @@ window.saveDailyLogFromModal = async function(jobId) {
 // ============ ADD PHOTO MODAL ============
 window.openPhotoModal = function(jobId) {
   if (!jobId) return;
+  if (document.getElementById('photo-modal')) return;
+
   var job = null;
   for (var i = 0; i < jobs.length; i++) {
     if (jobs[i].id === jobId) { job = jobs[i]; break; }
@@ -273,7 +271,7 @@ window.openPhotoModal = function(jobId) {
       '</div>' +
       '<div class="flex gap-3 mt-6">' +
         '<button id="upload-photo-btn" onclick="savePhotoFromModal(\'' + jobId + '\')" class="flex-1 bg-teal-600 text-white px-4 py-2.5 rounded-lg font-medium hover:bg-teal-700 transition-colors opacity-50 cursor-not-allowed" disabled>Upload Photo</button>' +
-        '<button onclick="closePhotoModal()" class="px-6 py-2.5 rounded-lg font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">Cancel</button>' +
+        '<button onclick="closePhotoModal()" class="px-6 py-2.5 rounded-lg font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">Done</button>' +
       '</div>' +
     '</div>';
 
@@ -284,6 +282,7 @@ window.closePhotoModal = function() {
   var m = document.getElementById('photo-modal');
   if (m) m.remove();
   window._modalPhotoFile = null;
+  renderApp();
 };
 
 window.onModalPhotoSelected = function(input) {
@@ -340,9 +339,11 @@ window.savePhotoFromModal = async function(jobId) {
     if (job) job.photos = updatedPhotos;
 
     window._modalPhotoFile = null;
+
+    // Stay open - refresh modal to show the new photo
     closePhotoModal();
-    showNotification('Photo uploaded', 'success');
-    renderApp();
+    openPhotoModal(jobId);
+    showNotification('Photo uploaded! Add another or click Done.', 'success');
   } catch (error) {
     console.error('Error uploading photo:', error);
     showNotification('Error: ' + error.message, 'error');
