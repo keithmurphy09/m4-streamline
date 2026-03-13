@@ -351,6 +351,112 @@ window.savePhotoFromModal = async function(jobId) {
   }
 };
 
+// ============ PHOTO LIGHTBOX ============
+var lbCss = document.createElement('style');
+lbCss.textContent = [
+'.photo-lb{position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:60;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s}',
+'.photo-lb.active{opacity:1}',
+'.photo-lb img{max-width:90vw;max-height:85vh;object-fit:contain;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,0.5)}',
+'.photo-lb-close{position:absolute;top:16px;right:20px;color:#fff;font-size:32px;cursor:pointer;background:rgba(255,255,255,0.15);border:none;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;transition:background 0.15s}',
+'.photo-lb-close:hover{background:rgba(255,255,255,0.3)}',
+'.photo-lb-nav{position:absolute;top:50%;transform:translateY(-50%);color:#fff;font-size:28px;cursor:pointer;background:rgba(255,255,255,0.15);border:none;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;transition:background 0.15s}',
+'.photo-lb-nav:hover{background:rgba(255,255,255,0.3)}',
+'.photo-lb-prev{left:16px}',
+'.photo-lb-next{right:16px}',
+'.photo-lb-count{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.7);font-size:14px}'
+].join('\n');
+document.head.appendChild(lbCss);
+
+var _lbPhotos = [];
+var _lbIdx = 0;
+
+window.openPhotoLightbox = function(photos, index) {
+  _lbPhotos = photos || [];
+  _lbIdx = index || 0;
+  if (_lbPhotos.length === 0) return;
+  if (document.getElementById('photo-lightbox')) return;
+
+  var lb = document.createElement('div');
+  lb.id = 'photo-lightbox';
+  lb.className = 'photo-lb';
+  lb.setAttribute('onclick', 'if(event.target===this)closePhotoLightbox()');
+  renderLbContent(lb);
+  document.body.appendChild(lb);
+  requestAnimationFrame(function() { lb.classList.add('active'); });
+
+  window._lbKeyFn = function(e) {
+    if (e.key === 'Escape') closePhotoLightbox();
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') navLightbox(1);
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') navLightbox(-1);
+  };
+  document.addEventListener('keydown', window._lbKeyFn);
+};
+
+function renderLbContent(lb) {
+  if (!lb) lb = document.getElementById('photo-lightbox');
+  if (!lb) return;
+  var photo = _lbPhotos[_lbIdx] || '';
+  var multi = _lbPhotos.length > 1;
+  lb.innerHTML =
+    '<button class="photo-lb-close" onclick="closePhotoLightbox()">&times;</button>' +
+    (multi ? '<button class="photo-lb-nav photo-lb-prev" onclick="event.stopPropagation();navLightbox(-1)">&#8249;</button>' : '') +
+    '<img src="' + escH(photo) + '" onclick="event.stopPropagation()" />' +
+    (multi ? '<button class="photo-lb-nav photo-lb-next" onclick="event.stopPropagation();navLightbox(1)">&#8250;</button>' : '') +
+    (multi ? '<div class="photo-lb-count">' + (_lbIdx + 1) + ' / ' + _lbPhotos.length + '</div>' : '');
+}
+
+window.navLightbox = function(dir) {
+  _lbIdx = (_lbIdx + dir + _lbPhotos.length) % _lbPhotos.length;
+  renderLbContent();
+};
+
+window.closePhotoLightbox = function() {
+  var lb = document.getElementById('photo-lightbox');
+  if (lb) {
+    lb.classList.remove('active');
+    setTimeout(function() { lb.remove(); }, 200);
+  }
+  if (window._lbKeyFn) {
+    document.removeEventListener('keydown', window._lbKeyFn);
+    window._lbKeyFn = null;
+  }
+};
+
+// Click on any job photo to enlarge
+document.addEventListener('click', function(e) {
+  var img = e.target;
+  if (img.tagName !== 'IMG') return;
+  var src = img.getAttribute('src') || '';
+  if (src.indexOf('job-photos') === -1 && src.indexOf('supabase') === -1) return;
+  if (img.closest('#photo-lightbox')) return;
+  if (img.id === 'photo-preview-img') return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  // Collect sibling photos in same grid
+  var container = img.closest('.grid');
+  var photos = [];
+  var clickedIdx = 0;
+  if (container) {
+    var allImgs = container.querySelectorAll('img');
+    for (var i = 0; i < allImgs.length; i++) {
+      var s = allImgs[i].getAttribute('src') || '';
+      if (s.indexOf('job-photos') !== -1 || s.indexOf('supabase') !== -1) {
+        if (allImgs[i] === img) clickedIdx = photos.length;
+        photos.push(s);
+      }
+    }
+  }
+  if (photos.length === 0) { photos = [src]; clickedIdx = 0; }
+  openPhotoLightbox(photos, clickedIdx);
+}, true);
+
+// Make job photos look clickable
+var lbCss2 = document.createElement('style');
+lbCss2.textContent = 'img[src*="job-photos"]{cursor:pointer;transition:transform 0.15s,box-shadow 0.15s}img[src*="job-photos"]:hover{transform:scale(1.03);box-shadow:0 4px 12px rgba(0,0,0,0.15)}';
+document.head.appendChild(lbCss2);
+
 console.log('Job quick actions modals loaded');
 
 } catch(e) {
