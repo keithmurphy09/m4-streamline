@@ -415,11 +415,27 @@ window.addExpense = async function(expense) {
     expense.receipt_url = window._receiptUrlForSave;
     window._receiptUrlForSave = null;
   }
+  var receiptUrl = expense.receipt_url || null;
   var result = await _origAddExpense(expense);
-  if (expense.receipt_url && expenses.length > 0) {
-    var latest = expenses[expenses.length - 1];
-    if (latest && !latest.receipt_url) latest.receipt_url = expense.receipt_url;
+
+  // Force sync receipt_url onto the local expense object
+  // The original push might not include it if Supabase didn't return it
+  if (receiptUrl && expenses.length > 0) {
+    for (var i = expenses.length - 1; i >= 0; i--) {
+      if (!expenses[i].receipt_url) {
+        expenses[i].receipt_url = receiptUrl;
+        // Also update in Supabase to be sure
+        try {
+          await supabaseClient
+            .from('expenses')
+            .update({ receipt_url: receiptUrl })
+            .eq('id', expenses[i].id);
+        } catch(e) { console.error('Receipt sync error:', e); }
+        break;
+      }
+    }
   }
+
   return result;
 };
 
