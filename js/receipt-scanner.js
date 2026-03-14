@@ -229,6 +229,7 @@ window.continueWithReceipt = async function() {
     if (!receiptUrl) throw new Error('Could not get receipt URL');
 
     window._pendingReceiptUrl = receiptUrl;
+    window._activeReceiptUrl = receiptUrl;
     window._pendingReceiptFile = null;
 
     // Step 3: AI scan
@@ -375,6 +376,7 @@ window.uploadReceiptInModal = async function(input) {
 
     var hidden = document.getElementById('receipt_url_field');
     if (hidden) hidden.value = receiptUrl;
+    window._activeReceiptUrl = receiptUrl;
 
     if (section) section.innerHTML = buildReceiptPreview(receiptUrl);
     showNotification('Receipt uploaded', 'success');
@@ -403,36 +405,39 @@ window.openExpReceiptLB = function(url) {
 var _origSaveExpense = window.saveExpense;
 
 window.saveExpense = function() {
+  // Grab from hidden field OR from global
   var receiptField = document.getElementById('receipt_url_field');
-  window._receiptUrlForSave = (receiptField && receiptField.value) ? receiptField.value : null;
+  var url = (receiptField && receiptField.value) ? receiptField.value : null;
+  if (!url) url = window._activeReceiptUrl || null;
+  window._receiptUrlForSave = url;
+  console.log('Saving expense with receipt:', url);
   _origSaveExpense();
 };
 
 var _origAddExpense = window.addExpense;
 
 window.addExpense = async function(expense) {
-  if (window._receiptUrlForSave) {
-    expense.receipt_url = window._receiptUrlForSave;
-    window._receiptUrlForSave = null;
+  var receiptUrl = window._receiptUrlForSave || null;
+  window._receiptUrlForSave = null;
+
+  if (receiptUrl) {
+    expense.receipt_url = receiptUrl;
   }
-  var receiptUrl = expense.receipt_url || null;
+
   var result = await _origAddExpense(expense);
 
-  // Force sync receipt_url onto the local expense object
-  // The original push might not include it if Supabase didn't return it
+  // Force update the just-saved expense in local array and DB
   if (receiptUrl && expenses.length > 0) {
-    for (var i = expenses.length - 1; i >= 0; i--) {
-      if (!expenses[i].receipt_url) {
-        expenses[i].receipt_url = receiptUrl;
-        // Also update in Supabase to be sure
-        try {
-          await supabaseClient
-            .from('expenses')
-            .update({ receipt_url: receiptUrl })
-            .eq('id', expenses[i].id);
-        } catch(e) { console.error('Receipt sync error:', e); }
-        break;
-      }
+    var latest = expenses[expenses.length - 1];
+    if (latest) {
+      latest.receipt_url = receiptUrl;
+      try {
+        await supabaseClient
+          .from('expenses')
+          .update({ receipt_url: receiptUrl })
+          .eq('id', latest.id);
+        console.log('Receipt URL saved to expense:', latest.id);
+      } catch(e) { console.error('Receipt sync error:', e); }
     }
   }
 
