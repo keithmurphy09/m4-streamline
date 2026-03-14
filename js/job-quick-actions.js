@@ -287,6 +287,7 @@ window.closePhotoModal = function() {
 // Called by the Done button - closes modal AND re-renders page
 window.donePhotoModal = function() {
   closePhotoModal();
+  _lastPhotoState = '';
   renderApp();
 };
 
