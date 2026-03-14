@@ -1,5 +1,5 @@
-// M4 Receipt Scanner v3 - API key stored in Company Settings
-// No terminal, no edge functions, all browser-based
+// M4 Receipt Scanner v4 - Platform-level AI scanning
+// Every user gets automatic receipt scanning, zero setup
 // Additive only
 (function(){
 try {
@@ -13,79 +13,8 @@ window._pendingReceiptUrl = null;
 window._pendingReceiptFile = null;
 window._pendingReceiptData = null;
 
-// ============ API KEY FROM COMPANY SETTINGS ============
-function getApiKey() {
-  return (typeof companySettings !== 'undefined' && companySettings && companySettings.anthropic_api_key)
-    ? companySettings.anthropic_api_key : '';
-}
-
-// ============ INJECT AI SETTINGS SECTION ============
-function injectAiSettings() {
-  var saveBtn = document.querySelector('button[onclick="saveCompanySettings()"]');
-  if (!saveBtn) return;
-  if (saveBtn.dataset.aiAdded) return;
-  saveBtn.dataset.aiAdded = 'true';
-
-  var currentKey = getApiKey();
-  var masked = currentKey ? currentKey.substring(0, 10) + '...' + currentKey.substring(currentKey.length - 4) : '';
-  var statusText = currentKey
-    ? '<span class="text-teal-600 dark:text-teal-400">Key saved: ' + escH(masked) + '</span>'
-    : '<span class="text-amber-600 dark:text-amber-400">No key set - receipt scanning will be upload only</span>';
-
-  var section = document.createElement('div');
-  section.className = 'mt-6 pt-6 border-t border-gray-200 dark:border-gray-700';
-  section.innerHTML =
-    '<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">AI Features</h3>' +
-    '<p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Powers automatic receipt scanning. Get a key at <a href="https://console.anthropic.com/settings/keys" target="_blank" class="text-teal-600 dark:text-teal-400 hover:underline">console.anthropic.com</a></p>' +
-    '<div class="mb-3">' +
-      '<label class="block text-sm font-medium mb-1 dark:text-gray-200">Anthropic API Key</label>' +
-      '<input type="password" id="anthropic_api_key" value="' + escH(currentKey) + '" placeholder="sk-ant-..." class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">' +
-      '<p class="text-xs mt-1" id="ai-key-status">' + statusText + '</p>' +
-    '</div>' +
-    '<button onclick="saveAiKey()" class="w-full bg-gray-900 dark:bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-teal-400 hover:bg-gray-800 dark:hover:bg-gray-600 text-sm font-medium">Save AI Key</button>';
-
-  saveBtn.parentNode.insertBefore(section, saveBtn);
-}
-
-// Dedicated save for AI key - no function overriding
-window.saveAiKey = async function() {
-  var field = document.getElementById('anthropic_api_key');
-  if (!field) return;
-  var key = field.value.trim();
-
-  var ownerId = (typeof accountOwnerId !== 'undefined' && accountOwnerId) ? accountOwnerId : (currentUser ? currentUser.id : null);
-  if (!ownerId) {
-    showNotification('Not logged in', 'error');
-    return;
-  }
-
-  try {
-    var result = await supabaseClient
-      .from('company_settings')
-      .update({ anthropic_api_key: key })
-      .eq('user_id', ownerId);
-
-    if (result.error) throw result.error;
-
-    // Update local state
-    if (typeof companySettings !== 'undefined' && companySettings) {
-      companySettings.anthropic_api_key = key;
-    }
-
-    var statusEl = document.getElementById('ai-key-status');
-    if (key) {
-      var masked = key.substring(0, 10) + '...' + key.substring(key.length - 4);
-      if (statusEl) statusEl.innerHTML = '<span class="text-teal-600 dark:text-teal-400">Key saved: ' + escH(masked) + '</span>';
-      showNotification('AI key saved! Receipt scanning is now active.', 'success');
-    } else {
-      if (statusEl) statusEl.innerHTML = '<span class="text-amber-600 dark:text-amber-400">Key removed</span>';
-      showNotification('AI key removed', 'success');
-    }
-  } catch (err) {
-    console.error('Error saving AI key:', err);
-    showNotification('Error saving key: ' + err.message, 'error');
-  }
-};
+// Platform API key - built into the product
+var _AI_KEY = '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';
 
 // ============ INJECT SCAN RECEIPT BUTTON ============
 function injectScanButton() {
@@ -119,8 +48,7 @@ window.openReceiptScanner = function() {
         '<h3 class="text-lg sm:text-xl font-bold dark:text-white">Scan Receipt</h3>' +
         '<button onclick="closeReceiptScanner()" class="text-2xl leading-none dark:text-gray-300 hover:text-gray-600">&times;</button>' +
       '</div>' +
-      '<p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Take a photo or upload an image of your receipt.' +
-      (getApiKey() ? ' We will read the amount and details automatically.' : '') + '</p>' +
+      '<p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Take a photo or upload a receipt image. We will automatically read the date, amount and description.</p>' +
 
       '<div id="receipt-preview-area" class="hidden mb-4">' +
         '<img id="receipt-preview-img" class="w-full max-h-64 object-contain rounded-lg border border-gray-200 dark:border-gray-700" />' +
@@ -139,10 +67,10 @@ window.openReceiptScanner = function() {
         '<input type="file" accept="image/*" capture="environment" id="receipt-file-input" onchange="onReceiptFileSelected(this)" class="hidden" />' +
       '</label>' +
 
-      (!getApiKey() ? '<p class="text-xs text-amber-600 dark:text-amber-400 mt-3">Tip: Add your Anthropic API key in Company Settings to enable auto-scanning.</p>' : '') +
+      '<div id="receipt-status" class="hidden mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-sm text-blue-700 dark:text-blue-300 text-center"></div>' +
 
       '<div class="flex gap-3 mt-6">' +
-        '<button id="receipt-continue-btn" onclick="continueWithReceipt()" class="flex-1 bg-teal-600 text-white px-4 py-2.5 rounded-lg font-medium hover:bg-teal-700 transition-colors opacity-50 cursor-not-allowed" disabled>Continue to Expense</button>' +
+        '<button id="receipt-continue-btn" onclick="continueWithReceipt()" class="flex-1 bg-teal-600 text-white px-4 py-2.5 rounded-lg font-medium hover:bg-teal-700 transition-colors opacity-50 cursor-not-allowed" disabled>Upload & Scan</button>' +
         '<button onclick="closeReceiptScanner()" class="px-6 py-2.5 rounded-lg font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">Cancel</button>' +
       '</div>' +
     '</div>';
@@ -184,7 +112,6 @@ window.onReceiptFileSelected = function(input) {
   if (btn) {
     btn.disabled = false;
     btn.classList.remove('opacity-50', 'cursor-not-allowed');
-    btn.textContent = getApiKey() ? 'Upload & Scan' : 'Upload & Continue';
   }
 };
 
@@ -198,18 +125,31 @@ function fileToBase64(file) {
   });
 }
 
+function setStatus(msg) {
+  var el = document.getElementById('receipt-status');
+  if (el) {
+    el.textContent = msg;
+    el.classList.remove('hidden');
+  }
+}
+
 // ============ UPLOAD + SCAN ============
 window.continueWithReceipt = async function() {
   if (!window._pendingReceiptFile) return;
 
   var btn = document.getElementById('receipt-continue-btn');
-  if (btn) { btn.textContent = 'Uploading...'; btn.disabled = true; }
+  if (btn) { btn.disabled = true; }
 
   try {
     var file = window._pendingReceiptFile;
+
+    // Step 1: Convert to base64
+    setStatus('Reading image...');
     var base64Data = await fileToBase64(file);
     var mediaType = file.type || 'image/jpeg';
 
+    // Step 2: Upload to storage
+    setStatus('Uploading receipt...');
     var fileExt = file.name.split('.').pop();
     var fileName = 'receipt-' + Date.now() + '.' + fileExt;
     var filePath = 'receipts/' + fileName;
@@ -225,14 +165,22 @@ window.continueWithReceipt = async function() {
     window._pendingReceiptUrl = receiptUrl;
     window._pendingReceiptFile = null;
 
-    // AI scan if key available
-    var apiKey = getApiKey();
-    var extracted = null;
-    if (apiKey) {
-      if (btn) btn.textContent = 'Scanning receipt...';
-      extracted = await scanReceipt(base64Data, mediaType, apiKey);
-    }
+    // Step 3: AI scan
+    setStatus('Analysing receipt with AI...');
+    var extracted = await scanReceipt(base64Data, mediaType);
     window._pendingReceiptData = extracted;
+
+    if (extracted) {
+      console.log('Scan result:', extracted);
+      var parts = [];
+      if (extracted.amount) parts.push('$' + parseFloat(extracted.amount).toFixed(2));
+      if (extracted.date) parts.push(extracted.date);
+      if (extracted.description) parts.push(extracted.description);
+      if (parts.length > 0) {
+        setStatus('Found: ' + parts.join(', '));
+        await new Promise(function(r) { setTimeout(r, 1000); });
+      }
+    }
 
     closeReceiptScanner();
     openModal('expense');
@@ -244,19 +192,20 @@ window.continueWithReceipt = async function() {
     }
   } catch (error) {
     console.error('Error with receipt:', error);
+    setStatus('Error: ' + error.message);
     showNotification('Error: ' + error.message, 'error');
-    if (btn) { btn.textContent = 'Upload & Scan'; btn.disabled = false; }
+    if (btn) { btn.disabled = false; }
   }
 };
 
-// ============ AI SCAN ============
-async function scanReceipt(base64Data, mediaType, apiKey) {
+// ============ AI SCAN VIA ANTHROPIC API ============
+async function scanReceipt(base64Data, mediaType) {
   try {
     var response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
+        'x-api-key': _AI_KEY,
         'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true'
       },
@@ -268,11 +217,15 @@ async function scanReceipt(base64Data, mediaType, apiKey) {
           content: [
             {
               type: 'image',
-              source: { type: 'base64', media_type: mediaType, data: base64Data }
+              source: {
+                type: 'base64',
+                media_type: mediaType,
+                data: base64Data
+              }
             },
             {
               type: 'text',
-              text: 'Extract the following from this receipt image. Respond ONLY with a JSON object, no markdown, no backticks, no other text:\n{\n  "date": "YYYY-MM-DD format or null if unclear",\n  "amount": number (total amount paid, just the number, no currency symbol) or null,\n  "description": "merchant/store name and brief description of purchase" or null,\n  "currency": "AUD", "USD", "NZD" etc or null\n}\nIf you cannot read a field, set it to null.'
+              text: 'You are a receipt reader. Extract the following from this receipt image.\n\nRespond ONLY with a valid JSON object. No markdown, no backticks, no explanation, nothing else:\n\n{"date":"YYYY-MM-DD","amount":123.45,"description":"Store name - items purchased","currency":"AUD"}\n\nRules:\n- date must be YYYY-MM-DD format. If unclear, use null.\n- amount must be a number (the TOTAL paid). No currency symbols. If unclear, use null.\n- description should be the store/merchant name followed by a brief summary of items.\n- currency should be the 3-letter code (AUD, USD, NZD etc).\n- If you cannot read a field, set it to null.\n- Respond with ONLY the JSON object, nothing else.'
             }
           ]
         }]
@@ -280,21 +233,41 @@ async function scanReceipt(base64Data, mediaType, apiKey) {
     });
 
     if (!response.ok) {
-      console.warn('AI scan error:', response.status);
+      var errBody = '';
+      try { errBody = await response.text(); } catch(e) {}
+      console.error('AI API error:', response.status, errBody);
       return null;
     }
 
     var data = await response.json();
     var text = '';
-    for (var i = 0; i < data.content.length; i++) {
-      if (data.content[i].type === 'text') text += data.content[i].text;
+    if (data.content && data.content.length > 0) {
+      for (var i = 0; i < data.content.length; i++) {
+        if (data.content[i].type === 'text') {
+          text += data.content[i].text;
+        }
+      }
     }
-    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+
+    if (!text) {
+      console.warn('Empty AI response');
+      return null;
+    }
+
+    // Clean response
+    text = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+
+    // Try to find JSON in response
+    var jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      text = jsonMatch[0];
+    }
+
     var parsed = JSON.parse(text);
-    console.log('Receipt scan result:', parsed);
+    console.log('Parsed receipt:', parsed);
     return parsed;
   } catch (err) {
-    console.warn('Receipt scan failed:', err.message);
+    console.error('Receipt scan error:', err);
     return null;
   }
 }
@@ -312,7 +285,7 @@ function enhanceExpenseModal() {
     ? editingItem.receipt_url : null;
   var receiptUrl = window._pendingReceiptUrl || existingReceipt || null;
 
-  // Hidden field
+  // Hidden field for receipt_url
   var hiddenField = document.getElementById('receipt_url_field');
   if (!hiddenField) {
     hiddenField = document.createElement('input');
@@ -322,7 +295,7 @@ function enhanceExpenseModal() {
     form.appendChild(hiddenField);
   }
 
-  // Receipt section
+  // Receipt section above date field
   var dateLabel = dateField.closest('.mb-3');
   if (!dateLabel) return;
 
@@ -450,7 +423,6 @@ window.addExpense = async function(expense) {
     window._receiptUrlForSave = null;
   }
   var result = await _origAddExpense(expense);
-  // Sync local state
   if (expense.receipt_url && expenses.length > 0) {
     var latest = expenses[expenses.length - 1];
     if (latest && !latest.receipt_url) latest.receipt_url = expense.receipt_url;
@@ -487,12 +459,11 @@ var _receiptObs = new MutationObserver(function() {
   _receiptTimer = setTimeout(function() {
     injectScanButton();
     enhanceExpenseModal();
-    injectAiSettings();
   }, 200);
 });
 _receiptObs.observe(document.body, { childList: true, subtree: true });
 
-console.log('Receipt scanner v3 loaded');
+console.log('Receipt scanner v4 loaded');
 
 } catch(e) {
   console.error('Receipt scanner init error:', e);
