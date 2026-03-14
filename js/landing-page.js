@@ -214,11 +214,8 @@ el.innerHTML = `
     <p class="lp2-hero-note">No credit card required &middot; Setup in 2 minutes &middot; Cancel anytime</p>
   </div>
   <div class="lp2-hero-visual">
-    <div style="background:linear-gradient(135deg,#f0fdfa,#e0f2fe);border-radius:16px;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;border:1px solid #e2e8f0;box-shadow:0 25px 60px rgba(0,0,0,0.1);position:relative;overflow:hidden">
-      <div style="text-align:center;padding:40px">
-        <div style="font-family:Outfit,sans-serif;font-size:24px;font-weight:700;color:#0f172a;margin-bottom:8px">M4 Streamline Dashboard</div>
-        <div style="font-size:14px;color:#64748b">Quotes &middot; Schedule &middot; Invoices &middot; Analytics</div>
-      </div>
+    <div style="position:relative">
+      <img src="lp-dashboard.png" alt="M4 Streamline Dashboard" style="width:100%;border-radius:16px;box-shadow:0 25px 60px rgba(0,0,0,0.12);border:1px solid #e2e8f0" />
     </div>
     <div class="lp2-hero-float lp2-hero-float-1">
       <div style="display:flex;align-items:center;gap:8px">
@@ -276,7 +273,7 @@ el.innerHTML = `
             <li>Recurring job scheduling</li>
           </ul>
         </div>
-        <div style="background:#f0fdfa;border-radius:12px;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;border:1px solid #e2e8f0"><div style="color:#0d9488;font-family:Outfit,sans-serif;font-weight:700;font-size:20px">Calendar &middot; List &middot; Gantt</div></div>
+        <img src="lp-scheduling.png" alt="Scheduling & Gantt Chart" class="lp2-tab-img" />
       </div>
     </div>
 
@@ -293,7 +290,7 @@ el.innerHTML = `
             <li>Salesperson assignment and tracking</li>
           </ul>
         </div>
-        <div style="background:#eff6ff;border-radius:12px;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;border:1px solid #e2e8f0"><div style="color:#1e40af;font-family:Outfit,sans-serif;font-weight:700;font-size:20px">Quote &rarr; Invoice &rarr; Paid</div></div>
+        <img src="lp-quoting.png" alt="Professional Quoting" class="lp2-tab-img" />
       </div>
     </div>
 
@@ -310,7 +307,7 @@ el.innerHTML = `
             <li>PDF generation and email/SMS delivery</li>
           </ul>
         </div>
-        <div style="background:#f0fdf4;border-radius:12px;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;border:1px solid #e2e8f0"><div style="color:#16a34a;font-family:Outfit,sans-serif;font-weight:700;font-size:20px">Invoice &middot; Pay &middot; Done</div></div>
+        <img src="lp-invoicing.png" alt="Invoicing & Payments" class="lp2-tab-img" />
       </div>
     </div>
 
@@ -327,7 +324,7 @@ el.innerHTML = `
             <li>Receipt photo storage and preview</li>
           </ul>
         </div>
-        <div style="background:#fef2f2;border-radius:12px;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;border:1px solid #e2e8f0"><div style="color:#dc2626;font-family:Outfit,sans-serif;font-weight:700;font-size:20px">Scan &middot; Track &middot; Save</div></div>
+        <img src="lp-analytics.png" alt="Expense Tracking" class="lp2-tab-img" />
       </div>
     </div>
 
@@ -344,7 +341,7 @@ el.innerHTML = `
             <li>Budget tracking and alerts</li>
           </ul>
         </div>
-        <div style="background:#faf5ff;border-radius:12px;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;border:1px solid #e2e8f0"><div style="color:#7c3aed;font-family:Outfit,sans-serif;font-weight:700;font-size:20px">Insights &middot; Reports &middot; Growth</div></div>
+        <img src="lp-dashboard.png" alt="Analytics & Reports" class="lp2-tab-img" />
       </div>
     </div>
 
@@ -361,7 +358,7 @@ el.innerHTML = `
             <li>Client portal for customer access</li>
           </ul>
         </div>
-        <div style="background:#fff7ed;border-radius:12px;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;border:1px solid #e2e8f0"><div style="color:#ea580c;font-family:Outfit,sans-serif;font-weight:700;font-size:20px">Assign &middot; Track &middot; Manage</div></div>
+        <img src="lp-team.png" alt="Team Management" class="lp2-tab-img" />
       </div>
     </div>
   </div>
@@ -392,7 +389,7 @@ el.innerHTML = `
         <div class="lp2-card-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
         <div class="lp2-card-tag">Pricing</div>
         <h3>Fraction of the cost</h3>
-        <p>Buildertrend starts at $499/month. M4 gives you the same core features starting at $79/month. No locked contracts.</p>
+        <p>Other platforms charge $499+/month with annual lock-in contracts. M4 gives you the same core features starting at $79/month. No contracts, cancel anytime.</p>
       </div>
       <div class="lp2-card">
         <div class="lp2-card-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.66 0 3-4.03 3-9s-1.34-9-3-9m0 18c-1.66 0-3-4.03-3-9s1.34-9 3-9"/></svg></div>
@@ -494,7 +491,7 @@ el.innerHTML = `
   </div>
   <div class="lp2-faq">
     <div class="lp2-faq-item"><button class="lp2-faq-q" onclick="lp2ToggleFaq(this)">Is there really a free trial?<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg></button><div class="lp2-faq-a">Yes, 14 days completely free with all features. No credit card required to start. You only pay if you decide to continue after the trial.</div></div>
-    <div class="lp2-faq-item"><button class="lp2-faq-q" onclick="lp2ToggleFaq(this)">How is this different from Buildertrend?<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg></button><div class="lp2-faq-a">M4 Streamline gives you the same core features (scheduling, quoting, invoicing, expenses, team management) at a fraction of the cost. Buildertrend starts at $499/month and requires annual contracts. We start at $79/month with no lock-in. We are built specifically for Australian and NZ tradies.</div></div>
+    <div class="lp2-faq-item"><button class="lp2-faq-q" onclick="lp2ToggleFaq(this)">How is this different from other platforms?<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg></button><div class="lp2-faq-a">M4 Streamline gives you the same core features as the big-name platforms (scheduling, quoting, invoicing, expenses, team management) at a fraction of the cost. Other platforms start at $499/month and require annual contracts. We start at $79/month with no lock-in. We are built specifically for Australian and NZ tradies.</div></div>
     <div class="lp2-faq-item"><button class="lp2-faq-q" onclick="lp2ToggleFaq(this)">Can my team members access it?<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg></button><div class="lp2-faq-a">Yes. On the Business plan, you can add unlimited team members with role-based permissions. Each person gets their own login and sees only what you allow them to access.</div></div>
     <div class="lp2-faq-item"><button class="lp2-faq-q" onclick="lp2ToggleFaq(this)">Can clients see their quotes and invoices?<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg></button><div class="lp2-faq-a">Yes. M4 includes a client portal where customers can view quotes, accept or decline them, view invoices, and make payments online via Stripe.</div></div>
     <div class="lp2-faq-item"><button class="lp2-faq-q" onclick="lp2ToggleFaq(this)">What about the AI receipt scanning?<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg></button><div class="lp2-faq-a">Just take a photo of any receipt. Our AI reads the date, amount, and merchant name automatically and pre-fills the expense form. You just pick the job and category. It is included on all plans at no extra cost.</div></div>
