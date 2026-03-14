@@ -13,8 +13,74 @@ window._pendingReceiptUrl = null;
 window._pendingReceiptFile = null;
 window._pendingReceiptData = null;
 
-// Platform API key - built into the product
-var _AI_KEY = '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';
+// Platform proxy - handles API auth server-side
+var _PROXY_URL = 'https://receipt-proxy.keithmurphy009.workers.dev/';
+
+// ============ AI SCAN VIA PROXY ============
+async function scanReceipt(base64Data, mediaType) {
+  try {
+    var response = await fetch(_PROXY_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 500,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: mediaType,
+                data: base64Data
+              }
+            },
+            {
+              type: 'text',
+              text: 'You are a receipt reader. Extract the following from this receipt image.\n\nRespond ONLY with a valid JSON object. No markdown, no backticks, no explanation, nothing else:\n\n{"date":"YYYY-MM-DD","amount":123.45,"description":"Store name - items purchased","currency":"AUD"}\n\nRules:\n- date must be YYYY-MM-DD format. If unclear, use null.\n- amount must be a number (the TOTAL paid). No currency symbols. If unclear, use null.\n- description should be the store/merchant name followed by a brief summary of items.\n- currency should be the 3-letter code (AUD, USD, NZD etc).\n- If you cannot read a field, set it to null.\n- Respond with ONLY the JSON object, nothing else.'
+            }
+          ]
+        }]
+      })
+    });
+
+    if (!response.ok) {
+      var errBody = '';
+      try { errBody = await response.text(); } catch(e) {}
+      console.error('Proxy error:', response.status, errBody);
+      return null;
+    }
+
+    var data = await response.json();
+    var text = '';
+    if (data.content && data.content.length > 0) {
+      for (var i = 0; i < data.content.length; i++) {
+        if (data.content[i].type === 'text') {
+          text += data.content[i].text;
+        }
+      }
+    }
+
+    if (!text) {
+      console.warn('Empty AI response');
+      return null;
+    }
+
+    text = text.replace(/```json\s*/g, '').replace(/```/g, '').trim();
+    var jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) text = jsonMatch[0];
+
+    var parsed = JSON.parse(text);
+    console.log('Parsed receipt:', parsed);
+    return parsed;
+  } catch (err) {
+    console.error('Receipt scan error:', err);
+    return null;
+  }
+}
 
 // ============ INJECT SCAN RECEIPT BUTTON ============
 function injectScanButton() {
@@ -198,79 +264,6 @@ window.continueWithReceipt = async function() {
   }
 };
 
-// ============ AI SCAN VIA ANTHROPIC API ============
-async function scanReceipt(base64Data, mediaType) {
-  try {
-    var response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': _AI_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 500,
-        messages: [{
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: {
-                type: 'base64',
-                media_type: mediaType,
-                data: base64Data
-              }
-            },
-            {
-              type: 'text',
-              text: 'You are a receipt reader. Extract the following from this receipt image.\n\nRespond ONLY with a valid JSON object. No markdown, no backticks, no explanation, nothing else:\n\n{"date":"YYYY-MM-DD","amount":123.45,"description":"Store name - items purchased","currency":"AUD"}\n\nRules:\n- date must be YYYY-MM-DD format. If unclear, use null.\n- amount must be a number (the TOTAL paid). No currency symbols. If unclear, use null.\n- description should be the store/merchant name followed by a brief summary of items.\n- currency should be the 3-letter code (AUD, USD, NZD etc).\n- If you cannot read a field, set it to null.\n- Respond with ONLY the JSON object, nothing else.'
-            }
-          ]
-        }]
-      })
-    });
-
-    if (!response.ok) {
-      var errBody = '';
-      try { errBody = await response.text(); } catch(e) {}
-      console.error('AI API error:', response.status, errBody);
-      return null;
-    }
-
-    var data = await response.json();
-    var text = '';
-    if (data.content && data.content.length > 0) {
-      for (var i = 0; i < data.content.length; i++) {
-        if (data.content[i].type === 'text') {
-          text += data.content[i].text;
-        }
-      }
-    }
-
-    if (!text) {
-      console.warn('Empty AI response');
-      return null;
-    }
-
-    // Clean response
-    text = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-
-    // Try to find JSON in response
-    var jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      text = jsonMatch[0];
-    }
-
-    var parsed = JSON.parse(text);
-    console.log('Parsed receipt:', parsed);
-    return parsed;
-  } catch (err) {
-    console.error('Receipt scan error:', err);
-    return null;
-  }
-}
 
 // ============ ENHANCE EXPENSE MODAL ============
 function enhanceExpenseModal() {
