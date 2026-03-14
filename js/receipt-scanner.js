@@ -419,47 +419,44 @@ window.openExpReceiptLB = function(url) {
   }
 };
 
-// ============ OVERRIDE saveExpense ============
+// ============ SAVE RECEIPT WITH EXPENSE ============
+// Don't override saveExpense/addExpense - just watch for modal close
+// and update the newest expense with the receipt URL
+
+var _expCountBefore = 0;
+
+// Capture expense count before save
 var _origSaveExpense = window.saveExpense;
-
 window.saveExpense = function() {
-  // Grab from hidden field OR from global
-  var receiptField = document.getElementById('receipt_url_field');
-  var url = (receiptField && receiptField.value) ? receiptField.value : null;
-  if (!url) url = window._activeReceiptUrl || null;
-  window._receiptUrlForSave = url;
-  console.log('Saving expense with receipt:', url);
+  _expCountBefore = expenses.length;
   _origSaveExpense();
-};
 
-var _origAddExpense = window.addExpense;
-
-window.addExpense = async function(expense) {
-  var receiptUrl = window._receiptUrlForSave || null;
-  window._receiptUrlForSave = null;
-
-  if (receiptUrl) {
-    expense.receipt_url = receiptUrl;
+  // After save, check for new expense and attach receipt
+  var receiptUrl = window._activeReceiptUrl || null;
+  if (!receiptUrl) {
+    var field = document.getElementById('receipt_url_field');
+    receiptUrl = (field && field.value) ? field.value : null;
   }
+  if (!receiptUrl) return;
 
-  var result = await _origAddExpense(expense);
-
-  // Force update the just-saved expense in local array and DB
-  if (receiptUrl && expenses.length > 0) {
-    var latest = expenses[expenses.length - 1];
-    if (latest) {
-      latest.receipt_url = receiptUrl;
-      try {
-        await supabaseClient
-          .from('expenses')
-          .update({ receipt_url: receiptUrl })
-          .eq('id', latest.id);
-        console.log('Receipt URL saved to expense:', latest.id);
-      } catch(e) { console.error('Receipt sync error:', e); }
+  // Poll for the new expense (addExpense is async)
+  var attempts = 0;
+  var checker = setInterval(function() {
+    attempts++;
+    if (expenses.length > _expCountBefore) {
+      clearInterval(checker);
+      var newExp = expenses[expenses.length - 1];
+      newExp.receipt_url = receiptUrl;
+      supabaseClient
+        .from('expenses')
+        .update({ receipt_url: receiptUrl })
+        .eq('id', newExp.id)
+        .then(function() { console.log('Receipt saved to expense:', newExp.id); })
+        .catch(function(e) { console.error('Receipt save error:', e); });
+      window._activeReceiptUrl = null;
     }
-  }
-
-  return result;
+    if (attempts > 30) clearInterval(checker);
+  }, 200);
 };
 
 var _origUpdateExpense = window.updateExpense;
