@@ -21,7 +21,6 @@ function getApiKey() {
 
 // ============ INJECT AI SETTINGS SECTION ============
 function injectAiSettings() {
-  // Find the Save Company Settings button
   var saveBtn = document.querySelector('button[onclick="saveCompanySettings()"]');
   if (!saveBtn) return;
   if (saveBtn.dataset.aiAdded) return;
@@ -29,44 +28,62 @@ function injectAiSettings() {
 
   var currentKey = getApiKey();
   var masked = currentKey ? currentKey.substring(0, 10) + '...' + currentKey.substring(currentKey.length - 4) : '';
+  var statusText = currentKey
+    ? '<span class="text-teal-600 dark:text-teal-400">Key saved: ' + escH(masked) + '</span>'
+    : '<span class="text-amber-600 dark:text-amber-400">No key set - receipt scanning will be upload only</span>';
 
   var section = document.createElement('div');
   section.className = 'mt-6 pt-6 border-t border-gray-200 dark:border-gray-700';
   section.innerHTML =
     '<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">AI Features</h3>' +
     '<p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Powers automatic receipt scanning. Get a key at <a href="https://console.anthropic.com/settings/keys" target="_blank" class="text-teal-600 dark:text-teal-400 hover:underline">console.anthropic.com</a></p>' +
-    '<div>' +
+    '<div class="mb-3">' +
       '<label class="block text-sm font-medium mb-1 dark:text-gray-200">Anthropic API Key</label>' +
       '<input type="password" id="anthropic_api_key" value="' + escH(currentKey) + '" placeholder="sk-ant-..." class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">' +
-      (masked ? '<p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Current: ' + escH(masked) + '</p>' : '') +
-    '</div>';
+      '<p class="text-xs mt-1" id="ai-key-status">' + statusText + '</p>' +
+    '</div>' +
+    '<button onclick="saveAiKey()" class="w-full bg-gray-900 dark:bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-teal-400 hover:bg-gray-800 dark:hover:bg-gray-600 text-sm font-medium">Save AI Key</button>';
 
   saveBtn.parentNode.insertBefore(section, saveBtn);
 }
 
-// Override saveCompanySettings to include AI key
-var _origSaveCompany = window.saveCompanySettings;
+// Dedicated save for AI key - no function overriding
+window.saveAiKey = async function() {
+  var field = document.getElementById('anthropic_api_key');
+  if (!field) return;
+  var key = field.value.trim();
 
-window.saveCompanySettings = async function() {
-  // Grab AI key before calling original
-  var aiKeyField = document.getElementById('anthropic_api_key');
-  var aiKey = aiKeyField ? aiKeyField.value.trim() : null;
+  var ownerId = (typeof accountOwnerId !== 'undefined' && accountOwnerId) ? accountOwnerId : (currentUser ? currentUser.id : null);
+  if (!ownerId) {
+    showNotification('Not logged in', 'error');
+    return;
+  }
 
-  // Call original save
-  await _origSaveCompany();
+  try {
+    var result = await supabaseClient
+      .from('company_settings')
+      .update({ anthropic_api_key: key })
+      .eq('user_id', ownerId);
 
-  // Save AI key separately (original doesn't know about it)
-  if (aiKey !== null && typeof currentUser !== 'undefined' && currentUser) {
-    try {
-      await supabaseClient
-        .from('company_settings')
-        .update({ anthropic_api_key: aiKey })
-        .eq('user_id', currentUser.id);
+    if (result.error) throw result.error;
 
-      if (companySettings) companySettings.anthropic_api_key = aiKey;
-    } catch (err) {
-      console.error('Error saving AI key:', err);
+    // Update local state
+    if (typeof companySettings !== 'undefined' && companySettings) {
+      companySettings.anthropic_api_key = key;
     }
+
+    var statusEl = document.getElementById('ai-key-status');
+    if (key) {
+      var masked = key.substring(0, 10) + '...' + key.substring(key.length - 4);
+      if (statusEl) statusEl.innerHTML = '<span class="text-teal-600 dark:text-teal-400">Key saved: ' + escH(masked) + '</span>';
+      showNotification('AI key saved! Receipt scanning is now active.', 'success');
+    } else {
+      if (statusEl) statusEl.innerHTML = '<span class="text-amber-600 dark:text-amber-400">Key removed</span>';
+      showNotification('AI key removed', 'success');
+    }
+  } catch (err) {
+    console.error('Error saving AI key:', err);
+    showNotification('Error saving key: ' + err.message, 'error');
   }
 };
 
