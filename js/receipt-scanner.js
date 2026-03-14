@@ -14,7 +14,7 @@ window._pendingReceiptFile = null;
 window._pendingReceiptData = null;
 
 // Platform API key - built into the product
-var _AI_KEY = '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';
+var _AI_KEY = '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';
 
 // ============ INJECT SCAN RECEIPT BUTTON ============
 function injectScanButton() {
