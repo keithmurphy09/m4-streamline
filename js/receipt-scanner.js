@@ -420,44 +420,39 @@ window.openExpReceiptLB = function(url) {
 };
 
 // ============ SAVE RECEIPT WITH EXPENSE ============
-// Don't override saveExpense/addExpense - just watch for modal close
-// and update the newest expense with the receipt URL
+// Dead simple: when expense modal closes and we have a receipt URL,
+// update the most recent expense with it
+var _wasReceiptModalOpen = false;
 
-var _expCountBefore = 0;
+function watchForExpenseSave() {
+  var modal = document.querySelector('.fixed.inset-0.bg-black');
+  var dateField = document.getElementById('expense_date');
+  var isExpenseModal = !!(modal && dateField);
 
-// Capture expense count before save
-var _origSaveExpense = window.saveExpense;
-window.saveExpense = function() {
-  _expCountBefore = expenses.length;
-  _origSaveExpense();
-
-  // After save, check for new expense and attach receipt
-  var receiptUrl = window._activeReceiptUrl || null;
-  if (!receiptUrl) {
-    var field = document.getElementById('receipt_url_field');
-    receiptUrl = (field && field.value) ? field.value : null;
+  if (isExpenseModal && window._activeReceiptUrl) {
+    _wasReceiptModalOpen = true;
   }
-  if (!receiptUrl) return;
 
-  // Poll for the new expense (addExpense is async)
-  var attempts = 0;
-  var checker = setInterval(function() {
-    attempts++;
-    if (expenses.length > _expCountBefore) {
-      clearInterval(checker);
-      var newExp = expenses[expenses.length - 1];
-      newExp.receipt_url = receiptUrl;
+  if (_wasReceiptModalOpen && !isExpenseModal) {
+    _wasReceiptModalOpen = false;
+    var receiptUrl = window._activeReceiptUrl;
+    window._activeReceiptUrl = null;
+    if (!receiptUrl) return;
+
+    // Modal just closed - find newest expense and attach receipt
+    setTimeout(function() {
+      if (expenses.length === 0) return;
+      var newest = expenses[expenses.length - 1];
+      if (!newest || newest.receipt_url) return;
+      newest.receipt_url = receiptUrl;
       supabaseClient
         .from('expenses')
         .update({ receipt_url: receiptUrl })
-        .eq('id', newExp.id)
-        .then(function() { console.log('Receipt saved to expense:', newExp.id); })
-        .catch(function(e) { console.error('Receipt save error:', e); });
-      window._activeReceiptUrl = null;
-    }
-    if (attempts > 30) clearInterval(checker);
-  }, 200);
-};
+        .eq('id', newest.id)
+        .then(function() { console.log('Receipt attached to expense:', newest.id); });
+    }, 1000);
+  }
+}
 
 var _origUpdateExpense = window.updateExpense;
 
@@ -488,6 +483,7 @@ var _receiptObs = new MutationObserver(function() {
   _receiptTimer = setTimeout(function() {
     injectScanButton();
     enhanceExpenseModal();
+    watchForExpenseSave();
   }, 200);
 });
 _receiptObs.observe(document.body, { childList: true, subtree: true });
