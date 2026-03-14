@@ -162,8 +162,9 @@ window.openExpenseQuickView = function(expenseId) {
   if (exp.receipt_url) {
     html += '<div style="margin-top:20px;">';
     html += '<span class="exp-panel-label">Receipt</span>';
-    html += '<div class="exp-panel-receipt" style="margin-top:8px;">';
+    html += '<div class="exp-panel-receipt" style="margin-top:8px;position:relative;">';
     html += '<img src="' + escH(exp.receipt_url) + '" onclick="openExpReceiptPreview(\'' + escH(exp.receipt_url) + '\')" title="Click to enlarge" />';
+    html += '<button onclick="deleteExpenseReceipt(\'' + exp.id + '\')" style="position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,0.6);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:background 0.15s;" onmouseenter="this.style.background=\'rgba(220,38,38,0.9)\'" onmouseleave="this.style.background=\'rgba(0,0,0,0.6)\'" title="Remove receipt">&times;</button>';
     html += '</div>';
     html += '<div style="margin-top:8px;display:flex;gap:8px;">';
     html += '<a href="' + escH(exp.receipt_url) + '" target="_blank" download class="text-xs text-teal-600 dark:text-teal-400 hover:underline">Download</a>';
@@ -247,6 +248,24 @@ window.openExpReceiptPreview = function(url) {
     openPhotoLightbox([url], 0);
   } else {
     window.open(url, '_blank');
+  }
+};
+
+window.deleteExpenseReceipt = async function(expId) {
+  if (!confirm('Remove receipt from this expense?')) return;
+  try {
+    await supabaseClient
+      .from('expenses')
+      .update({ receipt_url: null })
+      .eq('id', expId);
+    var exp = expenses.find(function(e) { return e.id === expId; });
+    if (exp) exp.receipt_url = null;
+    closeExpenseQuickView();
+    openExpenseQuickView(expId);
+    showNotification('Receipt removed', 'success');
+  } catch (err) {
+    console.error('Error removing receipt:', err);
+    showNotification('Error: ' + err.message, 'error');
   }
 };
 
