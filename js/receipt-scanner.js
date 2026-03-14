@@ -1,6 +1,6 @@
-// M4 Receipt Scanner - Upload receipt photos with expenses
-// Adds "Scan Receipt" button, receipt upload in expense modal,
-// includes receipt_url in save/update. Additive only.
+// M4 Receipt Scanner v2 - Supabase Edge Function powered
+// Upload receipt photos, auto-scan via Edge Function, attach to expenses
+// Additive only
 (function(){
 try {
 
@@ -9,14 +9,15 @@ function escH(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-// Track pending receipt
 window._pendingReceiptUrl = null;
 window._pendingReceiptFile = null;
 window._pendingReceiptData = null;
 
-// ============ INJECT "SCAN RECEIPT" BUTTON ============
+// Edge Function URL (same Supabase project)
+var EDGE_FN_URL = 'https://xviustrrsuhidzbcpgow.supabase.co/functions/v1/scan-receipt';
+
+// ============ INJECT SCAN RECEIPT BUTTON ============
 function injectScanButton() {
-  // Find the "Add Expense" button in the expenses tab
   var addBtns = document.querySelectorAll('button');
   for (var i = 0; i < addBtns.length; i++) {
     var btn = addBtns[i];
@@ -47,7 +48,7 @@ window.openReceiptScanner = function() {
         '<h3 class="text-lg sm:text-xl font-bold dark:text-white">Scan Receipt</h3>' +
         '<button onclick="closeReceiptScanner()" class="text-2xl leading-none dark:text-gray-300 hover:text-gray-600">&times;</button>' +
       '</div>' +
-      '<p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Take a photo or upload an image of your receipt. The details will be attached to your expense.</p>' +
+      '<p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Take a photo or upload an image of your receipt. We will try to read the amount and details automatically.</p>' +
 
       '<div id="receipt-preview-area" class="hidden mb-4">' +
         '<img id="receipt-preview-img" class="w-full max-h-64 object-contain rounded-lg border border-gray-200 dark:border-gray-700" />' +
@@ -109,63 +110,7 @@ window.onReceiptFileSelected = function(input) {
   if (btn) {
     btn.disabled = false;
     btn.classList.remove('opacity-50', 'cursor-not-allowed');
-    btn.textContent = 'Upload & Continue';
-  }
-};
-
-window.continueWithReceipt = async function() {
-  if (!window._pendingReceiptFile) return;
-
-  var btn = document.getElementById('receipt-continue-btn');
-  if (btn) { btn.textContent = 'Uploading...'; btn.disabled = true; }
-
-  try {
-    var file = window._pendingReceiptFile;
-
-    // Convert to base64 for AI analysis
-    var base64Data = await fileToBase64(file);
-    var mediaType = file.type || 'image/jpeg';
-
-    var fileExt = file.name.split('.').pop();
-    var fileName = 'receipt-' + Date.now() + '.' + fileExt;
-    var filePath = 'receipts/' + fileName;
-    var storageClient = typeof supabaseClient !== 'undefined' ? supabaseClient : supabase;
-
-    var uploadResult = await storageClient.storage
-      .from('job-photos')
-      .upload(filePath, file);
-
-    if (uploadResult.error) throw uploadResult.error;
-
-    var urlResult = storageClient.storage
-      .from('job-photos')
-      .getPublicUrl(filePath);
-
-    var receiptUrl = urlResult.data ? urlResult.data.publicUrl : null;
-    if (!receiptUrl) throw new Error('Could not get receipt URL');
-
-    window._pendingReceiptUrl = receiptUrl;
-    window._pendingReceiptFile = null;
-
-    // Try AI analysis
-    if (btn) btn.textContent = 'Analysing receipt...';
-    var extracted = await analyseReceipt(base64Data, mediaType);
-
-    // Store extracted data for modal pre-fill
-    window._pendingReceiptData = extracted;
-
-    closeReceiptScanner();
-    openModal('expense');
-
-    if (extracted && (extracted.amount || extracted.date || extracted.description)) {
-      showNotification('Receipt scanned! Check the pre-filled details.', 'success');
-    } else {
-      showNotification('Receipt uploaded! Fill in the details below.', 'success');
-    }
-  } catch (error) {
-    console.error('Error with receipt:', error);
-    showNotification('Error: ' + error.message, 'error');
-    if (btn) { btn.textContent = 'Upload & Continue'; btn.disabled = false; }
+    btn.textContent = 'Upload & Scan';
   }
 };
 
@@ -174,148 +119,113 @@ function fileToBase64(file) {
   return new Promise(function(resolve, reject) {
     var reader = new FileReader();
     reader.onload = function() {
-      var result = reader.result;
-      // Strip data URL prefix to get raw base64
-      var base64 = result.split(',')[1];
-      resolve(base64);
+      resolve(reader.result.split(',')[1]);
     };
     reader.onerror = function() { reject(new Error('Failed to read file')); };
     reader.readAsDataURL(file);
   });
 }
 
-// ============ API KEY MANAGEMENT ============
-function getReceiptApiKey() {
-  return localStorage.getItem('m4_anthropic_key') || '';
-}
+// ============ CONTINUE: UPLOAD + SCAN ============
+window.continueWithReceipt = async function() {
+  if (!window._pendingReceiptFile) return;
 
-function setReceiptApiKey(key) {
-  localStorage.setItem('m4_anthropic_key', key);
-}
+  var btn = document.getElementById('receipt-continue-btn');
+  if (btn) { btn.textContent = 'Uploading...'; btn.disabled = true; }
 
-window.promptForApiKey = function() {
-  var existing = getReceiptApiKey();
-  var key = prompt(
-    'Enter your Anthropic API key to enable receipt scanning.\n' +
-    'Get one at console.anthropic.com/settings/keys\n\n' +
-    'This is stored locally on your device only.',
-    existing
-  );
-  if (key && key.trim()) {
-    setReceiptApiKey(key.trim());
-    showNotification('API key saved. Try scanning again.', 'success');
+  try {
+    var file = window._pendingReceiptFile;
+    var base64Data = await fileToBase64(file);
+    var mediaType = file.type || 'image/jpeg';
+
+    // Upload to storage
+    var fileExt = file.name.split('.').pop();
+    var fileName = 'receipt-' + Date.now() + '.' + fileExt;
+    var filePath = 'receipts/' + fileName;
+    var sc = typeof supabaseClient !== 'undefined' ? supabaseClient : supabase;
+
+    var uploadResult = await sc.storage.from('job-photos').upload(filePath, file);
+    if (uploadResult.error) throw uploadResult.error;
+
+    var urlResult = sc.storage.from('job-photos').getPublicUrl(filePath);
+    var receiptUrl = urlResult.data ? urlResult.data.publicUrl : null;
+    if (!receiptUrl) throw new Error('Could not get receipt URL');
+
+    window._pendingReceiptUrl = receiptUrl;
+    window._pendingReceiptFile = null;
+
+    // Try AI scan via Edge Function
+    if (btn) btn.textContent = 'Scanning receipt...';
+    var extracted = await scanReceiptViaEdge(base64Data, mediaType);
+    window._pendingReceiptData = extracted;
+
+    closeReceiptScanner();
+    openModal('expense');
+
+    if (extracted && (extracted.amount || extracted.date)) {
+      showNotification('Receipt scanned! Check the pre-filled details.', 'success');
+    } else {
+      showNotification('Receipt uploaded! Fill in the details below.', 'success');
+    }
+  } catch (error) {
+    console.error('Error with receipt:', error);
+    showNotification('Error: ' + error.message, 'error');
+    if (btn) { btn.textContent = 'Upload & Scan'; btn.disabled = false; }
   }
 };
 
-// ============ AI RECEIPT ANALYSIS ============
-async function analyseReceipt(base64Data, mediaType) {
-  var apiKey = getReceiptApiKey();
-
-  if (!apiKey) {
-    // First time - prompt for key
-    var key = prompt(
-      'To auto-scan receipts, enter your Anthropic API key.\n' +
-      'Get one free at: console.anthropic.com/settings/keys\n\n' +
-      'This is stored locally on your device only.\n' +
-      'Press Cancel to skip and enter details manually.'
-    );
-    if (key && key.trim()) {
-      setReceiptApiKey(key.trim());
-      apiKey = key.trim();
-    } else {
-      return null; // Skip analysis
-    }
-  }
-
+// ============ EDGE FUNCTION CALL ============
+async function scanReceiptViaEdge(base64Data, mediaType) {
   try {
-    var response = await fetch('https://api.anthropic.com/v1/messages', {
+    // Get anon key from supabase client for auth
+    var anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aXVzdHJyc3VoaWR6YmNwZ293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3ODk1NDgsImV4cCI6MjA4NDM2NTU0OH0.CEcc50c1K2Qnh6rXt_1-_w30LzHvDniGLbqWhdOolRY';
+
+    var response = await fetch(EDGE_FN_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
+        'Authorization': 'Bearer ' + anonKey,
+        'apikey': anonKey
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 500,
-        messages: [{
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: {
-                type: 'base64',
-                media_type: mediaType,
-                data: base64Data
-              }
-            },
-            {
-              type: 'text',
-              text: 'Extract the following from this receipt image. Respond ONLY with a JSON object, no markdown, no backticks, no other text:\n' +
-                '{\n' +
-                '  "date": "YYYY-MM-DD format or null if unclear",\n' +
-                '  "amount": number (total amount paid, just the number, no currency symbol) or null,\n' +
-                '  "description": "merchant/store name and brief description of purchase" or null,\n' +
-                '  "currency": "AUD", "USD", "NZD" etc or null\n' +
-                '}\n' +
-                'If you cannot read a field, set it to null.'
-            }
-          ]
-        }]
+        image_base64: base64Data,
+        media_type: mediaType
       })
     });
 
     if (!response.ok) {
-      var errText = await response.text();
-      console.error('API error:', response.status, errText);
-      if (response.status === 401) {
-        setReceiptApiKey('');
-        showNotification('Invalid API key. Please try again.', 'error');
-      }
+      console.warn('Edge function error:', response.status);
       return null;
     }
 
     var data = await response.json();
-    var text = '';
-    for (var i = 0; i < data.content.length; i++) {
-      if (data.content[i].type === 'text') {
-        text += data.content[i].text;
-      }
+    if (data.error) {
+      console.warn('Scan error:', data.error);
+      return null;
     }
 
-    // Clean and parse JSON
-    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-    var parsed = JSON.parse(text);
-    console.log('Receipt analysis:', parsed);
-    return parsed;
+    console.log('Receipt scan result:', data);
+    return data;
   } catch (err) {
-    console.error('Receipt analysis error:', err);
-    return null;
+    console.warn('Receipt scan unavailable:', err.message);
+    return null; // Graceful fallback - no scan, just upload
   }
 }
 
-// ============ ENHANCE EXPENSE MODAL WITH RECEIPT ============
+// ============ ENHANCE EXPENSE MODAL ============
 function enhanceExpenseModal() {
-  // Only run when expense modal is open
-  var modal = document.querySelector('.fixed.inset-0.bg-black');
-  if (!modal) return;
-
-  // Check if this is an expense modal by looking for #expense_date
   var dateField = document.getElementById('expense_date');
   if (!dateField) return;
 
   var form = dateField.closest('.bg-white, .dark\\:bg-gray-800') || dateField.closest('div');
-  if (!form) return;
-  if (form.dataset.receiptEnhanced) return;
+  if (!form || form.dataset.receiptEnhanced) return;
   form.dataset.receiptEnhanced = 'true';
 
-  // Get existing receipt_url from editing item
   var existingReceipt = (typeof editingItem !== 'undefined' && editingItem && editingItem.receipt_url)
     ? editingItem.receipt_url : null;
   var receiptUrl = window._pendingReceiptUrl || existingReceipt || null;
 
-  // Add hidden field for receipt_url
+  // Hidden field
   var hiddenField = document.getElementById('receipt_url_field');
   if (!hiddenField) {
     hiddenField = document.createElement('input');
@@ -325,7 +235,7 @@ function enhanceExpenseModal() {
     form.appendChild(hiddenField);
   }
 
-  // Add receipt section at top of form (before date field)
+  // Receipt section
   var dateLabel = dateField.closest('.mb-3');
   if (!dateLabel) return;
 
@@ -334,40 +244,17 @@ function enhanceExpenseModal() {
   receiptSection.id = 'expense-receipt-section';
 
   if (receiptUrl) {
-    receiptSection.innerHTML =
-      '<div class="p-3 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg">' +
-        '<div class="flex items-start gap-3">' +
-          '<img src="' + escH(receiptUrl) + '" class="w-16 h-20 object-cover rounded border border-gray-200 dark:border-gray-600 cursor-pointer" onclick="openReceiptPreview(\'' + escH(receiptUrl) + '\')" />' +
-          '<div class="flex-1">' +
-            '<p class="text-sm font-medium text-teal-700 dark:text-teal-400">Receipt attached</p>' +
-            '<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Click to preview. Fill in the details below.</p>' +
-            '<button onclick="removeExpenseReceipt()" class="text-xs text-red-500 hover:text-red-700 mt-1">Remove receipt</button>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
+    receiptSection.innerHTML = buildReceiptPreview(receiptUrl);
   } else {
-    receiptSection.innerHTML =
-      '<div class="flex items-center gap-2">' +
-        '<label class="flex-1 flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-teal-400 dark:hover:border-teal-500 hover:bg-teal-50/50 dark:hover:bg-teal-900/10 transition-colors text-sm text-gray-500 dark:text-gray-400">' +
-          '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>' +
-          'Attach Receipt Photo' +
-          '<input type="file" accept="image/*" capture="environment" onchange="uploadReceiptInModal(this)" class="hidden" />' +
-        '</label>' +
-      '</div>';
+    receiptSection.innerHTML = buildReceiptUploader();
   }
 
   dateLabel.parentNode.insertBefore(receiptSection, dateLabel);
 
-  // Clear pending receipt after use
-  if (window._pendingReceiptUrl) {
-    window._pendingReceiptUrl = null;
-  }
-
-  // Pre-fill form from AI analysis
+  // Pre-fill from AI scan
   if (window._pendingReceiptData) {
     var rd = window._pendingReceiptData;
     window._pendingReceiptData = null;
-
     if (rd.date) {
       var df = document.getElementById('expense_date');
       if (df) df.value = rd.date;
@@ -381,6 +268,34 @@ function enhanceExpenseModal() {
       if (descf) descf.value = rd.description;
     }
   }
+
+  // Clear pending
+  if (window._pendingReceiptUrl) {
+    window._pendingReceiptUrl = null;
+  }
+}
+
+function buildReceiptPreview(url) {
+  return '<div class="p-3 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg">' +
+    '<div class="flex items-start gap-3">' +
+      '<img src="' + escH(url) + '" class="w-16 h-20 object-cover rounded border border-gray-200 dark:border-gray-600 cursor-pointer" onclick="openExpReceiptLB(\'' + escH(url) + '\')" />' +
+      '<div class="flex-1">' +
+        '<p class="text-sm font-medium text-teal-700 dark:text-teal-400">Receipt attached</p>' +
+        '<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Click to preview</p>' +
+        '<button onclick="removeExpenseReceipt()" class="text-xs text-red-500 hover:text-red-700 mt-1">Remove</button>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function buildReceiptUploader() {
+  return '<div class="flex items-center gap-2">' +
+    '<label class="flex-1 flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-teal-400 dark:hover:border-teal-500 hover:bg-teal-50/50 dark:hover:bg-teal-900/10 transition-colors text-sm text-gray-500 dark:text-gray-400">' +
+      '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>' +
+      'Attach Receipt Photo' +
+      '<input type="file" accept="image/*" capture="environment" onchange="uploadReceiptInModal(this)" class="hidden" />' +
+    '</label>' +
+  '</div>';
 }
 
 window.uploadReceiptInModal = async function(input) {
@@ -391,55 +306,29 @@ window.uploadReceiptInModal = async function(input) {
   }
 
   var section = document.getElementById('expense-receipt-section');
-  if (section) {
-    section.innerHTML = '<div class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-sm text-gray-500 dark:text-gray-400 text-center">Uploading receipt...</div>';
-  }
+  if (section) section.innerHTML = '<div class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-sm text-gray-500 dark:text-gray-400 text-center">Uploading...</div>';
 
   try {
     var fileExt = file.name.split('.').pop();
     var fileName = 'receipt-' + Date.now() + '.' + fileExt;
     var filePath = 'receipts/' + fileName;
-    var storageClient = typeof supabaseClient !== 'undefined' ? supabaseClient : supabase;
+    var sc = typeof supabaseClient !== 'undefined' ? supabaseClient : supabase;
 
-    var uploadResult = await storageClient.storage
-      .from('job-photos')
-      .upload(filePath, file);
-
+    var uploadResult = await sc.storage.from('job-photos').upload(filePath, file);
     if (uploadResult.error) throw uploadResult.error;
 
-    var urlResult = storageClient.storage
-      .from('job-photos')
-      .getPublicUrl(filePath);
-
+    var urlResult = sc.storage.from('job-photos').getPublicUrl(filePath);
     var receiptUrl = urlResult.data ? urlResult.data.publicUrl : null;
     if (!receiptUrl) throw new Error('Could not get URL');
 
-    // Update hidden field
     var hidden = document.getElementById('receipt_url_field');
     if (hidden) hidden.value = receiptUrl;
 
-    // Update preview
-    if (section) {
-      section.innerHTML =
-        '<div class="p-3 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg">' +
-          '<div class="flex items-start gap-3">' +
-            '<img src="' + escH(receiptUrl) + '" class="w-16 h-20 object-cover rounded border border-gray-200 dark:border-gray-600 cursor-pointer" onclick="openReceiptPreview(\'' + escH(receiptUrl) + '\')" />' +
-            '<div class="flex-1">' +
-              '<p class="text-sm font-medium text-teal-700 dark:text-teal-400">Receipt attached</p>' +
-              '<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Click to preview.</p>' +
-              '<button onclick="removeExpenseReceipt()" class="text-xs text-red-500 hover:text-red-700 mt-1">Remove receipt</button>' +
-            '</div>' +
-          '</div>' +
-        '</div>';
-    }
+    if (section) section.innerHTML = buildReceiptPreview(receiptUrl);
     showNotification('Receipt uploaded', 'success');
   } catch (error) {
     console.error('Error uploading receipt:', error);
-    if (section) {
-      section.innerHTML =
-        '<div class="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg text-sm text-red-600">Upload failed. ' +
-        '<button onclick="removeExpenseReceipt()" class="underline">Try again</button></div>';
-    }
+    if (section) section.innerHTML = '<div class="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg text-sm text-red-600">Upload failed. <button onclick="removeExpenseReceipt()" class="underline">Try again</button></div>';
     showNotification('Error: ' + error.message, 'error');
   }
 };
@@ -448,19 +337,10 @@ window.removeExpenseReceipt = function() {
   var hidden = document.getElementById('receipt_url_field');
   if (hidden) hidden.value = '';
   var section = document.getElementById('expense-receipt-section');
-  if (section) {
-    section.innerHTML =
-      '<div class="flex items-center gap-2">' +
-        '<label class="flex-1 flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-teal-400 dark:hover:border-teal-500 hover:bg-teal-50/50 dark:hover:bg-teal-900/10 transition-colors text-sm text-gray-500 dark:text-gray-400">' +
-          '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>' +
-          'Attach Receipt Photo' +
-          '<input type="file" accept="image/*" capture="environment" onchange="uploadReceiptInModal(this)" class="hidden" />' +
-        '</label>' +
-      '</div>';
-  }
+  if (section) section.innerHTML = buildReceiptUploader();
 };
 
-window.openReceiptPreview = function(url) {
+window.openExpReceiptLB = function(url) {
   if (typeof openPhotoLightbox === 'function') {
     openPhotoLightbox([url], 0);
   } else {
@@ -472,18 +352,11 @@ window.openReceiptPreview = function(url) {
 var _origSaveExpense = window.saveExpense;
 
 window.saveExpense = function() {
-  // Stash receipt URL before original save reads the form
   var receiptField = document.getElementById('receipt_url_field');
-  var receiptUrl = receiptField ? receiptField.value : '';
-
-  // Store for addExpense override
-  window._receiptUrlForSave = receiptUrl || null;
-
-  // Call original
+  window._receiptUrlForSave = (receiptField && receiptField.value) ? receiptField.value : null;
   _origSaveExpense();
 };
 
-// Override addExpense to include receipt_url
 var _origAddExpense = window.addExpense;
 
 window.addExpense = async function(expense) {
@@ -491,21 +364,28 @@ window.addExpense = async function(expense) {
     expense.receipt_url = window._receiptUrlForSave;
     window._receiptUrlForSave = null;
   }
-  return _origAddExpense(expense);
+  var result = await _origAddExpense(expense);
+
+  // Ensure the local expense object has receipt_url
+  if (expense.receipt_url && expenses.length > 0) {
+    var latest = expenses[expenses.length - 1];
+    if (latest && !latest.receipt_url && expense.receipt_url) {
+      latest.receipt_url = expense.receipt_url;
+    }
+  }
+
+  return result;
 };
 
-// Override updateExpense to include receipt_url
 var _origUpdateExpense = window.updateExpense;
 
 window.updateExpense = async function(id) {
-  // Grab receipt URL from hidden field before calling original
   var receiptField = document.getElementById('receipt_url_field');
-  var receiptUrl = receiptField ? receiptField.value : null;
+  var receiptUrl = (receiptField && receiptField.value) ? receiptField.value : null;
 
-  // Call original (it does the save)
   await _origUpdateExpense(id);
 
-  // Now update receipt_url separately if present
+  // Save receipt_url separately and sync local state
   if (receiptUrl !== null) {
     try {
       await supabaseClient
@@ -513,8 +393,8 @@ window.updateExpense = async function(id) {
         .update({ receipt_url: receiptUrl || null })
         .eq('id', id);
 
-      var expense = expenses.find(function(e) { return e.id === id; });
-      if (expense) expense.receipt_url = receiptUrl || null;
+      var exp = expenses.find(function(e) { return e.id === id; });
+      if (exp) exp.receipt_url = receiptUrl || null;
     } catch (err) {
       console.error('Error saving receipt URL:', err);
     }
@@ -532,7 +412,7 @@ var _receiptObs = new MutationObserver(function() {
 });
 _receiptObs.observe(document.body, { childList: true, subtree: true });
 
-console.log('Receipt scanner loaded');
+console.log('Receipt scanner v2 loaded');
 
 } catch(e) {
   console.error('Receipt scanner init error:', e);
