@@ -342,6 +342,7 @@ window.savePhotoFromModal = async function(jobId) {
     var updateResult = await supabaseClient.from('jobs').update({ photos: updatedPhotos }).eq('id', jobId);
     if (updateResult.error) throw updateResult.error;
     if (job) job.photos = updatedPhotos;
+    _lastPhotoState = '';
 
     window._modalPhotoFile = null;
 
@@ -462,6 +463,7 @@ window.deletePhotoFromLightbox = async function() {
 
     // Update local state
     job.photos = updatedPhotos;
+    _lastPhotoState = '';
 
     // Update lightbox
     _lbPhotos = _lbPhotos.filter(function(p) { return p !== photoToDelete; });
@@ -526,6 +528,8 @@ lbCss2.textContent = [
 document.head.appendChild(lbCss2);
 
 // Manage photos section + wrap thumbnails with delete X
+var _lastPhotoState = '';
+
 function wrapPhotoThumbs() {
   var jobId = getJobId();
   if (!jobId) return;
@@ -535,61 +539,67 @@ function wrapPhotoThumbs() {
   var leftCol = taskSection ? taskSection.parentElement : (dailyLogSection ? dailyLogSection.parentElement : null);
   if (!leftCol) return;
 
-  // Step 1: Remove ALL original photo sections (no ID) from schedule.js
-  var allDivs = leftCol.children;
-  for (var di = allDivs.length - 1; di >= 0; di--) {
-    var div = allDivs[di];
-    if (div.id === 'job-photos-section') continue;
-    if (div.id === 'job-tasks-section') continue;
-    if (div.id === 'job-dailylog-section') continue;
-    var h3 = div.querySelector('h3');
-    if (h3 && h3.textContent.indexOf('Job Photos') !== -1) {
-      div.remove();
-    }
-  }
-
-  // Step 2: Get current photo data
+  // Get current photo data
   var job = null;
   for (var j = 0; j < jobs.length; j++) {
     if (jobs[j].id === jobId) { job = jobs[j]; break; }
   }
   var photos = (job && job.photos) ? job.photos : [];
+  var stateKey = jobId + ':' + photos.length + ':' + photos.join(',');
 
-  // Step 3: Remove our existing section if it exists (will rebuild fresh)
-  var existing = document.getElementById('job-photos-section');
-  if (existing) existing.remove();
+  // Only rebuild section if state changed
+  if (stateKey !== _lastPhotoState) {
+    _lastPhotoState = stateKey;
 
-  // Step 4: Build fresh photos section
-  var section = document.createElement('div');
-  section.id = 'job-photos-section';
-  section.className = 'bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6';
-
-  if (photos.length > 0) {
-    var gridHtml = '<div class="grid grid-cols-2 sm:grid-cols-3 gap-3">';
-    for (var p = 0; p < photos.length; p++) {
-      gridHtml += '<img src="' + escH(photos[p]) + '" class="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-700" />';
+    // Remove original photo sections from schedule.js (no ID)
+    var allDivs = leftCol.children;
+    for (var di = allDivs.length - 1; di >= 0; di--) {
+      var div = allDivs[di];
+      if (div.id) continue;
+      var h3 = div.querySelector('h3');
+      if (h3 && h3.textContent.indexOf('Job Photos') !== -1) {
+        div.remove();
+      }
     }
-    gridHtml += '</div>';
-    section.innerHTML =
-      '<div class="flex justify-between items-center mb-4">' +
-        '<h3 class="text-lg font-semibold text-gray-900 dark:text-white">Job Photos (' + photos.length + ')</h3>' +
-        '<button onclick="openPhotoModal(\'' + jobId + '\')" class="text-sm text-teal-600 dark:text-teal-400 hover:underline">+ Add Photo</button>' +
-      '</div>' + gridHtml;
-  } else {
-    section.innerHTML =
-      '<div class="flex justify-between items-center mb-4">' +
-        '<h3 class="text-lg font-semibold text-gray-900 dark:text-white">Job Photos</h3>' +
-      '</div>' +
-      '<div class="text-center py-6">' +
-        '<svg class="w-10 h-10 mx-auto mb-2 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>' +
-        '<p class="text-sm text-gray-400 dark:text-gray-500 mb-3">No photos yet</p>' +
-        '<button onclick="openPhotoModal(\'' + jobId + '\')" class="px-4 py-2 text-sm font-medium text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/30 border border-teal-200 dark:border-teal-800 rounded-lg transition-colors">Add Photo</button>' +
-      '</div>';
-  }
-  leftCol.appendChild(section);
 
-  // Step 5: Wrap photo imgs with delete X
-  var imgs = section.querySelectorAll('img[src*="job-photos"]');
+    // Remove our existing section
+    var existing = document.getElementById('job-photos-section');
+    if (existing) existing.remove();
+
+    // Build fresh
+    var section = document.createElement('div');
+    section.id = 'job-photos-section';
+    section.className = 'bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6';
+
+    if (photos.length > 0) {
+      var gridHtml = '<div class="grid grid-cols-2 sm:grid-cols-3 gap-3">';
+      for (var p = 0; p < photos.length; p++) {
+        gridHtml += '<img src="' + escH(photos[p]) + '" class="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-700" />';
+      }
+      gridHtml += '</div>';
+      section.innerHTML =
+        '<div class="flex justify-between items-center mb-4">' +
+          '<h3 class="text-lg font-semibold text-gray-900 dark:text-white">Job Photos (' + photos.length + ')</h3>' +
+          '<button onclick="openPhotoModal(\'' + jobId + '\')" class="text-sm text-teal-600 dark:text-teal-400 hover:underline">+ Add Photo</button>' +
+        '</div>' + gridHtml;
+    } else {
+      section.innerHTML =
+        '<div class="flex justify-between items-center mb-4">' +
+          '<h3 class="text-lg font-semibold text-gray-900 dark:text-white">Job Photos</h3>' +
+        '</div>' +
+        '<div class="text-center py-6">' +
+          '<svg class="w-10 h-10 mx-auto mb-2 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>' +
+          '<p class="text-sm text-gray-400 dark:text-gray-500 mb-3">No photos yet</p>' +
+          '<button onclick="openPhotoModal(\'' + jobId + '\')" class="px-4 py-2 text-sm font-medium text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/30 border border-teal-200 dark:border-teal-800 rounded-lg transition-colors">Add Photo</button>' +
+        '</div>';
+    }
+    leftCol.appendChild(section);
+  }
+
+  // Add delete X to any unwrapped photos (runs every time, cheap check)
+  var section2 = document.getElementById('job-photos-section');
+  if (!section2) return;
+  var imgs = section2.querySelectorAll('img[src*="job-photos"]');
   for (var i = 0; i < imgs.length; i++) {
     var img = imgs[i];
     if (img.closest('.photo-thumb-wrap')) continue;
@@ -627,6 +637,7 @@ window.deletePhotoThumb = async function(photoSrc) {
     var result = await supabaseClient.from('jobs').update({ photos: updatedPhotos }).eq('id', jobId);
     if (result.error) throw result.error;
     job.photos = updatedPhotos;
+    _lastPhotoState = '';
     showNotification('Photo deleted', 'success');
     renderApp();
   } catch (error) {
