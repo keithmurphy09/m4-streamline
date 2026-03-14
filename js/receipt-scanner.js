@@ -12,6 +12,7 @@ function escH(s) {
 // Track pending receipt
 window._pendingReceiptUrl = null;
 window._pendingReceiptFile = null;
+window._pendingReceiptData = null;
 
 // ============ INJECT "SCAN RECEIPT" BUTTON ============
 function injectScanButton() {
@@ -120,6 +121,11 @@ window.continueWithReceipt = async function() {
 
   try {
     var file = window._pendingReceiptFile;
+
+    // Convert to base64 for AI analysis
+    var base64Data = await fileToBase64(file);
+    var mediaType = file.type || 'image/jpeg';
+
     var fileExt = file.name.split('.').pop();
     var fileName = 'receipt-' + Date.now() + '.' + fileExt;
     var filePath = 'receipts/' + fileName;
@@ -141,18 +147,153 @@ window.continueWithReceipt = async function() {
     window._pendingReceiptUrl = receiptUrl;
     window._pendingReceiptFile = null;
 
-    closeReceiptScanner();
+    // Try AI analysis
+    if (btn) btn.textContent = 'Analysing receipt...';
+    var extracted = await analyseReceipt(base64Data, mediaType);
 
-    // Open expense modal
+    // Store extracted data for modal pre-fill
+    window._pendingReceiptData = extracted;
+
+    closeReceiptScanner();
     openModal('expense');
 
-    showNotification('Receipt uploaded! Fill in the details below.', 'success');
+    if (extracted && (extracted.amount || extracted.date || extracted.description)) {
+      showNotification('Receipt scanned! Check the pre-filled details.', 'success');
+    } else {
+      showNotification('Receipt uploaded! Fill in the details below.', 'success');
+    }
   } catch (error) {
-    console.error('Error uploading receipt:', error);
-    showNotification('Error uploading receipt: ' + error.message, 'error');
+    console.error('Error with receipt:', error);
+    showNotification('Error: ' + error.message, 'error');
     if (btn) { btn.textContent = 'Upload & Continue'; btn.disabled = false; }
   }
 };
+
+// ============ FILE TO BASE64 ============
+function fileToBase64(file) {
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function() {
+      var result = reader.result;
+      // Strip data URL prefix to get raw base64
+      var base64 = result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = function() { reject(new Error('Failed to read file')); };
+    reader.readAsDataURL(file);
+  });
+}
+
+// ============ API KEY MANAGEMENT ============
+function getReceiptApiKey() {
+  return localStorage.getItem('m4_anthropic_key') || '';
+}
+
+function setReceiptApiKey(key) {
+  localStorage.setItem('m4_anthropic_key', key);
+}
+
+window.promptForApiKey = function() {
+  var existing = getReceiptApiKey();
+  var key = prompt(
+    'Enter your Anthropic API key to enable receipt scanning.\n' +
+    'Get one at console.anthropic.com/settings/keys\n\n' +
+    'This is stored locally on your device only.',
+    existing
+  );
+  if (key && key.trim()) {
+    setReceiptApiKey(key.trim());
+    showNotification('API key saved. Try scanning again.', 'success');
+  }
+};
+
+// ============ AI RECEIPT ANALYSIS ============
+async function analyseReceipt(base64Data, mediaType) {
+  var apiKey = getReceiptApiKey();
+
+  if (!apiKey) {
+    // First time - prompt for key
+    var key = prompt(
+      'To auto-scan receipts, enter your Anthropic API key.\n' +
+      'Get one free at: console.anthropic.com/settings/keys\n\n' +
+      'This is stored locally on your device only.\n' +
+      'Press Cancel to skip and enter details manually.'
+    );
+    if (key && key.trim()) {
+      setReceiptApiKey(key.trim());
+      apiKey = key.trim();
+    } else {
+      return null; // Skip analysis
+    }
+  }
+
+  try {
+    var response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 500,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: mediaType,
+                data: base64Data
+              }
+            },
+            {
+              type: 'text',
+              text: 'Extract the following from this receipt image. Respond ONLY with a JSON object, no markdown, no backticks, no other text:\n' +
+                '{\n' +
+                '  "date": "YYYY-MM-DD format or null if unclear",\n' +
+                '  "amount": number (total amount paid, just the number, no currency symbol) or null,\n' +
+                '  "description": "merchant/store name and brief description of purchase" or null,\n' +
+                '  "currency": "AUD", "USD", "NZD" etc or null\n' +
+                '}\n' +
+                'If you cannot read a field, set it to null.'
+            }
+          ]
+        }]
+      })
+    });
+
+    if (!response.ok) {
+      var errText = await response.text();
+      console.error('API error:', response.status, errText);
+      if (response.status === 401) {
+        setReceiptApiKey('');
+        showNotification('Invalid API key. Please try again.', 'error');
+      }
+      return null;
+    }
+
+    var data = await response.json();
+    var text = '';
+    for (var i = 0; i < data.content.length; i++) {
+      if (data.content[i].type === 'text') {
+        text += data.content[i].text;
+      }
+    }
+
+    // Clean and parse JSON
+    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    var parsed = JSON.parse(text);
+    console.log('Receipt analysis:', parsed);
+    return parsed;
+  } catch (err) {
+    console.error('Receipt analysis error:', err);
+    return null;
+  }
+}
 
 // ============ ENHANCE EXPENSE MODAL WITH RECEIPT ============
 function enhanceExpenseModal() {
@@ -220,6 +361,25 @@ function enhanceExpenseModal() {
   // Clear pending receipt after use
   if (window._pendingReceiptUrl) {
     window._pendingReceiptUrl = null;
+  }
+
+  // Pre-fill form from AI analysis
+  if (window._pendingReceiptData) {
+    var rd = window._pendingReceiptData;
+    window._pendingReceiptData = null;
+
+    if (rd.date) {
+      var df = document.getElementById('expense_date');
+      if (df) df.value = rd.date;
+    }
+    if (rd.amount) {
+      var af = document.getElementById('amount');
+      if (af) af.value = parseFloat(rd.amount).toFixed(2);
+    }
+    if (rd.description) {
+      var descf = document.getElementById('description');
+      if (descf) descf.value = rd.description;
+    }
   }
 }
 
