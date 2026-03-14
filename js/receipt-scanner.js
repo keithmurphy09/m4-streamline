@@ -252,6 +252,24 @@ window.continueWithReceipt = async function() {
     closeReceiptScanner();
     openModal('expense');
 
+    // Pre-fill after modal renders (direct, not via observer)
+    setTimeout(function() {
+      if (extracted) {
+        if (extracted.date) {
+          var df = document.getElementById('expense_date');
+          if (df) { df.value = extracted.date; console.log('Pre-filled date:', extracted.date); }
+        }
+        if (extracted.amount) {
+          var af = document.getElementById('amount');
+          if (af) { af.value = parseFloat(extracted.amount).toFixed(2); console.log('Pre-filled amount:', extracted.amount); }
+        }
+        if (extracted.description) {
+          var descf = document.getElementById('description');
+          if (descf) { descf.value = extracted.description; console.log('Pre-filled description:', extracted.description); }
+        }
+      }
+    }, 500);
+
     if (extracted && (extracted.amount || extracted.date)) {
       showNotification('Receipt scanned! Check the pre-filled details.', 'success');
     } else {
