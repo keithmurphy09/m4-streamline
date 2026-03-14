@@ -392,7 +392,7 @@ el.innerHTML = `
         <div class="lp2-card-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
         <div class="lp2-card-tag">Pricing</div>
         <h3>Fraction of the cost</h3>
-        <p>Buildertrend starts at $499/month. M4 gives you the same core features for a fraction of that. No locked contracts.</p>
+        <p>Buildertrend starts at $499/month. M4 gives you the same core features starting at $79/month. No locked contracts.</p>
       </div>
       <div class="lp2-card">
         <div class="lp2-card-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.66 0 3-4.03 3-9s-1.34-9-3-9m0 18c-1.66 0-3-4.03-3-9s1.34-9 3-9"/></svg></div>
@@ -456,7 +456,7 @@ el.innerHTML = `
     </div>
     <div class="lp2-price-card featured">
       <h3>Solo Trader</h3>
-      <div class="price">$29 <span>/mo</span></div>
+      <div class="price">$79 <span>/mo</span></div>
       <div class="price-note">Everything a sole trader needs</div>
       <ul>
         <li>${chk} Everything in Trial</li>
@@ -470,7 +470,7 @@ el.innerHTML = `
     </div>
     <div class="lp2-price-card">
       <h3>Business</h3>
-      <div class="price">$59 <span>/mo</span></div>
+      <div class="price">$149 <span>/mo</span></div>
       <div class="price-note">For growing teams</div>
       <ul>
         <li>${chk} Everything in Solo</li>
@@ -494,7 +494,7 @@ el.innerHTML = `
   </div>
   <div class="lp2-faq">
     <div class="lp2-faq-item"><button class="lp2-faq-q" onclick="lp2ToggleFaq(this)">Is there really a free trial?<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg></button><div class="lp2-faq-a">Yes, 14 days completely free with all features. No credit card required to start. You only pay if you decide to continue after the trial.</div></div>
-    <div class="lp2-faq-item"><button class="lp2-faq-q" onclick="lp2ToggleFaq(this)">How is this different from Buildertrend?<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg></button><div class="lp2-faq-a">M4 Streamline gives you the same core features (scheduling, quoting, invoicing, expenses, team management) at a fraction of the cost. Buildertrend starts at $499/month and requires annual contracts. We start at $29/month with no lock-in. We are built specifically for Australian and NZ tradies.</div></div>
+    <div class="lp2-faq-item"><button class="lp2-faq-q" onclick="lp2ToggleFaq(this)">How is this different from Buildertrend?<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg></button><div class="lp2-faq-a">M4 Streamline gives you the same core features (scheduling, quoting, invoicing, expenses, team management) at a fraction of the cost. Buildertrend starts at $499/month and requires annual contracts. We start at $79/month with no lock-in. We are built specifically for Australian and NZ tradies.</div></div>
     <div class="lp2-faq-item"><button class="lp2-faq-q" onclick="lp2ToggleFaq(this)">Can my team members access it?<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg></button><div class="lp2-faq-a">Yes. On the Business plan, you can add unlimited team members with role-based permissions. Each person gets their own login and sees only what you allow them to access.</div></div>
     <div class="lp2-faq-item"><button class="lp2-faq-q" onclick="lp2ToggleFaq(this)">Can clients see their quotes and invoices?<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg></button><div class="lp2-faq-a">Yes. M4 includes a client portal where customers can view quotes, accept or decline them, view invoices, and make payments online via Stripe.</div></div>
     <div class="lp2-faq-item"><button class="lp2-faq-q" onclick="lp2ToggleFaq(this)">What about the AI receipt scanning?<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg></button><div class="lp2-faq-a">Just take a photo of any receipt. Our AI reads the date, amount, and merchant name automatically and pre-fills the expense form. You just pick the job and category. It is included on all plans at no extra cost.</div></div>
