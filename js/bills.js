@@ -159,6 +159,7 @@ window.saveBill = async function() {
     if (r.data && r.data[0]) _bills.unshift(r.data[0]);
     closeBillModal();
     showNotification('Bill added - $' + parseFloat(amount.value).toFixed(2) + ' from ' + vendor.value.trim(), 'success');
+    refreshBillsBadge();
     if (_billView === 'bills') { switchBillView('bills'); } else { renderApp(); }
   } catch (e) { console.error(e); showNotification('Error: ' + e.message, 'error'); }
 };
@@ -173,7 +174,7 @@ window.setBillStatus = async function(billId, newStatus) {
     if (r.error) throw r.error;
     bill.status = newStatus; bill.paid_date = paidDate;
     showNotification('Bill marked as ' + newStatus, 'success');
-    // Refresh views
+    refreshBillsBadge();
     refreshBillsList();
     // Refresh quick view if open
     var panel = document.getElementById('bp-panel');
@@ -189,6 +190,7 @@ window.deleteBill = async function(billId) {
     _bills = _bills.filter(function(b) { return b.id !== billId; });
     closeBillPanel();
     showNotification('Bill deleted', 'success');
+    refreshBillsBadge();
     refreshBillsList();
   } catch (e) { console.error(e); }
 };
@@ -311,7 +313,15 @@ window.switchBillView = function(view) {
 
   // Update heading
   var h2 = document.querySelector('[data-bill-heading]');
-  if (h2) h2.textContent = view === 'bills' ? 'Bills' : 'Expenses';
+  if (h2) {
+    h2.textContent = view === 'bills' ? 'Bills' : 'Expenses';
+    // Hide/show expenses total and subtitle (siblings of h2)
+    var sib = h2.nextElementSibling;
+    while (sib) {
+      sib.style.display = (view === 'bills') ? 'none' : '';
+      sib = sib.nextElementSibling;
+    }
+  }
 
   // Toggle content
   var expContent = document.getElementById('expenses-content-wrap');
@@ -329,6 +339,14 @@ window.switchBillView = function(view) {
     if (billContent) billContent.style.display = 'none';
   }
 };
+
+function refreshBillsBadge() {
+  var unpaidCount = _bills.filter(function(b) { return b.status === 'unpaid'; }).length;
+  var billTab = document.querySelector('.bill-tab[data-view="bills"]');
+  if (billTab) {
+    billTab.innerHTML = 'Bills' + (unpaidCount > 0 ? ' <span style="background:#fecaca;color:#dc2626;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:700;margin-left:2px;">' + unpaidCount + '</span>' : '');
+  }
+}
 
 function refreshBillsList() {
   var bc = document.getElementById('bills-content-wrap');
@@ -392,6 +410,12 @@ function injectBillsTabs() {
 
   // Set heading
   expHeader.textContent = _billView === 'bills' ? 'Bills' : 'Expenses';
+
+  // Hide expenses total/subtitle when in bills view
+  if (_billView === 'bills') {
+    var sib = expHeader.nextElementSibling;
+    while (sib) { sib.style.display = 'none'; sib = sib.nextElementSibling; }
+  }
 
   var container = expHeader.closest('.flex') || expHeader.parentElement;
   if (!container) return;
