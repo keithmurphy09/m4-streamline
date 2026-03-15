@@ -7,11 +7,11 @@ try {
 // ============ CSS ============
 var css = document.createElement('style');
 css.textContent = [
-'.bill-toggle{display:flex;gap:2px;background:#f1f5f9;padding:3px;border-radius:8px;margin-bottom:16px}',
-'.dark .bill-toggle{background:#1f2937}',
-'.bill-toggle-btn{padding:8px 20px;font-size:13px;font-weight:600;border:none;border-radius:6px;cursor:pointer;transition:all 0.15s;color:#64748b;background:transparent;font-family:inherit}',
-'.bill-toggle-btn.active{background:#fff;color:#0f172a;box-shadow:0 1px 3px rgba(0,0,0,0.08)}',
-'.dark .bill-toggle-btn.active{background:#374151;color:#e2e8f0}',
+'.bill-tab-active{padding:8px 16px;font-size:13px;font-weight:600;border-radius:6px;cursor:pointer;border:1px solid #2dd4bf;background:#fff;color:#0f172a;box-shadow:0 0 10px rgba(45,212,191,0.5);font-family:inherit;transition:all 0.15s}',
+'.dark .bill-tab-active{background:#374151;color:#e2e8f0}',
+'.bill-tab-inactive{padding:8px 16px;font-size:13px;font-weight:600;border-radius:6px;cursor:pointer;border:1px solid #d1d5db;background:#fff;color:#0f172a;font-family:inherit;transition:all 0.15s}',
+'.bill-tab-inactive:hover{border-color:#2dd4bf}',
+'.dark .bill-tab-inactive{background:#374151;color:#e2e8f0;border-color:#4b5563}',
 '',
 '.bill-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px;transition:all 0.15s;cursor:pointer}',
 '.bill-card:hover{border-color:#99f6e4;box-shadow:0 4px 12px rgba(0,0,0,0.05)}',
@@ -342,36 +342,49 @@ function injectBillsToggle() {
   if (typeof activeTab !== 'undefined' && activeTab !== 'expenses') return;
 
   var expHeader = document.querySelector('h2.text-2xl');
-  if (!expHeader || expHeader.textContent.trim() !== 'Expenses') return;
+  if (!expHeader) return;
+  var hText = expHeader.textContent.trim();
+  if (hText !== 'Expenses' && hText !== 'Bills') return;
   if (expHeader.dataset.billsAdded) return;
   expHeader.dataset.billsAdded = 'true';
 
-  // Add toggle
+  // Update heading
+  expHeader.textContent = _billView === 'bills' ? 'Bills' : 'Expenses';
+
   var container = expHeader.closest('.flex') || expHeader.parentElement;
   if (!container) return;
 
-  var toggle = document.createElement('div');
-  toggle.className = 'bill-toggle';
-  toggle.innerHTML =
-    '<button class="bill-toggle-btn ' + (_billView === 'expenses' ? 'active' : '') + '" onclick="switchBillView(\'expenses\')">Expenses</button>' +
-    '<button class="bill-toggle-btn ' + (_billView === 'bills' ? 'active' : '') + '" onclick="switchBillView(\'bills\')">Bills' +
-    (_bills.filter(function(b){ return b.status === 'unpaid'; }).length > 0 ? ' <span style="background:#fecaca;color:#dc2626;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:700;margin-left:4px;">' + _bills.filter(function(b){ return b.status === 'unpaid'; }).length + '</span>' : '') +
-    '</button>';
-  container.parentElement.insertBefore(toggle, container.nextSibling);
+  // Find the buttons row
+  var btnRow = container.querySelector('.flex.flex-wrap') || container.querySelector('.flex.gap-2');
+  if (!btnRow) btnRow = container;
 
-  // Add bill button next to existing buttons
-  var btnArea = container.querySelector('.flex') || container;
+  // Build toggle matching Schedule view style
+  var expCls = _billView === 'expenses' ? 'bill-tab-active' : 'bill-tab-inactive';
+  var billCls = _billView === 'bills' ? 'bill-tab-active' : 'bill-tab-inactive';
+  var unpaidCount = _bills.filter(function(b){ return b.status === 'unpaid'; }).length;
+  var badge = unpaidCount > 0 ? ' <span style="background:#fecaca;color:#dc2626;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:700;margin-left:2px;">' + unpaidCount + '</span>' : '';
+
+  var toggleDiv = document.createElement('div');
+  toggleDiv.style.cssText = 'display:flex;gap:4px;align-items:center;';
+  toggleDiv.innerHTML =
+    '<button class="' + expCls + '" onclick="switchBillView(\'expenses\')">Expenses</button>' +
+    '<button class="' + billCls + '" onclick="switchBillView(\'bills\')">Bills' + badge + '</button>';
+
+  // Insert toggle as first item
+  if (btnRow.firstChild) {
+    btnRow.insertBefore(toggleDiv, btnRow.firstChild);
+  } else {
+    btnRow.appendChild(toggleDiv);
+  }
+
+  // Add "+ Add Bill" button at end
   var addBillBtn = document.createElement('button');
   addBillBtn.className = 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-gray-200 dark:border-gray-600 hover:border-teal-400 px-3 sm:px-4 py-2 rounded-lg text-sm whitespace-nowrap transition-colors';
   addBillBtn.textContent = '+ Add Bill';
   addBillBtn.setAttribute('onclick', 'openAddBillModal()');
+  btnRow.appendChild(addBillBtn);
 
-  var existingBtns = container.querySelectorAll('button');
-  if (existingBtns.length > 0) {
-    existingBtns[existingBtns.length - 1].parentElement.insertBefore(addBillBtn, existingBtns[existingBtns.length - 1].nextSibling);
-  }
-
-  // If viewing bills, replace content
+  // If viewing bills, hide expenses and show bills
   if (_billView === 'bills') {
     showBillsList();
   }
@@ -383,18 +396,21 @@ window.switchBillView = function(view) {
 };
 
 function showBillsList() {
-  // Hide ALL expense content by finding siblings after the toggle
-  var toggle = document.querySelector('.bill-toggle');
-  if (!toggle) return;
-
   var existing = document.getElementById('bills-list-container');
   if (existing) return;
 
-  // Hide every sibling after the toggle that isn't our bills container
-  var sibling = toggle.nextElementSibling;
+  // Find the expenses header and hide all content below it
+  var expHeader = document.querySelector('h2.text-2xl');
+  if (!expHeader) return;
+  var headerRow = expHeader.closest('.flex') || expHeader.parentElement;
+  if (!headerRow) return;
+  var parent = headerRow.parentElement;
+  if (!parent) return;
+
+  // Hide every sibling after the header row
+  var sibling = headerRow.nextElementSibling;
   while (sibling) {
     if (sibling.id !== 'bills-list-container') {
-      sibling.dataset.billsHidden = sibling.style.display || '';
       sibling.style.display = 'none';
     }
     sibling = sibling.nextElementSibling;
@@ -437,7 +453,7 @@ function showBillsList() {
   }
 
   billsDiv.innerHTML = h;
-  toggle.parentElement.appendChild(billsDiv);
+  parent.appendChild(billsDiv);
 }
 
 // ============ BILLS IN JOB DETAIL ============
