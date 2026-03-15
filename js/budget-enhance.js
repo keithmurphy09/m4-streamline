@@ -171,30 +171,13 @@ function enhanceBudget() {
 
   periodCard.parentElement.insertBefore(topRow, periodCard.nextSibling);
 
-  // Hide original summary card and category section (our enhancement replaces them)
-  // The summary card is the one with "Total Budget This Month"
+  // Hide original summary card only (our enhancement replaces it)
   var allCards = container.querySelectorAll('.bg-white.dark\\:bg-gray-800');
   allCards.forEach(function(card) {
     var text = card.textContent || '';
     if (text.indexOf('Total Budget This Month') !== -1) {
       card.style.display = 'none';
     }
-  });
-
-  // Hide "Budget by Category" heading and its grid
-  var headings = container.querySelectorAll('h3');
-  headings.forEach(function(h3) {
-    if (h3.textContent.trim() === 'Budget by Category') {
-      h3.style.display = 'none';
-      var grid = h3.nextElementSibling;
-      if (grid) grid.style.display = 'none';
-    }
-  });
-
-  // Hide the over budget alert (we show it in velocity instead)
-  var alerts = container.querySelectorAll('.bg-red-50, .dark\\:bg-red-900\\/20');
-  alerts.forEach(function(a) {
-    if (a.textContent.indexOf('Over Budget Alert') !== -1) a.style.display = 'none';
   });
 
   // ============ ENHANCE CATEGORY CARDS ============
