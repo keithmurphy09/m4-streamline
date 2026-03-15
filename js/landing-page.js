@@ -324,7 +324,7 @@ el.innerHTML = `
             <li>Receipt photo storage and preview</li>
           </ul>
         </div>
-        <img src="lp-analytics.png" alt="Expense Tracking" class="lp2-tab-img" />
+        <img src="lp-expenses.png" alt="AI Receipt Scanning" class="lp2-tab-img" />
       </div>
     </div>
 
