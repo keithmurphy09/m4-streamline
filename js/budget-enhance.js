@@ -113,6 +113,7 @@ function enhanceBudget() {
   var daysLeft = daysInMonth - dayOfMonth;
 
   // ============ BUILD BUDGET VS SPENT BARS ============
+  var cats = Object.keys(budgets);
   var barsH = '';
   for (var i = 0; i < cats.length; i++) {
     var cat = cats[i];
