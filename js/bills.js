@@ -383,19 +383,22 @@ window.switchBillView = function(view) {
 };
 
 function showBillsList() {
-  // Find the expenses content area (table/cards)
-  var expTable = document.querySelector('.expenses-desktop-table');
-  var expCards = document.querySelector('.expenses-mobile-cards');
-  var expSearch = document.querySelector('input[placeholder*="Search expenses"]');
-  var searchParent = expSearch ? expSearch.closest('.mb-4, .mb-6') : null;
+  // Hide ALL expense content by finding siblings after the toggle
+  var toggle = document.querySelector('.bill-toggle');
+  if (!toggle) return;
 
-  // Hide expenses content
-  if (expTable) expTable.style.display = 'none';
-  if (expCards) expCards.style.display = 'none';
-
-  // Find or create bills container
   var existing = document.getElementById('bills-list-container');
   if (existing) return;
+
+  // Hide every sibling after the toggle that isn't our bills container
+  var sibling = toggle.nextElementSibling;
+  while (sibling) {
+    if (sibling.id !== 'bills-list-container') {
+      sibling.dataset.billsHidden = sibling.style.display || '';
+      sibling.style.display = 'none';
+    }
+    sibling = sibling.nextElementSibling;
+  }
 
   var billsDiv = document.createElement('div');
   billsDiv.id = 'bills-list-container';
@@ -434,12 +437,7 @@ function showBillsList() {
   }
 
   billsDiv.innerHTML = h;
-
-  // Insert after search or toggle
-  var expContent = expTable ? expTable.parentElement : (searchParent ? searchParent.parentElement : null);
-  if (expContent) {
-    expContent.appendChild(billsDiv);
-  }
+  toggle.parentElement.appendChild(billsDiv);
 }
 
 // ============ BILLS IN JOB DETAIL ============
