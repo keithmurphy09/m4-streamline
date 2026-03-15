@@ -272,6 +272,16 @@ function buildEntryRow(e) {
   }
 
   h += '</div>';
+
+  // Owner-only edit/delete
+  var isOwner = !(typeof isTeamMember !== 'undefined' && isTeamMember);
+  if (isOwner) {
+    h += '<span style="display:flex;gap:6px;flex-shrink:0;">';
+    h += '<button onclick="tcEditEntry(\'' + e.id + '\')" title="Edit" style="background:none;border:none;cursor:pointer;color:#94a3b8;padding:2px;" onmouseenter="this.style.color=\'#0d9488\'" onmouseleave="this.style.color=\'#94a3b8\'"><svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button>';
+    h += '<button onclick="tcDeleteEntry(\'' + e.id + '\')" title="Delete" style="background:none;border:none;cursor:pointer;color:#94a3b8;padding:2px;" onmouseenter="this.style.color=\'#ef4444\'" onmouseleave="this.style.color=\'#94a3b8\'"><svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>';
+    h += '</span>';
+  }
+
   return h;
 }
 
@@ -385,17 +395,95 @@ async function loadJobTimeEntries(jobId, parentSection) {
     var logDiv = document.createElement('div');
     logDiv.style.cssText = 'margin-top:16px;padding-top:16px;border-top:1px solid #e2e8f0;';
     logDiv.className = 'dark:border-gray-700';
-    var lh = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
-    lh += '<span style="font-size:13px;font-weight:700;color:#0f172a;" class="dark:text-white">Time Log</span>';
+    var lh = '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="var c=this.nextElementSibling;var chv=this.querySelector(\'.tc-chv\');if(c.style.display===\'none\'){c.style.display=\'block\';chv.style.transform=\'rotate(90deg)\';}else{c.style.display=\'none\';chv.style.transform=\'rotate(0deg)\';}">';
+    lh += '<span style="font-size:13px;font-weight:700;color:#0f172a;display:flex;align-items:center;gap:6px;" class="dark:text-white"><svg class="tc-chv" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform 0.2s;"><path d="M9 18l6-6-6-6"/></svg>Time Log</span>';
     lh += '<span style="font-size:12px;font-weight:600;color:#0d9488;">' + entries.length + ' entries &middot; ' + totalHrs + 'h ' + totalMins + 'm total</span>';
     lh += '</div>';
+    lh += '<div style="display:none;">';
     for (var e = 0; e < entries.length; e++) lh += buildEntryRow(entries[e]);
+    lh += '</div>';
     logDiv.innerHTML = lh;
     parentSection.appendChild(logDiv);
   } catch (err) {
     console.error('Error loading job time entries:', err);
   }
 }
+
+// ============ EDIT / DELETE ENTRIES ============
+window.tcDeleteEntry = async function(entryId) {
+  if (!confirm('Delete this time entry?')) return;
+  try {
+    var result = await supabaseClient.from('time_entries').delete().eq('id', entryId);
+    if (result.error) throw result.error;
+    _timeEntries = _timeEntries.filter(function(e) { return e.id !== entryId; });
+    if (_currentEntry && _currentEntry.id === entryId) _currentEntry = null;
+    showNotification('Time entry deleted', 'success');
+    renderApp();
+  } catch (err) {
+    console.error('Error deleting time entry:', err);
+    showNotification('Error: ' + err.message, 'error');
+  }
+};
+
+window.tcEditEntry = async function(entryId) {
+  var entry = null;
+  for (var i = 0; i < _timeEntries.length; i++) {
+    if (_timeEntries[i].id === entryId) { entry = _timeEntries[i]; break; }
+  }
+  // Also check via supabase if not in today's cache
+  if (!entry) {
+    try {
+      var r = await supabaseClient.from('time_entries').select('*').eq('id', entryId).single();
+      if (r.data) entry = r.data;
+    } catch(e) {}
+  }
+  if (!entry) { showNotification('Entry not found', 'error'); return; }
+
+  var clockInDate = entry.clock_in ? new Date(entry.clock_in) : new Date();
+  var clockOutDate = entry.clock_out ? new Date(entry.clock_out) : null;
+
+  // Format for datetime-local input
+  function toLocal(d) {
+    if (!d) return '';
+    var y = d.getFullYear();
+    var mo = ('0' + (d.getMonth()+1)).slice(-2);
+    var da = ('0' + d.getDate()).slice(-2);
+    var h = ('0' + d.getHours()).slice(-2);
+    var mi = ('0' + d.getMinutes()).slice(-2);
+    return y + '-' + mo + '-' + da + 'T' + h + ':' + mi;
+  }
+
+  var newIn = prompt('Clock In time:', toLocal(clockInDate));
+  if (newIn === null) return;
+  var newOut = prompt('Clock Out time (leave blank if still active):', clockOutDate ? toLocal(clockOutDate) : '');
+  if (newOut === null) return;
+
+  try {
+    var update = {
+      clock_in: newIn ? new Date(newIn).toISOString() : entry.clock_in,
+      clock_out: newOut ? new Date(newOut).toISOString() : null
+    };
+    var result = await supabaseClient.from('time_entries').update(update).eq('id', entryId);
+    if (result.error) throw result.error;
+
+    // Update local cache
+    if (entry) {
+      entry.clock_in = update.clock_in;
+      entry.clock_out = update.clock_out;
+    }
+    if (!update.clock_out && entry.team_member_id === getTeamMemberId()) {
+      _currentEntry = entry;
+    } else if (_currentEntry && _currentEntry.id === entryId && update.clock_out) {
+      _currentEntry = null;
+    }
+
+    showNotification('Time entry updated', 'success');
+    renderApp();
+  } catch (err) {
+    console.error('Error editing time entry:', err);
+    showNotification('Error: ' + err.message, 'error');
+  }
+};
 
 // ============ OBSERVER ============
 var _tcTimer = null;
