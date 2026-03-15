@@ -112,23 +112,39 @@ function enhanceBudget() {
   var projectedTotal = dailyRate * daysInMonth;
   var daysLeft = daysInMonth - dayOfMonth;
 
-  // ============ BUILD DONUT CHART ============
-  var donutData = [];
-  var cats = Object.keys(budgets);
+  // ============ BUILD BUDGET VS SPENT BARS ============
+  var barsH = '';
   for (var i = 0; i < cats.length; i++) {
-    var spent = catSpending[cats[i]] || 0;
-    if (spent > 0) donutData.push({ label: cats[i], value: spent, color: getCatMeta(cats[i]).color });
-  }
-  if (remaining > 0) donutData.push({ label: 'Remaining', value: remaining, color: '#e2e8f0' });
+    var cat = cats[i];
+    var budget = budgets[cat] || 0;
+    var spent = catSpending[cat] || 0;
+    if (budget === 0 && spent === 0) continue;
+    var pct = budget > 0 ? Math.min((spent / budget) * 100, 100) : 100;
+    var isOver = spent > budget;
+    var meta = getCatMeta(cat);
+    var barColor = isOver ? '#ef4444' : meta.color;
 
-  var donutSvg = buildDonutSVG(donutData, totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0);
-
-  // Legend
-  var legendH = '';
-  for (var d = 0; d < donutData.length; d++) {
-    if (donutData[d].label === 'Remaining') continue;
-    legendH += '<div class="bgt-donut-legend-item"><span class="bgt-donut-legend-dot" style="background:' + donutData[d].color + ';"></span><span style="flex:1;color:#374151;" class="dark:text-gray-300">' + escH(donutData[d].label) + '</span><span style="font-weight:600;color:#0f172a;" class="dark:text-white">$' + donutData[d].value.toFixed(0) + '</span></div>';
+    barsH += '<div style="margin-bottom:12px;">';
+    barsH += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
+    barsH += '<span style="font-size:13px;font-weight:600;color:#374151;" class="dark:text-gray-300">' + escH(cat) + '</span>';
+    barsH += '<span style="font-size:12px;color:' + (isOver ? '#ef4444' : '#64748b') + ';font-weight:' + (isOver ? '700' : '500') + ';">$' + spent.toFixed(0) + ' / $' + budget.toFixed(0) + '</span>';
+    barsH += '</div>';
+    barsH += '<div style="height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden;" class="dark:bg-gray-700">';
+    barsH += '<div style="height:100%;width:' + pct.toFixed(1) + '%;background:' + barColor + ';border-radius:4px;transition:width 0.5s ease;"></div>';
+    barsH += '</div>';
+    barsH += '</div>';
   }
+
+  // Overall percentage ring (simple)
+  var overallPct = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0;
+  var ringColor = overallPct > 100 ? '#ef4444' : overallPct > 80 ? '#f97316' : '#0d9488';
+
+  var overviewH = '<div class="bgt-donut-wrap">';
+  overviewH += '<div style="text-align:center;flex-shrink:0;">';
+  overviewH += buildDonutSVG([{label:"Spent",value:totalSpent,color:ringColor},{label:"Remaining",value:remaining,color:"#e2e8f0"}], overallPct);
+  overviewH += '</div>';
+  overviewH += '<div style="flex:1;min-width:0;">' + barsH + '</div>';
+  overviewH += '</div>';
 
   // ============ BUILD VELOCITY CARD ============
   var forecastColor = projectedTotal > totalBudget ? '#ef4444' : '#10b981';
@@ -150,12 +166,7 @@ function enhanceBudget() {
 
   var topRow = document.createElement('div');
   topRow.className = 'bgt-top';
-  topRow.innerHTML =
-    '<div class="bgt-donut-wrap">' +
-      '<div class="bgt-donut-svg">' + donutSvg + '</div>' +
-      '<div class="bgt-donut-legend">' + legendH + '</div>' +
-    '</div>' +
-    velocityH;
+  topRow.innerHTML = overviewH + velocityH;
 
   periodCard.parentElement.insertBefore(topRow, periodCard.nextSibling);
 
@@ -170,14 +181,7 @@ function enhanceBudget() {
     var catName = titleEl.textContent.trim();
     var meta = getCatMeta(catName);
 
-    // Add icon before title
-    if (!card.querySelector('.bgt-cat-icon')) {
-      var icon = document.createElement('div');
-      icon.className = 'bgt-cat-icon';
-      icon.style.background = meta.bg;
-      icon.innerHTML = meta.icon;
-      titleEl.parentElement.insertBefore(icon, titleEl);
-    }
+    // Skip icon injection - keep it clean
 
     // Add month-over-month change
     var spent = catSpending[catName] || 0;
