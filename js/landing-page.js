@@ -401,32 +401,25 @@ el.innerHTML = `
   </div>
 </section>
 
-<!-- AI SECTION -->
+<!-- AI & ANALYTICS SECTION -->
 <section class="lp2-ai-section" id="lp2-ai">
   <div class="lp2-ai-grid">
     <div>
       <div class="lp2-section-tag" style="background:rgba(45,212,191,0.1);border-color:rgba(45,212,191,0.2);color:#2dd4bf">AI Powered</div>
-      <h2>Snap a receipt.<br><span>We handle the rest.</span></h2>
-      <p>Take a photo of any receipt and our AI reads the date, amount, and merchant automatically. Just pick the job and category &mdash; done.</p>
+      <h2>Your numbers, <span>analysed.<br>Your business, understood.</span></h2>
+      <p>M4 does not just store your data &mdash; it works for you. AI-powered insights surface what matters, while real-time analytics show you exactly where your money goes and where your profit comes from.</p>
       <ul class="lp2-ai-features">
-        <li>${chk} Reads handwritten and printed receipts</li>
-        <li>${chk} Extracts date, amount, and description</li>
-        <li>${chk} Attaches photo to the expense record</li>
-        <li>${chk} Works on any phone camera</li>
+        <li>${chk} Revenue vs expenses with trend analysis</li>
+        <li>${chk} Profit margin tracking per job</li>
+        <li>${chk} AI receipt scanning &mdash; snap a photo, auto-fill the expense</li>
+        <li>${chk} Quote win rate and pipeline analytics</li>
+        <li>${chk} Most profitable clients ranked monthly</li>
+        <li>${chk} Cash flow forecasting and budget tracking</li>
+        <li>${chk} Custom report builder with PDF export</li>
       </ul>
     </div>
-    <div class="lp2-ai-mockup">
-      <div class="lp2-ai-mockup-hd"><span></span><span></span><span></span></div>
-      <div class="lp2-ai-scan">
-        <div class="lp2-ai-scan-icon">&#128247;</div>
-        <p>Receipt uploaded &middot; Scanning with AI...</p>
-      </div>
-      <div class="lp2-ai-result">
-        <div class="lp2-ai-result-row"><span>Date</span><span>14 Mar 2026</span></div>
-        <div class="lp2-ai-result-row"><span>Amount</span><span>$247.50</span></div>
-        <div class="lp2-ai-result-row"><span>Merchant</span><span>Bunnings Warehouse</span></div>
-        <div class="lp2-ai-result-row" style="border:none"><span>Category</span><span>Materials</span></div>
-      </div>
+    <div>
+      <img src="lp-ai-insights.png" alt="AI Business Insights" style="width:100%;border-radius:12px;box-shadow:0 20px 50px rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1)" />
     </div>
   </div>
 </section>
