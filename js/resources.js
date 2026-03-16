@@ -209,34 +209,22 @@ function injectResourcesMobile() {
   menuContent.insertAdjacentHTML('beforeend', h);
 }
 
-// ============ HOOK INTO renderApp ============
-var _origRenderApp = window.renderApp;
-if (_origRenderApp) {
-  window.renderApp = function() {
-    // Check if we're on a resources tab
-    if (typeof activeTab === 'string' && activeTab.startsWith('res_')) {
-      var resKey = activeTab.replace('res_', '');
-      // We need to render the page content
-      var contentArea = document.querySelector('.max-w-7xl.mx-auto.p-3.md\\:p-6');
-      if (contentArea) {
-        contentArea.innerHTML = renderResourcePage(resKey);
-      }
-    }
-    _origRenderApp();
-  };
-}
+// ============ INJECT CONTENT FOR RESOURCE TABS ============
+function injectResourceContent() {
+  if (typeof activeTab !== 'string' || !activeTab.startsWith('res_')) return;
 
-// ============ HOOK INTO getTabContent ============
-// Override the content rendering for resource tabs
-var _origSwitchTab = window.switchTab;
-window.switchTab = function(tab) {
-  if (tab && tab.startsWith('res_')) {
-    activeTab = tab;
-    renderApp();
-    return;
-  }
-  _origSwitchTab(tab);
-};
+  // Find the "Section not found" fallback content and replace it
+  var contentArea = document.querySelector('.max-w-7xl.mx-auto.p-3.md\\:p-6');
+  if (!contentArea) return;
+  if (contentArea.dataset.resRendered === activeTab) return;
+
+  var fallback = contentArea.querySelector('h2');
+  if (!fallback) return;
+
+  contentArea.dataset.resRendered = activeTab;
+  var resKey = activeTab.replace('res_', '');
+  contentArea.innerHTML = renderResourcePage(resKey);
+}
 
 // ============ OBSERVER ============
 var _resTimer = null;
@@ -246,6 +234,7 @@ var _resObs = new MutationObserver(function() {
     if (!currentUser) return;
     injectResourcesNav();
     injectResourcesMobile();
+    injectResourceContent();
   }, 200);
 });
 _resObs.observe(document.body, { childList: true, subtree: true });
