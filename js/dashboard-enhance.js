@@ -330,7 +330,7 @@ _dashObs.observe(document.body, { childList: true, subtree: true });
 console.log('Dashboard enhancements loaded');
 
 // Override user guide to open in browser tab instead of downloading
-window.downloadUserGuide = function(){ window.open('https://www.m4streamline.com/docs/Streamline_User_Guide.pdf', '_blank'); };
+window.downloadUserGuide = function(){ window.open('https://docs.google.com/viewer?url=https://www.m4streamline.com/docs/Streamline_User_Guide.pdf&embedded=true', '_blank'); };
 
 } catch(e) {
   console.error('Dashboard enhance error:', e);
