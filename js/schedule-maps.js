@@ -110,7 +110,41 @@ window.renderSchedule = function() {
   if (scheduleView === 'livemap') {
     return renderLiveMapView();
   }
-  return _origRS2();
+  // For list/calendar/gantt, render original then inject our buttons after
+  var html = _origRS2();
+
+  // Replace the existing view toggle with our 5-button version
+  // The original has a div with List and Calendar buttons (and Gantt adds one)
+  // We inject Job Map and Live Map buttons via post-render
+  setTimeout(function() {
+    var btns = document.querySelectorAll('.flex.gap-2');
+    btns.forEach(function(group) {
+      var listBtn = null;
+      var children = group.querySelectorAll('button');
+      children.forEach(function(b) {
+        if (b.textContent.trim() === 'List') listBtn = b;
+      });
+      if (!listBtn) return;
+      if (group.dataset.mapBtns) return;
+      group.dataset.mapBtns = 'true';
+
+      // Add Job Map before List
+      var jobMapBtn = document.createElement('button');
+      jobMapBtn.className = 'px-3 py-2 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 border';
+      jobMapBtn.textContent = 'Job Map';
+      jobMapBtn.setAttribute('onclick', "scheduleView='jobmap';renderApp();");
+      group.insertBefore(jobMapBtn, listBtn);
+
+      // Add Live Map at the end
+      var liveMapBtn = document.createElement('button');
+      liveMapBtn.className = 'px-3 py-2 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 border';
+      liveMapBtn.textContent = 'Live Map';
+      liveMapBtn.setAttribute('onclick', "scheduleView='livemap';renderApp();");
+      group.appendChild(liveMapBtn);
+    });
+  }, 100);
+
+  return html;
 };
 
 // ============ JOB MAP VIEW ============
