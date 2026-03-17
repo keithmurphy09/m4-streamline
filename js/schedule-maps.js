@@ -77,24 +77,27 @@ window.renderSchedule = function() {
 };
 
 function injectMapBtns(html) {
-  // Find the List button and insert Job Map before it
-  var listMarker = 'border">List</button>';
+  // Insert Job Map before List button - search for ">List</button>"
   var jobMapCls = 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600';
   var jobMapBtn = '<button onclick="scheduleView=\'jobmap\';renderApp();" class="px-3 py-2 rounded text-sm ' + jobMapCls + ' border">Job Map</button>';
 
+  var listMarker = '>List</button>';
   var pos = 0;
   while (true) {
     var idx = html.indexOf(listMarker, pos);
     if (idx === -1) break;
-    html = html.substring(0, idx) + jobMapBtn + html.substring(idx);
-    pos = idx + jobMapBtn.length + listMarker.length;
+    // Find the start of this button tag
+    var btnStart = html.lastIndexOf('<button', idx);
+    if (btnStart === -1) break;
+    html = html.substring(0, btnStart) + jobMapBtn + html.substring(btnStart);
+    pos = btnStart + jobMapBtn.length + listMarker.length + 50;
   }
 
-  // Find the Gantt button and insert Live Map after it
-  var ganttMarker = 'border">Gantt</button>';
+  // Insert Live Map after Gantt button
   var liveCls = 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600';
   var liveBtn = '<button onclick="scheduleView=\'livemap\';renderApp();" class="px-3 py-2 rounded text-sm ' + liveCls + ' border">Live Map</button>';
 
+  var ganttMarker = '>Gantt</button>';
   pos = 0;
   while (true) {
     var idx2 = html.indexOf(ganttMarker, pos);
