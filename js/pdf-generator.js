@@ -94,11 +94,13 @@ function generatePDF(type, item) {
     
     if (item.items && Array.isArray(item.items)) {
         item.items.forEach(lineItem => {
-            doc.text(lineItem.description || '', 25, y);
+            if (y > 265) { doc.addPage(); y = 20; }
+            var descLines = doc.splitTextToSize(lineItem.description || '', 88);
+            doc.text(descLines, 25, y);
             doc.text(String(lineItem.quantity || 0), 120, y);
             doc.text('$' + (lineItem.price || 0).toFixed(2), 145, y);
             doc.text('$' + ((lineItem.quantity * lineItem.price) || 0).toFixed(2), 170, y);
-            y += 7;
+            y += Math.max(descLines.length * 5, 7);
         });
     }
     
