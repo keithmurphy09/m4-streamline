@@ -152,6 +152,11 @@ window.openBookQuote = function() {
     '</div>';
 
   document.body.appendChild(ov);
+
+  // Init Google Maps autocomplete on address field
+  if (typeof initAddressAutocomplete === 'function') {
+    setTimeout(function() { initAddressAutocomplete('bq-address'); }, 300);
+  }
 };
 
 window.closeBookQuote = function() {
