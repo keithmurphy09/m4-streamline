@@ -218,6 +218,8 @@ function geocodeAndPin(geocoder, map, bounds, markers, infoWindow, job, client, 
         '<div style="font-size:12px;color:#64748b;">' + escH(job.job_address) + '</div>' +
         (client ? '<div style="font-size:12px;color:#64748b;margin-top:2px;">' + escH(client.name) + '</div>' : '') +
         '<div style="font-size:11px;color:#94a3b8;margin-top:4px;">' + escH(job.date) + ' at ' + escH(job.time || '9:00') + '</div>' +
+'<div style="margin-top:8px;"><a href="#" onclick="event.preventDefault();openJobDetail(' + JSON.stringify(job).replace(/"/g, '&quot;') + ');return false;" style="font-size:12px;font-weight:600;color:#0d9488;text-decoration:none;">View Job &rarr;</a></div>' +
+'</div>';
         '</div>';
 
       marker.addListener('click', function() {
