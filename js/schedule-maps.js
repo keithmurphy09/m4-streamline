@@ -213,19 +213,34 @@ function geocodeAndPin(geocoder, map, bounds, markers, infoWindow, job, client, 
         }
       });
 
+      var jobJson = JSON.stringify(job).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
       var content = '<div style="font-family:sans-serif;max-width:220px;">' +
         '<div style="font-weight:700;font-size:14px;margin-bottom:4px;">' + escH(job.title) + '</div>' +
         '<div style="font-size:12px;color:#64748b;">' + escH(job.job_address) + '</div>' +
         (client ? '<div style="font-size:12px;color:#64748b;margin-top:2px;">' + escH(client.name) + '</div>' : '') +
         '<div style="font-size:11px;color:#94a3b8;margin-top:4px;">' + escH(job.date) + ' at ' + escH(job.time || '9:00') + '</div>' +
-'<div style="margin-top:8px;"><a href="#" onclick="event.preventDefault();openJobDetail(' + JSON.stringify(job).replace(/"/g, '&quot;') + ');return false;" style="font-size:12px;font-weight:600;color:#0d9488;text-decoration:none;">View Job &rarr;</a></div>' +
-'</div>';
+        '<div style="margin-top:8px;"><a href="#" id="smap-view-' + job.id + '" style="font-size:12px;font-weight:600;color:#0d9488;text-decoration:none;">View Job &rarr;</a></div>' +
         '</div>';
 
-      marker.addListener('click', function() {
-        infoWindow.setContent(content);
-        infoWindow.open(map, marker);
-      });
+      marker.addListener('click', (function(j) {
+        return function() {
+          infoWindow.setContent(content);
+          infoWindow.open(map, marker);
+          google.maps.event.addListenerOnce(infoWindow, 'domready', function() {
+            var link = document.getElementById('smap-view-' + j.id);
+            if (link) {
+              link.onclick = function(e) {
+                e.preventDefault();
+                scheduleView = 'list';
+                jobViewMode = 'detail';
+                selectedJobForDetail = j;
+                renderApp();
+                return false;
+              };
+            }
+          });
+        };
+      })(job));
 
       bounds.extend(pos);
       markers.push(marker);
@@ -444,7 +459,7 @@ function buildWorkerFilter() {
   return h;
 }
 
-// FIX: Removed the MutationObserver — it was observing the entire document body
+// FIX: Removed the MutationObserver - it was observing the entire document body
 // but doing nothing (empty placeholder). On a complex SPA this fires constantly
 // and adds overhead. Re-add only when you have actual logic to run.
 
