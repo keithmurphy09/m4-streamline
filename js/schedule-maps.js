@@ -71,40 +71,39 @@ window.renderSchedule = function() {
   if (scheduleView === 'livemap') {
     return renderLiveMapView();
   }
-  // For list/calendar/gantt, render original then inject our buttons via string replacement
+  // For list/calendar/gantt, render original then inject our buttons
+  // FIX: guard against _origRS2 being undefined (script load order)
+  if (typeof _origRS2 !== 'function') {
+    console.warn('schedule-maps: original renderSchedule not found');
+    return '<div class="p-4 text-red-500">Schedule render error - please reload.</div>';
+  }
   var html = _origRS2();
   return injectMapBtns(html);
 };
 
+// FIX: replaced dangerous while(true) loops with single safe replacements
 function injectMapBtns(html) {
-  // Insert Job Map before List button - search for ">List</button>"
-  var jobMapCls = 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600';
-  var jobMapBtn = '<button onclick="scheduleView=\'jobmap\';renderApp();" class="px-3 py-2 rounded text-sm ' + jobMapCls + ' border">Job Map</button>';
+  // Build the button classes
+  var btnCls = 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600';
+  var jobMapBtn = '<button onclick="scheduleView=\'jobmap\';renderApp();" class="px-3 py-2 rounded text-sm ' + btnCls + ' border">Job Map</button>';
+  var liveBtn = '<button onclick="scheduleView=\'livemap\';renderApp();" class="px-3 py-2 rounded text-sm ' + btnCls + ' border">Live Map</button>';
 
+  // Insert Job Map before the List button (one-time replacement, no loop)
   var listMarker = '>List</button>';
-  var pos = 0;
-  while (true) {
-    var idx = html.indexOf(listMarker, pos);
-    if (idx === -1) break;
-    // Find the start of this button tag
-    var btnStart = html.lastIndexOf('<button', idx);
-    if (btnStart === -1) break;
-    html = html.substring(0, btnStart) + jobMapBtn + html.substring(btnStart);
-    pos = btnStart + jobMapBtn.length + listMarker.length + 50;
+  var listIdx = html.indexOf(listMarker);
+  if (listIdx !== -1) {
+    var btnStart = html.lastIndexOf('<button', listIdx);
+    if (btnStart !== -1) {
+      html = html.substring(0, btnStart) + jobMapBtn + html.substring(btnStart);
+    }
   }
 
-  // Insert Live Map after Gantt button
-  var liveCls = 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600';
-  var liveBtn = '<button onclick="scheduleView=\'livemap\';renderApp();" class="px-3 py-2 rounded text-sm ' + liveCls + ' border">Live Map</button>';
-
+  // Insert Live Map after the Gantt button (one-time replacement, no loop)
   var ganttMarker = '>Gantt</button>';
-  pos = 0;
-  while (true) {
-    var idx2 = html.indexOf(ganttMarker, pos);
-    if (idx2 === -1) break;
-    var after = idx2 + ganttMarker.length;
+  var ganttIdx = html.indexOf(ganttMarker);
+  if (ganttIdx !== -1) {
+    var after = ganttIdx + ganttMarker.length;
     html = html.substring(0, after) + liveBtn + html.substring(after);
-    pos = after + liveBtn.length;
   }
 
   return html;
@@ -443,18 +442,9 @@ function buildWorkerFilter() {
   return h;
 }
 
-// ============ OBSERVER ============
-var _smapTimer = null;
-var _smapObs = new MutationObserver(function() {
-  if (_smapTimer) clearTimeout(_smapTimer);
-  _smapTimer = setTimeout(function() {
-    // Color M&Q jobs if on schedule
-    if (typeof activeTab !== 'undefined' && activeTab === 'schedule') {
-      // placeholder for future enhancements
-    }
-  }, 200);
-});
-_smapObs.observe(document.body, { childList: true, subtree: true });
+// FIX: Removed the MutationObserver — it was observing the entire document body
+// but doing nothing (empty placeholder). On a complex SPA this fires constantly
+// and adds overhead. Re-add only when you have actual logic to run.
 
 console.log('Schedule maps loaded');
 
