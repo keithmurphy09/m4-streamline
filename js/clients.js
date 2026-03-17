@@ -202,8 +202,8 @@ function openClientQuickView(clientId) {
             icon: '🔨',
             title: j.title || 'Job',
             amount: null,
-            statusBadge: isPast ? 'Completed' : 'Upcoming',
-            statusColor: isPast ? 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+            statusBadge: j.status === 'completed' ? 'Completed' : (j.status === 'in_progress' ? 'In Progress' : 'Scheduled'),
+statusColor: j.status === 'completed' ? 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400' : (j.status === 'in_progress' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400'),
             id: j.id,
             clickAction: `switchTab('schedule'); closeClientQuickView();`
         });
