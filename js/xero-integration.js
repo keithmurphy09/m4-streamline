@@ -140,6 +140,21 @@ function checkReturn() {
   }
 }
 
+// Poll for callback return (popup sets localStorage flag)
+var _xPoll = setInterval(function() {
+  if (localStorage.getItem('m4_xero_connected') === 'true') {
+    localStorage.removeItem('m4_xero_connected');
+    _xChecked = false;
+    clearInterval(_xPoll);
+    checkStatus().then(function() {
+      // Remove existing box so it rebuilds with connected state
+      var box = document.getElementById('xero-box');
+      if (box) box.remove();
+      renderApp();
+    });
+  }
+}, 1500);
+
 var _xt = null;
 var _xo = new MutationObserver(function() {
   if (_xt) clearTimeout(_xt);
@@ -147,7 +162,6 @@ var _xo = new MutationObserver(function() {
     if (!currentUser) return;
     if (!_xChecked) await checkStatus();
     inject();
-    checkReturn();
   }, 300);
 });
 _xo.observe(document.body, { childList: true, subtree: true });
