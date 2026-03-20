@@ -367,7 +367,7 @@ function renderModal() {
             ${(editingItem && editingItem.id) ? `
             <div class="mb-3">
                 <label class="block text-sm font-medium mb-1 dark:text-gray-200">Invoice Number</label>
-                <input type="text" id="invoice_number" value="${invoiceNumber}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" readonly>
+                <input type="text" id="invoice_number" value="${invoiceNumber}" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
             </div>
             ` : ''}
             <div class="mb-3">
