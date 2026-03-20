@@ -144,16 +144,10 @@ function checkReturn() {
 var _xPoll = setInterval(function() {
   if (localStorage.getItem('m4_xero_connected') === 'true') {
     localStorage.removeItem('m4_xero_connected');
-    _xChecked = false;
     clearInterval(_xPoll);
-    checkStatus().then(function() {
-      // Remove existing box so it rebuilds with connected state
-      var box = document.getElementById('xero-box');
-      if (box) box.remove();
-      renderApp();
-    });
+    window.location.reload();
   }
-}, 1500);
+}, 1000);
 
 var _xt = null;
 var _xo = new MutationObserver(function() {
