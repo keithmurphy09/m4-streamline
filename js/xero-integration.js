@@ -222,21 +222,22 @@ window.xeroSyncContacts = async function() {
 // ============ INJECT UI ============
 function injectXeroSection() {
   if (typeof activeTab !== 'undefined' && activeTab !== 'company') return;
+  if (document.getElementById('xero-injected-flag')) return;
 
   var h2 = document.querySelector('h2.text-2xl.font-bold');
   if (!h2 || h2.textContent.trim() !== 'Company Settings') return;
 
-  var companyContent = h2.parentElement;
-  if (!companyContent) return;
-  if (companyContent.dataset.xeroAdded) return;
-  companyContent.dataset.xeroAdded = 'true';
+  // Add hidden flag element so we never inject twice
+  var flag = document.createElement('div');
+  flag.id = 'xero-injected-flag';
+  flag.style.display = 'none';
+  document.body.appendChild(flag);
 
   if (_xeroStatus && _xeroStatus.connected) {
-    // Connected state - show connected banner at top
+    // Connected - show sync panel after heading
     var banner = document.createElement('div');
     banner.className = 'xero-section';
-    banner.style.cssText = 'margin-bottom:24px;';
-    banner.id = 'xero-section';
+    banner.style.cssText = 'margin-bottom:24px;margin-top:12px;';
 
     var bh = '';
     bh += '<div class="xero-hd">';
@@ -251,50 +252,24 @@ function injectXeroSection() {
     bh += '</div>';
 
     bh += '<div class="xero-sync-section">';
-
-    bh += '<div class="xero-sync-row">';
-    bh += '<div><div class="xero-sync-label">Invoices</div><div class="xero-sync-sublabel">Push all invoices to Xero</div><div class="xero-sync-result" id="xero-sync-inv-result"></div></div>';
-    bh += '<button class="xero-sync-btn" id="xero-sync-inv-btn" onclick="xeroSyncInvoices()">Sync Now</button>';
+    bh += '<div class="xero-sync-row"><div><div class="xero-sync-label">Invoices</div><div class="xero-sync-sublabel">Push all invoices to Xero</div><div class="xero-sync-result" id="xero-sync-inv-result"></div></div><button class="xero-sync-btn" id="xero-sync-inv-btn" onclick="xeroSyncInvoices()">Sync Now</button></div>';
+    bh += '<div class="xero-sync-row"><div><div class="xero-sync-label">Expenses</div><div class="xero-sync-sublabel">Push all expenses to Xero as bills</div><div class="xero-sync-result" id="xero-sync-exp-result"></div></div><button class="xero-sync-btn" id="xero-sync-exp-btn" onclick="xeroSyncExpenses()">Sync Now</button></div>';
+    bh += '<div class="xero-sync-row"><div><div class="xero-sync-label">Contacts / Clients</div><div class="xero-sync-sublabel">Push all clients to Xero contacts</div><div class="xero-sync-result" id="xero-sync-con-result"></div></div><button class="xero-sync-btn" id="xero-sync-con-btn" onclick="xeroSyncContacts()">Sync Now</button></div>';
     bh += '</div>';
-
-    bh += '<div class="xero-sync-row">';
-    bh += '<div><div class="xero-sync-label">Expenses</div><div class="xero-sync-sublabel">Push all expenses to Xero as bills</div><div class="xero-sync-result" id="xero-sync-exp-result"></div></div>';
-    bh += '<button class="xero-sync-btn" id="xero-sync-exp-btn" onclick="xeroSyncExpenses()">Sync Now</button>';
-    bh += '</div>';
-
-    bh += '<div class="xero-sync-row">';
-    bh += '<div><div class="xero-sync-label">Contacts / Clients</div><div class="xero-sync-sublabel">Push all clients to Xero contacts</div><div class="xero-sync-result" id="xero-sync-con-result"></div></div>';
-    bh += '<button class="xero-sync-btn" id="xero-sync-con-btn" onclick="xeroSyncContacts()">Sync Now</button>';
-    bh += '</div>';
-
-    bh += '</div>';
-
-    bh += '<div style="margin-top:16px;text-align:right;">';
-    bh += '<button class="xero-disconnect-btn" onclick="disconnectXero()">Disconnect Xero</button>';
-    bh += '</div>';
+    bh += '<div style="margin-top:16px;text-align:right;"><button class="xero-disconnect-btn" onclick="disconnectXero()">Disconnect Xero</button></div>';
 
     banner.innerHTML = bh;
-    h2.parentElement.insertBefore(banner, h2.nextSibling);
+    h2.insertAdjacentElement('afterend', banner);
 
   } else {
-    // Not connected - floating pulse button top right
-    var fabWrap = document.createElement('div');
-    fabWrap.style.cssText = 'position:relative;';
-    fabWrap.id = 'xero-fab-wrap';
-
+    // Not connected - add pulsing button next to heading using CSS only (no DOM restructure)
     var fab = document.createElement('button');
     fab.className = 'xero-fab-btn';
+    fab.id = 'xero-fab-btn';
     fab.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.41 14.59L6 12l1.41-1.41L11 14.17l6.59-6.59L19 9l-8.41 8.59z"/></svg> Connect to Xero';
     fab.setAttribute('onclick', 'connectXero()');
-
-    // Position it next to the h2
-    h2.style.display = 'inline-block';
-    var headerWrap = document.createElement('div');
-    headerWrap.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;';
-    h2.parentElement.insertBefore(headerWrap, h2);
-    headerWrap.appendChild(h2);
-    headerWrap.appendChild(fab);
-    h2.style.marginBottom = '0';
+    fab.style.cssText = 'position:fixed;top:80px;right:24px;z-index:40;';
+    document.body.appendChild(fab);
   }
 }
 
@@ -314,6 +289,16 @@ var _xObs = new MutationObserver(function() {
   _xTimer = setTimeout(async function() {
     if (!currentUser) return;
     if (!_xeroChecked) await checkXeroStatus();
+
+    // Clean up when not on company tab
+    if (typeof activeTab !== 'undefined' && activeTab !== 'company') {
+      var fab = document.getElementById('xero-fab-btn');
+      if (fab) fab.remove();
+      var flag = document.getElementById('xero-injected-flag');
+      if (flag) flag.remove();
+      return;
+    }
+
     injectXeroSection();
     checkCallbackReturn();
   }, 300);
