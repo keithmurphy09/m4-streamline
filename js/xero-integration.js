@@ -219,7 +219,11 @@ window.xeroSyncContacts = async function() {
 function injectXeroSection() {
   if (typeof activeTab !== 'undefined' && activeTab !== 'company') return;
 
-  var companyContent = document.querySelector('.space-y-6');
+  // Find the Company Settings heading
+  var h2 = document.querySelector('h2.text-2xl.font-bold');
+  if (!h2 || h2.textContent.trim() !== 'Company Settings') return;
+
+  var companyContent = h2.parentElement;
   if (!companyContent) return;
   if (companyContent.dataset.xeroAdded) return;
   companyContent.dataset.xeroAdded = 'true';
