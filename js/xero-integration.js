@@ -65,10 +65,36 @@ window.disconnectXero = async function() {
 window.xeroSyncInvoices = async function() {
   var btn = document.getElementById('xero-sync-inv'); if (btn) { btn.textContent = 'Syncing...'; btn.disabled = true; }
   try {
-    var d = invoices.map(function(inv) { var cl = clients.find(function(c){return c.id===inv.client_id;}); return { invoice_number:inv.invoice_number||inv.title, title:inv.title, client_name:cl?cl.name:'Unknown', issue_date:inv.issue_date, due_date:inv.due_date, total:inv.total, subtotal:inv.subtotal, gst:inv.gst, include_gst:inv.include_gst, status:inv.status, items:inv.items||[{description:inv.title||'Services',quantity:1,price:inv.total}] }; });
+    var d = invoices.map(function(inv) { var cl = clients.find(function(c){return c.id===inv.client_id;}); return { invoice_number:inv.invoice_number||inv.title, title:inv.title, client_name:cl?cl.name:'Unknown', issue_date:inv.issue_date, due_date:inv.due_date, paid_date:inv.paid_date||null, total:inv.total, subtotal:inv.subtotal, gst:inv.gst, include_gst:inv.include_gst, status:inv.status, items:inv.items||[{description:inv.title||'Services',quantity:1,price:inv.total}] }; });
     var r = await fetch(XERO_WORKER+'/sync/invoices',{method:'POST',headers:{'Content-Type':'application/json','X-User-Id':currentUser.id},body:JSON.stringify({invoices:d})});
-    var res = await r.json(); var ok = res.results?res.results.filter(function(x){return x.success;}).length:0;
-    showNotification(ok+' invoices synced to Xero','success');
+    var res = await r.json();
+    var synced = res.synced || 0; var skipped = res.skipped || 0; var paid = res.paid || 0; var failed = res.failed || 0;
+    var msg = synced + ' invoices synced';
+    if (paid > 0) msg += ', ' + paid + ' marked paid';
+    if (skipped > 0) msg += ', ' + skipped + ' already in Xero';
+    if (failed > 0) msg += ', ' + failed + ' failed';
+    showNotification(msg, synced > 0 || skipped > 0 ? 'success' : 'error');
+    // Show payment errors if any
+    if (res.results) { res.results.forEach(function(r) { if (r.pay_error) console.warn('Payment error for ' + r.invoice_number + ': ' + r.pay_error); }); }
+  } catch(e) { showNotification('Error: '+e.message,'error'); }
+  if (btn) { btn.textContent = 'Sync Now'; btn.disabled = false; }
+};
+
+window.xeroSyncTimesheets = async function() {
+  var btn = document.getElementById('xero-sync-time'); if (btn) { btn.textContent = 'Syncing...'; btn.disabled = true; }
+  try {
+    // Load all time entries
+    var ownerId = (typeof accountOwnerId !== 'undefined' && accountOwnerId) ? accountOwnerId : currentUser.id;
+    var r = await supabaseClient.from('time_entries').select('*').eq('user_id', ownerId);
+    var entries = (r.data || []).map(function(e) { return { team_member_name:e.team_member_name, clock_in:e.clock_in, clock_out:e.clock_out, job_title:e.job_title }; });
+    var sr = await fetch(XERO_WORKER+'/sync/timesheets',{method:'POST',headers:{'Content-Type':'application/json','X-User-Id':currentUser.id},body:JSON.stringify({entries:entries})});
+    var res = await sr.json();
+    if (res.success) {
+      var msg = res.total_entries + ' time entries processed for ' + res.total_workers + ' workers';
+      showNotification(msg, 'success');
+      // Show summary in console
+      if (res.summary) res.summary.forEach(function(s) { console.log('Payroll: ' + s.name + ' - ' + s.total_hours + ' hours'); });
+    } else { showNotification('Error: ' + (res.error || 'Unknown'), 'error'); }
   } catch(e) { showNotification('Error: '+e.message,'error'); }
   if (btn) { btn.textContent = 'Sync Now'; btn.disabled = false; }
 };
@@ -76,7 +102,7 @@ window.xeroSyncInvoices = async function() {
 window.xeroSyncExpenses = async function() {
   var btn = document.getElementById('xero-sync-exp'); if (btn) { btn.textContent = 'Syncing...'; btn.disabled = true; }
   try {
-    var d = expenses.map(function(exp) { return { id:exp.id, date:exp.date, amount:exp.amount, category:exp.category, description:exp.description, vendor:exp.vendor||exp.team_member_name||exp.category }; });
+    var d = expenses.map(function(exp) { var j = exp.job_id ? jobs.find(function(x){return x.id===exp.job_id;}) : null; return { id:exp.id, date:exp.date, amount:exp.amount, category:exp.category, description:exp.description, vendor:exp.vendor||exp.team_member_name||exp.category, job_title:j?j.title:'' }; });
     var r = await fetch(XERO_WORKER+'/sync/expenses',{method:'POST',headers:{'Content-Type':'application/json','X-User-Id':currentUser.id},body:JSON.stringify({expenses:d})});
     var res = await r.json(); var ok = res.results?res.results.filter(function(x){return x.success;}).length:0;
     showNotification(ok+' expenses synced to Xero','success');
@@ -91,6 +117,33 @@ window.xeroSyncContacts = async function() {
     var r = await fetch(XERO_WORKER+'/sync/contacts',{method:'POST',headers:{'Content-Type':'application/json','X-User-Id':currentUser.id},body:JSON.stringify({contacts:d})});
     var res = await r.json();
     showNotification((res.synced||0)+' contacts synced to Xero','success');
+  } catch(e) { showNotification('Error: '+e.message,'error'); }
+  if (btn) { btn.textContent = 'Sync Now'; btn.disabled = false; }
+};
+
+window.xeroSyncTimeEntries = async function() {
+  var btn = document.getElementById('xero-sync-time'); if (btn) { btn.textContent = 'Syncing...'; btn.disabled = true; }
+  try {
+    // Load all completed time entries
+    var ownerId = (typeof accountOwnerId !== 'undefined' && accountOwnerId) ? accountOwnerId : currentUser.id;
+    var r = await supabaseClient.from('time_entries').select('*').eq('user_id', ownerId).not('clock_out', 'is', null);
+    var entries = (r.data || []).map(function(e) {
+      var hours = 0;
+      if (e.clock_in && e.clock_out) {
+        hours = (new Date(e.clock_out) - new Date(e.clock_in)) / (1000 * 60 * 60);
+      }
+      return {
+        team_member_name: e.team_member_name || 'Unknown',
+        job_title: e.job_title || 'General',
+        date: e.clock_in ? new Date(e.clock_in).toISOString().split('T')[0] : '',
+        hours: Math.round(hours * 10) / 10,
+        hourly_rate: 0
+      };
+    });
+    var resp = await fetch(XERO_WORKER+'/sync/timeentries',{method:'POST',headers:{'Content-Type':'application/json','X-User-Id':currentUser.id},body:JSON.stringify({entries:entries})});
+    var res = await resp.json();
+    var ok = res.results ? res.results.filter(function(x){return x.success;}).length : 0;
+    showNotification(ok+' timesheet' + (ok!==1?'s':'') + ' synced to Xero as draft bills','success');
   } catch(e) { showNotification('Error: '+e.message,'error'); }
   if (btn) { btn.textContent = 'Sync Now'; btn.disabled = false; }
 };
@@ -117,6 +170,8 @@ function inject() {
     h += '<div class="xero-sync-row"><div><div style="font-size:14px;font-weight:500;color:#374151;" class="dark:text-gray-200">Invoices</div><div style="font-size:11px;color:#94a3b8;">Push all invoices to Xero</div></div><button class="xero-sync-btn" id="xero-sync-inv" onclick="xeroSyncInvoices()">Sync Now</button></div>';
     h += '<div class="xero-sync-row"><div><div style="font-size:14px;font-weight:500;color:#374151;" class="dark:text-gray-200">Expenses</div><div style="font-size:11px;color:#94a3b8;">Push expenses to Xero as bills</div></div><button class="xero-sync-btn" id="xero-sync-exp" onclick="xeroSyncExpenses()">Sync Now</button></div>';
     h += '<div class="xero-sync-row"><div><div style="font-size:14px;font-weight:500;color:#374151;" class="dark:text-gray-200">Contacts</div><div style="font-size:11px;color:#94a3b8;">Push clients to Xero contacts</div></div><button class="xero-sync-btn" id="xero-sync-con" onclick="xeroSyncContacts()">Sync Now</button></div>';
+    h += '<div class="xero-sync-row"><div><div style="font-size:14px;font-weight:500;color:#374151;" class="dark:text-gray-200">Time Entries / Payroll</div><div style="font-size:11px;color:#94a3b8;">Push logged hours to Xero as draft bills per worker</div></div><button class="xero-sync-btn" id="xero-sync-time" onclick="xeroSyncTimeEntries()">Sync Now</button></div>';
+    h += '<div class="xero-sync-row"><div><div style="font-size:14px;font-weight:500;color:#374151;" class="dark:text-gray-200">Timesheets</div><div style="font-size:11px;color:#94a3b8;">Push clock-in hours for payroll</div></div><button class="xero-sync-btn" id="xero-sync-time" onclick="xeroSyncTimesheets()">Sync Now</button></div>';
     h += '<div style="margin-top:16px;text-align:right;"><button class="xero-disconnect" onclick="disconnectXero()">Disconnect Xero</button></div>';
   } else {
     h += '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">';
