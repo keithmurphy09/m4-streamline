@@ -268,8 +268,10 @@ function injectXeroSection() {
     fab.id = 'xero-fab-btn';
     fab.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.41 14.59L6 12l1.41-1.41L11 14.17l6.59-6.59L19 9l-8.41 8.59z"/></svg> Connect to Xero';
     fab.setAttribute('onclick', 'connectXero()');
-    fab.style.cssText = 'position:fixed;top:80px;right:24px;z-index:40;';
-    document.body.appendChild(fab);
+    fab.style.cssText = 'position:absolute;top:0;right:0;z-index:10;';
+    // Make h2 parent relative so we can position absolutely
+    h2.parentElement.style.position = 'relative';
+    h2.parentElement.appendChild(fab);
   }
 }
 
