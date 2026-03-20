@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connecting to Xero... - M4 Streamline</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #fff; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .card { text-align: center; max-width: 400px; padding: 40px; }
+        .spinner { width: 48px; height: 48px; border: 4px solid rgba(45,212,191,0.2); border-top-color: #2dd4bf; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 24px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        h1 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+        p { font-size: 14px; color: #94a3b8; line-height: 1.6; }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .icon { font-size: 48px; margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+    <div class="card" id="content">
+        <div class="spinner"></div>
+        <h1>Connecting to Xero...</h1>
+        <p>Please wait while we complete the connection.</p>
+    </div>
+
+    <script>
+        (async function() {
+            var content = document.getElementById('content');
+            var params = new URLSearchParams(window.location.search);
+            var code = params.get('code');
+            var error = params.get('error');
+
+            if (error) {
+                content.innerHTML = '<div class="icon">&#10060;</div><h1 class="error">Connection Failed</h1><p>' + error + '</p><p style="margin-top:16px;"><a href="/" style="color:#2dd4bf;">Return to M4 Streamline</a></p>';
+                return;
+            }
+
+            if (!code) {
+                content.innerHTML = '<div class="icon">&#10060;</div><h1 class="error">No Authorization Code</h1><p>Something went wrong. Please try connecting again.</p><p style="margin-top:16px;"><a href="/" style="color:#2dd4bf;">Return to M4 Streamline</a></p>';
+                return;
+            }
+
+            // Get user ID from localStorage
+            var userId = localStorage.getItem('m4_xero_user_id');
+            if (!userId) {
+                content.innerHTML = '<div class="icon">&#10060;</div><h1 class="error">Session Expired</h1><p>Please try connecting again from Company Settings.</p><p style="margin-top:16px;"><a href="/" style="color:#2dd4bf;">Return to M4 Streamline</a></p>';
+                return;
+            }
+
+            try {
+                var response = await fetch('https://round-paper-a015.keithmurphy009.workers.dev/callback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: code, user_id: userId })
+                });
+
+                var result = await response.json();
+
+                if (result.success) {
+                    content.innerHTML = '<div class="icon">&#9989;</div><h1 class="success">Connected to Xero!</h1><p>Organisation: <strong>' + (result.tenant_name || 'Your Organisation') + '</strong></p><p style="margin-top:8px;color:#64748b;">This window will close automatically...</p>';
+                    localStorage.removeItem('m4_xero_user_id');
+                    localStorage.setItem('m4_xero_connected', 'true');
+                    setTimeout(function() { window.close(); }, 2500);
+                    // Fallback if window.close doesn't work
+                    setTimeout(function() { window.location.href = '/'; }, 4000);
+                } else {
+                    content.innerHTML = '<div class="icon">&#10060;</div><h1 class="error">Connection Failed</h1><p>' + (result.error || 'Unknown error') + '</p><p style="margin-top:16px;"><a href="/" style="color:#2dd4bf;">Return to M4 Streamline</a></p>';
+                }
+            } catch (e) {
+                content.innerHTML = '<div class="icon">&#10060;</div><h1 class="error">Connection Error</h1><p>' + e.message + '</p><p style="margin-top:16px;"><a href="/" style="color:#2dd4bf;">Return to M4 Streamline</a></p>';
+            }
+        })();
+    </script>
+</body>
+</html>
