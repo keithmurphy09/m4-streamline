@@ -231,6 +231,26 @@ if (typeof _origQuickMarkAsPaid === 'function') {
   };
 }
 
+var _origQuickMarkAsUnpaid = window.quickMarkAsUnpaid;
+if (typeof _origQuickMarkAsUnpaid === 'function') {
+  window.quickMarkAsUnpaid = async function(id) {
+    var inv = invoices.find(function(i) { return i.id === id; });
+    var xeroId = inv ? inv.xero_id : null;
+
+    await _origQuickMarkAsUnpaid(id);
+
+    if (xeroId && isXeroConnected()) {
+      try {
+        await fetch(XERO_WORKER + '/pay/invoice', {
+          method: 'POST', headers: xeroHeaders(),
+          body: JSON.stringify({ xero_id: xeroId, action: 'unpaid' })
+        });
+        console.log('Xero: Invoice payment reversed');
+      } catch(e) { console.error('Xero unpaid error:', e); }
+    }
+  };
+}
+
 // ============ UPDATE BULK SYNC TO STORE XERO IDS ============
 var _origXeroSyncInvoices = window.xeroSyncInvoices;
 window.xeroSyncInvoices = async function() {
