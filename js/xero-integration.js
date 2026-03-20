@@ -25,6 +25,10 @@ css.textContent = [
 '.dark .xero-disconnect-btn{background:#374151;border-color:#991b1b}',
 '.xero-disconnect-btn:hover{background:#fef2f2}',
 '',
+'.xero-fab-btn{padding:12px 24px;font-size:14px;font-weight:700;color:#fff;background:#13B5EA;border:none;border-radius:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px;box-shadow:0 0 0 0 rgba(19,181,234,0.7);animation:xeroPulse 2s infinite;transition:all 0.15s;white-space:nowrap}',
+'.xero-fab-btn:hover{background:#0e9fd0;transform:scale(1.05);animation:none;box-shadow:0 4px 16px rgba(19,181,234,0.4)}',
+'@keyframes xeroPulse{0%{box-shadow:0 0 0 0 rgba(19,181,234,0.7)}70%{box-shadow:0 0 0 12px rgba(19,181,234,0)}100%{box-shadow:0 0 0 0 rgba(19,181,234,0)}}',
+'',
 '.xero-status{display:flex;align-items:center;gap:8px;padding:12px 16px;border-radius:10px;margin-bottom:16px}',
 '.xero-status-connected{background:#f0fdf4;border:1px solid #bbf7d0}',
 '.dark .xero-status-connected{background:rgba(22,163,74,0.1);border-color:rgba(22,163,74,0.3)}',
@@ -219,7 +223,6 @@ window.xeroSyncContacts = async function() {
 function injectXeroSection() {
   if (typeof activeTab !== 'undefined' && activeTab !== 'company') return;
 
-  // Find the Company Settings heading
   var h2 = document.querySelector('h2.text-2xl.font-bold');
   if (!h2 || h2.textContent.trim() !== 'Company Settings') return;
 
@@ -228,57 +231,71 @@ function injectXeroSection() {
   if (companyContent.dataset.xeroAdded) return;
   companyContent.dataset.xeroAdded = 'true';
 
-  var section = document.createElement('div');
-  section.className = 'xero-section';
-  section.id = 'xero-section';
-
-  var h = '';
-  h += '<div class="xero-hd">';
-  h += '<div class="xero-logo"><svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.41 14.59L6 12l1.41-1.41L11 14.17l6.59-6.59L19 9l-8.41 8.59z"/></svg></div>';
-  h += '<div><div class="xero-title">Xero Integration</div><div style="font-size:12px;color:#94a3b8;">Sync invoices, expenses, and contacts</div></div>';
-  h += '</div>';
-
   if (_xeroStatus && _xeroStatus.connected) {
-    h += '<div class="xero-status xero-status-connected">';
-    h += '<span class="xero-status-dot"></span>';
-    h += '<span class="xero-status-text">Connected</span>';
-    h += '<span class="xero-status-org">' + escH(_xeroStatus.tenant_name || 'Your Organisation') + '</span>';
-    h += '</div>';
+    // Connected state - show connected banner at top
+    var banner = document.createElement('div');
+    banner.className = 'xero-section';
+    banner.style.cssText = 'margin-bottom:24px;';
+    banner.id = 'xero-section';
 
-    // Sync controls
-    h += '<div class="xero-sync-section">';
+    var bh = '';
+    bh += '<div class="xero-hd">';
+    bh += '<div class="xero-logo"><svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.41 14.59L6 12l1.41-1.41L11 14.17l6.59-6.59L19 9l-8.41 8.59z"/></svg></div>';
+    bh += '<div style="flex:1;"><div class="xero-title">Xero Integration</div><div style="font-size:12px;color:#94a3b8;">Sync invoices, expenses, and contacts</div></div>';
+    bh += '</div>';
 
-    h += '<div class="xero-sync-row">';
-    h += '<div><div class="xero-sync-label">Invoices</div><div class="xero-sync-sublabel">Push all invoices to Xero</div><div class="xero-sync-result" id="xero-sync-inv-result"></div></div>';
-    h += '<button class="xero-sync-btn" id="xero-sync-inv-btn" onclick="xeroSyncInvoices()">Sync Now</button>';
-    h += '</div>';
+    bh += '<div class="xero-status xero-status-connected">';
+    bh += '<span class="xero-status-dot"></span>';
+    bh += '<span class="xero-status-text">Connected</span>';
+    bh += '<span class="xero-status-org">' + escH(_xeroStatus.tenant_name || 'Your Organisation') + '</span>';
+    bh += '</div>';
 
-    h += '<div class="xero-sync-row">';
-    h += '<div><div class="xero-sync-label">Expenses</div><div class="xero-sync-sublabel">Push all expenses to Xero as bills</div><div class="xero-sync-result" id="xero-sync-exp-result"></div></div>';
-    h += '<button class="xero-sync-btn" id="xero-sync-exp-btn" onclick="xeroSyncExpenses()">Sync Now</button>';
-    h += '</div>';
+    bh += '<div class="xero-sync-section">';
 
-    h += '<div class="xero-sync-row">';
-    h += '<div><div class="xero-sync-label">Contacts / Clients</div><div class="xero-sync-sublabel">Push all clients to Xero contacts</div><div class="xero-sync-result" id="xero-sync-con-result"></div></div>';
-    h += '<button class="xero-sync-btn" id="xero-sync-con-btn" onclick="xeroSyncContacts()">Sync Now</button>';
-    h += '</div>';
+    bh += '<div class="xero-sync-row">';
+    bh += '<div><div class="xero-sync-label">Invoices</div><div class="xero-sync-sublabel">Push all invoices to Xero</div><div class="xero-sync-result" id="xero-sync-inv-result"></div></div>';
+    bh += '<button class="xero-sync-btn" id="xero-sync-inv-btn" onclick="xeroSyncInvoices()">Sync Now</button>';
+    bh += '</div>';
 
-    h += '</div>';
+    bh += '<div class="xero-sync-row">';
+    bh += '<div><div class="xero-sync-label">Expenses</div><div class="xero-sync-sublabel">Push all expenses to Xero as bills</div><div class="xero-sync-result" id="xero-sync-exp-result"></div></div>';
+    bh += '<button class="xero-sync-btn" id="xero-sync-exp-btn" onclick="xeroSyncExpenses()">Sync Now</button>';
+    bh += '</div>';
 
-    h += '<div style="margin-top:16px;text-align:right;">';
-    h += '<button class="xero-disconnect-btn" onclick="disconnectXero()">Disconnect Xero</button>';
-    h += '</div>';
+    bh += '<div class="xero-sync-row">';
+    bh += '<div><div class="xero-sync-label">Contacts / Clients</div><div class="xero-sync-sublabel">Push all clients to Xero contacts</div><div class="xero-sync-result" id="xero-sync-con-result"></div></div>';
+    bh += '<button class="xero-sync-btn" id="xero-sync-con-btn" onclick="xeroSyncContacts()">Sync Now</button>';
+    bh += '</div>';
+
+    bh += '</div>';
+
+    bh += '<div style="margin-top:16px;text-align:right;">';
+    bh += '<button class="xero-disconnect-btn" onclick="disconnectXero()">Disconnect Xero</button>';
+    bh += '</div>';
+
+    banner.innerHTML = bh;
+    h2.parentElement.insertBefore(banner, h2.nextSibling);
 
   } else {
-    h += '<div class="xero-desc">Connect your Xero account to automatically sync invoices, expenses, and client contacts. Keep your accounting up to date without manual data entry.</div>';
-    h += '<button class="xero-connect-btn" onclick="connectXero()">';
-    h += '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.41 14.59L6 12l1.41-1.41L11 14.17l6.59-6.59L19 9l-8.41 8.59z"/></svg>';
-    h += 'Connect to Xero';
-    h += '</button>';
-  }
+    // Not connected - floating pulse button top right
+    var fabWrap = document.createElement('div');
+    fabWrap.style.cssText = 'position:relative;';
+    fabWrap.id = 'xero-fab-wrap';
 
-  section.innerHTML = h;
-  companyContent.appendChild(section);
+    var fab = document.createElement('button');
+    fab.className = 'xero-fab-btn';
+    fab.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.41 14.59L6 12l1.41-1.41L11 14.17l6.59-6.59L19 9l-8.41 8.59z"/></svg> Connect to Xero';
+    fab.setAttribute('onclick', 'connectXero()');
+
+    // Position it next to the h2
+    h2.style.display = 'inline-block';
+    var headerWrap = document.createElement('div');
+    headerWrap.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;';
+    h2.parentElement.insertBefore(headerWrap, h2);
+    headerWrap.appendChild(h2);
+    headerWrap.appendChild(fab);
+    h2.style.marginBottom = '0';
+  }
 }
 
 // ============ CHECK FOR CALLBACK RETURN ============
