@@ -175,7 +175,12 @@ var _origDeleteBill = window.deleteBill;
 if (typeof _origDeleteBill === 'function') {
   window.deleteBill = async function(id) {
     var bill = null;
-    if (typeof _bills !== 'undefined') bill = _bills.find(function(b) { return b.id === id; });
+    // Try to find bill - query Supabase since _bills is scoped
+    try {
+      var oid = (typeof accountOwnerId !== 'undefined' && accountOwnerId) ? accountOwnerId : currentUser.id;
+      var r = await supabaseClient.from('bills').select('xero_id').eq('id', id).single();
+      if (r.data) bill = r.data;
+    } catch(e) {}
     var xeroId = bill ? bill.xero_id : null;
 
     await _origDeleteBill(id);
@@ -188,6 +193,63 @@ if (typeof _origDeleteBill === 'function') {
         });
         console.log('Xero: Bill voided');
       } catch(e) { console.error('Xero void bill error:', e); }
+    }
+  };
+}
+
+// ============ OVERRIDE SAVE BILL FOR AUTO-SYNC ============
+var _origSaveBill = window.saveBill;
+if (typeof _origSaveBill === 'function') {
+  window.saveBill = async function() {
+    // Call original save
+    await _origSaveBill();
+
+    // After saving, find the newest bill and push to Xero
+    if (!isXeroConnected()) return;
+    try {
+      var oid = (typeof accountOwnerId !== 'undefined' && accountOwnerId) ? accountOwnerId : currentUser.id;
+      var r = await supabaseClient.from('bills').select('*').eq('user_id', oid).order('created_at', { ascending: false }).limit(1);
+      var bill = r.data && r.data[0] ? r.data[0] : null;
+      if (!bill || bill.xero_id) return;
+
+      var data = {
+        date: bill.date,
+        due_date: bill.due_date,
+        amount: bill.amount,
+        vendor: bill.vendor_name,
+        bill_number: bill.bill_number,
+        description: bill.description,
+        job_title: bill.job_title,
+        file_url: bill.file_url
+      };
+
+      var xr = await fetch(XERO_WORKER + '/push/expense', {
+        method: 'POST', headers: xeroHeaders(),
+        body: JSON.stringify({ expense: data })
+      });
+      var result = await xr.json();
+
+      if (result.success && result.xero_id) {
+        await supabaseClient.from('bills').update({ xero_id: result.xero_id }).eq('id', bill.id);
+        console.log('Xero: Bill from ' + bill.vendor_name + ' auto-synced');
+      } else {
+        console.warn('Xero: Bill sync failed -', result.error);
+      }
+    } catch(e) { console.error('Xero auto-sync bill error:', e); }
+  };
+}
+
+// ============ OVERRIDE SET BILL STATUS FOR XERO ============
+var _origSetBillStatus = window.setBillStatus;
+if (typeof _origSetBillStatus === 'function') {
+  window.setBillStatus = async function(billId, newStatus) {
+    await _origSetBillStatus(billId, newStatus);
+
+    // If marking as paid in Xero, we'd need to apply payment
+    // Bills in Xero are ACCPAY - marking paid works differently
+    // For now just log it - Xero bill payments handled manually
+    if (isXeroConnected()) {
+      console.log('Xero: Bill status changed to ' + newStatus + ' - update in Xero manually or via next sync');
     }
   };
 }
