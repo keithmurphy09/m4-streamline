@@ -100,6 +100,7 @@ function getChecklist() {
     { id: 'business', label: 'Add business details', done: !!(s.business_name && s.phone), action: "switchTab('company')" },
     { id: 'logo', label: 'Upload your logo', done: !!s.logo_url, action: "switchTab('company')" },
     { id: 'bank', label: 'Set up bank details', done: !!(s.bank_name && s.bsb), action: "switchTab('company')" },
+    { id: 'xero', label: 'Connect Xero', done: !!(typeof _xStatus !== 'undefined' && _xStatus && _xStatus.connected), action: "switchTab('company')" },
     { id: 'client', label: 'Add your first client', done: clients.length > 0, action: "openModal('client')" },
     { id: 'quote', label: 'Create your first quote', done: quotes.length > 0, action: "openModal('quote')" },
     { id: 'team', label: 'Add a team member', done: teamMembers.length > 0, action: "switchTab('team')" }
@@ -236,6 +237,28 @@ var STEPS = [
       } catch(e) { return true; }
     },
     optional: true
+  },
+  {
+    title: 'Connect Xero',
+    desc: 'Connect your Xero account to automatically sync invoices, bills, and contacts. Keep your accounting up to date without manual data entry.',
+    fields: function() {
+      var connected = typeof _xStatus !== 'undefined' && _xStatus && _xStatus.connected;
+      if (connected) {
+        return '<div style="text-align:center;padding:24px;">' +
+          '<div style="font-size:48px;margin-bottom:16px;">&#9989;</div>' +
+          '<p style="font-size:16px;font-weight:700;color:#10b981;">Xero Connected!</p>' +
+          '<p style="font-size:13px;color:#64748b;margin-top:8px;">' + (_xStatus.tenant_name || 'Your Organisation') + '</p>' +
+          '</div>';
+      }
+      return '<div style="text-align:center;padding:24px;">' +
+        '<div style="width:60px;height:60px;border-radius:14px;background:#13B5EA;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;"><svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.41 14.59L6 12l1.41-1.41L11 14.17l6.59-6.59L19 9l-8.41 8.59z"/></svg></div>' +
+        '<p style="font-size:15px;color:#64748b;line-height:1.6;margin-bottom:20px;">Sync invoices, expenses, and clients automatically. No more manual data entry.</p>' +
+        '<button onclick="connectXero()" style="padding:14px 32px;background:#13B5EA;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">Connect to Xero</button>' +
+        '</div>';
+    },
+    save: async function() { return true; },
+    optional: true,
+    noSaveBtn: true
   },
   {
     title: 'Add Your First Client',
