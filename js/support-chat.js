@@ -175,7 +175,10 @@ window.sendSupportMessage = async function() {
 
 // Don't show on landing page
 function shouldShow() {
-  return typeof currentUser !== 'undefined' && currentUser;
+  if (typeof currentUser === 'undefined' || !currentUser) return false;
+  // Hide for platform admin - you answer messages, you don't send them
+  if (currentUser.email === 'm4projectsanddesigns@gmail.com') return false;
+  return true;
 }
 
 // Add to DOM when logged in
