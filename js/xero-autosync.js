@@ -43,16 +43,8 @@ function checkForNewItems() {
   }
   _lastInvoiceCount = invoices.length;
 
-  // Check for new bills
-  if (typeof _bills !== 'undefined' && _bills.length > _lastExpenseCount && _lastExpenseCount > 0) {
-    var newBills = _bills.filter(function(b) { return !b.xero_id; });
-    var newestBill = newBills[newBills.length - 1];
-    if (newestBill && !newestBill._xero_pushing) {
-      newestBill._xero_pushing = true;
-      pushBillToXero(newestBill);
-    }
-  }
-  if (typeof _bills !== 'undefined') _lastExpenseCount = _bills.length;
+  // Bills auto-sync handled via manual "Sync Now" button
+  // since _bills is in a scoped IIFE
 
   // Check for new clients
   if (clients.length > _lastClientCount && _lastClientCount > 0) {
@@ -349,13 +341,18 @@ window.xeroSyncBills = async function() {
   if (btn) { btn.textContent = 'Syncing...'; btn.disabled = true; }
 
   try {
-    if (typeof _bills === 'undefined' || _bills.length === 0) {
+    // Load bills from Supabase directly since _bills may be scoped
+    var ownerId = (typeof accountOwnerId !== 'undefined' && accountOwnerId) ? accountOwnerId : currentUser.id;
+    var billsResult = await supabaseClient.from('bills').select('*').eq('user_id', ownerId);
+    var allBills = (billsResult.data || []);
+
+    if (allBills.length === 0) {
       showNotification('No bills to sync', 'error');
       if (btn) { btn.textContent = 'Sync Now'; btn.disabled = false; }
       return;
     }
 
-    var toSync = _bills.filter(function(b) { return !b.xero_id; });
+    var toSync = allBills.filter(function(b) { return !b.xero_id; });
     if (toSync.length === 0) {
       showNotification('All bills already synced', 'success');
       if (btn) { btn.textContent = 'Sync Now'; btn.disabled = false; }
@@ -385,7 +382,6 @@ window.xeroSyncBills = async function() {
         var result = await r.json();
 
         if (result.success && result.xero_id) {
-          bill.xero_id = result.xero_id;
           await supabaseClient.from('bills').update({ xero_id: result.xero_id }).eq('id', bill.id);
           synced++;
         } else {
@@ -395,7 +391,7 @@ window.xeroSyncBills = async function() {
       } catch(e) { failed++; }
     }
 
-    var skipped = _bills.length - toSync.length;
+    var skipped = allBills.length - toSync.length;
     var msg = synced + ' bills synced';
     if (skipped > 0) msg += ', ' + skipped + ' already synced';
     if (failed > 0) msg += ', ' + failed + ' failed';
@@ -415,7 +411,6 @@ setInterval(function() {
 // Initialize counts
 setTimeout(function() {
   _lastInvoiceCount = invoices.length;
-  _lastExpenseCount = typeof _bills !== 'undefined' ? _bills.length : 0;
   _lastClientCount = clients.length;
 }, 3000);
 
