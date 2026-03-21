@@ -1,129 +1,103 @@
-// M4 Quote P&L Bills Box
-// Adds a Bills card below Profit & Loss in quote detail
+// M4 Quote Bills Box - below P&L in quote detail
 // Additive only
 (function(){
 try {
 
-function fmt(n) {
-  return '$' + parseFloat(n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-}
+function fmt(n) { return '$' + parseFloat(n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+function esc(s) { return s ? String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''; }
 
-function escH(s) {
-  return s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
-}
-
-async function injectBillsBox() {
+async function inject() {
   if (typeof activeTab !== 'undefined' && activeTab !== 'quotes') return;
   if (typeof selectedQuoteForDetail === 'undefined' || !selectedQuoteForDetail) return;
-  if (document.getElementById('quote-bills-box')) return;
+  if (document.getElementById('qbills')) return;
 
-  // Find P&L heading
-  var plH3 = null;
-  document.querySelectorAll('h3').forEach(function(h) {
-    if (h.textContent.trim() === 'Profit & Loss Analysis') plH3 = h;
-  });
-  if (!plH3) return;
+  var all = document.querySelectorAll('h3');
+  var plH = null;
+  all.forEach(function(h) { if (h.textContent.trim() === 'Profit & Loss Analysis') plH = h; });
+  if (!plH) return;
 
-  // Walk up to find the card container
-  var plCard = plH3.parentElement;
-  while (plCard && !plCard.classList.contains('rounded-xl') && !plCard.classList.contains('shadow-sm')) {
-    plCard = plCard.parentElement;
+  // Walk up to the card container
+  var card = plH.parentElement;
+  while (card && card.parentElement && !card.classList.contains('shadow-sm') && !card.classList.contains('rounded-xl')) {
+    card = card.parentElement;
   }
-  if (!plCard) plCard = plH3.parentElement;
+  if (!card || card === document.body) card = plH.parentElement;
 
   // Find related job
   var q = selectedQuoteForDetail;
-  var relatedJob = jobs.find(function(j) {
-    return j.title === q.title && j.client_id === q.client_id;
-  });
-  if (!relatedJob) {
-    relatedJob = jobs.find(function(j) {
-      return j.title && q.title && j.title.toLowerCase() === q.title.toLowerCase() && j.client_id === q.client_id;
-    });
-  }
+  var rj = jobs.find(function(j) { return j.title === q.title && j.client_id === q.client_id; });
+  if (!rj) rj = jobs.find(function(j) { return j.title && q.title && j.title.toLowerCase() === q.title.toLowerCase() && j.client_id === q.client_id; });
+  if (!rj) return;
 
-  if (!relatedJob) return;
+  var oid = (typeof accountOwnerId !== 'undefined' && accountOwnerId) ? accountOwnerId : (currentUser ? currentUser.id : null);
+  if (!oid) return;
 
-  // Load bills from Supabase
-  var ownerId = (typeof accountOwnerId !== 'undefined' && accountOwnerId) ? accountOwnerId : (currentUser ? currentUser.id : null);
-  if (!ownerId) return;
+  var r = await supabaseClient.from('bills').select('*').eq('user_id', oid).eq('job_id', rj.id);
+  var bills = r.data || [];
 
-  var result = await supabaseClient.from('bills').select('*').eq('user_id', ownerId).eq('job_id', relatedJob.id);
-  var jobBills = result.data || [];
-
-  if (jobBills.length === 0) return;
-
-  var totalBills = jobBills.reduce(function(sum, b) { return sum + parseFloat(b.amount || 0); }, 0);
-  var paidBills = jobBills.filter(function(b) { return b.status === 'paid'; });
-  var unpaidBills = jobBills.filter(function(b) { return b.status !== 'paid'; });
-  var totalUnpaid = unpaidBills.reduce(function(sum, b) { return sum + parseFloat(b.amount || 0); }, 0);
+  var tot = bills.reduce(function(s, b) { return s + parseFloat(b.amount || 0); }, 0);
+  var unpaid = bills.filter(function(b) { return b.status !== 'paid'; });
+  var totU = unpaid.reduce(function(s, b) { return s + parseFloat(b.amount || 0); }, 0);
+  var jobId = rj.id;
 
   var h = '';
-  h += '<div id="quote-bills-box" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6" style="margin-top:16px;">';
-  h += '<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Bills / Supplier Invoices</h3>';
+  h += '<div id="qbills" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6" style="margin-top:16px;">';
 
-  // Summary bar
-  h += '<div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;">';
-  h += '<div style="flex:1;min-width:120px;padding:12px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;" class="dark:bg-gray-700/50 dark:border-gray-600">';
-  h += '<div style="font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase;">Total Bills</div>';
-  h += '<div style="font-size:20px;font-weight:800;color:#0f172a;" class="dark:text-white">' + fmt(totalBills) + '</div>';
+  // Header with Add Bill button
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">';
+  h += '<h3 class="text-lg font-semibold text-gray-900 dark:text-white" style="margin:0;">Bills / Supplier Invoices</h3>';
+  h += '<button onclick="openAddBillModal(\'' + jobId + '\')" style="padding:8px 16px;font-size:13px;font-weight:600;background:#0d9488;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;">+ Add Bill</button>';
   h += '</div>';
-  if (unpaidBills.length > 0) {
-    h += '<div style="flex:1;min-width:120px;padding:12px;background:#fef2f2;border-radius:10px;border:1px solid #fecaca;" class="dark:bg-red-900/20 dark:border-red-800">';
-    h += '<div style="font-size:11px;color:#ef4444;font-weight:600;text-transform:uppercase;">Outstanding</div>';
-    h += '<div style="font-size:20px;font-weight:800;color:#ef4444;">' + fmt(totalUnpaid) + '</div>';
+
+  if (bills.length === 0) {
+    h += '<div style="text-align:center;padding:32px;color:#94a3b8;">';
+    h += '<p style="font-size:14px;margin-bottom:4px;">No bills for this job yet.</p>';
+    h += '<p style="font-size:12px;">Add supplier invoices to track true job profitability.</p>';
+    h += '</div>';
+  } else {
+    // Summary boxes
+    h += '<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">';
+    h += '<div style="flex:1;min-width:100px;padding:10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;" class="dark:bg-gray-700/50 dark:border-gray-600"><div style="font-size:10px;color:#64748b;font-weight:600;">TOTAL</div><div style="font-size:18px;font-weight:800;" class="dark:text-white">' + fmt(tot) + '</div></div>';
+    if (totU > 0) h += '<div style="flex:1;min-width:100px;padding:10px;background:#fef2f2;border-radius:8px;border:1px solid #fecaca;" class="dark:bg-red-900/20 dark:border-red-800"><div style="font-size:10px;color:#ef4444;font-weight:600;">UNPAID</div><div style="font-size:18px;font-weight:800;color:#ef4444;">' + fmt(totU) + '</div></div>';
+    h += '<div style="flex:1;min-width:100px;padding:10px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;" class="dark:bg-green-900/20 dark:border-green-800"><div style="font-size:10px;color:#16a34a;font-weight:600;">PAID</div><div style="font-size:18px;font-weight:800;color:#16a34a;">' + fmt(tot - totU) + '</div></div>';
+    h += '</div>';
+
+    // Bills list
+    bills.forEach(function(b) {
+      var sc = b.status === 'paid' ? 'background:#d1fae5;color:#065f46;' : 'background:#fee2e2;color:#991b1b;';
+      h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid #f1f5f9;" class="dark:border-gray-700">';
+      h += '<div>';
+      h += '<div style="font-size:13px;font-weight:600;" class="dark:text-white">' + esc(b.vendor_name) + '</div>';
+      h += '<div style="font-size:11px;color:#94a3b8;">';
+      if (b.bill_number) h += '#' + esc(b.bill_number) + ' ';
+      h += (b.date || '');
+      if (b.due_date) h += ' &middot; Due: ' + b.due_date;
+      h += '</div>';
+      if (b.description) h += '<div style="font-size:11px;color:#b0b8c4;margin-top:2px;">' + esc(b.description) + '</div>';
+      h += '</div>';
+      h += '<div style="display:flex;align-items:center;gap:8px;">';
+      h += '<span style="font-weight:700;" class="dark:text-white">' + fmt(b.amount) + '</span>';
+      h += '<span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:8px;' + sc + '">' + (b.status === 'paid' ? 'PAID' : 'UNPAID') + '</span>';
+      h += '</div>';
+      h += '</div>';
+    });
+
+    // Impact note
+    h += '<div style="margin-top:12px;padding:10px 14px;border-radius:8px;background:#fef3c7;border:1px solid #fde68a;" class="dark:bg-amber-900/20 dark:border-amber-800">';
+    h += '<div style="font-size:12px;font-weight:600;color:#92400e;" class="dark:text-amber-400">These bills reduce your profit by ' + fmt(tot) + '</div>';
     h += '</div>';
   }
-  h += '<div style="flex:1;min-width:120px;padding:12px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0;" class="dark:bg-green-900/20 dark:border-green-800">';
-  h += '<div style="font-size:11px;color:#16a34a;font-weight:600;text-transform:uppercase;">Paid</div>';
-  h += '<div style="font-size:20px;font-weight:800;color:#16a34a;">' + fmt(totalBills - totalUnpaid) + '</div>';
-  h += '</div>';
-  h += '</div>';
-
-  // Bills list
-  h += '<div style="border-top:1px solid #e2e8f0;" class="dark:border-gray-700">';
-  jobBills.forEach(function(b) {
-    var statusColor = b.status === 'paid' ? 'background:#d1fae5;color:#065f46;' : 'background:#fee2e2;color:#991b1b;';
-    var statusLabel = b.status === 'paid' ? 'PAID' : 'UNPAID';
-    h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #f3f4f6;" class="dark:border-gray-700">';
-    h += '<div>';
-    h += '<div style="font-size:14px;font-weight:600;color:#0f172a;" class="dark:text-white">' + escH(b.vendor_name) + '</div>';
-    h += '<div style="font-size:12px;color:#64748b;">';
-    if (b.bill_number) h += '#' + escH(b.bill_number) + ' &middot; ';
-    if (b.date) h += b.date;
-    if (b.due_date) h += ' &middot; Due: ' + b.due_date;
-    h += '</div>';
-    if (b.description) h += '<div style="font-size:11px;color:#94a3b8;margin-top:2px;">' + escH(b.description) + '</div>';
-    h += '</div>';
-    h += '<div style="display:flex;align-items:center;gap:12px;">';
-    h += '<span style="font-size:14px;font-weight:700;color:#0f172a;" class="dark:text-white">' + fmt(b.amount) + '</span>';
-    h += '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;' + statusColor + '">' + statusLabel + '</span>';
-    h += '</div>';
-    h += '</div>';
-  });
-  h += '</div>';
-
-  // Impact on profit
-  h += '<div style="margin-top:16px;padding:12px 16px;border-radius:10px;background:#fef3c7;border:1px solid #fde68a;" class="dark:bg-amber-900/20 dark:border-amber-800">';
-  h += '<div style="font-size:12px;font-weight:600;color:#92400e;" class="dark:text-amber-400">These bills reduce your profit by ' + fmt(totalBills) + '</div>';
-  h += '</div>';
 
   h += '</div>';
-
-  // Insert after P&L card
-  plCard.insertAdjacentHTML('afterend', h);
+  card.insertAdjacentHTML('afterend', h);
 }
 
-var _qbTimer = null;
-var _qbObs = new MutationObserver(function() {
-  if (_qbTimer) clearTimeout(_qbTimer);
-  _qbTimer = setTimeout(injectBillsBox, 500);
-});
-_qbObs.observe(document.body, { childList: true, subtree: true });
+var t = null;
+new MutationObserver(function() {
+  if (t) clearTimeout(t);
+  t = setTimeout(inject, 500);
+}).observe(document.body, { childList: true, subtree: true });
 
 console.log('Quote bills box loaded');
-
-} catch(e) {
-  console.error('Quote bills box error:', e);
-}
+} catch(e) { console.error('qbills err:', e); }
 })();
