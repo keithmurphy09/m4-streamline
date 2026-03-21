@@ -1,38 +1,38 @@
-// M4 Quote P&L Bills Enhancement
-// Injects bills data into quote detail P&L section
+// M4 Quote P&L Bills Box
+// Adds a Bills card below Profit & Loss in quote detail
 // Additive only
 (function(){
 try {
 
-function escH(s) {
-  if (!s) return '';
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function formatCurrency(n) {
+function fmt(n) {
   return '$' + parseFloat(n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
-function enhanceQuotePL() {
+function escH(s) {
+  return s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
+}
+
+async function injectBillsBox() {
   if (typeof activeTab !== 'undefined' && activeTab !== 'quotes') return;
-
-  // Find the P&L section
-  var plHeading = null;
-  var headings = document.querySelectorAll('h3');
-  headings.forEach(function(h) {
-    if (h.textContent.trim() === 'Profit & Loss Analysis') plHeading = h;
-  });
-  if (!plHeading) return;
-
-  var plCard = plHeading.closest('.bg-white, .dark\\:bg-gray-800');
-  if (!plCard || plCard.dataset.billsAdded) return;
-  plCard.dataset.billsAdded = 'true';
-
-  // Find which quote we're viewing
   if (typeof selectedQuoteForDetail === 'undefined' || !selectedQuoteForDetail) return;
-  var q = selectedQuoteForDetail;
+  if (document.getElementById('quote-bills-box')) return;
 
-  // Find related job (same logic as quotes.js)
+  // Find P&L heading
+  var plH3 = null;
+  document.querySelectorAll('h3').forEach(function(h) {
+    if (h.textContent.trim() === 'Profit & Loss Analysis') plH3 = h;
+  });
+  if (!plH3) return;
+
+  // Walk up to find the card container
+  var plCard = plH3.parentElement;
+  while (plCard && !plCard.classList.contains('rounded-xl') && !plCard.classList.contains('shadow-sm')) {
+    plCard = plCard.parentElement;
+  }
+  if (!plCard) plCard = plH3.parentElement;
+
+  // Find related job
+  var q = selectedQuoteForDetail;
   var relatedJob = jobs.find(function(j) {
     return j.title === q.title && j.client_id === q.client_id;
   });
@@ -42,129 +42,88 @@ function enhanceQuotePL() {
     });
   }
 
-  // Load bills for this job
-  var jobBills = [];
-  if (relatedJob) {
-    // Check if _bills is accessible
-    if (typeof _bills !== 'undefined') {
-      jobBills = _bills.filter(function(b) { return b.job_id === relatedJob.id; });
-    }
-  }
+  if (!relatedJob) return;
 
-  // If no bills from local, try to find via Supabase query
-  if (jobBills.length === 0 && relatedJob) {
-    // Use async approach
-    loadBillsForJob(relatedJob.id, plCard, q);
-    return;
-  }
+  // Load bills from Supabase
+  var ownerId = (typeof accountOwnerId !== 'undefined' && accountOwnerId) ? accountOwnerId : (currentUser ? currentUser.id : null);
+  if (!ownerId) return;
 
-  if (jobBills.length > 0) {
-    injectBillsIntoPI(plCard, jobBills, q);
-  }
-}
+  var result = await supabaseClient.from('bills').select('*').eq('user_id', ownerId).eq('job_id', relatedJob.id);
+  var jobBills = result.data || [];
 
-async function loadBillsForJob(jobId, plCard, quote) {
-  try {
-    var ownerId = (typeof accountOwnerId !== 'undefined' && accountOwnerId) ? accountOwnerId : (currentUser ? currentUser.id : null);
-    if (!ownerId) return;
-
-    var r = await supabaseClient.from('bills').select('*').eq('user_id', ownerId).eq('job_id', jobId);
-    var jobBills = r.data || [];
-
-    if (jobBills.length > 0) {
-      injectBillsIntoPI(plCard, jobBills, quote);
-    }
-  } catch(e) {
-    console.error('Error loading bills for quote P&L:', e);
-  }
-}
-
-function injectBillsIntoPI(plCard, jobBills, quote) {
-  if (plCard.dataset.billsInjected) return;
-  plCard.dataset.billsInjected = 'true';
+  if (jobBills.length === 0) return;
 
   var totalBills = jobBills.reduce(function(sum, b) { return sum + parseFloat(b.amount || 0); }, 0);
+  var paidBills = jobBills.filter(function(b) { return b.status === 'paid'; });
+  var unpaidBills = jobBills.filter(function(b) { return b.status !== 'paid'; });
+  var totalUnpaid = unpaidBills.reduce(function(sum, b) { return sum + parseFloat(b.amount || 0); }, 0);
 
-  // Find the "Total Expenses" row to insert after
-  var rows = plCard.querySelectorAll('.flex.justify-between');
-  var expenseRow = null;
-  var detailsEl = null;
-  rows.forEach(function(row) {
-    var label = row.querySelector('.text-gray-600, .dark\\:text-gray-400');
-    if (label && label.textContent.trim() === 'Total Expenses:') expenseRow = row;
-  });
+  var h = '';
+  h += '<div id="quote-bills-box" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6" style="margin-top:16px;">';
+  h += '<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Bills / Supplier Invoices</h3>';
 
-  // Also check for the details/expandable expenses
-  detailsEl = plCard.querySelector('details');
+  // Summary bar
+  h += '<div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;">';
+  h += '<div style="flex:1;min-width:120px;padding:12px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;" class="dark:bg-gray-700/50 dark:border-gray-600">';
+  h += '<div style="font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase;">Total Bills</div>';
+  h += '<div style="font-size:20px;font-weight:800;color:#0f172a;" class="dark:text-white">' + fmt(totalBills) + '</div>';
+  h += '</div>';
+  if (unpaidBills.length > 0) {
+    h += '<div style="flex:1;min-width:120px;padding:12px;background:#fef2f2;border-radius:10px;border:1px solid #fecaca;" class="dark:bg-red-900/20 dark:border-red-800">';
+    h += '<div style="font-size:11px;color:#ef4444;font-weight:600;text-transform:uppercase;">Outstanding</div>';
+    h += '<div style="font-size:20px;font-weight:800;color:#ef4444;">' + fmt(totalUnpaid) + '</div>';
+    h += '</div>';
+  }
+  h += '<div style="flex:1;min-width:120px;padding:12px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0;" class="dark:bg-green-900/20 dark:border-green-800">';
+  h += '<div style="font-size:11px;color:#16a34a;font-weight:600;text-transform:uppercase;">Paid</div>';
+  h += '<div style="font-size:20px;font-weight:800;color:#16a34a;">' + fmt(totalBills - totalUnpaid) + '</div>';
+  h += '</div>';
+  h += '</div>';
 
-  // Build bills row
-  var billsRow = document.createElement('div');
-  billsRow.className = 'flex justify-between py-2 border-b border-gray-100 dark:border-gray-700';
-  billsRow.innerHTML = '<span class="text-sm text-gray-600 dark:text-gray-400">Bills (Subcontractors):</span><span class="text-sm font-medium text-red-600 dark:text-red-400">' + formatCurrency(totalBills) + '</span>';
-
-  // Build expandable bill details
-  var billDetails = document.createElement('div');
-  billDetails.className = 'mt-2 mb-2 pl-4';
-  var detailsH = '<details class="text-xs text-gray-500 dark:text-gray-400"><summary class="cursor-pointer hover:text-gray-700 dark:hover:text-gray-300">Show ' + jobBills.length + ' bill' + (jobBills.length > 1 ? 's' : '') + '</summary><div class="mt-2 space-y-1 pl-2">';
+  // Bills list
+  h += '<div style="border-top:1px solid #e2e8f0;" class="dark:border-gray-700">';
   jobBills.forEach(function(b) {
-    var statusBadge = b.status === 'paid'
-      ? '<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:#d1fae5;color:#065f46;margin-left:6px;">PAID</span>'
-      : '<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:#fee2e2;color:#991b1b;margin-left:6px;">UNPAID</span>';
-    detailsH += '<div class="flex justify-between py-1"><span>' + escH(b.vendor_name) + (b.bill_number ? ' #' + escH(b.bill_number) : '') + statusBadge + '</span><span class="font-medium">' + formatCurrency(b.amount) + '</span></div>';
+    var statusColor = b.status === 'paid' ? 'background:#d1fae5;color:#065f46;' : 'background:#fee2e2;color:#991b1b;';
+    var statusLabel = b.status === 'paid' ? 'PAID' : 'UNPAID';
+    h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #f3f4f6;" class="dark:border-gray-700">';
+    h += '<div>';
+    h += '<div style="font-size:14px;font-weight:600;color:#0f172a;" class="dark:text-white">' + escH(b.vendor_name) + '</div>';
+    h += '<div style="font-size:12px;color:#64748b;">';
+    if (b.bill_number) h += '#' + escH(b.bill_number) + ' &middot; ';
+    if (b.date) h += b.date;
+    if (b.due_date) h += ' &middot; Due: ' + b.due_date;
+    h += '</div>';
+    if (b.description) h += '<div style="font-size:11px;color:#94a3b8;margin-top:2px;">' + escH(b.description) + '</div>';
+    h += '</div>';
+    h += '<div style="display:flex;align-items:center;gap:12px;">';
+    h += '<span style="font-size:14px;font-weight:700;color:#0f172a;" class="dark:text-white">' + fmt(b.amount) + '</span>';
+    h += '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;' + statusColor + '">' + statusLabel + '</span>';
+    h += '</div>';
+    h += '</div>';
   });
-  detailsH += '</div></details>';
-  billDetails.innerHTML = detailsH;
+  h += '</div>';
 
-  // Insert after expense row or details
-  var insertAfter = detailsEl || expenseRow;
-  if (insertAfter && insertAfter.parentElement) {
-    insertAfter.parentElement.insertBefore(billsRow, insertAfter.nextSibling);
-    billsRow.parentElement.insertBefore(billDetails, billsRow.nextSibling);
-  }
+  // Impact on profit
+  h += '<div style="margin-top:16px;padding:12px 16px;border-radius:10px;background:#fef3c7;border:1px solid #fde68a;" class="dark:bg-amber-900/20 dark:border-amber-800">';
+  h += '<div style="font-size:12px;font-weight:600;color:#92400e;" class="dark:text-amber-400">These bills reduce your profit by ' + fmt(totalBills) + '</div>';
+  h += '</div>';
 
-  // Update the Net Profit calculation
-  var revenue = parseFloat(quote.total || 0);
-  var expenseText = expenseRow ? expenseRow.querySelector('.text-red-600, .dark\\:text-red-400') : null;
-  var currentExpenses = expenseText ? parseFloat(expenseText.textContent.replace(/[^0-9.-]/g, '')) : 0;
-  var totalCosts = currentExpenses + totalBills;
-  var newProfit = revenue - totalCosts;
-  var newMargin = revenue > 0 ? ((newProfit / revenue) * 100).toFixed(1) : 0;
+  h += '</div>';
 
-  // Find and update profit row
-  var profitRow = plCard.querySelector('.bg-teal-50, .bg-red-50');
-  if (profitRow) {
-    var profitVal = profitRow.querySelector('.text-lg.font-bold');
-    var marginVal = profitRow.querySelector('.text-xs');
-    if (profitVal) {
-      profitVal.textContent = formatCurrency(newProfit);
-      profitVal.className = 'text-lg font-bold ' + (newProfit >= 0 ? 'text-teal-700 dark:text-teal-400' : 'text-red-700 dark:text-red-400');
-    }
-    if (marginVal) {
-      marginVal.textContent = '(' + newMargin + '% margin)';
-    }
-    profitRow.className = profitRow.className.replace(/bg-teal-50|bg-red-50/g, '') + ' ' + (newProfit >= 0 ? 'bg-teal-50' : 'bg-red-50');
-  }
-
-  // Add a "Total Costs" summary row before profit
-  if (totalBills > 0 && profitRow) {
-    var costsRow = document.createElement('div');
-    costsRow.className = 'flex justify-between py-2 border-b border-gray-100 dark:border-gray-700';
-    costsRow.innerHTML = '<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Total Costs (Expenses + Bills):</span><span class="text-sm font-bold text-red-600 dark:text-red-400">' + formatCurrency(totalCosts) + '</span>';
-    profitRow.parentElement.insertBefore(costsRow, profitRow);
-  }
+  // Insert after P&L card
+  plCard.insertAdjacentHTML('afterend', h);
 }
 
-// ============ OBSERVER ============
-var _qplTimer = null;
-var _qplObs = new MutationObserver(function() {
-  if (_qplTimer) clearTimeout(_qplTimer);
-  _qplTimer = setTimeout(enhanceQuotePL, 300);
+var _qbTimer = null;
+var _qbObs = new MutationObserver(function() {
+  if (_qbTimer) clearTimeout(_qbTimer);
+  _qbTimer = setTimeout(injectBillsBox, 500);
 });
-_qplObs.observe(document.body, { childList: true, subtree: true });
+_qbObs.observe(document.body, { childList: true, subtree: true });
 
-console.log('Quote P&L bills enhancement loaded');
+console.log('Quote bills box loaded');
 
 } catch(e) {
-  console.error('Quote P&L bills error:', e);
+  console.error('Quote bills box error:', e);
 }
 })();
