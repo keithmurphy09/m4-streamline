@@ -105,7 +105,8 @@ async function pushBillToXero(bill) {
       vendor: bill.vendor_name,
       bill_number: bill.bill_number,
       description: bill.description,
-      job_title: bill.job_title
+      job_title: bill.job_title,
+      file_url: bill.file_url
     };
 
     var r = await fetch(XERO_WORKER + '/push/expense', {
@@ -372,7 +373,8 @@ window.xeroSyncBills = async function() {
           vendor: bill.vendor_name,
           bill_number: bill.bill_number,
           description: bill.description,
-          job_title: bill.job_title
+          job_title: bill.job_title,
+          file_url: bill.file_url
         };
 
         var r = await fetch(XERO_WORKER + '/push/expense', {
