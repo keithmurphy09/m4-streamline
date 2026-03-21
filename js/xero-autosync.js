@@ -43,16 +43,16 @@ function checkForNewItems() {
   }
   _lastInvoiceCount = invoices.length;
 
-  // Check for new expenses
-  if (expenses.length > _lastExpenseCount && _lastExpenseCount > 0) {
-    var newExpenses = expenses.filter(function(exp) { return !exp.xero_id; });
-    var newestExp = newExpenses[newExpenses.length - 1];
-    if (newestExp && !newestExp._xero_pushing) {
-      newestExp._xero_pushing = true;
-      pushExpenseToXero(newestExp);
+  // Check for new bills
+  if (typeof _bills !== 'undefined' && _bills.length > _lastExpenseCount && _lastExpenseCount > 0) {
+    var newBills = _bills.filter(function(b) { return !b.xero_id; });
+    var newestBill = newBills[newBills.length - 1];
+    if (newestBill && !newestBill._xero_pushing) {
+      newestBill._xero_pushing = true;
+      pushBillToXero(newestBill);
     }
   }
-  _lastExpenseCount = expenses.length;
+  if (typeof _bills !== 'undefined') _lastExpenseCount = _bills.length;
 
   // Check for new clients
   if (clients.length > _lastClientCount && _lastClientCount > 0) {
@@ -104,16 +104,16 @@ async function pushInvoiceToXero(inv) {
   }
 }
 
-async function pushExpenseToXero(exp) {
+async function pushBillToXero(bill) {
   try {
     var data = {
-      date: exp.date,
-      amount: exp.amount,
-      category: exp.category,
-      description: exp.description,
-      vendor: exp.vendor || exp.team_member_name || exp.category,
-      team_member: exp.team_member_name,
-      job_title: exp.job_title
+      date: bill.date,
+      due_date: bill.due_date,
+      amount: bill.amount,
+      vendor: bill.vendor_name,
+      bill_number: bill.bill_number,
+      description: bill.description,
+      job_title: bill.job_title
     };
 
     var r = await fetch(XERO_WORKER + '/push/expense', {
@@ -123,14 +123,14 @@ async function pushExpenseToXero(exp) {
     var result = await r.json();
 
     if (result.success && result.xero_id) {
-      exp.xero_id = result.xero_id;
-      await supabaseClient.from('expenses').update({ xero_id: result.xero_id }).eq('id', exp.id);
-      console.log('Xero: Expense synced');
+      bill.xero_id = result.xero_id;
+      await supabaseClient.from('bills').update({ xero_id: result.xero_id }).eq('id', bill.id);
+      console.log('Xero: Bill from ' + bill.vendor_name + ' synced');
     } else {
-      console.warn('Xero: Expense sync failed -', result.error);
+      console.warn('Xero: Bill sync failed -', result.error);
     }
   } catch(e) {
-    console.error('Xero auto-sync expense error:', e);
+    console.error('Xero auto-sync bill error:', e);
   }
 }
 
@@ -178,13 +178,14 @@ if (typeof _origDeleteInvoice === 'function') {
   };
 }
 
-var _origDeleteExpense = window.deleteExpense;
-if (typeof _origDeleteExpense === 'function') {
-  window.deleteExpense = async function(id) {
-    var exp = expenses.find(function(e) { return e.id === id; });
-    var xeroId = exp ? exp.xero_id : null;
+var _origDeleteBill = window.deleteBill;
+if (typeof _origDeleteBill === 'function') {
+  window.deleteBill = async function(id) {
+    var bill = null;
+    if (typeof _bills !== 'undefined') bill = _bills.find(function(b) { return b.id === id; });
+    var xeroId = bill ? bill.xero_id : null;
 
-    await _origDeleteExpense(id);
+    await _origDeleteBill(id);
 
     if (xeroId && isXeroConnected()) {
       try {
@@ -192,8 +193,8 @@ if (typeof _origDeleteExpense === 'function') {
           method: 'POST', headers: xeroHeaders(),
           body: JSON.stringify({ xero_id: xeroId })
         });
-        console.log('Xero: Expense voided');
-      } catch(e) { console.error('Xero void error:', e); }
+        console.log('Xero: Bill voided');
+      } catch(e) { console.error('Xero void bill error:', e); }
     }
   };
 }
@@ -342,6 +343,68 @@ window.xeroSyncContacts = async function() {
   if (btn) { btn.textContent = 'Sync Now'; btn.disabled = false; }
 };
 
+// ============ BULK SYNC BILLS ============
+window.xeroSyncBills = async function() {
+  var btn = document.getElementById('xero-sync-exp');
+  if (btn) { btn.textContent = 'Syncing...'; btn.disabled = true; }
+
+  try {
+    if (typeof _bills === 'undefined' || _bills.length === 0) {
+      showNotification('No bills to sync', 'error');
+      if (btn) { btn.textContent = 'Sync Now'; btn.disabled = false; }
+      return;
+    }
+
+    var toSync = _bills.filter(function(b) { return !b.xero_id; });
+    if (toSync.length === 0) {
+      showNotification('All bills already synced', 'success');
+      if (btn) { btn.textContent = 'Sync Now'; btn.disabled = false; }
+      return;
+    }
+
+    var synced = 0;
+    var failed = 0;
+
+    for (var i = 0; i < toSync.length; i++) {
+      var bill = toSync[i];
+      try {
+        var data = {
+          date: bill.date,
+          due_date: bill.due_date,
+          amount: bill.amount,
+          vendor: bill.vendor_name,
+          bill_number: bill.bill_number,
+          description: bill.description,
+          job_title: bill.job_title
+        };
+
+        var r = await fetch(XERO_WORKER + '/push/expense', {
+          method: 'POST', headers: xeroHeaders(),
+          body: JSON.stringify({ expense: data })
+        });
+        var result = await r.json();
+
+        if (result.success && result.xero_id) {
+          bill.xero_id = result.xero_id;
+          await supabaseClient.from('bills').update({ xero_id: result.xero_id }).eq('id', bill.id);
+          synced++;
+        } else {
+          failed++;
+          console.warn('Xero bill sync failed:', bill.vendor_name, result.error);
+        }
+      } catch(e) { failed++; }
+    }
+
+    var skipped = _bills.length - toSync.length;
+    var msg = synced + ' bills synced';
+    if (skipped > 0) msg += ', ' + skipped + ' already synced';
+    if (failed > 0) msg += ', ' + failed + ' failed';
+    showNotification(msg, synced > 0 ? 'success' : 'error');
+  } catch(e) { showNotification('Error: ' + e.message, 'error'); }
+
+  if (btn) { btn.textContent = 'Sync Now'; btn.disabled = false; }
+};
+
 // ============ POLLING FOR NEW ITEMS ============
 setInterval(function() {
   if (typeof currentUser !== 'undefined' && currentUser) {
@@ -352,7 +415,7 @@ setInterval(function() {
 // Initialize counts
 setTimeout(function() {
   _lastInvoiceCount = invoices.length;
-  _lastExpenseCount = expenses.length;
+  _lastExpenseCount = typeof _bills !== 'undefined' ? _bills.length : 0;
   _lastClientCount = clients.length;
 }, 3000);
 
