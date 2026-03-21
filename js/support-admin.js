@@ -280,15 +280,19 @@ function formatDate(date) {
 
 // ============ INJECT INTO ADMIN PANEL ============
 function injectSupportTab() {
-  if (typeof activeTab !== 'undefined' && activeTab !== 'admin') return;
+  if (typeof activeTab !== 'undefined' && activeTab !== 'admin' && activeTab !== 'company') return;
 
   // Find admin panel content
-  var h2 = document.querySelector('h2.text-2xl.font-bold');
-  if (!h2 || h2.textContent.trim() !== 'Admin Panel') return;
+  var h2 = null;
+  document.querySelectorAll('h2').forEach(function(el) {
+    if (el.textContent.trim() === 'All Users') h2 = el;
+  });
+  if (!h2) return;
   if (document.getElementById('sa-section')) return;
 
-  var container = h2.parentElement;
-  if (!container) return;
+  var container = h2.closest('.bg-white, .dark\\:bg-gray-800') || h2.parentElement;
+  if (!container || !container.parentElement) return;
+  var parent = container.parentElement;
 
   // Add Support Messages section
   var section = document.createElement('div');
@@ -306,7 +310,7 @@ function injectSupportTab() {
     '</div>' +
     '<div id="sa-panel-content" style="display:none;margin-top:16px;"></div>';
 
-  container.appendChild(section);
+  parent.appendChild(section);
 }
 
 window.saTogglePanel = function() {
