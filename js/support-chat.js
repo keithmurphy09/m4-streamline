@@ -164,12 +164,7 @@ window.sendSupportMessage = async function() {
 
     _scSent = true;
     renderSuccess();
-
-    // Also send email notification
-    try {
-      var emailBody = 'New support message from ' + (data.user_name || 'Unknown') + ' (' + (data.user_email || 'no email') + ')\n\nTopic: ' + data.page + '\n\nMessage:\n' + data.message;
-      console.log('Support message saved:', emailBody);
-    } catch(e) {}
+    console.log('Support message saved - admin will see badge notification');
 
   } catch(e) {
     console.error('Support message error:', e);
