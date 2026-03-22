@@ -29,15 +29,15 @@ document.head.appendChild(css);
 
 function escH(s) { return s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''; }
 
-var _xStatus = null;
+window._xStatus = null;
 var _xChecked = false;
 
 async function checkStatus() {
   if (!currentUser) return;
   try {
     var r = await fetch(XERO_WORKER + '/status?user_id=' + currentUser.id);
-    _xStatus = await r.json();
-  } catch(e) { _xStatus = { connected: false }; }
+    window._xStatus = await r.json();
+  } catch(e) { window._xStatus = { connected: false }; }
   _xChecked = true;
 }
 
@@ -55,7 +55,7 @@ window.disconnectXero = async function() {
   if (!confirm('Disconnect Xero?')) return;
   try {
     await fetch(XERO_WORKER + '/disconnect?user_id=' + currentUser.id, { method: 'POST' });
-    _xStatus = { connected: false };
+    window._xStatus = { connected: false };
     localStorage.removeItem('m4_xero_connected');
     showNotification('Xero disconnected', 'success');
     renderApp();
@@ -161,12 +161,12 @@ function inject() {
 
   var h = '';
 
-  if (_xStatus && _xStatus.connected) {
+  if (window._xStatus && window._xStatus.connected) {
     h += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">';
     h += '<div style="width:40px;height:40px;border-radius:10px;background:#13B5EA;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.41 14.59L6 12l1.41-1.41L11 14.17l6.59-6.59L19 9l-8.41 8.59z"/></svg></div>';
     h += '<div style="flex:1;"><div style="font-size:18px;font-weight:700;color:#0f172a;" class="dark:text-white">Xero Integration</div><div style="font-size:12px;color:#94a3b8;">Sync invoices, expenses, and contacts</div></div>';
     h += '</div>';
-    h += '<div class="xero-status-bar"><span class="xero-dot"></span><span style="font-size:13px;font-weight:600;color:#16a34a;">Connected</span><span style="margin-left:auto;font-size:12px;color:#64748b;">' + escH(_xStatus.tenant_name || '') + '</span></div>';
+    h += '<div class="xero-status-bar"><span class="xero-dot"></span><span style="font-size:13px;font-weight:600;color:#16a34a;">Connected</span><span style="margin-left:auto;font-size:12px;color:#64748b;">' + escH(window._xStatus.tenant_name || '') + '</span></div>';
     h += '<div class="xero-sync-row"><div><div style="font-size:14px;font-weight:500;color:#374151;" class="dark:text-gray-200">Invoices</div><div style="font-size:11px;color:#94a3b8;">Push all invoices to Xero</div></div><button class="xero-sync-btn" id="xero-sync-inv" onclick="xeroSyncInvoices()">Sync Now</button></div>';
     h += '<div class="xero-sync-row"><div><div style="font-size:14px;font-weight:500;color:#374151;" class="dark:text-gray-200">Bills</div><div style="font-size:11px;color:#94a3b8;">Push supplier invoices to Xero as bills</div></div><button class="xero-sync-btn" id="xero-sync-exp" onclick="xeroSyncBills()">Sync Now</button></div>';
     h += '<div class="xero-sync-row"><div><div style="font-size:14px;font-weight:500;color:#374151;" class="dark:text-gray-200">Contacts</div><div style="font-size:11px;color:#94a3b8;">Push clients to Xero contacts</div></div><button class="xero-sync-btn" id="xero-sync-con" onclick="xeroSyncContacts()">Sync Now</button></div>';
