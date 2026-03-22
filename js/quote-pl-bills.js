@@ -13,32 +13,41 @@ async function inject() {
 
   var all = document.querySelectorAll('h3');
   var plH = null;
-  all.forEach(function(h) { if (h.textContent.trim() === 'Profit & Loss Analysis') plH = h; });
-  if (!plH) return;
+  var lineItemsH = null;
+  all.forEach(function(h) {
+    if (h.textContent.trim() === 'Profit & Loss Analysis') plH = h;
+    if (h.textContent.trim() === 'Line Items') lineItemsH = h;
+  });
+
+  // Use P&L section if exists, otherwise fall back to Line Items
+  var targetH = plH || lineItemsH;
+  if (!targetH) return;
 
   // Walk up to the card container
-  var card = plH.parentElement;
+  var card = targetH.parentElement;
   while (card && card.parentElement && !card.classList.contains('shadow-sm') && !card.classList.contains('rounded-xl')) {
     card = card.parentElement;
   }
-  if (!card || card === document.body) card = plH.parentElement;
+  if (!card || card === document.body) card = targetH.parentElement;
 
   // Find related job
   var q = selectedQuoteForDetail;
   var rj = jobs.find(function(j) { return j.title === q.title && j.client_id === q.client_id; });
   if (!rj) rj = jobs.find(function(j) { return j.title && q.title && j.title.toLowerCase() === q.title.toLowerCase() && j.client_id === q.client_id; });
-  if (!rj) return;
 
   var oid = (typeof accountOwnerId !== 'undefined' && accountOwnerId) ? accountOwnerId : (currentUser ? currentUser.id : null);
   if (!oid) return;
 
-  var r = await supabaseClient.from('bills').select('*').eq('user_id', oid).eq('job_id', rj.id);
-  var bills = r.data || [];
+  var bills = [];
+  if (rj) {
+    var r = await supabaseClient.from('bills').select('*').eq('user_id', oid).eq('job_id', rj.id);
+    bills = r.data || [];
+  }
 
   var tot = bills.reduce(function(s, b) { return s + parseFloat(b.amount || 0); }, 0);
   var unpaid = bills.filter(function(b) { return b.status !== 'paid'; });
   var totU = unpaid.reduce(function(s, b) { return s + parseFloat(b.amount || 0); }, 0);
-  var jobId = rj.id;
+  var jobId = rj ? rj.id : '';
 
   var h = '';
   h += '<div id="qbills" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6" style="margin-top:16px;">';
@@ -50,10 +59,17 @@ async function inject() {
   h += '</div>';
 
   if (bills.length === 0) {
-    h += '<div style="text-align:center;padding:32px;color:#94a3b8;">';
-    h += '<p style="font-size:14px;margin-bottom:4px;">No bills for this job yet.</p>';
-    h += '<p style="font-size:12px;">Add supplier invoices to track true job profitability.</p>';
-    h += '</div>';
+    if (!rj) {
+      h += '<div style="text-align:center;padding:32px;color:#94a3b8;">';
+      h += '<p style="font-size:14px;margin-bottom:4px;">No bills yet.</p>';
+      h += '<p style="font-size:12px;">Add supplier invoices now — they will link to the job once scheduled.</p>';
+      h += '</div>';
+    } else {
+      h += '<div style="text-align:center;padding:32px;color:#94a3b8;">';
+      h += '<p style="font-size:14px;margin-bottom:4px;">No bills for this job yet.</p>';
+      h += '<p style="font-size:12px;">Add supplier invoices to track true job profitability.</p>';
+      h += '</div>';
+    }
   } else {
     // Summary boxes
     h += '<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">';
