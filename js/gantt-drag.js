@@ -83,47 +83,47 @@ function buildRowMap() {
   return map;
 }
 
-// Build date array for position-to-date conversion
-function buildDateArray() {
+// Derive the gantt start date from a known bar position
+function getGanttStartDate() {
+  var dayW = getDayW();
   var allTasks = window.jobTasks || [];
-  var fj = (typeof jobs !== 'undefined' ? jobs : []).filter(function(j) {
-    return j.status !== 'completed';
-  });
+  var canvas = document.getElementById('gantt-canvas');
+  if (!canvas) return null;
 
-  var minD = null;
-  var maxD = null;
-
-  for (var i = 0; i < fj.length; i++) {
-    var sd = fj[i].date ? new Date(fj[i].date + 'T00:00:00') : null;
-    if (!sd || isNaN(sd.getTime())) continue;
-    var dur = parseInt(fj[i].duration) || 1;
-    var ed = new Date(sd); ed.setDate(ed.getDate() + dur);
-    if (!minD || sd < minD) minD = new Date(sd);
-    if (!maxD || ed > maxD) maxD = new Date(ed);
-  }
-  for (var i2 = 0; i2 < allTasks.length; i2++) {
-    if (!allTasks[i2].start_date) continue;
-    var td = new Date(allTasks[i2].start_date + 'T00:00:00');
-    if (isNaN(td.getTime())) continue;
-    var tDur = allTasks[i2].duration_days || 1;
-    var te = new Date(td); te.setDate(te.getDate() + tDur);
-    if (!minD || td < minD) minD = new Date(td);
-    if (!maxD || te > maxD) maxD = new Date(te);
+  // Find any bar with a known task
+  var bars = canvas.querySelectorAll('.gantt-bar[data-task-id]');
+  for (var i = 0; i < bars.length; i++) {
+    var tid = bars[i].dataset.taskId;
+    var task = allTasks.find(function(t) { return t.id === tid; });
+    if (task && task.start_date) {
+      var barL = parseInt(bars[i].style.left) || 0;
+      var dayIdx = Math.round((barL - 2) / dayW);
+      var taskDate = new Date(task.start_date + 'T00:00:00');
+      // Gantt start = task date minus dayIdx
+      var ganttStart = new Date(taskDate);
+      ganttStart.setDate(ganttStart.getDate() - dayIdx);
+      return ganttStart;
+    }
   }
 
-  if (!minD) minD = new Date();
-  if (!maxD) { maxD = new Date(minD); maxD.setDate(maxD.getDate() + 30); }
-
-  var start = new Date(minD); start.setDate(start.getDate() - 7);
-  var end = new Date(maxD); end.setDate(end.getDate() + 14);
-
-  var days = [];
-  var cur = new Date(start);
-  while (cur <= end) {
-    days.push(new Date(cur));
-    cur.setDate(cur.getDate() + 1);
+  // Fallback: use job dates
+  var fj = (typeof jobs !== 'undefined' ? jobs : []).filter(function(j) { return j.date && j.status !== 'completed'; });
+  if (fj.length > 0) {
+    fj.sort(function(a, b) { return a.date < b.date ? -1 : 1; });
+    var earliest = new Date(fj[0].date + 'T00:00:00');
+    earliest.setDate(earliest.getDate() - 7);
+    return earliest;
   }
-  return days;
+
+  return new Date();
+}
+
+function dayIdxToDate(dayIdx) {
+  var start = getGanttStartDate();
+  if (!start) return null;
+  var d = new Date(start);
+  d.setDate(d.getDate() + dayIdx);
+  return d;
 }
 
 function dateToStr(d) {
@@ -248,24 +248,23 @@ async function onEnd() {
     return;
   }
 
-  var allDays = buildDateArray();
-  if (newDayIdx < 0 || newDayIdx >= allDays.length) {
+  var newDate = dayIdxToDate(newDayIdx);
+  if (!newDate) {
     _gdActive = false; _gdBar = null; _gdTaskId = null;
     renderApp();
     return;
   }
-
-  var newDate = dateToStr(allDays[newDayIdx]);
+  var newDateStr = dateToStr(newDate);
   var taskId = _gdTaskId;
 
   try {
-    var r = await supabaseClient.from('job_tasks').update({ start_date: newDate, duration_days: newDur }).eq('id', taskId);
+    var r = await supabaseClient.from('job_tasks').update({ start_date: newDateStr, duration_days: newDur }).eq('id', taskId);
     if (r.error) throw r.error;
 
     var task = (window.jobTasks || []).find(function(t) { return t.id === taskId; });
-    if (task) { task.start_date = newDate; task.duration_days = newDur; }
+    if (task) { task.start_date = newDateStr; task.duration_days = newDur; }
 
-    showNotification('Task: ' + newDate + ' (' + newDur + ' day' + (newDur > 1 ? 's' : '') + ')', 'success');
+    showNotification('Task: ' + newDateStr + ' (' + newDur + ' day' + (newDur > 1 ? 's' : '') + ')', 'success');
   } catch (err) {
     console.error('Gantt drag error:', err);
     showNotification('Error: ' + err.message, 'error');
