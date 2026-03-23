@@ -126,6 +126,76 @@ new MutationObserver(function() {
   _spTimer = setTimeout(wirePricingButtons, 300);
 }).observe(document.body, { childList: true, subtree: true });
 
+// ============ OVERRIDE DISCOUNT FUNCTIONS TO SYNC WITH STRIPE ============
+var _origSaveDiscount = window.saveDiscount;
+window.saveDiscount = async function(id) {
+  // Call original to save to Supabase
+  if (typeof _origSaveDiscount === 'function') await _origSaveDiscount(id);
+
+  // Now apply to Stripe
+  var percentEl = document.getElementById('discount_' + id);
+  var monthsEl = document.getElementById('discount_months_' + id);
+  var percent = percentEl ? parseFloat(percentEl.value) : 0;
+  var months = monthsEl && monthsEl.value ? parseInt(monthsEl.value) : null;
+
+  if (percent <= 0) return;
+
+  // Find user email from the admin table
+  var row = percentEl ? percentEl.closest('tr') : null;
+  var email = '';
+  if (row) {
+    var cells = row.querySelectorAll('td');
+    if (cells.length > 0) email = cells[0].textContent.trim();
+  }
+
+  if (!email) { console.warn('Could not find user email for Stripe discount'); return; }
+
+  try {
+    var r = await fetch('https://rough-leaf-6e8e.keithmurphy009.workers.dev/discount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, percent: percent, months: months })
+    });
+    var result = await r.json();
+    if (result.success) {
+      showNotification('Discount applied in Stripe: ' + percent + '% off' + (months ? ' for ' + months + ' months' : ' indefinitely'), 'success');
+    } else {
+      showNotification('Saved locally but Stripe: ' + (result.error || 'unknown error'), 'error');
+    }
+  } catch(e) {
+    showNotification('Saved locally but Stripe sync failed: ' + e.message, 'error');
+  }
+};
+
+var _origRemoveDiscount = window.removeDiscount;
+window.removeDiscount = async function(id) {
+  // Find email before removing
+  var percentEl = document.getElementById('discount_' + id);
+  var row = percentEl ? percentEl.closest('tr') : null;
+  var email = '';
+  if (row) {
+    var cells = row.querySelectorAll('td');
+    if (cells.length > 0) email = cells[0].textContent.trim();
+  }
+
+  // Call original
+  if (typeof _origRemoveDiscount === 'function') await _origRemoveDiscount(id);
+
+  // Remove from Stripe
+  if (!email) return;
+  try {
+    var r = await fetch('https://rough-leaf-6e8e.keithmurphy009.workers.dev/remove-discount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email })
+    });
+    var result = await r.json();
+    if (result.success) {
+      showNotification('Discount removed from Stripe', 'success');
+    }
+  } catch(e) { console.warn('Stripe discount removal failed:', e); }
+};
+
 console.log('Stripe subscriptions loaded');
 
 } catch(e) {
