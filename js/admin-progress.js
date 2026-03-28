@@ -35,54 +35,70 @@ document.head.appendChild(css);
 // ============ LOAD USER PROGRESS ============
 async function loadUserProgress(userId, email) {
   var checks = [];
+  var clientCount = 0, quoteCount = 0, invoiceCount = 0, jobCount = 0, teamCount = 0, expenseCount = 0;
 
   try {
     // 1. Company settings
-    var cs = await supabaseClient.from('company_settings').select('business_name,phone,logo_url,bank_name,bsb').eq('user_id', userId).single();
-    var settings = cs.data || {};
+    var cs = await supabaseClient.from('company_settings').select('business_name,phone,logo_url,bank_name,bsb').eq('user_id', userId);
+    var settings = (cs.data && cs.data.length > 0) ? cs.data[0] : {};
     checks.push({ label: 'Business details', done: !!(settings.business_name && settings.phone) });
     checks.push({ label: 'Logo uploaded', done: !!settings.logo_url });
     checks.push({ label: 'Bank details', done: !!(settings.bank_name && settings.bsb) });
+  } catch(e) {
+    checks.push({ label: 'Business details', done: false });
+    checks.push({ label: 'Logo uploaded', done: false });
+    checks.push({ label: 'Bank details', done: false });
+  }
 
+  try {
     // 2. Xero connected
     var xr = await supabaseClient.from('xero_tokens').select('id').eq('user_id', userId);
     checks.push({ label: 'Xero connected', done: !!(xr.data && xr.data.length > 0) });
+  } catch(e) { checks.push({ label: 'Xero connected', done: false }); }
 
+  try {
     // 3. Clients
     var cl = await supabaseClient.from('clients').select('id').eq('user_id', userId);
-    var clientCount = cl.data ? cl.data.length : 0;
+    clientCount = cl.data ? cl.data.length : 0;
     checks.push({ label: 'Added clients', done: clientCount > 0, count: clientCount });
+  } catch(e) { checks.push({ label: 'Added clients', done: false, count: 0 }); }
 
+  try {
     // 4. Quotes
     var qt = await supabaseClient.from('quotes').select('id').eq('user_id', userId);
-    var quoteCount = qt.data ? qt.data.length : 0;
+    quoteCount = qt.data ? qt.data.length : 0;
     checks.push({ label: 'Created quotes', done: quoteCount > 0, count: quoteCount });
+  } catch(e) { checks.push({ label: 'Created quotes', done: false, count: 0 }); }
 
+  try {
     // 5. Invoices
     var inv = await supabaseClient.from('invoices').select('id').eq('user_id', userId);
-    var invoiceCount = inv.data ? inv.data.length : 0;
+    invoiceCount = inv.data ? inv.data.length : 0;
     checks.push({ label: 'Created invoices', done: invoiceCount > 0, count: invoiceCount });
+  } catch(e) { checks.push({ label: 'Created invoices', done: false, count: 0 }); }
 
+  try {
     // 6. Jobs
     var jb = await supabaseClient.from('jobs').select('id').eq('user_id', userId);
-    var jobCount = jb.data ? jb.data.length : 0;
+    jobCount = jb.data ? jb.data.length : 0;
     checks.push({ label: 'Scheduled jobs', done: jobCount > 0, count: jobCount });
+  } catch(e) { checks.push({ label: 'Scheduled jobs', done: false, count: 0 }); }
 
+  try {
     // 7. Team members
     var tm = await supabaseClient.from('team_members').select('id').eq('owner_id', userId);
-    var teamCount = tm.data ? tm.data.length : 0;
+    teamCount = tm.data ? tm.data.length : 0;
     checks.push({ label: 'Added team members', done: teamCount > 0, count: teamCount });
+  } catch(e) { checks.push({ label: 'Added team members', done: false, count: 0 }); }
 
+  try {
     // 8. Expenses
     var ex = await supabaseClient.from('expenses').select('id').eq('user_id', userId);
-    var expenseCount = ex.data ? ex.data.length : 0;
+    expenseCount = ex.data ? ex.data.length : 0;
     checks.push({ label: 'Logged expenses', done: expenseCount > 0, count: expenseCount });
+  } catch(e) { checks.push({ label: 'Logged expenses', done: false, count: 0 }); }
 
-  } catch(e) {
-    console.error('Error loading user progress:', e);
-  }
-
-  return { checks: checks, stats: { clients: clientCount || 0, quotes: quoteCount || 0, invoices: invoiceCount || 0, jobs: jobCount || 0 } };
+  return { checks: checks, stats: { clients: clientCount, quotes: quoteCount, invoices: invoiceCount, jobs: jobCount } };
 }
 
 // ============ SHOW PROGRESS PANEL ============
@@ -111,8 +127,26 @@ window.showUserProgress = async function(userId, email) {
   panel.innerHTML = '<td colspan="5"><div class="up-panel"><div style="text-align:center;padding:16px;color:#94a3b8;font-size:13px;">Loading user activity...</div></div></td>';
   targetRow.insertAdjacentElement('afterend', panel);
 
+  // Look up real user_id from subscriptions using email
+  var realUserId = userId;
+  try {
+    // Try by email first
+    var subR = await supabaseClient.from('subscriptions').select('user_id').eq('user_email', email);
+    if (subR.data && subR.data.length > 0 && subR.data[0].user_id) {
+      realUserId = subR.data[0].user_id;
+    } else {
+      // Try by subscription id
+      var subR2 = await supabaseClient.from('subscriptions').select('user_id').eq('id', userId);
+      if (subR2.data && subR2.data.length > 0 && subR2.data[0].user_id) {
+        realUserId = subR2.data[0].user_id;
+      }
+    }
+  } catch(e) { console.warn('User ID lookup failed:', e); }
+
+  console.log('User progress - email:', email, 'subId:', userId, 'resolved userId:', realUserId);
+
   // Load data
-  var data = await loadUserProgress(userId, email);
+  var data = await loadUserProgress(realUserId, email);
   var checks = data.checks;
   var stats = data.stats;
   var doneCount = checks.filter(function(c) { return c.done; }).length;
