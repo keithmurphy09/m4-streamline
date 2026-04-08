@@ -1,20 +1,18 @@
-// M4 Co-Brand Header - Tradies Network v4
+// M4 Co-Brand Header - Tradies Network v5
 // Additive only
 (function(){
 try {
 
 var css = document.createElement('style');
 css.textContent = [
-'.cb-header-wrap{display:flex;align-items:center;width:100%;gap:16px;padding:8px 0}',
-'.cb-left{display:flex;align-items:center;gap:16px;flex-shrink:0}',
-'.cb-tn-logo{height:65px;width:auto;object-fit:contain;filter:invert(1) brightness(2.5)}',
-'.cb-divider{width:2px;height:44px;background:rgba(255,255,255,0.15);flex-shrink:0}',
-'.cb-text{display:flex;flex-direction:column;line-height:1.2}',
-'.cb-tn-name{font-size:22px;font-weight:800;color:#fff;letter-spacing:1px;white-space:nowrap}',
-'.cb-powered{font-size:12px;color:#94a3b8;letter-spacing:0.5px;white-space:nowrap;margin-top:2px}',
+'.cb-header-wrap{display:flex !important;align-items:center;width:100%;gap:16px;padding:4px 0;grid-column:1/-1 !important}',
+'.cb-tn-logo{height:65px;width:auto;object-fit:contain;filter:invert(1) brightness(2) contrast(1.5);flex-shrink:0}',
+'.cb-text{display:flex;flex-direction:column;line-height:1.2;flex:1;text-align:center}',
+'.cb-tn-name{font-size:22px;font-weight:800;color:#fff;letter-spacing:1px}',
+'.cb-powered{font-size:12px;color:#94a3b8;letter-spacing:0.5px;margin-top:2px}',
 '.cb-powered span{color:#2dd4bf;font-weight:700}',
-'.cb-right{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}',
-'@media(max-width:768px){.cb-tn-logo{height:40px}.cb-tn-name{font-size:14px}.cb-powered{font-size:9px}.cb-divider{height:28px}.cb-header-wrap{gap:8px}}'
+'.cb-right{display:flex;align-items:center;gap:8px;flex-shrink:0}',
+'@media(max-width:768px){.cb-tn-logo{height:40px}.cb-tn-name{font-size:15px}.cb-powered{font-size:9px}}'
 ].join('\n');
 document.head.appendChild(css);
 
@@ -24,21 +22,12 @@ function injectCoBrand() {
   if (_cbDone) return;
   if (document.getElementById('cb-flag')) return;
 
-  // Find the M4 STREAMLINE text
-  var target = null;
-  document.querySelectorAll('div, span, a, h1, h2').forEach(function(el) {
-    var t = el.textContent.trim();
-    if (t === 'M4 STREAMLINE' && !target) target = el;
-  });
-  if (!target) return;
-
-  // Find the header row
-  var headerRow = target.parentElement;
-  if (!headerRow) return;
-
-  // Go up one more if needed to find the row with all the buttons
-  var containerRow = headerRow.parentElement;
-  if (!containerRow) return;
+  // Find the header grid container
+  var headerGrid = document.querySelector('.max-w-7xl.mx-auto.flex.flex-col');
+  if (!headerGrid) return;
+  // Make sure it's in the black header
+  var parent = headerGrid.parentElement;
+  if (!parent || parent.className.indexOf('bg-black') === -1) return;
 
   _cbDone = true;
   var flag = document.createElement('div');
@@ -46,52 +35,54 @@ function injectCoBrand() {
   flag.style.display = 'none';
   document.body.appendChild(flag);
 
-  // Collect the right-side elements (ADMIN badge, Sole Trader, Business, Real, icons)
-  var rightElements = [];
-  var children = Array.from(containerRow.children);
+  // Collect all existing children
+  var children = Array.from(headerGrid.children);
+  
+  // Find which ones are the logo/branding (to hide) vs admin buttons (to keep)
+  var keepElements = [];
   children.forEach(function(child) {
     var text = child.textContent || '';
-    var isLogo = child.querySelector('img[src*="final_logo"]') || child.querySelector('img[src*="logo"]');
-    var isM4Text = text.indexOf('M4 STREAMLINE') !== -1 || text.indexOf('streamlining') !== -1;
-    var isLoggedIn = text.indexOf('Logged in') !== -1;
-
-    if (isLogo || isM4Text || isLoggedIn) {
+    var hasLogo = child.querySelector('img') || text.indexOf('Logged in') !== -1;
+    var isM4Brand = text.indexOf('M4 STREAMLINE') !== -1 && text.indexOf('TRADIES') === -1;
+    
+    if (hasLogo || isM4Brand || text.indexOf('Logged in') !== -1) {
       child.style.display = 'none';
-    } else {
-      // Keep these - they're the admin badges, buttons, icons
-      rightElements.push(child);
+    } else if (child.className.indexOf('cb-') === -1) {
+      keepElements.push(child);
     }
   });
 
-  // Hide the original header row content
-  headerRow.style.display = 'none';
+  // Remove old cb-header-wrap if exists from previous versions
+  var oldWrap = headerGrid.querySelector('.cb-header-wrap');
+  if (oldWrap) oldWrap.remove();
 
   // Build new header
   var wrapper = document.createElement('div');
   wrapper.className = 'cb-header-wrap';
 
-  // Left: logo + divider + text
-  var left = document.createElement('div');
-  left.className = 'cb-left';
-  left.innerHTML =
-    '<img class="cb-tn-logo" src="tradies-network-logo.png" alt="Tradies Network">' +
-    '<div class="cb-divider"></div>' +
-    '<div class="cb-text">' +
-      '<div class="cb-tn-name">TRADIES NETWORK</div>' +
-      '<div class="cb-powered">Powered by <span>M4 STREAMLINE</span></div>' +
-    '</div>';
+  // Logo on left
+  var logo = document.createElement('img');
+  logo.className = 'cb-tn-logo';
+  logo.src = 'tradies-network-logo.png';
+  logo.alt = 'Tradies Network';
+  wrapper.appendChild(logo);
 
-  wrapper.appendChild(left);
+  // Text in center
+  var textBlock = document.createElement('div');
+  textBlock.className = 'cb-text';
+  textBlock.innerHTML = '<div class="cb-tn-name">TRADIES NETWORK</div><div class="cb-powered">Powered by <span>M4 STREAMLINE</span></div>';
+  wrapper.appendChild(textBlock);
 
-  // Right: move existing buttons/badges
+  // Admin buttons on right
   var right = document.createElement('div');
   right.className = 'cb-right';
-  rightElements.forEach(function(el) {
+  keepElements.forEach(function(el) {
     right.appendChild(el);
   });
   wrapper.appendChild(right);
 
-  containerRow.insertBefore(wrapper, containerRow.firstChild);
+  // Insert as first child
+  headerGrid.insertBefore(wrapper, headerGrid.firstChild);
 }
 
 var _cbTimer = null;
@@ -101,7 +92,7 @@ new MutationObserver(function() {
   _cbTimer = setTimeout(injectCoBrand, 500);
 }).observe(document.body, { childList: true, subtree: true });
 
-console.log('Co-brand header v4 loaded');
+console.log('Co-brand header v5 loaded');
 
 } catch(e) {
   console.error('Co-brand error:', e);
