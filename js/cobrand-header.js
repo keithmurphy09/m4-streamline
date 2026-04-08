@@ -5,9 +5,9 @@ try {
 
 var css = document.createElement('style');
 css.textContent = [
-'.cb-header-wrap{display:flex;align-items:center;width:100%;gap:16px}',
+'.cb-header-wrap{display:flex;align-items:center;width:100%;gap:16px;padding:8px 0}',
 '.cb-left{display:flex;align-items:center;gap:16px;flex-shrink:0}',
-'.cb-tn-logo{height:80px;width:auto;object-fit:contain;filter:invert(1) brightness(1.8)}',
+'.cb-tn-logo{height:65px;width:auto;object-fit:contain;filter:invert(1) brightness(2.5)}',
 '.cb-divider{width:2px;height:44px;background:rgba(255,255,255,0.15);flex-shrink:0}',
 '.cb-text{display:flex;flex-direction:column;line-height:1.2}',
 '.cb-tn-name{font-size:22px;font-weight:800;color:#fff;letter-spacing:1px;white-space:nowrap}',
