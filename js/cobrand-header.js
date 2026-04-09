@@ -1,73 +1,56 @@
-// M4 Co-Brand Header - Tradies Network v7
+// M4 Co-Brand Header - Tradies Network v8
+// CSS hides old branding instantly (no flash)
+// Never moves or touches dark mode, settings, or admin badge
 // Additive only
 (function(){
 try {
 
+// CSS loads immediately - hides old branding before paint
 var css = document.createElement('style');
 css.textContent = [
-'.cb-wrap{display:flex !important;align-items:center;width:100%;padding:6px 0;grid-column:1/-1 !important}',
-'.cb-logo-img{height:65px;width:auto;object-fit:contain;filter:invert(1) brightness(3) contrast(1.2);flex-shrink:0}',
-'.cb-center{flex:1;text-align:center}',
-'.cb-name{font-size:24px;font-weight:800;color:#fff;letter-spacing:1.5px}',
-'.cb-sub{font-size:13px;color:#94a3b8;letter-spacing:0.5px;margin-top:3px}',
-'.cb-sub span{color:#2dd4bf;font-weight:700}',
-'@media(max-width:768px){.cb-logo-img{height:40px}.cb-name{font-size:16px}.cb-sub{font-size:10px}}'
+// Hide old M4 logo and Logged in text via the header's first child
+'.bg-black .max-w-7xl > div:first-child img:not(.cb-logo){display:none !important}',
+'.bg-black .max-w-7xl > div:first-child span:not(.bg-red-600){display:none !important}',
+
+// Hide demo mode buttons
+'button[onclick*="enterDemoMode"]{display:none !important}',
+'button[onclick*="exitDemoMode"]{display:none !important}',
+
+// Co-brand styles
+'.cb-row{display:flex !important;align-items:center;grid-column:1/-1 !important;padding:4px 0;gap:16px}',
+'.cb-logo{height:65px;width:auto;object-fit:contain;filter:invert(1) brightness(3) contrast(1.2);flex-shrink:0}',
+'.cb-mid{flex:1;text-align:center}',
+'.cb-n{font-size:24px;font-weight:800;color:#fff;letter-spacing:1.5px}',
+'.cb-p{font-size:13px;color:#94a3b8;letter-spacing:0.5px;margin-top:3px}',
+'.cb-p b{color:#2dd4bf;font-weight:700}',
+'@media(max-width:768px){.cb-logo{height:40px}.cb-n{font-size:16px}.cb-p{font-size:10px}}'
 ].join('\n');
 document.head.appendChild(css);
 
-function injectCoBrand() {
-  var headerGrid = document.querySelector('.max-w-7xl.mx-auto.flex.flex-col');
-  if (!headerGrid) return;
-  var parent = headerGrid.parentElement;
-  if (!parent || parent.className.indexOf('bg-black') === -1) return;
+function inject() {
+  var grid = document.querySelector('.bg-black .max-w-7xl');
+  if (!grid) return;
+  if (grid.querySelector('.cb-row')) return;
 
-  // Already injected on this render
-  if (headerGrid.querySelector('.cb-wrap')) return;
-
-  var children = Array.from(headerGrid.children);
-
-  children.forEach(function(child) {
-    var text = child.textContent || '';
-    // Hide logo row and "Logged in" text
-    if (child.querySelector('img') && text.indexOf('Logged in') !== -1) {
-      child.style.display = 'none';
-      return;
-    }
-    // Hide M4 STREAMLINE branding row
-    if (text.indexOf('M4 STREAMLINE') !== -1 && text.indexOf('TRADIES') === -1) {
-      child.style.display = 'none';
-      return;
-    }
-    // In the buttons row, hide demo mode buttons but keep everything else
-    var btns = child.querySelectorAll('button');
-    btns.forEach(function(btn) {
-      var oc = btn.getAttribute('onclick') || '';
-      if (oc.indexOf('enterDemoMode') !== -1 || oc.indexOf('exitDemoMode') !== -1) {
-        btn.style.display = 'none';
-      }
-    });
-  });
-
-  // Build wrapper
-  var wrapper = document.createElement('div');
-  wrapper.className = 'cb-wrap';
-  wrapper.innerHTML =
-    '<img class="cb-logo-img" src="tradies-network-logo.png" alt="Tradies Network">' +
-    '<div class="cb-center">' +
-      '<div class="cb-name">TRADIES NETWORK</div>' +
-      '<div class="cb-sub">Powered by <span>M4 STREAMLINE</span></div>' +
+  var row = document.createElement('div');
+  row.className = 'cb-row';
+  row.innerHTML =
+    '<img class="cb-logo" src="tradies-network-logo.png" alt="Tradies Network">' +
+    '<div class="cb-mid">' +
+      '<div class="cb-n">TRADIES NETWORK</div>' +
+      '<div class="cb-p">Powered by <b>M4 STREAMLINE</b></div>' +
     '</div>';
 
-  headerGrid.insertBefore(wrapper, headerGrid.firstChild);
+  grid.insertBefore(row, grid.firstChild);
 }
 
-var _cbTimer = null;
+var t = null;
 new MutationObserver(function() {
-  if (_cbTimer) clearTimeout(_cbTimer);
-  _cbTimer = setTimeout(injectCoBrand, 200);
+  if (t) clearTimeout(t);
+  t = setTimeout(inject, 150);
 }).observe(document.body, { childList: true, subtree: true });
 
-console.log('Co-brand header v7 loaded');
+console.log('Co-brand header v8 loaded');
 
 } catch(e) {
   console.error('Co-brand error:', e);
