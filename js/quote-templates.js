@@ -211,19 +211,18 @@ function escH(s) { return s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;
 
 // Enhance the Detailed Quote box
 function enhanceDetailedBox() {
-  // Find the smallest div that contains exactly "Detailed Quote" + "Comprehensive"
-  var candidates = [];
-  document.querySelectorAll('div').forEach(function(d) {
-    var t = d.textContent.trim();
-    if (t.indexOf('Detailed Quote') !== -1 && t.indexOf('Comprehensive') !== -1 && !d.dataset.qtReady) {
-      candidates.push({ el: d, len: t.length });
-    }
+  // Find the button containing "Detailed Quote" text
+  var detailedBox = null;
+  document.querySelectorAll('button').forEach(function(btn) {
+    if (btn.dataset.qtReady) return;
+    var kids = btn.querySelectorAll('div');
+    kids.forEach(function(d) {
+      if (d.textContent.trim() === 'Detailed Quote' && d.children.length === 0) {
+        detailedBox = btn;
+      }
+    });
   });
-  if (candidates.length === 0) return;
-
-  // Pick the smallest (most specific) match
-  candidates.sort(function(a, b) { return a.len - b.len; });
-  var detailedBox = candidates[0].el;
+  if (!detailedBox) return;
   detailedBox.dataset.qtReady = 'true';
 
   // Add setup/edit button
