@@ -5,7 +5,7 @@
 try {
 
 var s = document.createElement('style');
-s.textContent = 'button[onclick*="enterDemoMode"],button[onclick*="exitDemoMode"]{display:none !important}.cb-hide{display:none !important}.cb-row{display:flex !important;align-items:center;grid-column:1/-1 !important;padding:4px 0}.cb-logo{height:80px;width:auto;filter:invert(1) brightness(3) contrast(1.2);flex-shrink:0;margin-right:20px}.cb-mid{flex:1;display:flex;flex-direction:column;align-items:center}.cb-n{font-size:24px;font-weight:800;color:#fff;letter-spacing:1.5px}.cb-p{font-size:13px;color:#94a3b8;margin-top:3px}.cb-p b{color:#2dd4bf;font-weight:700}.bg-black .max-w-7xl>div:not(.cb-row):not(.cb-hide){grid-column:1/-1 !important;display:flex !important;justify-content:center !important}@media(max-width:768px){.cb-logo{height:45px;margin-right:10px}.cb-n{font-size:16px}.cb-p{font-size:10px}}';
+s.textContent = 'button[onclick*="enterDemoMode"],button[onclick*="exitDemoMode"]{display:none !important}.cb-hide{display:none !important}.cb-row{display:flex !important;align-items:center;grid-column:1/-1 !important;padding:4px 0}.cb-logo{height:110px;width:auto;filter:invert(1) brightness(3) contrast(1.2);flex-shrink:0;margin-right:20px}.cb-mid{flex:1;display:flex;flex-direction:column;align-items:center}.cb-n{font-size:18px;font-weight:800;color:#fff;letter-spacing:1.5px}.cb-p{font-size:11px;color:#94a3b8;margin-top:3px}.cb-p b{color:#2dd4bf;font-weight:700}.bg-black .max-w-7xl>div:not(.cb-row):not(.cb-hide){grid-column:1/-1 !important;display:flex !important;justify-content:flex-end !important}@media(max-width:768px){.cb-logo{height:50px;margin-right:10px}.cb-n{font-size:14px}.cb-p{font-size:9px}}';
 document.head.appendChild(s);
 
 var _r = false;
