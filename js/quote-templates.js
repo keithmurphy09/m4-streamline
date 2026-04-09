@@ -140,17 +140,9 @@ window.saveQuoteTemplate = function() {
 window.applyQuoteTemplate = function() {
   if (!_template || !_template.items || _template.items.length === 0) return;
 
-  // Small delay to let the form render after clicking Detailed Quote
+  // Wait for form to fully render
   setTimeout(function() {
-    // First remove ALL existing line items by clicking all X buttons
-    var delBtns = [];
-    document.querySelectorAll('button').forEach(function(b) {
-      var t = b.textContent.trim();
-      if (t === 'x' || t === 'X' || t === '\u00d7') delBtns.push(b);
-    });
-    delBtns.forEach(function(b) { b.click(); });
-
-    // Find add button
+    // Find the Add Line Item button - this anchors us to the line items section
     var addBtn = null;
     document.querySelectorAll('button').forEach(function(b) {
       var t = b.textContent.trim();
@@ -158,18 +150,28 @@ window.applyQuoteTemplate = function() {
     });
     if (!addBtn) return;
 
+    // The line items container is the parent of the add button
+    var container = addBtn.parentElement;
+    if (!container) return;
+
+    // Remove existing line items - find X buttons ONLY in this container
+    container.querySelectorAll('button').forEach(function(b) {
+      var t = b.textContent.trim();
+      if (t === 'x' || t === 'X' || t === '\u00d7') b.click();
+    });
+
     var templateItems = _template.items;
 
-    // Add exactly the right number of rows
+    // Add rows
     for (var i = 0; i < templateItems.length; i++) {
       addBtn.click();
     }
 
-    // Wait then fill
+    // Fill after DOM updates
     setTimeout(function() {
-      // Find all description inputs (placeholder contains "escription")
+      // Find description inputs ONLY in the line items container
       var descInputs = [];
-      document.querySelectorAll('input, textarea').forEach(function(inp) {
+      container.querySelectorAll('input, textarea').forEach(function(inp) {
         var ph = (inp.placeholder || '').toLowerCase();
         if (ph.indexOf('escription') !== -1) descInputs.push(inp);
       });
@@ -177,36 +179,27 @@ window.applyQuoteTemplate = function() {
       for (var j = 0; j < Math.min(templateItems.length, descInputs.length); j++) {
         var item = templateItems[j];
         var descInput = descInputs[j];
-
-        // Set description
         setInputValue(descInput, item.description);
 
-        // Find the qty and rate inputs - they are in a flex row below the description
-        // Go to parent, then find the next sibling or child flex row with number inputs
-        var parent = descInput.parentElement;
-        var wrapper = parent.parentElement || parent;
-        var numInputs = wrapper.querySelectorAll('input[type="number"], input:not([placeholder])');
+        // Find qty/rate in same line item block
+        var block = descInput.parentElement;
+        if (block) block = block.parentElement || block;
 
-        // Filter to only number-like inputs in this wrapper
-        var qtyRate = [];
-        numInputs.forEach(function(inp) {
+        var numInputs = [];
+        block.querySelectorAll('input').forEach(function(inp) {
           if (inp === descInput) return;
           var ph = (inp.placeholder || '').toLowerCase();
           if (ph.indexOf('escription') !== -1) return;
-          qtyRate.push(inp);
+          numInputs.push(inp);
         });
 
-        // qtyRate[0] = qty, qtyRate[1] = rate
-        if (qtyRate.length >= 2) {
-          setInputValue(qtyRate[0], '');  // qty blank
-          setInputValue(qtyRate[1], item.rate);
-        } else if (qtyRate.length === 1) {
-          // Only one - assume it's rate
-          setInputValue(qtyRate[0], item.rate);
+        if (numInputs.length >= 2) {
+          setInputValue(numInputs[0], '');
+          setInputValue(numInputs[1], item.rate);
         }
       }
     }, 400);
-  }, 300);
+  }, 800);
 };
 
 function setInputValue(input, value) {
