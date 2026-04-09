@@ -211,16 +211,19 @@ function escH(s) { return s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;
 
 // Enhance the Detailed Quote box
 function enhanceDetailedBox() {
-  // Find the Detailed Quote template box
-  var boxes = document.querySelectorAll('div');
-  var detailedBox = null;
-  boxes.forEach(function(d) {
-    if (d.textContent.trim().indexOf('Detailed Quote') !== -1 && d.textContent.trim().indexOf('Comprehensive') !== -1 && !d.dataset.qtReady) {
-      detailedBox = d;
+  // Find the smallest div that contains exactly "Detailed Quote" + "Comprehensive"
+  var candidates = [];
+  document.querySelectorAll('div').forEach(function(d) {
+    var t = d.textContent.trim();
+    if (t.indexOf('Detailed Quote') !== -1 && t.indexOf('Comprehensive') !== -1 && !d.dataset.qtReady) {
+      candidates.push({ el: d, len: t.length });
     }
   });
+  if (candidates.length === 0) return;
 
-  if (!detailedBox) return;
+  // Pick the smallest (most specific) match
+  candidates.sort(function(a, b) { return a.len - b.len; });
+  var detailedBox = candidates[0].el;
   detailedBox.dataset.qtReady = 'true';
 
   // Add setup/edit button
