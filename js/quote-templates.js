@@ -138,66 +138,59 @@ window.saveQuoteTemplate = function() {
 window.applyQuoteTemplate = function() {
   if (!_template || !_template.items || _template.items.length === 0) return;
 
-  // Find the line items container in the quote form
   var addBtn = null;
   document.querySelectorAll('button').forEach(function(b) {
-    if (b.textContent.trim() === '+ Add Line Item' || b.textContent.trim() === '+ Add Item') addBtn = b;
+    var t = b.textContent.trim();
+    if (t === '+ Add Line Item' || t === '+ Add Item' || t === 'Add Line Item') addBtn = b;
   });
-
   if (!addBtn) return;
-
-  // Clear existing empty items first
-  var existingRows = addBtn.parentElement.querySelectorAll('.flex.gap-2, .flex.items-center.gap-2');
 
   var templateItems = _template.items;
 
-  // Click add button for each template item
-  for (var i = 0; i < templateItems.length; i++) {
+  // We need (templateItems.length - 1) extra rows since 1 already exists
+  for (var i = 0; i < templateItems.length - 1; i++) {
     addBtn.click();
   }
 
-  // Wait for DOM to update then fill values
+  // Wait for DOM then fill by finding all description inputs in order
   setTimeout(function() {
-    // Find all description, qty, and price inputs
-    var container = addBtn.parentElement;
-    var descInputs = container.querySelectorAll('input[placeholder*="escription"], input[placeholder*="tem"], textarea[placeholder*="escription"]');
-    var allInputs = container.querySelectorAll('input');
-
-    // Group inputs into rows
-    var rows = container.querySelectorAll('.flex.gap-2, .flex.items-center.gap-2, [class*="flex"][class*="gap"]');
-
-    // Try direct approach - find all input groups
-    var inputRows = [];
-    var currentRow = [];
-    allInputs.forEach(function(inp) {
-      var row = inp.closest('.flex') || inp.parentElement;
-      if (!inputRows.includes(row)) inputRows.push(row);
+    // Find all line item rows by looking for the delete (x) buttons
+    var delBtns = document.querySelectorAll('button');
+    var lineRows = [];
+    delBtns.forEach(function(btn) {
+      var t = btn.textContent.trim();
+      if ((t === 'x' || t === 'X' || t === '\u00d7') && btn.closest('.flex')) {
+        var row = btn.closest('.flex');
+        if (row && !lineRows.includes(row)) lineRows.push(row);
+      }
     });
 
-    // Fill each template item
-    for (var j = 0; j < templateItems.length; j++) {
+    // Fill each row
+    for (var j = 0; j < Math.min(templateItems.length, lineRows.length); j++) {
       var item = templateItems[j];
-      // Find the right row of inputs
-      var rowInputs = [];
-      if (inputRows[j]) {
-        rowInputs = inputRows[j].querySelectorAll('input, textarea');
-      }
+      var inputs = lineRows[j].querySelectorAll('input, textarea');
 
-      // Description is usually first input, qty second, price third
-      for (var k = 0; k < rowInputs.length; k++) {
-        var inp = rowInputs[k];
-        var ph = (inp.placeholder || '').toLowerCase();
-        var type = inp.type || 'text';
-        if (ph.indexOf('desc') !== -1 || ph.indexOf('item') !== -1 || k === 0) {
-          setInputValue(inp, item.description);
-        } else if (k === 2 || ph.indexOf('price') !== -1 || ph.indexOf('rate') !== -1) {
-          setInputValue(inp, item.rate);
-        } else if (k === 1) {
-          setInputValue(inp, ''); // qty blank - user fills this
+      // inputs[0] = description or qty, inputs[1] = qty or rate, inputs[2] = rate
+      // Check by placeholder to be safe
+      var descSet = false;
+      var rateSet = false;
+      for (var k = 0; k < inputs.length; k++) {
+        var ph = (inputs[k].placeholder || '').toLowerCase();
+        var val = inputs[k].value;
+
+        if (!descSet && (ph.indexOf('desc') !== -1 || ph.indexOf('item') !== -1 || (k === 0 && inputs.length >= 3))) {
+          setInputValue(inputs[k], item.description);
+          descSet = true;
+        } else if (!rateSet && (k === inputs.length - 1 || ph.indexOf('price') !== -1 || ph.indexOf('rate') !== -1)) {
+          setInputValue(inputs[k], item.rate);
+          rateSet = true;
+        } else if (descSet && !rateSet) {
+          // This is the qty field - leave blank
+          setInputValue(inputs[k], '');
         }
       }
     }
-  }, 300);
+  }, 500);
 };
 
 function setInputValue(input, value) {
