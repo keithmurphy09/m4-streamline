@@ -72,6 +72,8 @@ async function saveTemplate(items) {
       if (r2.data && r2.data[0]) _template = r2.data[0];
     }
     showNotification('Template saved with ' + items.length + ' items', 'success');
+    // Reset UI so it re-enhances with updated template
+    document.querySelectorAll('[data-qt-ready]').forEach(function(el) { delete el.dataset.qtReady; });
   } catch(e) {
     showNotification('Error: ' + e.message, 'error');
   }
@@ -138,59 +140,73 @@ window.saveQuoteTemplate = function() {
 window.applyQuoteTemplate = function() {
   if (!_template || !_template.items || _template.items.length === 0) return;
 
-  var addBtn = null;
-  document.querySelectorAll('button').forEach(function(b) {
-    var t = b.textContent.trim();
-    if (t === '+ Add Line Item' || t === '+ Add Item' || t === 'Add Line Item') addBtn = b;
-  });
-  if (!addBtn) return;
-
-  var templateItems = _template.items;
-
-  // We need (templateItems.length - 1) extra rows since 1 already exists
-  for (var i = 0; i < templateItems.length - 1; i++) {
-    addBtn.click();
-  }
-
-  // Wait for DOM then fill by finding all description inputs in order
+  // Small delay to let the form render after clicking Detailed Quote
   setTimeout(function() {
-    // Find all line item rows by looking for the delete (x) buttons
-    var delBtns = document.querySelectorAll('button');
-    var lineRows = [];
-    delBtns.forEach(function(btn) {
-      var t = btn.textContent.trim();
-      if ((t === 'x' || t === 'X' || t === '\u00d7') && btn.closest('.flex')) {
-        var row = btn.closest('.flex');
-        if (row && !lineRows.includes(row)) lineRows.push(row);
-      }
+    // First remove ALL existing line items by clicking all X buttons
+    var delBtns = [];
+    document.querySelectorAll('button').forEach(function(b) {
+      var t = b.textContent.trim();
+      if (t === 'x' || t === 'X' || t === '\u00d7') delBtns.push(b);
     });
+    delBtns.forEach(function(b) { b.click(); });
 
-    // Fill each row
-    for (var j = 0; j < Math.min(templateItems.length, lineRows.length); j++) {
-      var item = templateItems[j];
-      var inputs = lineRows[j].querySelectorAll('input, textarea');
+    // Find add button
+    var addBtn = null;
+    document.querySelectorAll('button').forEach(function(b) {
+      var t = b.textContent.trim();
+      if (t === '+ Add Line Item' || t === '+ Add Item' || t === 'Add Line Item') addBtn = b;
+    });
+    if (!addBtn) return;
 
-      // inputs[0] = description or qty, inputs[1] = qty or rate, inputs[2] = rate
-      // Check by placeholder to be safe
-      var descSet = false;
-      var rateSet = false;
-      for (var k = 0; k < inputs.length; k++) {
-        var ph = (inputs[k].placeholder || '').toLowerCase();
-        var val = inputs[k].value;
+    var templateItems = _template.items;
 
-        if (!descSet && (ph.indexOf('desc') !== -1 || ph.indexOf('item') !== -1 || (k === 0 && inputs.length >= 3))) {
-          setInputValue(inputs[k], item.description);
-          descSet = true;
-        } else if (!rateSet && (k === inputs.length - 1 || ph.indexOf('price') !== -1 || ph.indexOf('rate') !== -1)) {
-          setInputValue(inputs[k], item.rate);
-          rateSet = true;
-        } else if (descSet && !rateSet) {
-          // This is the qty field - leave blank
-          setInputValue(inputs[k], '');
+    // Add exactly the right number of rows
+    for (var i = 0; i < templateItems.length; i++) {
+      addBtn.click();
+    }
+
+    // Wait then fill
+    setTimeout(function() {
+      // Find all description inputs (placeholder contains "escription")
+      var descInputs = [];
+      document.querySelectorAll('input, textarea').forEach(function(inp) {
+        var ph = (inp.placeholder || '').toLowerCase();
+        if (ph.indexOf('escription') !== -1) descInputs.push(inp);
+      });
+
+      for (var j = 0; j < Math.min(templateItems.length, descInputs.length); j++) {
+        var item = templateItems[j];
+        var descInput = descInputs[j];
+
+        // Set description
+        setInputValue(descInput, item.description);
+
+        // Find the qty and rate inputs - they are in a flex row below the description
+        // Go to parent, then find the next sibling or child flex row with number inputs
+        var parent = descInput.parentElement;
+        var wrapper = parent.parentElement || parent;
+        var numInputs = wrapper.querySelectorAll('input[type="number"], input:not([placeholder])');
+
+        // Filter to only number-like inputs in this wrapper
+        var qtyRate = [];
+        numInputs.forEach(function(inp) {
+          if (inp === descInput) return;
+          var ph = (inp.placeholder || '').toLowerCase();
+          if (ph.indexOf('escription') !== -1) return;
+          qtyRate.push(inp);
+        });
+
+        // qtyRate[0] = qty, qtyRate[1] = rate
+        if (qtyRate.length >= 2) {
+          setInputValue(qtyRate[0], '');  // qty blank
+          setInputValue(qtyRate[1], item.rate);
+        } else if (qtyRate.length === 1) {
+          // Only one - assume it's rate
+          setInputValue(qtyRate[0], item.rate);
         }
       }
-    }
-  }, 500);
+    }, 400);
+  }, 300);
 };
 
 function setInputValue(input, value) {
