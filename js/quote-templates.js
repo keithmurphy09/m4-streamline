@@ -232,19 +232,39 @@ function enhanceDetailedBox() {
   btnContainer.style.marginTop = '6px';
 
   if (_template && _template.items && _template.items.length > 0) {
-    // Template exists - show status + edit button
     btnContainer.innerHTML = '<div class="qt-filled"><span class="qt-filled-text">Template ready</span><span class="qt-filled-count">' + _template.items.length + ' items</span></div><button class="qt-edit-btn" onclick="event.stopPropagation();openQuoteTemplateEditor()">Edit Template</button>';
-
-    // Override click to pre-fill
-    detailedBox.addEventListener('click', function() {
-      setTimeout(applyQuoteTemplate, 500);
-    });
   } else {
     // No template - show create button
     btnContainer.innerHTML = '<button class="qt-setup-btn" onclick="event.stopPropagation();openQuoteTemplateEditor()">Setup Template</button>';
   }
 
   detailedBox.appendChild(btnContainer);
+}
+
+// Also inject "Fill from Template" button near Add Line Item
+function injectFillButton() {
+  if (!_template || !_template.items || _template.items.length === 0) return;
+
+  // Find Add Line Item button
+  var addBtn = null;
+  document.querySelectorAll('button').forEach(function(b) {
+    var t = b.textContent.trim();
+    if (t === '+ Add Line Item' || t === '+ Add Item' || t === 'Add Line Item') addBtn = b;
+  });
+  if (!addBtn) return;
+  if (addBtn.dataset.qtFillReady) return;
+  addBtn.dataset.qtFillReady = 'true';
+
+  var fillBtn = document.createElement('button');
+  fillBtn.type = 'button';
+  fillBtn.textContent = 'Fill from Template (' + _template.items.length + ' items)';
+  fillBtn.style.cssText = 'padding:8px 16px;font-size:12px;font-weight:700;background:#0d9488;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;margin-left:8px';
+  fillBtn.onclick = function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    applyQuoteTemplate();
+  };
+  addBtn.parentElement.insertBefore(fillBtn, addBtn.nextSibling);
 }
 
 // Observer
@@ -255,6 +275,7 @@ new MutationObserver(function() {
     if (!currentUser) return;
     if (!_loaded) await loadTemplate();
     enhanceDetailedBox();
+    injectFillButton();
   }, 300);
 }).observe(document.body, { childList: true, subtree: true });
 
