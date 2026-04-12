@@ -88,75 +88,24 @@ window.applyQT = function() {
   console.log('QT: applyQT called, _tpl:', _tpl ? _tpl.items.length + ' items' : 'null');
   if (!_tpl || !_tpl.items || !_tpl.items.length) { showNotification('No template saved', 'error'); return; }
 
-  // Find + Add Item button
-  var addBtn = null;
-  document.querySelectorAll('button').forEach(function(b) {
-    if (b.textContent.trim().indexOf('Add') !== -1 && b.textContent.trim().indexOf('Item') !== -1) {
-      if (!addBtn) addBtn = b;
-    }
+  if (typeof quoteItems === 'undefined' || typeof renderQuoteItems !== 'function') {
+    console.log('QT: quoteItems or renderQuoteItems not found');
+    showNotification('Open Create Quote first', 'error');
+    return;
+  }
+
+  // Replace quoteItems with template items - qty blank, price from template
+  quoteItems.length = 0;
+  _tpl.items.forEach(function(item) {
+    quoteItems.push({
+      description: item.description,
+      quantity: 0,
+      price: item.rate || 0
+    });
   });
-  if (!addBtn) return;
 
-  var items = _tpl.items;
-
-  // Delete existing rows
-  var parent = addBtn.parentElement;
-  var xBtns = [];
-  parent.querySelectorAll('button').forEach(function(b) {
-    if (b.textContent.trim() === 'x' || b.textContent.trim() === 'X') xBtns.push(b);
-  });
-  for (var d = xBtns.length - 1; d >= 0; d--) xBtns[d].click();
-
-  // Add rows after delete settles
-  setTimeout(function() {
-    for (var i = 0; i < items.length; i++) addBtn.click();
-
-    // Fill after rows render
-    setTimeout(function() {
-      // Collect all line item blocks - each has a description input
-      var descInputs = [];
-      parent.querySelectorAll('input, textarea').forEach(function(inp) {
-        if ((inp.placeholder || '').indexOf('escription') !== -1) descInputs.push(inp);
-      });
-
-      console.log('QT: found ' + descInputs.length + ' description inputs for ' + items.length + ' items');
-
-      for (var j = 0; j < Math.min(items.length, descInputs.length); j++) {
-        // Set description
-        sv(descInputs[j], items[j].description);
-
-        // Find the line item card - go up until we find a div with border
-        var card = descInputs[j].parentElement;
-        while (card && card !== parent) {
-          var cs = window.getComputedStyle(card);
-          if (cs.borderWidth && parseFloat(cs.borderWidth) > 0) break;
-          card = card.parentElement;
-        }
-        if (!card || card === parent) card = descInputs[j].parentElement.parentElement;
-
-        // Get ALL inputs in this card except the description
-        var allInCard = card.querySelectorAll('input');
-        var numInputs = [];
-        for (var k = 0; k < allInCard.length; k++) {
-          if (allInCard[k] === descInputs[j]) continue;
-          if ((allInCard[k].placeholder || '').indexOf('escription') !== -1) continue;
-          numInputs.push(allInCard[k]);
-        }
-
-        console.log('QT row ' + j + ': ' + items[j].description + ' -> ' + numInputs.length + ' number inputs');
-
-        // numInputs[0] = qty, numInputs[1] = price
-        if (numInputs.length >= 2) {
-          sv(numInputs[0], '');
-          sv(numInputs[1], items[j].rate);
-        } else if (numInputs.length === 1) {
-          sv(numInputs[0], items[j].rate);
-        }
-      }
-
-      showNotification('Template applied - enter quantities', 'success');
-    }, 500);
-  }, 300);
+  renderQuoteItems();
+  showNotification('Template applied - enter quantities', 'success');
 };
 
 // UI Enhancement - runs on DOM changes
