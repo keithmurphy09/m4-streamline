@@ -112,42 +112,31 @@ window.applyQT = function() {
 function enhance() {
   if (!_loaded) return;
 
-  // 1. Detailed Quote card badge (ONE only)
-  document.querySelectorAll('button').forEach(function(btn) {
-    // Skip if already tagged
-    if (btn.querySelector('.qt-tag')) return;
-
-    var found = false;
-    btn.querySelectorAll('div').forEach(function(d) {
-      if (d.textContent.trim() === 'Detailed Quote' && d.children.length === 0) found = true;
-    });
-    if (!found) return;
-
-    var tag = document.createElement('div');
-    tag.className = 'qt-tag';
-    tag.style.marginTop = '6px';
-
-    if (_tpl && _tpl.items && _tpl.items.length > 0) {
-      tag.innerHTML = '<span class="qt-b">' + _tpl.items.length + ' saved items</span> <button class="qt-e" onclick="event.stopPropagation();openQTEditor()">Edit</button>';
-    } else {
-      tag.innerHTML = '<button class="qt-e" onclick="event.stopPropagation();openQTEditor()">Setup Template</button>';
+  // 1. Hide "Start from Template" section
+  document.querySelectorAll('label').forEach(function(lbl) {
+    if (lbl.textContent.indexOf('Start from Template') !== -1) {
+      var section = lbl.closest('.mb-6') || lbl.parentElement;
+      if (section) section.style.display = 'none';
     }
-    btn.appendChild(tag);
   });
 
-  // 2. Fill button (ONE only)
+  // 2. Fill button at top of Create Quote modal (ONE only)
   if (!_tpl || !_tpl.items || !_tpl.items.length) return;
-  document.querySelectorAll('button').forEach(function(b) {
-    if (b.textContent.trim().indexOf('Add') === -1 || b.textContent.trim().indexOf('Item') === -1) return;
-    if (b.nextElementSibling && b.nextElementSibling.classList.contains('qt-f')) return;
-    var fb = document.createElement('button');
-    fb.className = 'qt-f';
-    fb.textContent = 'Fill from Template';
-    fb.type = 'button';
-    fb.setAttribute('onclick', 'window.applyQT();return false;');
-    b.insertAdjacentElement('afterend', fb);
-    console.log('QT: Fill button injected');
+
+  var heading = null;
+  document.querySelectorAll('h3').forEach(function(h) {
+    if (h.textContent.trim() === 'Create Quote') heading = h;
   });
+  if (!heading) return;
+
+  var headerRow = heading.parentElement;
+  if (!headerRow || headerRow.querySelector('.qt-top')) return;
+
+  var topBar = document.createElement('div');
+  topBar.className = 'qt-top';
+  topBar.style.cssText = 'display:flex;align-items:center;gap:10px;margin:12px 0 4px;';
+  topBar.innerHTML = '<button class="qt-f" onclick="window.applyQT();return false;" type="button">Fill from Template (' + _tpl.items.length + ' items)</button><button class="qt-e" onclick="event.stopPropagation();openQTEditor()" type="button">Edit Template</button>';
+  headerRow.insertAdjacentElement('afterend', topBar);
 }
 
 var _t = null;
