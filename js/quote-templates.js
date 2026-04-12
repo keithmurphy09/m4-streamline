@@ -112,16 +112,17 @@ window.applyQT = function() {
 function enhance() {
   if (!_loaded) return;
 
-  // 1. Hide "Start from Template" section
+  // 1. Hide only the "Start from Template" label text, not the buttons
   document.querySelectorAll('label').forEach(function(lbl) {
-    if (lbl.textContent.indexOf('Start from Template') !== -1) {
-      var section = lbl.closest('.mb-6') || lbl.parentElement;
-      if (section) section.style.display = 'none';
+    if (lbl.textContent.indexOf('Start from Template') !== -1 && !lbl.dataset.qtHid) {
+      lbl.dataset.qtHid = '1';
+      lbl.style.display = 'none';
     }
   });
 
   // 2. Fill button at top of Create Quote modal (ONE only)
   if (!_tpl || !_tpl.items || !_tpl.items.length) return;
+  if (document.querySelector('.qt-top')) return;
 
   var heading = null;
   document.querySelectorAll('h3').forEach(function(h) {
@@ -130,7 +131,7 @@ function enhance() {
   if (!heading) return;
 
   var headerRow = heading.parentElement;
-  if (!headerRow || headerRow.querySelector('.qt-top')) return;
+  if (!headerRow) return;
 
   var topBar = document.createElement('div');
   topBar.className = 'qt-top';
