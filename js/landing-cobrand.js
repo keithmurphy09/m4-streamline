@@ -57,7 +57,7 @@ s.textContent = [
 '.lp2-footer a{color:#94a3b8 !important}',
 '.lp2-footer a:hover{color:#2dd4bf !important}',
 '',
-'section[class*="bg-gradient"],div[class*="bg-gradient"]{background:#0a0a0a !important}',
+'#landing section[class*="bg-gradient"],#landing div[class*="bg-gradient"]{background:#0a0a0a !important}',
 '.lp2-xero-section{background:#111 !important}',
 '',
 '.lp-tn-hero-logo{position:absolute;right:-40px;top:50%;transform:translateY(-50%);height:400px;width:auto;opacity:0.06;filter:invert(1);pointer-events:none}',
