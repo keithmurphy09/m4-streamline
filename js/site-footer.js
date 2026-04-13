@@ -14,7 +14,7 @@ function addFooter() {
   if (!app) return;
   // Don't add to landing page
   var landing = document.getElementById('landing');
-  if (landing && landing.style.display !== 'none') return;
+  if (landing && landing.offsetHeight > 0) return;
 
   var footer = document.createElement('div');
   footer.className = 'tn-footer';
