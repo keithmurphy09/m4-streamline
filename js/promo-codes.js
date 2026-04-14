@@ -66,24 +66,21 @@ window.renderPromoAdmin = async function(container) {
 
     // Add form
     h += '<div class="pc-add">';
-    h += '<input id="pc-new-code" type="text" placeholder="CODE" style="width:100px;text-transform:uppercase">';
+    h += '<input id="pc-new-code" type="text" placeholder="CODE" style="width:120px;text-transform:uppercase">';
     h += '<input id="pc-new-discount" type="number" min="1" max="100" value="10" style="width:60px" placeholder="%">';
-    h += '<span style="font-size:11px;color:#64748b">% off</span>';
-    h += '<input id="pc-new-from" type="date" title="Valid from">';
-    h += '<input id="pc-new-until" type="date" title="Valid until">';
-    h += '<input id="pc-new-max" type="number" min="0" value="0" style="width:60px" placeholder="Max uses" title="0 = unlimited">';
+    h += '<span style="font-size:11px;color:#64748b">% off for</span>';
+    h += '<input id="pc-new-months" type="number" min="1" max="36" value="6" style="width:50px">';
+    h += '<span style="font-size:11px;color:#64748b">months from signup</span>';
     h += '<button class="pc-btn" onclick="createPromoCode()">Add Code</button>';
     h += '</div>';
 
     // Table
-    h += '<table class="pc-table"><thead><tr><th>Code</th><th>Discount</th><th>Valid From</th><th>Valid Until</th><th>Used</th><th>Max</th><th>Status</th><th></th></tr></thead><tbody>';
+    h += '<table class="pc-table"><thead><tr><th>Code</th><th>Discount</th><th>Term</th><th>Used</th><th>Status</th><th></th></tr></thead><tbody>';
     promos.forEach(function(p) {
-      var from = p.valid_from ? new Date(p.valid_from).toLocaleDateString() : '-';
-      var until = p.valid_until ? new Date(p.valid_until).toLocaleDateString() : 'No limit';
-      var max = p.max_uses > 0 ? p.max_uses : 'Unlimited';
+      var term = p.term_months ? p.term_months + ' months' : 'Ongoing';
       var status = p.active ? '<span class="pc-active">Active</span>' : '<span class="pc-inactive">Inactive</span>';
-      h += '<tr><td><strong>' + p.code + '</strong></td><td>' + p.discount_percent + '%</td><td>' + from + '</td><td>' + until + '</td><td>' + (p.times_used || 0) + '</td><td>' + max + '</td><td>' + status + '</td>';
-      h += '<td><button class="pc-del" onclick="togglePromoCode(\'' + p.id + '\',' + !p.active + ')">x</button></td></tr>';
+      h += '<tr><td><strong>' + p.code + '</strong></td><td>' + p.discount_percent + '%</td><td>' + term + '</td><td>' + (p.times_used || 0) + '</td><td>' + status + '</td>';
+      h += '<td><button class="pc-del" onclick="togglePromoCode(\'' + p.id + '\',' + !p.active + ')" title="' + (p.active ? 'Deactivate' : 'Activate') + '">' + (p.active ? 'x' : '✓') + '</button></td></tr>';
     });
     h += '</tbody></table>';
     if (promos.length === 0) h += '<p style="color:#94a3b8;font-size:13px;text-align:center;margin-top:12px">No promo codes yet</p>';
@@ -98,9 +95,7 @@ window.renderPromoAdmin = async function(container) {
 window.createPromoCode = async function() {
   var code = (document.getElementById('pc-new-code').value || '').trim().toUpperCase();
   var discount = parseInt(document.getElementById('pc-new-discount').value) || 10;
-  var from = document.getElementById('pc-new-from').value || null;
-  var until = document.getElementById('pc-new-until').value || null;
-  var max = parseInt(document.getElementById('pc-new-max').value) || 0;
+  var months = parseInt(document.getElementById('pc-new-months').value) || 0;
 
   if (!code) { showNotification('Enter a promo code', 'error'); return; }
   if (discount < 1 || discount > 100) { showNotification('Discount must be 1-100%', 'error'); return; }
@@ -109,14 +104,11 @@ window.createPromoCode = async function() {
     var r = await supabaseClient.from('promo_codes').insert([{
       code: code,
       discount_percent: discount,
-      valid_from: from ? new Date(from).toISOString() : new Date().toISOString(),
-      valid_until: until ? new Date(until + 'T23:59:59').toISOString() : null,
-      max_uses: max,
+      term_months: months || null,
       active: true
     }]);
     if (r.error) { showNotification('Error: ' + r.error.message, 'error'); return; }
     showNotification('Promo code ' + code + ' created', 'success');
-    // Re-render
     var container = document.getElementById('pc-admin-container');
     if (container) renderPromoAdmin(container);
   } catch(e) { showNotification('Error: ' + e.message, 'error'); }
@@ -156,49 +148,25 @@ function injectAdmin() {
   renderPromoAdmin(container);
 }
 
-// Inject promo input on landing/signup pages
+// Inject promo input on signup page
 function injectSignup() {
   if (document.querySelector('.pc-box')) return;
 
-  // Find "Start Free Trial" or "Get Started" buttons on landing page
-  var targetBtn = null;
+  // Find the "Start 14-Day Free Trial" button with handleSignup onclick
+  var trialBtn = null;
   document.querySelectorAll('button').forEach(function(b) {
-    var t = b.textContent.trim();
-    var parent = b.parentElement.className || '';
-    // Target the pricing card buttons or hero buttons
-    if ((t === 'Start Free Trial' || t === 'Get Started') && parent.indexOf('lp2-price') !== -1) {
-      if (!targetBtn) targetBtn = b;
-    }
+    var oc = b.getAttribute('onclick') || '';
+    if (oc.indexOf('handleSignup') !== -1) trialBtn = b;
   });
-
-  // Also check for Sign In button in auth form
-  if (!targetBtn) {
-    document.querySelectorAll('button').forEach(function(b) {
-      if (b.textContent.trim() === 'Sign In' && b.parentElement.className.indexOf('lp2-nav') === -1) {
-        targetBtn = b;
-      }
-    });
-  }
-
-  // Also check for "Start 14-Day Free Trial" on the actual signup form
-  if (!targetBtn) {
-    document.querySelectorAll('button').forEach(function(b) {
-      if (b.textContent.trim().indexOf('Start') !== -1 && b.textContent.trim().indexOf('Trial') !== -1) {
-        var p = b.parentElement.className || '';
-        if (p.indexOf('lp2-hero') === -1 && p.indexOf('lp2-nav') === -1) targetBtn = b;
-      }
-    });
-  }
-
-  if (!targetBtn) return;
-  if (targetBtn.dataset.pcDone) return;
-  targetBtn.dataset.pcDone = '1';
+  if (!trialBtn) return;
+  if (trialBtn.dataset.pcDone) return;
+  trialBtn.dataset.pcDone = '1';
 
   var box = document.createElement('div');
   box.className = 'pc-box';
-  box.style.cssText = 'margin-top:12px;display:flex;gap:8px;align-items:center;justify-content:center';
-  box.innerHTML = '<input class="pc-input" id="pc-signup-code" type="text" placeholder="Promo code (optional)"><button class="pc-btn" type="button" onclick="applyPromoAtSignup()">Apply</button>';
-  targetBtn.parentElement.insertBefore(box, targetBtn.nextSibling);
+  box.style.cssText = 'margin:8px 0;display:flex;gap:8px;align-items:center;justify-content:center';
+  box.innerHTML = '<input class="pc-input" id="pc-signup-code" type="text" placeholder="Promo code (optional)" style="flex:1;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;text-transform:uppercase"><button class="pc-btn" type="button" onclick="applyPromoAtSignup()" style="padding:10px 16px;font-size:12px;font-weight:700;background:#0d9488;color:#fff;border:none;border-radius:8px;cursor:pointer;white-space:nowrap">Apply Code</button>';
+  trialBtn.parentElement.insertBefore(box, trialBtn);
 }
 
 // Apply promo code at signup
@@ -208,21 +176,100 @@ window.applyPromoAtSignup = async function() {
   var promo = await validatePromoCode(input.value);
   if (promo) {
     input.style.borderColor = '#0d9488';
-    input.dataset.validCode = promo.code;
-    input.dataset.discount = promo.discount_percent;
-    showNotification(promo.discount_percent + '% discount will apply after your free trial!', 'success');
+    input.style.background = '#f0fdfa';
+    // Store in sessionStorage so handleSignup can pick it up
+    sessionStorage.setItem('pc_code', promo.code);
+    sessionStorage.setItem('pc_discount', promo.discount_percent);
+    sessionStorage.setItem('pc_months', promo.term_months || 6);
+    sessionStorage.setItem('pc_id', promo.id);
+    showNotification(promo.discount_percent + '% off for ' + (promo.term_months || 6) + ' months - applied after free trial!', 'success');
   } else {
     input.style.borderColor = '#ef4444';
+    input.style.background = '#fef2f2';
+    sessionStorage.removeItem('pc_code');
     showNotification('Invalid or expired promo code', 'error');
   }
 };
 
+// Hook into signup to redeem code after account creation
+var _origSignup = window.handleSignup;
+if (typeof _origSignup === 'function') {
+  window.handleSignup = async function() {
+    await _origSignup.apply(this, arguments);
+    // After signup, check if promo was applied
+    var pcId = sessionStorage.getItem('pc_id');
+    if (pcId && typeof currentUser !== 'undefined' && currentUser) {
+      try {
+        var code = sessionStorage.getItem('pc_code');
+        var discount = parseInt(sessionStorage.getItem('pc_discount')) || 0;
+        var months = parseInt(sessionStorage.getItem('pc_months')) || 6;
+        // Increment usage count
+        var ur = await supabaseClient.from('promo_codes').select('times_used').eq('id', pcId).single();
+        if (ur.data) {
+          await supabaseClient.from('promo_codes').update({ times_used: (ur.data.times_used || 0) + 1 }).eq('id', pcId);
+        }
+        // Record redemption
+        await supabaseClient.from('promo_redemptions').insert([{
+          user_id: currentUser.id,
+          promo_code_id: pcId,
+          code: code,
+          discount_percent: discount
+        }]);
+        // Apply discount to subscription
+        await supabaseClient.from('subscriptions').update({
+          discount_percent: discount,
+          discount_months: months,
+          discount_start_date: new Date().toISOString()
+        }).eq('user_id', currentUser.id);
+        sessionStorage.removeItem('pc_code');
+        sessionStorage.removeItem('pc_discount');
+        sessionStorage.removeItem('pc_months');
+        sessionStorage.removeItem('pc_id');
+      } catch(e) { console.error('Promo redeem error:', e); }
+    }
+  };
+}
+
 var _t = null;
+var _promoRedeemed = false;
 new MutationObserver(function() {
   if (_t) clearTimeout(_t);
-  _t = setTimeout(function() {
+  _t = setTimeout(async function() {
     injectSignup();
     injectAdmin();
+
+    // Fallback: redeem stored promo after login completes
+    if (!_promoRedeemed && sessionStorage.getItem('pc_id') && typeof currentUser !== 'undefined' && currentUser) {
+      _promoRedeemed = true;
+      try {
+        var pcId = sessionStorage.getItem('pc_id');
+        var code = sessionStorage.getItem('pc_code');
+        var discount = parseInt(sessionStorage.getItem('pc_discount')) || 0;
+        var months = parseInt(sessionStorage.getItem('pc_months')) || 6;
+
+        var ur = await supabaseClient.from('promo_codes').select('times_used').eq('id', pcId).single();
+        if (ur.data) {
+          await supabaseClient.from('promo_codes').update({ times_used: (ur.data.times_used || 0) + 1 }).eq('id', pcId);
+        }
+        await supabaseClient.from('promo_redemptions').insert([{
+          user_id: currentUser.id,
+          promo_code_id: pcId,
+          code: code,
+          discount_percent: discount
+        }]);
+        await supabaseClient.from('subscriptions').update({
+          discount_percent: discount,
+          discount_months: months,
+          discount_start_date: new Date().toISOString()
+        }).eq('user_id', currentUser.id);
+
+        sessionStorage.removeItem('pc_code');
+        sessionStorage.removeItem('pc_discount');
+        sessionStorage.removeItem('pc_months');
+        sessionStorage.removeItem('pc_id');
+        showNotification('Promo code applied to your account!', 'success');
+      } catch(e) { console.error('Promo redeem error:', e); }
+    }
   }, 500);
 }).observe(document.body, { childList: true, subtree: true });
 
