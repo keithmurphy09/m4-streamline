@@ -63,7 +63,7 @@ s.textContent = [
 '.lp-tn-hero-logo{position:absolute;right:-40px;top:50%;transform:translateY(-50%);height:400px;width:auto;opacity:0.06;filter:invert(1);pointer-events:none}',
 '.lp-tn-nav-logo{height:32px;width:auto;filter:invert(1) brightness(3) contrast(1.2);margin-right:8px}',
 '.lp-tn-nav-text{display:flex;flex-direction:column;line-height:1.1}',
-'.lp-tn-nav-name{font-size:18px;font-weight:800;color:#fff}',
+'.lp-tn-nav-txt{height:22px;width:auto;filter:invert(1)}',
 '.lp-tn-nav-sub{font-size:9px;color:#64748b}',
 '.lp-tn-nav-sub b{color:#2dd4bf}',
 '@media(max-width:768px){.lp-tn-hero-logo{height:200px;right:-20px}}'
@@ -82,7 +82,7 @@ function run() {
   landing.dataset.tnDone = 'true';
 
   // Replace nav logo
-  nav.innerHTML = '<img class="lp-tn-nav-logo" src="tradies-network-logo.png" alt="Tradies Network"><div class="lp-tn-nav-text"><div class="lp-tn-nav-name">TRADIES NETWORK</div><div class="lp-tn-nav-sub">Powered by <b>M4 STREAMLINE</b></div></div>';
+  nav.innerHTML = '<img class="lp-tn-nav-logo" src="tradies-network-logo.png" alt="Tradies Network"><div class="lp-tn-nav-text"><img class="lp-tn-nav-txt" src="tradies-network-text.png" alt="Tradies Network"><div class="lp-tn-nav-sub">Powered by <b>M4 STREAMLINE</b></div></div>';
 
   // Update hero text
   var h1 = landing.querySelector('.lp2-hero-content h1');
@@ -103,7 +103,7 @@ function run() {
   // Update footer branding if exists
   var footerLogo = landing.querySelector('.lp2-footer .lp2-nav-logo');
   if (footerLogo) {
-    footerLogo.innerHTML = '<img class="lp-tn-nav-logo" src="tradies-network-logo.png" alt="Tradies Network"><div class="lp-tn-nav-text"><div class="lp-tn-nav-name">TRADIES NETWORK</div><div class="lp-tn-nav-sub">Powered by <b>M4 STREAMLINE</b></div></div>';
+    footerLogo.innerHTML = '<img class="lp-tn-nav-logo" src="tradies-network-logo.png" alt="Tradies Network"><div class="lp-tn-nav-text"><img class="lp-tn-nav-txt" src="tradies-network-text.png" alt="Tradies Network"><div class="lp-tn-nav-sub">Powered by <b>M4 STREAMLINE</b></div></div>';
   }
 }
 
