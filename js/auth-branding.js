@@ -5,7 +5,7 @@
 try {
 
 var css = document.createElement('style');
-css.textContent = '.tn-auth-logo{height:80px;width:auto;margin:0 auto 8px;display:block;}.tn-auth-name{font-size:22px;font-weight:800;color:#0f172a;letter-spacing:1px;text-align:center;margin-bottom:2px}.dark .tn-auth-name{color:#fff}.tn-auth-sub{font-size:11px;color:#64748b;text-align:center;margin-bottom:16px}.tn-auth-sub b{color:#0d9488}';
+css.textContent = '.tn-auth-logo{height:80px;width:auto;margin:0 auto 8px;display:block;}.tn-auth-txt{height:28px;width:auto;display:block;margin:0 auto 4px}.tn-auth-sub{font-size:11px;color:#64748b;text-align:center;margin-bottom:16px}.tn-auth-sub b{color:#0d9488}';
 document.head.appendChild(css);
 
 function brandAuth() {
@@ -37,7 +37,7 @@ function brandAuth() {
 
   // Insert T logo + branding
   var wrap = document.createElement('div');
-  wrap.innerHTML = '<img class="tn-auth-logo" src="tradies-network-logo.png" alt="Tradies Network"><div class="tn-auth-name">TRADIES NETWORK</div><div class="tn-auth-sub">Powered by <b>M4 STREAMLINE</b></div>';
+  wrap.innerHTML = '<img class="tn-auth-logo" src="tradies-network-logo.png" alt="Tradies Network"><img class="tn-auth-txt" src="tradies-network-text.png" alt="Tradies Network"><div class="tn-auth-sub">Powered by <b>M4 STREAMLINE</b></div>';
   parent.insertBefore(wrap, parent.firstChild);
 }
 
