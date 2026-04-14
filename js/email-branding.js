@@ -5,6 +5,7 @@
 try {
 
 var TN_LOGO = 'https://raw.githubusercontent.com/keithmurphy09/m4-streamline/main/tradies-network-logo.png';
+var TN_TEXT = 'https://raw.githubusercontent.com/keithmurphy09/m4-streamline/main/tradies-network-text.png';
 var TN_FROM = 'info@tradiesnetwork.app';
 
 function getDoNotReply() {
@@ -37,7 +38,7 @@ function buildEmailHTML(opts) {
   return '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">' +
     '<div style="text-align:center;margin-bottom:30px;padding:20px;background:#0a0a0a;border-radius:8px;">' +
       '<img src="' + TN_LOGO + '" alt="Tradies Network" style="max-width:80px;max-height:60px;margin-bottom:10px;filter:invert(1) brightness(3) contrast(1.2);">' +
-      '<h1 style="color:#fff;margin:10px 0;font-size:20px;letter-spacing:1px;">TRADIES NETWORK</h1>' +
+      '<img src="' + TN_TEXT + '" alt="Tradies Network" style="max-width:220px;height:auto;margin:10px auto;display:block;filter:invert(1);">' +
       '<p style="color:#2dd4bf;font-size:12px;margin:0;">Powered by M4 STREAMLINE</p>' +
     '</div>' +
     '<p>Hello ' + opts.clientName + ',</p>' +
