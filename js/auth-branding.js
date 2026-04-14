@@ -5,7 +5,7 @@
 try {
 
 var css = document.createElement('style');
-css.textContent = '.tn-auth-logo{height:80px;width:auto;margin:0 auto 8px;display:block;}.tn-auth-txt{height:28px;width:auto;display:block;margin:0 auto 4px}.tn-auth-sub{font-size:11px;color:#64748b;text-align:center;margin-bottom:16px}.tn-auth-sub b{color:#0d9488}';
+css.textContent = '.tn-auth-logo{height:80px;width:auto;margin:0 auto 8px;display:block;}.tn-auth-txt{height:28px;width:auto;display:block;margin:0 auto 4px;filter:invert(1)}.tn-auth-sub{font-size:11px;color:#64748b;text-align:center;margin-bottom:16px}.tn-auth-sub b{color:#0d9488}';
 document.head.appendChild(css);
 
 function brandAuth() {
