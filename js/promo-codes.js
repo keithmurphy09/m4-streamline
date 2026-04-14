@@ -8,31 +8,6 @@ css.textContent = '.pc-box{margin-top:12px;display:flex;gap:8px;align-items:cent
 document.head.appendChild(css);
 
 // ========== SIGNUP PROMO CODE ==========
-function addPromoInput() {
-  // Find the auth/login form area
-  var authForm = document.querySelector('#auth-container') || document.querySelector('[class*="auth"]');
-  if (!authForm) {
-    // Try finding signup button
-    document.querySelectorAll('button').forEach(function(b) {
-      var t = b.textContent.trim().toLowerCase();
-      if ((t === 'sign up' || t === 'create account' || t === 'register') && !b.dataset.pcDone) {
-        b.dataset.pcDone = '1';
-        var box = document.createElement('div');
-        box.className = 'pc-box';
-        box.innerHTML = '<input class="pc-input" id="pc-signup-code" type="text" placeholder="Promo code (optional)">';
-        b.parentElement.insertBefore(box, b);
-      }
-    });
-    return;
-  }
-  if (authForm.querySelector('.pc-box')) return;
-
-  var box = document.createElement('div');
-  box.className = 'pc-box';
-  box.innerHTML = '<input class="pc-input" id="pc-signup-code" type="text" placeholder="Promo code (optional)">';
-  authForm.appendChild(box);
-}
-
 // Validate and redeem a promo code
 window.validatePromoCode = async function(code) {
   if (!code) return null;
@@ -158,50 +133,89 @@ window.togglePromoCode = async function(id, active) {
 
 // Inject admin section in admin panel
 function injectAdmin() {
-  if (typeof isAdmin === 'undefined' || !isAdmin) {
-    // Check for admin badge
-    var badge = document.querySelector('.bg-red-600');
-    if (!badge || badge.textContent.trim() !== 'ADMIN') return;
-  }
+  if (document.getElementById('pc-admin-container')) return;
 
-  // Find Company or Settings section
-  var inserted = false;
+  // Find "Support Messages" or "All Users" heading
+  var target = null;
   document.querySelectorAll('h2, h3').forEach(function(el) {
     var t = el.textContent.trim();
-    if ((t === 'Admin Panel' || t === 'Subscription Management' || t === 'User Management') && !inserted) {
-      var section = el.closest('div');
-      if (section && !section.querySelector('#pc-admin-container')) {
-        var container = document.createElement('div');
-        container.id = 'pc-admin-container';
-        section.appendChild(container);
-        renderPromoAdmin(container);
-        inserted = true;
-      }
+    if (t === 'Support Messages' || t === 'All Users') target = el;
+  });
+  if (!target) return;
+
+  // Check admin badge exists
+  var badge = document.querySelector('.bg-red-600');
+  if (!badge || badge.textContent.trim() !== 'ADMIN') return;
+
+  var section = target.closest('div');
+  if (!section) return;
+
+  var container = document.createElement('div');
+  container.id = 'pc-admin-container';
+  section.parentElement.appendChild(container);
+  renderPromoAdmin(container);
+}
+
+// Inject promo input on landing/signup pages
+function injectSignup() {
+  if (document.querySelector('.pc-box')) return;
+
+  // Find "Start Free Trial" or "Get Started" buttons on landing page
+  var targetBtn = null;
+  document.querySelectorAll('button').forEach(function(b) {
+    var t = b.textContent.trim();
+    var parent = b.parentElement.className || '';
+    // Target the pricing card buttons or hero buttons
+    if ((t === 'Start Free Trial' || t === 'Get Started') && parent.indexOf('lp2-price') !== -1) {
+      if (!targetBtn) targetBtn = b;
     }
   });
-}
 
-// Inject promo input on auth pages
-function injectSignup() {
-  // Look for signup forms
-  var forms = document.querySelectorAll('form, [class*="auth"], [class*="login"], [class*="signup"]');
-  forms.forEach(function(form) {
-    if (form.querySelector('.pc-box')) return;
-    var signupBtn = null;
-    form.querySelectorAll('button').forEach(function(b) {
-      var t = b.textContent.trim().toLowerCase();
-      if (t === 'sign up' || t === 'create account' || t === 'register') signupBtn = b;
+  // Also check for Sign In button in auth form
+  if (!targetBtn) {
+    document.querySelectorAll('button').forEach(function(b) {
+      if (b.textContent.trim() === 'Sign In' && b.parentElement.className.indexOf('lp2-nav') === -1) {
+        targetBtn = b;
+      }
     });
-    if (!signupBtn) return;
-    if (signupBtn.dataset.pcDone) return;
-    signupBtn.dataset.pcDone = '1';
+  }
 
-    var box = document.createElement('div');
-    box.className = 'pc-box';
-    box.innerHTML = '<input class="pc-input" id="pc-signup-code" type="text" placeholder="Promo code (optional)">';
-    signupBtn.parentElement.insertBefore(box, signupBtn);
-  });
+  // Also check for "Start 14-Day Free Trial" on the actual signup form
+  if (!targetBtn) {
+    document.querySelectorAll('button').forEach(function(b) {
+      if (b.textContent.trim().indexOf('Start') !== -1 && b.textContent.trim().indexOf('Trial') !== -1) {
+        var p = b.parentElement.className || '';
+        if (p.indexOf('lp2-hero') === -1 && p.indexOf('lp2-nav') === -1) targetBtn = b;
+      }
+    });
+  }
+
+  if (!targetBtn) return;
+  if (targetBtn.dataset.pcDone) return;
+  targetBtn.dataset.pcDone = '1';
+
+  var box = document.createElement('div');
+  box.className = 'pc-box';
+  box.style.cssText = 'margin-top:12px;display:flex;gap:8px;align-items:center;justify-content:center';
+  box.innerHTML = '<input class="pc-input" id="pc-signup-code" type="text" placeholder="Promo code (optional)"><button class="pc-btn" type="button" onclick="applyPromoAtSignup()">Apply</button>';
+  targetBtn.parentElement.insertBefore(box, targetBtn.nextSibling);
 }
+
+// Apply promo code at signup
+window.applyPromoAtSignup = async function() {
+  var input = document.getElementById('pc-signup-code');
+  if (!input || !input.value.trim()) { showNotification('Enter a promo code', 'error'); return; }
+  var promo = await validatePromoCode(input.value);
+  if (promo) {
+    input.style.borderColor = '#0d9488';
+    input.dataset.validCode = promo.code;
+    input.dataset.discount = promo.discount_percent;
+    showNotification(promo.discount_percent + '% discount will apply after your free trial!', 'success');
+  } else {
+    input.style.borderColor = '#ef4444';
+    showNotification('Invalid or expired promo code', 'error');
+  }
+};
 
 var _t = null;
 new MutationObserver(function() {
