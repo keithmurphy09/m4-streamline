@@ -63,7 +63,7 @@ s.textContent = [
 '.lp-tn-hero-logo{position:absolute;right:-40px;top:50%;transform:translateY(-50%);height:400px;width:auto;opacity:0.06;filter:invert(1);pointer-events:none}',
 '.lp-tn-nav-logo{height:32px;width:auto;filter:invert(1) brightness(3) contrast(1.2);margin-right:8px}',
 '.lp-tn-nav-text{display:flex;flex-direction:column;line-height:1.1}',
-'.lp-tn-nav-txt{height:22px;width:auto;filter:invert(1)}',
+'.lp-tn-nav-txt{height:22px;width:auto}',
 '.lp-tn-nav-sub{font-size:9px;color:#64748b}',
 '.lp-tn-nav-sub b{color:#2dd4bf}',
 '@media(max-width:768px){.lp-tn-hero-logo{height:200px;right:-20px}}'
