@@ -4,7 +4,7 @@
 try {
 
 var css = document.createElement('style');
-css.textContent = '.tn-footer{background:#0a0a0a;border-top:3px solid #2dd4bf;padding:32px 20px;text-align:center;margin-top:40px}.tn-footer-inner{max-width:800px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:12px}.tn-footer-logo{height:50px;width:auto;filter:invert(1) brightness(3) contrast(1.2);opacity:0.7}.tn-footer-txt{height:24px;width:auto;filter:invert(1);opacity:0.8}.tn-footer-addr{font-size:12px;color:#64748b;letter-spacing:0.3px}.tn-footer-copy{font-size:11px;color:#475569}@media(max-width:768px){.tn-footer{padding:24px 16px}.tn-footer-logo{height:36px}.tn-footer-name{font-size:13px}}';
+css.textContent = '.tn-footer{background:#0a0a0a;border-top:3px solid #2dd4bf;padding:32px 20px;text-align:center;margin-top:40px}.tn-footer-inner{max-width:800px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:12px}.tn-footer-logo{height:50px;width:auto;filter:invert(1) brightness(3) contrast(1.2);opacity:0.7}.tn-footer-txt{height:24px;width:auto;opacity:0.8}.tn-footer-addr{font-size:12px;color:#64748b;letter-spacing:0.3px}.tn-footer-copy{font-size:11px;color:#475569}@media(max-width:768px){.tn-footer{padding:24px 16px}.tn-footer-logo{height:36px}.tn-footer-name{font-size:13px}}';
 document.head.appendChild(css);
 
 function addFooter() {
