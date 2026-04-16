@@ -1,0 +1,57 @@
+/* M4 Mobile Fix CSS - Loads before scripts to prevent first-render breakage */
+/* Additive only. Does not modify any existing styles. */
+
+@media (max-width: 768px) {
+
+  /* ADMIN badge - prevent stretching down the page */
+  .bg-red-600 {
+    max-height: 32px !important;
+    max-width: 80px !important;
+    overflow: hidden !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1.2 !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* All SVG icons - cap at reasonable size */
+  svg {
+    max-width: 32px !important;
+    max-height: 32px !important;
+  }
+
+  /* Header and nav icons - slightly smaller */
+  header svg,
+  nav svg,
+  .tn-footer svg {
+    max-width: 28px !important;
+    max-height: 28px !important;
+  }
+
+  /* Icon-only buttons */
+  button > svg:only-child {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  /* Dashboard card icons */
+  [class*="card"] svg,
+  [class*="Card"] svg {
+    max-width: 32px !important;
+    max-height: 32px !important;
+  }
+
+  /* Header height cap */
+  .bg-black.border-b-4 {
+    max-height: 120px !important;
+    overflow: hidden !important;
+  }
+
+  /* Prevent any image from rendering giant */
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+}
