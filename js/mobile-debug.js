@@ -26,6 +26,8 @@ log('tw config: ' + (tailwind.config ? 'set' : 'missing'));
 log('tw version: ' + (tailwind.version || 'unknown'));
 log('stylesheet rules: ' + (document.styleSheets[0] ? document.styleSheets[0].cssRules.length : 'blocked'));
 log('tw stylesheets: ' + document.querySelectorAll('style[type="text/tailwindcss"]').length);
+log('head children: ' + document.head.children.length);
+log('body children: ' + document.body.children.length);
 
 window.addEventListener('error', function(e) {
   log('ERR: ' + e.message + ' @ ' + (e.filename || '').split('/').pop() + ':' + e.lineno, '#ef4444');
