@@ -87,4 +87,5 @@ setTimeout(function() {
 }, 3000);
 
 } catch(e) {}
+setTimeout(function(){ if(window.tailwind && window.tailwind._generate) window.tailwind._generate(); }, 5000);
 })();
