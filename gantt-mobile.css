@@ -1,0 +1,44 @@
+/* M4 Gantt Mobile - narrow sidebar, scrollable chart */
+
+@media (max-width: 768px) {
+
+  /* Narrow the sidebar on mobile */
+  .gantt-sb {
+    width: 120px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
+    font-size: 10px !important;
+  }
+
+  /* Compact sidebar header */
+  .gantt-sb-hd {
+    padding: 0 6px !important;
+    font-size: 10px !important;
+  }
+
+  /* Compact rows in sidebar */
+  .gantt-sb .gantt-row,
+  .gantt-sb .gantt-job-row,
+  .gantt-sb .gantt-task-row {
+    padding: 4px 6px !important;
+    font-size: 10px !important;
+  }
+
+  /* Truncate long text in sidebar */
+  .gantt-sb * {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  /* Make the chart area scrollable horizontally */
+  #gantt-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Gantt wrap fills screen width minus sidebar */
+  .gantt-wrap {
+    max-width: 100vw !important;
+  }
+}
