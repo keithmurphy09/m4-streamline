@@ -24,6 +24,8 @@ log('Screen: ' + window.innerWidth + 'x' + window.innerHeight);
 log('tailwind global: ' + typeof tailwind);
 log('tw config: ' + (tailwind.config ? 'set' : 'missing'));
 log('tw version: ' + (tailwind.version || 'unknown'));
+log('stylesheet rules: ' + (document.styleSheets[0] ? document.styleSheets[0].cssRules.length : 'blocked'));
+log('tw stylesheets: ' + document.querySelectorAll('style[type="text/tailwindcss"]').length);
 
 window.addEventListener('error', function(e) {
   log('ERR: ' + e.message + ' @ ' + (e.filename || '').split('/').pop() + ':' + e.lineno, '#ef4444');
