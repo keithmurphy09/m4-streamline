@@ -1,40 +1,33 @@
-/* M4 Mobile Fix - aggressive first-paint protection */
+/* M4 Mobile Fix */
 
 @media (max-width: 768px) {
 
-  /* Hide the entire black header on mobile until the cb-row is present.
-     This prevents the ADMIN stripe and overflow from ever being visible
-     during the race condition on first load. */
-  .bg-black.border-b-4 {
-    visibility: hidden !important;
-    max-height: 0 !important;
-    overflow: hidden !important;
-    transition: none !important;
-  }
-
-  /* Once cobrand-header.js has run and injected .cb-row, show the header */
-  .bg-black.border-b-4:has(.cb-row) {
-    visibility: visible !important;
-    max-height: 140px !important;
-    overflow: hidden !important;
-  }
-
-  /* Hard caps on ADMIN badge regardless of state */
-  .bg-red-600,
-  [class*="bg-red-6"],
-  [class*="bg-red-7"] {
-    max-height: 32px !important;
-    max-width: 90px !important;
-    height: auto !important;
-    overflow: hidden !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    flex: 0 0 auto !important;
+  /* ADMIN badge - span created by app.js line 105 */
+  /* Must use align-self to prevent flex parent from stretching it */
+  span.bg-red-600 {
+    display: inline-block !important;
+    max-width: 70px !important;
+    max-height: 24px !important;
+    height: 24px !important;
+    line-height: 16px !important;
     padding: 4px 8px !important;
+    overflow: hidden !important;
+    align-self: flex-start !important;
+    flex: 0 0 auto !important;
+    vertical-align: middle !important;
+    box-sizing: border-box !important;
   }
 
-  /* Hard caps on all icons */
+  /* Other bg-red-600 elements (buttons etc) */
+  .bg-red-600:not(span) {
+    max-height: 40px !important;
+    max-width: 120px !important;
+    overflow: hidden !important;
+    flex: 0 0 auto !important;
+    align-self: flex-start !important;
+  }
+
+  /* Cap all icons */
   svg {
     max-width: 40px !important;
     max-height: 40px !important;
@@ -48,7 +41,7 @@
     max-height: 28px !important;
   }
 
-  /* Cap oversized Tailwind width/height classes */
+  /* Tailwind oversized width/height utilities */
   .w-20, .w-24, .w-28, .w-32, .w-40, .w-48, .w-56, .w-64 {
     max-width: 40px !important;
   }
