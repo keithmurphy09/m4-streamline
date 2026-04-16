@@ -22,6 +22,8 @@ function log(msg, color) {
 
 log('Screen: ' + window.innerWidth + 'x' + window.innerHeight);
 log('tailwind global: ' + typeof tailwind);
+log('tw config: ' + (tailwind.config ? 'set' : 'missing'));
+log('tw version: ' + (tailwind.version || 'unknown'));
 
 window.addEventListener('error', function(e) {
   log('ERR: ' + e.message + ' @ ' + (e.filename || '').split('/').pop() + ':' + e.lineno, '#ef4444');
