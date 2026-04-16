@@ -28,6 +28,9 @@ log('stylesheet rules: ' + (document.styleSheets[0] ? document.styleSheets[0].cs
 log('tw stylesheets: ' + document.querySelectorAll('style[type="text/tailwindcss"]').length);
 log('head children: ' + document.head.children.length);
 log('body children: ' + document.body.children.length);
+log('style tags in head: ' + document.head.querySelectorAll('style').length);
+var lastStyle = document.head.querySelector('style:last-of-type');
+log('last style size: ' + (lastStyle ? lastStyle.textContent.length : 'none'));
 
 window.addEventListener('error', function(e) {
   log('ERR: ' + e.message + ' @ ' + (e.filename || '').split('/').pop() + ':' + e.lineno, '#ef4444');
