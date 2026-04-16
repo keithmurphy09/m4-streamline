@@ -1,0 +1,28 @@
+/* M4 Calendar Mobile Fix - horizontal scroll on small screens */
+
+@media (max-width: 768px) {
+  #calendar {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #calendar .fc-view-harness,
+  #calendar .fc-scrollgrid,
+  #calendar table {
+    min-width: 700px !important;
+  }
+
+  #calendar .fc-toolbar {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  #calendar .fc-toolbar-title {
+    font-size: 16px !important;
+  }
+
+  #calendar .fc-button {
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+  }
+}
