@@ -1,81 +1,32 @@
-/* M4 Mobile Fix - targets exact app.js DOM structure */
+/* M4 Tailwind Fallback - explicit sizes when Tailwind CDN fails */
+
+svg { width: 24px; height: 24px; max-width: 24px; max-height: 24px; }
+
+.w-4 { width: 16px !important; } .h-4 { height: 16px !important; }
+.w-5 { width: 20px !important; } .h-5 { height: 20px !important; }
+.w-6 { width: 24px !important; } .h-6 { height: 24px !important; }
+.w-8 { width: 32px !important; } .h-8 { height: 32px !important; }
+.w-10 { width: 40px !important; } .h-10 { height: 40px !important; }
+.w-12 { width: 48px !important; } .h-12 { height: 48px !important; }
+.w-16 { width: 64px !important; } .h-16 { height: 64px !important; }
+.w-20 { width: 80px !important; } .h-20 { height: 80px !important; }
+.w-24 { width: 96px !important; } .h-24 { height: 96px !important; }
+.w-32 { width: 128px !important; } .h-32 { height: 128px !important; }
+
+img.h-20, img.h-24, img.h-32 { max-height: 80px; object-fit: contain; }
+img.w-20, img.w-24, img.w-32 { max-width: 80px; object-fit: contain; }
 
 @media (max-width: 768px) {
-
-  /* ADMIN / TEAM badges are spans inside:
-     div.bg-black.border-b-4 > div.max-w-7xl > div.flex.items-center (Controls)
-     Force them to natural content size. */
-  div.bg-black span.bg-red-600,
-  div.bg-black span.bg-purple-600 {
+  img.h-20, img.h-24, img.h-32 { max-height: 60px !important; }
+  img.w-20, img.w-24, img.w-32 { max-width: 60px !important; }
+  span.bg-red-600, span.bg-purple-600 {
     display: inline-block !important;
-    width: auto !important;
-    height: auto !important;
     max-width: 70px !important;
     max-height: 22px !important;
-    line-height: 14px !important;
     font-size: 10px !important;
-    padding: 4px 6px !important;
+    padding: 2px 6px !important;
+    line-height: 16px !important;
     overflow: hidden !important;
-    white-space: nowrap !important;
     flex: 0 0 auto !important;
-    align-self: center !important;
-    box-sizing: border-box !important;
-    vertical-align: middle !important;
   }
-
-  /* The Controls flex container - ensure it wraps and doesn't stretch children */
-  div.bg-black div.flex.items-center {
-    flex-wrap: wrap !important;
-    align-items: center !important;
-    justify-content: center !important;
-  }
-
-  /* The logo should stay small on mobile */
-  div.bg-black img[src*="final_logo"] {
-    max-width: 60px !important;
-    max-height: 60px !important;
-  }
-
-  /* Cap all SVG icons on mobile */
-  svg {
-    max-width: 40px !important;
-    max-height: 40px !important;
-  }
-
-  header svg,
-  nav svg,
-  .tn-footer svg,
-  button svg {
-    max-width: 28px !important;
-    max-height: 28px !important;
-  }
-
-  /* Tailwind width/height utilities that blow up on mobile */
-  .w-20, .w-24, .w-28, .w-32, .w-40, .w-48, .w-56, .w-64 {
-    max-width: 40px !important;
-  }
-  .h-20, .h-24, .h-28, .h-32, .h-40, .h-48, .h-56, .h-64 {
-    max-height: 40px !important;
-  }
-
-  /* Logo exception - allow the h-20 w-20 on the final_logo to show */
-  img.h-20.w-20 {
-    max-width: 60px !important;
-    max-height: 60px !important;
-  }
-
-  /* Image safety */
-  img {
-    max-width: 100% !important;
-    height: auto !important;
-  }
-
-  img.cb-logo {
-    max-width: 100px !important;
-    max-height: 40px !important;
-  }
-  img.cb-txt {
-    max-height: 14px !important;
-  }
-
 }
