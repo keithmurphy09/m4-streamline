@@ -1,53 +1,45 @@
-/* M4 Mobile Fix CSS v2 - targeted fixes based on cobrand-header.js analysis */
-/* Additive only. Loads in HTML head before scripts. */
+/* M4 Mobile Fix - aggressive first-paint protection */
 
 @media (max-width: 768px) {
 
-  /* ====================================================================
-     FIX 1: Prevent ADMIN red stripe on mobile
-     cobrand-header.js absolutely positions the buttons row on desktop,
-     then switches to static on mobile via its own stylesheet. But its
-     style tag is injected AFTER page render, so on first load the
-     absolute positioning applies, ADMIN badge stretches vertically.
-
-     We force static positioning BEFORE cobrand-header.js runs.
-     ==================================================================== */
-  .bg-black.border-b-4 .max-w-7xl > div:not(.cb-row):not(.cb-hide) {
-    position: static !important;
-    justify-content: center !important;
-    margin-top: 4px !important;
-    grid-column: 1 / -1 !important;
-    flex-wrap: wrap !important;
+  /* Hide the entire black header on mobile until the cb-row is present.
+     This prevents the ADMIN stripe and overflow from ever being visible
+     during the race condition on first load. */
+  .bg-black.border-b-4 {
+    visibility: hidden !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    transition: none !important;
   }
 
-  /* Cap the ADMIN badge so it can never stretch down the page */
+  /* Once cobrand-header.js has run and injected .cb-row, show the header */
+  .bg-black.border-b-4:has(.cb-row) {
+    visibility: visible !important;
+    max-height: 140px !important;
+    overflow: hidden !important;
+  }
+
+  /* Hard caps on ADMIN badge regardless of state */
   .bg-red-600,
   [class*="bg-red-6"],
   [class*="bg-red-7"] {
     max-height: 32px !important;
     max-width: 90px !important;
     height: auto !important;
-    width: auto !important;
     overflow: hidden !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    line-height: 1.2 !important;
     flex: 0 0 auto !important;
     padding: 4px 8px !important;
   }
 
-  /* ====================================================================
-     FIX 2: Cap giant icons (envelope, book, etc) on mobile
-     Tailwind icon classes and bare SVGs can render at natural size
-     before layout settles. Cap them aggressively.
-     ==================================================================== */
+  /* Hard caps on all icons */
   svg {
     max-width: 40px !important;
     max-height: 40px !important;
   }
 
-  /* Even smaller for known icon contexts */
   header svg,
   nav svg,
   .tn-footer svg,
@@ -56,7 +48,7 @@
     max-height: 28px !important;
   }
 
-  /* Tailwind size utility classes that commonly make icons huge */
+  /* Cap oversized Tailwind width/height classes */
   .w-20, .w-24, .w-28, .w-32, .w-40, .w-48, .w-56, .w-64 {
     max-width: 40px !important;
   }
@@ -64,24 +56,12 @@
     max-height: 40px !important;
   }
 
-  /* ====================================================================
-     FIX 3: Header height safety
-     Prevent header container from growing tall on first load
-     ==================================================================== */
-  .bg-black.border-b-4 {
-    max-height: 140px !important;
-    overflow: hidden !important;
-  }
-
-  /* ====================================================================
-     FIX 4: Image safety
-     ==================================================================== */
+  /* Image safety */
   img {
     max-width: 100% !important;
     height: auto !important;
   }
 
-  /* Keep the cobrand logos their intended sizes */
   img.cb-logo {
     max-width: 100px !important;
     max-height: 40px !important;
