@@ -1,57 +1,93 @@
-/* M4 Mobile Fix CSS - Loads before scripts to prevent first-render breakage */
-/* Additive only. Does not modify any existing styles. */
+/* M4 Mobile Fix CSS v2 - targeted fixes based on cobrand-header.js analysis */
+/* Additive only. Loads in HTML head before scripts. */
 
 @media (max-width: 768px) {
 
-  /* ADMIN badge - prevent stretching down the page */
-  .bg-red-600 {
+  /* ====================================================================
+     FIX 1: Prevent ADMIN red stripe on mobile
+     cobrand-header.js absolutely positions the buttons row on desktop,
+     then switches to static on mobile via its own stylesheet. But its
+     style tag is injected AFTER page render, so on first load the
+     absolute positioning applies, ADMIN badge stretches vertically.
+
+     We force static positioning BEFORE cobrand-header.js runs.
+     ==================================================================== */
+  .bg-black.border-b-4 .max-w-7xl > div:not(.cb-row):not(.cb-hide) {
+    position: static !important;
+    justify-content: center !important;
+    margin-top: 4px !important;
+    grid-column: 1 / -1 !important;
+    flex-wrap: wrap !important;
+  }
+
+  /* Cap the ADMIN badge so it can never stretch down the page */
+  .bg-red-600,
+  [class*="bg-red-6"],
+  [class*="bg-red-7"] {
     max-height: 32px !important;
-    max-width: 80px !important;
+    max-width: 90px !important;
+    height: auto !important;
+    width: auto !important;
     overflow: hidden !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     line-height: 1.2 !important;
-    flex-shrink: 0 !important;
+    flex: 0 0 auto !important;
+    padding: 4px 8px !important;
   }
 
-  /* All SVG icons - cap at reasonable size */
+  /* ====================================================================
+     FIX 2: Cap giant icons (envelope, book, etc) on mobile
+     Tailwind icon classes and bare SVGs can render at natural size
+     before layout settles. Cap them aggressively.
+     ==================================================================== */
   svg {
-    max-width: 32px !important;
-    max-height: 32px !important;
+    max-width: 40px !important;
+    max-height: 40px !important;
   }
 
-  /* Header and nav icons - slightly smaller */
+  /* Even smaller for known icon contexts */
   header svg,
   nav svg,
-  .tn-footer svg {
+  .tn-footer svg,
+  button svg {
     max-width: 28px !important;
     max-height: 28px !important;
   }
 
-  /* Icon-only buttons */
-  button > svg:only-child {
-    width: 24px !important;
-    height: 24px !important;
+  /* Tailwind size utility classes that commonly make icons huge */
+  .w-20, .w-24, .w-28, .w-32, .w-40, .w-48, .w-56, .w-64 {
+    max-width: 40px !important;
+  }
+  .h-20, .h-24, .h-28, .h-32, .h-40, .h-48, .h-56, .h-64 {
+    max-height: 40px !important;
   }
 
-  /* Dashboard card icons */
-  [class*="card"] svg,
-  [class*="Card"] svg {
-    max-width: 32px !important;
-    max-height: 32px !important;
-  }
-
-  /* Header height cap */
+  /* ====================================================================
+     FIX 3: Header height safety
+     Prevent header container from growing tall on first load
+     ==================================================================== */
   .bg-black.border-b-4 {
-    max-height: 120px !important;
+    max-height: 140px !important;
     overflow: hidden !important;
   }
 
-  /* Prevent any image from rendering giant */
+  /* ====================================================================
+     FIX 4: Image safety
+     ==================================================================== */
   img {
     max-width: 100% !important;
     height: auto !important;
+  }
+
+  /* Keep the cobrand logos their intended sizes */
+  img.cb-logo {
+    max-width: 100px !important;
+    max-height: 40px !important;
+  }
+  img.cb-txt {
+    max-height: 14px !important;
   }
 
 }
