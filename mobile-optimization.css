@@ -26,9 +26,9 @@
         -webkit-overflow-scrolling: touch;
     }
     
-    table {
-        min-width: 800px; /* Force horizontal scroll for wide tables */
-    }
+    table:not(.fc-scrollgrid):not(.fc-col-header):not(.fc-scrollgrid-sync-table) {
+    min-width: 800px;
+}
     
     /* Cards - Full Width */
     .card,
