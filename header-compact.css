@@ -1,0 +1,83 @@
+/* M4 Header Compact */
+
+/* Desktop - slightly thinner */
+.bg-black.border-b-4 {
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+
+.bg-black.border-b-4 .max-w-7xl {
+  gap: 8px !important;
+}
+
+/* Nav bar thinner */
+nav, [class*="border-b"][class*="bg-white"] {
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+
+@media (max-width: 768px) {
+
+  /* Header much thinner on mobile */
+  .bg-black.border-b-4 {
+    padding: 4px 8px !important;
+  }
+
+  .bg-black.border-b-4 .max-w-7xl {
+    gap: 4px !important;
+  }
+
+  /* Cobrand row compact */
+  .cb-row {
+    padding: 2px 0 !important;
+    gap: 4px !important;
+  }
+
+  .cb-logo {
+    height: 30px !important;
+  }
+
+  .cb-txt {
+    height: 12px !important;
+  }
+
+  .cb-p {
+    font-size: 7px !important;
+    margin-top: 1px !important;
+  }
+
+  /* ADMIN badge smaller */
+  span.bg-red-600 {
+    font-size: 9px !important;
+    padding: 2px 6px !important;
+  }
+
+  /* Dark mode + settings buttons smaller */
+  .bg-black button {
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+    min-height: 32px !important;
+  }
+
+  /* Nav bar compact */
+  nav, [class*="border-b"][class*="bg-white"] {
+    padding: 2px 8px !important;
+  }
+
+  nav button, nav a {
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+    min-height: 32px !important;
+  }
+
+  /* M4 logo text smaller in nav */
+  nav .text-xl, nav .text-2xl, nav .text-lg {
+    font-size: 16px !important;
+  }
+
+  /* Hamburger icon smaller */
+  nav svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+}
