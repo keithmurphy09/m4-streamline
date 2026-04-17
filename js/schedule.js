@@ -698,6 +698,7 @@ function renderCalendar() {
     }
     
     const calendar = new FullCalendar.Calendar(calendarEl, {
+        height: 'auto',
         initialView: 'dayGridMonth',
         headerToolbar: {
             left: 'prev,next today',
