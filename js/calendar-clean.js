@@ -109,7 +109,8 @@ dayNumber: 1
 });
 
 var cal = new FullCalendar.Calendar(el, {
-initialView: 'dayGridMonth',
+  height: 'auto',
+  initialView: 'dayGridMonth',
 headerToolbar: {
 left: 'prev,next today',
 center: 'title',
