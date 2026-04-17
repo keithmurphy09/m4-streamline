@@ -31,6 +31,8 @@ log('body children: ' + document.body.children.length);
 log('style tags in head: ' + document.head.querySelectorAll('style').length);
 var lastStyle = document.head.querySelector('style:last-of-type');
 log('last style size: ' + (lastStyle ? lastStyle.textContent.length : 'none'));
+  var bh = document.querySelector('.bg-black.border-b-4');
+if(bh) log('header h:' + bh.offsetHeight + ' pad:' + getComputedStyle(bh).padding);
 
 window.addEventListener('error', function(e) {
   log('ERR: ' + e.message + ' @ ' + (e.filename || '').split('/').pop() + ':' + e.lineno, '#ef4444');
