@@ -29,6 +29,8 @@ if(typeof tailwind !== 'undefined') {
 log('stylesheet rules: ' + (document.styleSheets[0] ? document.styleSheets[0].cssRules.length : 'blocked'));
 log('head children: ' + document.head.children.length);
 log('body children: ' + document.body.children.length);
+  var navBar = document.querySelector('.border-b.border-teal-400 .h-16') || document.querySelector('.border-teal-400 .flex.items-center.h-16');
+if(navBar) log('nav h:' + navBar.offsetHeight + ' class:' + navBar.className.substring(0,60), '#ff0');
 
 var bh = document.querySelector('.bg-black.border-b-4');
 if(bh) log('header h:' + bh.offsetHeight + ' pad:' + getComputedStyle(bh).padding, '#ff0');
