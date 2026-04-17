@@ -22,17 +22,16 @@ function log(msg, color) {
 
 log('Screen: ' + window.innerWidth + 'x' + window.innerHeight);
 log('tailwind global: ' + typeof tailwind);
-log('tw config: ' + (tailwind.config ? 'set' : 'missing'));
-log('tw version: ' + (tailwind.version || 'unknown'));
+if(typeof tailwind !== 'undefined') {
+  log('tw config: ' + (tailwind.config ? 'set' : 'missing'));
+  log('tw version: ' + (tailwind.version || 'unknown'));
+}
 log('stylesheet rules: ' + (document.styleSheets[0] ? document.styleSheets[0].cssRules.length : 'blocked'));
-log('tw stylesheets: ' + document.querySelectorAll('style[type="text/tailwindcss"]').length);
 log('head children: ' + document.head.children.length);
 log('body children: ' + document.body.children.length);
-log('style tags in head: ' + document.head.querySelectorAll('style').length);
-var lastStyle = document.head.querySelector('style:last-of-type');
-log('last style size: ' + (lastStyle ? lastStyle.textContent.length : 'none'));
-  var bh = document.querySelector('.bg-black.border-b-4');
-if(bh) log('header h:' + bh.offsetHeight + ' pad:' + getComputedStyle(bh).padding);
+
+var bh = document.querySelector('.bg-black.border-b-4');
+if(bh) log('header h:' + bh.offsetHeight + ' pad:' + getComputedStyle(bh).padding, '#ff0');
 
 window.addEventListener('error', function(e) {
   log('ERR: ' + e.message + ' @ ' + (e.filename || '').split('/').pop() + ':' + e.lineno, '#ef4444');
@@ -41,9 +40,7 @@ window.addEventListener('unhandledrejection', function(e) {
   log('PROMISE: ' + (e.reason ? (e.reason.message || e.reason) : 'unknown'), '#f59e0b');
 });
 
-// Check Tailwind after 3 sec
 setTimeout(function() {
-  // Test if Tailwind loaded by creating a test element
   var t = document.createElement('div');
   t.className = 'w-6 h-6';
   t.style.cssText = 'position:absolute;left:-9999px';
@@ -57,19 +54,17 @@ setTimeout(function() {
   }
   document.body.removeChild(t);
 
-  // Check ADMIN badge
   var admin = document.querySelector('span.bg-red-600');
   if (admin) {
     var ar = admin.getBoundingClientRect();
-    var ap = admin.parentElement;
-    var apc = ap ? getComputedStyle(ap) : null;
     log('ADMIN: ' + Math.round(ar.width) + 'x' + Math.round(ar.height) + 'px', ar.height > 50 ? '#ef4444' : '#0f0');
-    if (apc) log('ADMIN parent: display=' + apc.display + ' flex-dir=' + apc.flexDirection, '#ff0');
   } else {
     log('ADMIN: not found', '#ff0');
   }
 
-  // Find giant elements
+  var bh2 = document.querySelector('.bg-black.border-b-4');
+  if(bh2) log('header h:' + bh2.offsetHeight + ' pad:' + getComputedStyle(bh2).padding, '#ff0');
+
   var giants = [];
   document.querySelectorAll('svg, img, div').forEach(function(el) {
     var r = el.getBoundingClientRect();
@@ -88,6 +83,5 @@ setTimeout(function() {
   log('Stylesheets: ' + document.styleSheets.length);
 }, 3000);
 
-} catch(e) {}
-setTimeout(function(){ if(window.tailwind && window.tailwind._generate) window.tailwind._generate(); }, 5000);
+} catch(e) { console.error('debug error:', e); }
 })();
