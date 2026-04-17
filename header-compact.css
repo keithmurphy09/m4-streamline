@@ -8,33 +8,26 @@
 
 @media (max-width: 768px) {
 
-  /* Force header to be compact */
+  /* === BLACK HEADER === */
   .bg-black.border-b-4 {
     padding: 4px 8px !important;
-    max-height: 80px !important;
-    overflow: hidden !important;
   }
 
-  /* Kill all spacing inside header children */
   .bg-black.border-b-4 .max-w-7xl {
-    gap: 0 !important;
-    padding: 0 4px !important;
+    gap: 2px !important;
   }
 
-  .bg-black.border-b-4 .max-w-7xl > div {
-    padding: 0 !important;
-    margin: 0 !important;
-    min-height: 0 !important;
-    gap: 4px !important;
-  }
-
-  /* Hide original logo */
+  /* Hide original logo and title - cobrand replaces them */
   .bg-black.border-b-4 img[src*="final_logo"] {
     display: none !important;
   }
 
-  /* Hide title section */
   .bg-black.border-b-4 .text-center {
+    display: none !important;
+  }
+
+  .bg-black.border-b-4 .text-xs.text-teal-400,
+  .bg-black.border-b-4 .font-medium.text-teal-400.truncate {
     display: none !important;
   }
 
@@ -42,17 +35,24 @@
   .cb-row {
     flex-wrap: nowrap !important;
     justify-content: flex-start !important;
-    padding: 2px 0 !important;
+    padding: 4px 0 !important;
     gap: 8px !important;
+    align-items: center !important;
   }
 
   .cb-logo {
-    height: 28px !important;
+    height: 30px !important;
     margin-right: 0 !important;
+    flex-shrink: 0 !important;
+  }
+
+  .cb-mid {
+    flex: 1 !important;
+    align-items: center !important;
   }
 
   .cb-txt {
-    height: 11px !important;
+    height: 12px !important;
   }
 
   .cb-p {
@@ -60,39 +60,43 @@
     margin-top: 0 !important;
   }
 
-  /* Buttons smaller */
+  /* Controls row compact */
+  .bg-black.border-b-4 .max-w-7xl > div:not(.cb-row):not(.cb-hide) {
+    gap: 4px !important;
+  }
+
   .bg-black.border-b-4 button {
-    padding: 2px 5px !important;
-    font-size: 10px !important;
-    min-height: 26px !important;
+    padding: 3px 6px !important;
+    font-size: 11px !important;
+    min-height: 28px !important;
   }
 
   .bg-black.border-b-4 span.bg-red-600,
   .bg-black.border-b-4 span.bg-purple-600 {
-    font-size: 8px !important;
-    padding: 1px 4px !important;
+    font-size: 9px !important;
+    padding: 2px 5px !important;
   }
 
-  /* ====== NAV BAR (hamburger + M4) ====== */
-  nav {
-    padding: 2px 8px !important;
-    min-height: 0 !important;
+  /* === NAV BAR (hamburger + M4) === */
+  /* This is div.bg-white.border-b.border-teal-400 with h-16 inside */
+  .border-b.border-teal-400 .h-16 {
+    height: 36px !important;
   }
 
-  nav > div,
-  nav > .flex {
-    padding: 0 !important;
-    gap: 4px !important;
-  }
-
-  nav .text-xl,
-  nav .text-2xl,
-  nav .text-lg {
+  /* M4 text smaller */
+  .border-b.border-teal-400 .text-2xl {
     font-size: 16px !important;
   }
 
-  nav button {
-    padding: 4px !important;
-    min-height: 28px !important;
+  /* Hamburger icon */
+  .border-b.border-teal-400 .w-6.h-6 {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  /* Nav bar padding */
+  .border-b.border-teal-400 .px-4 {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
   }
 }
