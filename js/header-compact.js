@@ -18,6 +18,7 @@ function compact() {
   var headerInner = header.querySelector('.max-w-7xl');
   if (headerInner) {
     headerInner.style.setProperty('gap', '0px', 'important');
+    headerInner.style.setProperty('padding-bottom', '0px', 'important');
     headerInner.style.setProperty('height', 'auto', 'important');
     headerInner.style.setProperty('min-height', '0', 'important');
     headerInner.style.setProperty('display', 'flex', 'important');
