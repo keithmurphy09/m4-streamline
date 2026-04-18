@@ -10,43 +10,44 @@ function compact() {
   var header = document.querySelector('.bg-black.border-b-4');
   if (!header) return;
 
-  // Reduce padding
   header.style.setProperty('padding', '4px 8px', 'important');
+  header.style.setProperty('height', 'auto', 'important');
+  header.style.setProperty('max-height', 'none', 'important');
 
-  // The inner container has gap-4 which creates space even for hidden children
-  // Remove the gap entirely and use margin on visible children instead
+  // Inner container - force height to fit content only
   var headerInner = header.querySelector('.max-w-7xl');
   if (headerInner) {
     headerInner.style.setProperty('gap', '0px', 'important');
+    headerInner.style.setProperty('height', 'auto', 'important');
+    headerInner.style.setProperty('min-height', '0', 'important');
+    headerInner.style.setProperty('display', 'flex', 'important');
+    headerInner.style.setProperty('flex-direction', 'column', 'important');
+    headerInner.style.setProperty('grid-template-rows', 'none', 'important');
 
-    // Add small margin only to visible children
     for (var i = 0; i < headerInner.children.length; i++) {
       var child = headerInner.children[i];
       var display = getComputedStyle(child).display;
       if (display === 'none') continue;
       child.style.setProperty('margin-bottom', '2px', 'important');
+      child.style.setProperty('height', 'auto', 'important');
+      child.style.setProperty('min-height', '0', 'important');
     }
   }
 
   // === NAV BAR ===
-  // Find by structure: bg-white with border-teal-400
   var allDivs = document.querySelectorAll('div.border-b.border-teal-400');
   for (var j = 0; j < allDivs.length; j++) {
     var navOuter = allDivs[j];
-    // Skip if inside the header
     if (navOuter.closest('.bg-black')) continue;
 
-    // Force height on the nav container
     navOuter.style.setProperty('max-height', '44px', 'important');
     navOuter.style.setProperty('overflow', 'hidden', 'important');
 
-    // Find h-16 inside and shrink it
     var h16 = navOuter.querySelector('[class*="h-16"]');
     if (h16) {
       h16.style.setProperty('height', '40px', 'important');
     }
 
-    // Hide desktop nav on mobile
     var desktopNav = navOuter.querySelector('nav');
     if (desktopNav) {
       desktopNav.style.setProperty('display', 'none', 'important');
