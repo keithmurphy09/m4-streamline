@@ -8,51 +8,69 @@ function fixDashLayout() {
   if (window.innerWidth > 768) return;
   if (typeof activeTab !== 'undefined' && activeTab !== 'dashboard') return;
 
-  // Find the header row: div.flex.justify-between.items-start
   var headerRow = document.querySelector('.flex.justify-between.items-start');
   if (!headerRow) return;
   if (headerRow.dataset.dashFixed) return;
 
-  // Check it's the dashboard header (contains the h1)
   var h1 = headerRow.querySelector('h1');
   if (!h1) return;
 
   headerRow.dataset.dashFixed = '1';
 
-  // Stack vertically on mobile
+  // Stack vertically
   headerRow.style.setProperty('flex-direction', 'column', 'important');
   headerRow.style.setProperty('align-items', 'stretch', 'important');
-  headerRow.style.setProperty('gap', '8px', 'important');
+  headerRow.style.setProperty('gap', '6px', 'important');
 
-  // Date section - make it a row below greeting
+  // Greeting smaller
+  if (h1) {
+    h1.style.setProperty('font-size', '22px', 'important');
+    h1.style.setProperty('line-height', '1.2', 'important');
+  }
+
+  // Date section - inline, smaller
   var dateDiv = headerRow.querySelector('.text-right');
   if (dateDiv) {
     dateDiv.style.setProperty('text-align', 'left', 'important');
     dateDiv.style.setProperty('display', 'flex', 'important');
     dateDiv.style.setProperty('align-items', 'center', 'important');
-    dateDiv.style.setProperty('gap', '8px', 'important');
-  }
+    dateDiv.style.setProperty('gap', '6px', 'important');
+    dateDiv.style.setProperty('flex-wrap', 'wrap', 'important');
 
-  // Weather widget - make it horizontal row
-  var weather = headerRow.querySelector('.dash-weather');
-  if (weather) {
-    weather.style.setProperty('flex-wrap', 'nowrap', 'important');
-    weather.style.setProperty('overflow-x', 'auto', 'important');
-    weather.style.setProperty('margin-top', '4px', 'important');
-    weather.style.setProperty('-webkit-overflow-scrolling', 'touch', 'important');
-
-    // Make weather days smaller
-    var days = weather.querySelectorAll('.dash-weather-day');
-    days.forEach(function(day) {
-      day.style.setProperty('min-width', '52px', 'important');
-      day.style.setProperty('padding', '4px 6px', 'important');
+    // Make date text smaller
+    var dateTexts = dateDiv.querySelectorAll('div');
+    dateTexts.forEach(function(dt) {
+      dt.style.setProperty('font-size', '12px', 'important');
+      dt.style.setProperty('display', 'inline', 'important');
     });
   }
 
-  // Greeting text - smaller on mobile
-  if (h1) {
-    h1.style.setProperty('font-size', '24px', 'important');
-    h1.style.setProperty('line-height', '1.2', 'important');
+  // Weather widget - all 5 days in one row, no scroll
+  var weather = headerRow.querySelector('.dash-weather');
+  if (weather) {
+    weather.style.setProperty('display', 'flex', 'important');
+    weather.style.setProperty('flex-wrap', 'nowrap', 'important');
+    weather.style.setProperty('gap', '4px', 'important');
+    weather.style.setProperty('margin-top', '4px', 'important');
+    weather.style.setProperty('width', '100%', 'important');
+    weather.style.setProperty('justify-content', 'space-between', 'important');
+
+    var days = weather.querySelectorAll('.dash-weather-day');
+    days.forEach(function(day) {
+      day.style.setProperty('min-width', '0', 'important');
+      day.style.setProperty('flex', '1', 'important');
+      day.style.setProperty('padding', '4px 2px', 'important');
+
+      // Smaller text inside
+      var dayLabel = day.querySelector('.day');
+      if (dayLabel) dayLabel.style.setProperty('font-size', '8px', 'important');
+
+      var temp = day.querySelector('.temp');
+      if (temp) temp.style.setProperty('font-size', '12px', 'important');
+
+      var icon = day.querySelector('.icon');
+      if (icon) icon.style.setProperty('font-size', '14px', 'important');
+    });
   }
 }
 
