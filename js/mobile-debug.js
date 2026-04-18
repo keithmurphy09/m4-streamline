@@ -31,24 +31,14 @@ window.addEventListener('unhandledrejection', function(e) {
 
 setTimeout(function() {
   var bh2 = document.querySelector('.bg-black.border-b-4');
-  if(bh2) {
-    log('header h:' + bh2.offsetHeight, '#ff0');
-    var hi = bh2.querySelector('.max-w-7xl');
-    if(hi) {
-      var cs = getComputedStyle(hi);
-      log('inner h:' + hi.offsetHeight, '#ff0');
-      log('inner display:' + cs.display, '#ff0');
-      log('inner flex-dir:' + cs.flexDirection, '#ff0');
-      log('inner height:' + cs.height, '#ff0');
-      log('inner min-h:' + cs.minHeight, '#ff0');
-      log('inner max-h:' + cs.maxHeight, '#ff0');
-      log('inner padding:' + cs.padding, '#ff0');
-      log('inner margin:' + cs.margin, '#ff0');
-      log('inner inline:' + (hi.getAttribute('style') || 'none'), '#ff0');
-      log('inner grid-rows:' + cs.gridTemplateRows, '#ff0');
-      log('inner grid-cols:' + cs.gridTemplateColumns, '#ff0');
-    }
-  }
+  if(bh2) log('header h:' + bh2.offsetHeight, '#ff0');
+
+  log('html dark class: ' + document.documentElement.classList.contains('dark'), '#ff0');
+  log('body dark class: ' + document.body.classList.contains('dark'), '#ff0');
+  log('darkMode var: ' + (typeof darkMode !== 'undefined' ? darkMode : 'undefined'), '#ff0');
+  log('localStorage dark: ' + localStorage.getItem('darkMode'), '#ff0');
+  log('prefers-dark: ' + window.matchMedia('(prefers-color-scheme: dark)').matches, '#ff0');
+
   log('Body: ' + document.body.scrollWidth + 'x' + document.body.scrollHeight);
 }, 3000);
 
