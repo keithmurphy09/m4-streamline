@@ -1,4 +1,4 @@
-// M4 Mobile Debug v2 - tells us WHAT is broken
+// M4 Mobile Debug v2
 (function(){
 try {
 var d = document.createElement('div');
@@ -21,16 +21,6 @@ function log(msg, color) {
 }
 
 log('Screen: ' + window.innerWidth + 'x' + window.innerHeight);
-log('tailwind global: ' + typeof tailwind);
-if(typeof tailwind !== 'undefined') {
-  log('tw config: ' + (tailwind.config ? 'set' : 'missing'));
-}
-log('stylesheet rules: ' + (document.styleSheets[0] ? document.styleSheets[0].cssRules.length : 'blocked'));
-log('head children: ' + document.head.children.length);
-log('body children: ' + document.body.children.length);
-
-var bh = document.querySelector('.bg-black.border-b-4');
-if(bh) log('header h:' + bh.offsetHeight + ' pad:' + getComputedStyle(bh).padding, '#ff0');
 
 window.addEventListener('error', function(e) {
   log('ERR: ' + e.message + ' @ ' + (e.filename || '').split('/').pop() + ':' + e.lineno, '#ef4444');
@@ -40,62 +30,36 @@ window.addEventListener('unhandledrejection', function(e) {
 });
 
 setTimeout(function() {
-  var t = document.createElement('div');
-  t.className = 'w-6 h-6';
-  t.style.cssText = 'position:absolute;left:-9999px';
-  document.body.appendChild(t);
-  var cs = getComputedStyle(t);
-  var w = cs.width;
-  if (w === '24px') {
-    log('TAILWIND: LOADED OK', '#0f0');
-  } else {
-    log('TAILWIND: NOT LOADED (w-6 = ' + w + ')', '#ef4444');
-  }
-  document.body.removeChild(t);
-
-  var admin = document.querySelector('span.bg-red-600');
-  if (admin) {
-    var ar = admin.getBoundingClientRect();
-    log('ADMIN: ' + Math.round(ar.width) + 'x' + Math.round(ar.height) + 'px', ar.height > 50 ? '#ef4444' : '#0f0');
-  } else {
-    log('ADMIN: not found', '#ff0');
-  }
-
   var bh2 = document.querySelector('.bg-black.border-b-4');
   if(bh2) {
     log('header h:' + bh2.offsetHeight + ' pad:' + getComputedStyle(bh2).padding, '#ff0');
     var hi = bh2.querySelector('.max-w-7xl');
     if(hi) {
-      var visCount = 0;
       var childInfo = [];
       for(var ci = 0; ci < hi.children.length; ci++) {
         var ch = hi.children[ci];
         var disp = getComputedStyle(ch).display;
         var chH = ch.offsetHeight;
-        childInfo.push(disp + ':' + chH + 'px');
-        if(disp !== 'none') visCount++;
+        var cls = (ch.className && typeof ch.className === 'string') ? ch.className.substring(0,20) : '';
+        childInfo.push(cls + ' ' + disp + ':' + chH + 'px');
       }
-      log('inner gap:' + getComputedStyle(hi).gap + ' kids:' + hi.children.length + ' visible:' + visCount, '#ff0');
-      log('children: ' + childInfo.join(', '), '#ff0');
+      log('inner gap:' + getComputedStyle(hi).gap + ' kids:' + hi.children.length, '#ff0');
+      childInfo.forEach(function(c) { log('  child: ' + c, '#ff0'); });
     }
-  }
 
-  var giants = [];
-  document.querySelectorAll('svg, img, div').forEach(function(el) {
-    var r = el.getBoundingClientRect();
-    if (r.height > 150 && r.width > 150 && el.children.length < 2) {
-      var cls = (el.className && typeof el.className === 'string') ? el.className.substring(0, 30) : el.tagName;
-      giants.push(el.tagName + '.' + cls + ' ' + Math.round(r.width) + 'x' + Math.round(r.height));
+    var cbRow = document.querySelector('.cb-row');
+    if(cbRow) log('cb-row h:' + cbRow.offsetHeight + ' parent:' + cbRow.parentElement.className.substring(0,40), '#ff0');
+
+    // Check if there are elements between header inner and header outer
+    log('header direct kids:' + bh2.children.length, '#ff0');
+    for(var di = 0; di < bh2.children.length; di++) {
+      var dc = bh2.children[di];
+      var dcls = (dc.className && typeof dc.className === 'string') ? dc.className.substring(0,30) : dc.tagName;
+      log('  hdr child: ' + dcls + ' h:' + dc.offsetHeight, '#ff0');
     }
-  });
-  if (giants.length) {
-    log('GIANTS (' + giants.length + '):', '#ef4444');
-    giants.slice(0, 8).forEach(function(g) { log('  ' + g, '#ef4444'); });
   }
 
   log('Body: ' + document.body.scrollWidth + 'x' + document.body.scrollHeight);
-  log('Scripts: ' + document.querySelectorAll('script').length);
-  log('Stylesheets: ' + document.styleSheets.length);
 }, 3000);
 
 } catch(e) { console.error('debug error:', e); }
