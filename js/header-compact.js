@@ -1,6 +1,5 @@
 // M4 Header Compact - Mobile
-// Additive only. Inline styles override Tailwind.
-// Does NOT touch logos, only reduces container padding/gaps/heights.
+// Additive only
 (function(){
 try {
 
@@ -8,55 +7,61 @@ function compact() {
   if (window.innerWidth > 768) return;
 
   // === BLACK HEADER ===
-  // Line 79: div.bg-black.text-white.p-4.border-b-4
   var header = document.querySelector('.bg-black.border-b-4');
-  if (header) {
-    header.style.setProperty('padding', '6px 10px', 'important');
-  }
+  if (!header) return;
 
-  // Line 80: div.max-w-7xl flex-col with gap-4
-  var headerInner = header ? header.querySelector('.max-w-7xl') : null;
-  if (headerInner) {
-    headerInner.style.setProperty('gap', '4px', 'important');
-  }
+  // Reduce padding
+  header.style.setProperty('padding', '4px 8px', 'important');
 
-  // Line 97-100: Title section "M4 STREAMLINE" - hide on mobile, cobrand shows it
+  // The inner container has gap-4 which creates space even for hidden children
+  // Remove the gap entirely and use margin on visible children instead
+  var headerInner = header.querySelector('.max-w-7xl');
   if (headerInner) {
-    var kids = headerInner.children;
-    for (var i = 0; i < kids.length; i++) {
-      var txt = kids[i].textContent || '';
-      // Hide the title div but NOT the cobrand row or controls
-      if (kids[i].classList && kids[i].classList.contains('text-center') && txt.indexOf('M4 STREAMLINE') !== -1 && !kids[i].classList.contains('cb-row')) {
-        kids[i].style.setProperty('display', 'none', 'important');
-      }
+    headerInner.style.setProperty('gap', '0px', 'important');
+
+    // Add small margin only to visible children
+    for (var i = 0; i < headerInner.children.length; i++) {
+      var child = headerInner.children[i];
+      var display = getComputedStyle(child).display;
+      if (display === 'none') continue;
+      child.style.setProperty('margin-bottom', '2px', 'important');
     }
   }
 
   // === NAV BAR ===
-  // Line 190: div.bg-white.border-b.border-teal-400
-  // Line 192: div.flex.items-center.h-16
-  var navOuter = document.querySelector('.border-b.border-teal-400');
-  if (navOuter) {
-    var h16 = navOuter.querySelector('.h-16');
+  // Find by structure: bg-white with border-teal-400
+  var allDivs = document.querySelectorAll('div.border-b.border-teal-400');
+  for (var j = 0; j < allDivs.length; j++) {
+    var navOuter = allDivs[j];
+    // Skip if inside the header
+    if (navOuter.closest('.bg-black')) continue;
+
+    // Force height on the nav container
+    navOuter.style.setProperty('max-height', '44px', 'important');
+    navOuter.style.setProperty('overflow', 'hidden', 'important');
+
+    // Find h-16 inside and shrink it
+    var h16 = navOuter.querySelector('[class*="h-16"]');
     if (h16) {
       h16.style.setProperty('height', '40px', 'important');
     }
-    // Line 203: nav.hidden.md:flex - force hidden on mobile
+
+    // Hide desktop nav on mobile
     var desktopNav = navOuter.querySelector('nav');
-    if (desktopNav && window.innerWidth <= 768) {
+    if (desktopNav) {
       desktopNav.style.setProperty('display', 'none', 'important');
     }
+
+    break;
   }
 }
 
-// Run after DOM changes settle
 var _t = null;
 new MutationObserver(function() {
   if (_t) clearTimeout(_t);
   _t = setTimeout(compact, 150);
 }).observe(document.body, { childList: true, subtree: true });
 
-// Run on load and after delays
 setTimeout(compact, 500);
 setTimeout(compact, 1500);
 setTimeout(compact, 3500);
