@@ -36,6 +36,7 @@ function fixDashLayout() {
     dateDiv.style.setProperty('align-items', 'center', 'important');
     dateDiv.style.setProperty('gap', '6px', 'important');
     dateDiv.style.setProperty('flex-wrap', 'wrap', 'important');
+    dateDiv.style.setProperty('width', '100%', 'important');
 
     // Make date text smaller
     var dateTexts = dateDiv.querySelectorAll('div');
