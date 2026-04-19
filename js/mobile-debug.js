@@ -34,6 +34,9 @@ setTimeout(function() {
   log('html dark: ' + document.documentElement.classList.contains('dark'), '#ff0');
   log('darkMode: ' + (typeof darkMode !== 'undefined' ? darkMode : 'undef'), '#ff0');
   log('prefers-dark: ' + window.matchMedia('(prefers-color-scheme: dark)').matches, '#ff0');
+  var navTest = document.querySelectorAll('div.border-b.border-teal-400');
+log('nav candidates: ' + navTest.length, '#ff0');
+for(var ni=0;ni<navTest.length;ni++){var n=navTest[ni];log('  nav'+ni+': inHeader='+!!n.closest('.bg-black')+' h='+n.offsetHeight+' kids='+n.children.length, '#ff0');}
 
   // Check actual background colours
   var html = document.documentElement;
