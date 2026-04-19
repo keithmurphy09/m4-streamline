@@ -96,7 +96,7 @@ function compact() {
       }
 
       // Move controls into cb-row
-      var controlsClone = controlsRow.cloneNode(true);
+      var controlsClone = controlsRow;
       controlsClone.style.setProperty('display', 'flex', 'important');
       controlsClone.style.setProperty('align-items', 'center', 'important');
       controlsClone.style.setProperty('gap', '4px', 'important');
@@ -121,7 +121,7 @@ function compact() {
 
       // Hide original controls row
       var origMenu = controlsRow.querySelector('#settings-menu'); if (origMenu) origMenu.id = 'settings-menu-orig';
-      controlsRow.style.setProperty('display', 'none', 'important');
+      
     }
   }
 
