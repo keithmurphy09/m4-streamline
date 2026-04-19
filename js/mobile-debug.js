@@ -30,14 +30,36 @@ window.addEventListener('unhandledrejection', function(e) {
 });
 
 setTimeout(function() {
-  var bh2 = document.querySelector('.bg-black.border-b-4');
-  if(bh2) log('header h:' + bh2.offsetHeight, '#ff0');
-
-  log('html dark class: ' + document.documentElement.classList.contains('dark'), '#ff0');
-  log('body dark class: ' + document.body.classList.contains('dark'), '#ff0');
-  log('darkMode var: ' + (typeof darkMode !== 'undefined' ? darkMode : 'undefined'), '#ff0');
-  log('localStorage dark: ' + localStorage.getItem('darkMode'), '#ff0');
+  log('header h:' + (document.querySelector('.bg-black.border-b-4') || {}).offsetHeight, '#ff0');
+  log('html dark: ' + document.documentElement.classList.contains('dark'), '#ff0');
+  log('darkMode: ' + (typeof darkMode !== 'undefined' ? darkMode : 'undef'), '#ff0');
   log('prefers-dark: ' + window.matchMedia('(prefers-color-scheme: dark)').matches, '#ff0');
+
+  // Check actual background colours
+  var html = document.documentElement;
+  var body = document.body;
+  var app = document.getElementById('app');
+  var mainDiv = app ? app.firstElementChild : null;
+
+  log('html bg: ' + getComputedStyle(html).backgroundColor, '#ff0');
+  log('body bg: ' + getComputedStyle(body).backgroundColor, '#ff0');
+  if(app) log('app bg: ' + getComputedStyle(app).backgroundColor, '#ff0');
+  if(mainDiv) log('mainDiv bg: ' + getComputedStyle(mainDiv).backgroundColor + ' class: ' + (mainDiv.className || '').substring(0,50), '#ff0');
+
+  // Check if any stylesheet has dark overrides active
+  var darkRules = 0;
+  try {
+    for(var si = 0; si < document.styleSheets.length; si++) {
+      try {
+        var rules = document.styleSheets[si].cssRules;
+        for(var ri = 0; ri < rules.length; ri++) {
+          var txt = rules[ri].cssText || '';
+          if(txt.indexOf('prefers-color-scheme: dark') !== -1) darkRules++;
+        }
+      } catch(e) {}
+    }
+  } catch(e) {}
+  log('dark CSS rules: ' + darkRules, '#ff0');
 
   log('Body: ' + document.body.scrollWidth + 'x' + document.body.scrollHeight);
 }, 3000);
