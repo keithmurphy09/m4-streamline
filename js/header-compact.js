@@ -120,6 +120,7 @@ function compact() {
       cbRow.appendChild(controlsClone);
 
       // Hide original controls row
+      var origMenu = controlsRow.querySelector('#settings-menu'); if (origMenu) origMenu.id = 'settings-menu-orig';
       controlsRow.style.setProperty('display', 'none', 'important');
     }
   }
