@@ -132,6 +132,18 @@ function run() {
   if (footerLogo) {
     footerLogo.innerHTML = '<img class="lp-tn-nav-logo" src="tradies-network-logo.png" alt="Tradies Network"><div class="lp-tn-nav-text"><img class="lp-tn-nav-txt" src="tradies-network-text.png" alt="Tradies Network"><div class="lp-tn-nav-sub">Powered by <b>M4 STREAMLINE</b></div></div>';
   }
+
+  // Fix "Built different" card headings to black text
+  var cardTexts = ['2 minute setup', 'No bloat, no confusion', 'Fraction of the cost', 'Works everywhere'];
+  landing.querySelectorAll('h3, h4, div').forEach(function(el) {
+    var t = el.textContent.trim();
+    for (var i = 0; i < cardTexts.length; i++) {
+      if (t === cardTexts[i] && el.children.length === 0) {
+        el.style.color = '#000';
+        break;
+      }
+    }
+  });
 }
 
 var t = null;
