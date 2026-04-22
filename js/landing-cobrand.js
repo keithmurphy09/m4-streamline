@@ -63,6 +63,30 @@ s.textContent = [
 '#landing section[class*="bg-gradient"],#landing div[class*="bg-gradient"]{background:#0a0a0a !important}',
 '.lp2-xero-section{background:#111 !important}',
 '',
+// Catch-all for any text still dark
+'#landing h1,#landing h2,#landing h3,#landing h4{color:#fff !important}',
+'#landing p,#landing li{color:#cbd5e1 !important}',
+'#landing h2 span{color:#2dd4bf !important}',
+'#landing section{background:#0a0a0a !important}',
+'#landing section:nth-child(even){background:#111 !important}',
+// Pricing specific
+'#landing [class*="price"] *{color:#fff !important}',
+'#landing [class*="pricing"] h2{color:#fff !important}',
+// Platform section
+'#landing [class*="platform"] h2,#landing [class*="platform"] h3{color:#fff !important}',
+'#landing [class*="platform"] p{color:#94a3b8 !important}',
+// FAQ section
+'#landing [class*="faq"] *,#landing [class*="accordion"] *{color:#fff !important}',
+'#landing details summary{color:#fff !important}',
+'#landing details p{color:#cbd5e1 !important}',
+// CTA section text
+'#landing .lp2-cta h2,#landing .lp2-cta p{color:#fff !important}',
+// Any remaining dark text
+'#landing [class*="text-gray-900"],#landing [class*="text-gray-800"],#landing [class*="text-gray-700"]{color:#fff !important}',
+'#landing [class*="text-gray-600"],#landing [class*="text-gray-500"]{color:#94a3b8 !important}',
+'#landing [class*="bg-white"]{background:#1a1a1a !important}',
+'#landing [class*="bg-gray-50"],#landing [class*="bg-gray-100"]{background:#111 !important}',
+'',
 '.lp-tn-hero-logo{position:absolute;right:-40px;top:50%;transform:translateY(-50%);height:400px;width:auto;opacity:0.06;filter:invert(1);pointer-events:none}',
 '.lp-tn-nav-logo{height:32px;width:auto;filter:invert(1) brightness(3) contrast(1.2);margin-right:8px}',
 '.lp-tn-nav-text{display:flex;flex-direction:column;line-height:1.1}',
