@@ -75,6 +75,57 @@ window.renderAdminControls = async function(container) {
     if (subs.length === 0) h += '<p style="color:#94a3b8;text-align:center;margin-top:12px">No users yet</p>';
     h += '</div>';
 
+    // Active Discounts section
+    var discounted = subs.filter(function(s) { return s.discount_percent && s.discount_percent > 0; });
+
+    h += '<div class="ac-panel" style="margin-top:16px">';
+    h += '<h3>Active Discounts <span style="font-size:12px;font-weight:400;color:#64748b">(' + discounted.length + ' users)</span></h3>';
+
+    if (discounted.length > 0) {
+      h += '<table class="ac-table"><thead><tr><th>Email</th><th>Discount</th><th>Months</th><th>Start Date</th><th>Expires</th><th>Stripe Action</th></tr></thead><tbody>';
+      discounted.forEach(function(s) {
+        var start = s.discount_start_date ? new Date(s.discount_start_date) : null;
+        var startStr = start ? start.toLocaleDateString() : '-';
+        var expiresStr = '-';
+        if (start && s.discount_months) {
+          var expires = new Date(start);
+          expires.setMonth(expires.getMonth() + s.discount_months);
+          expiresStr = expires.toLocaleDateString();
+          if (expires < new Date()) expiresStr = '<span style="color:#ef4444">' + expiresStr + ' (EXPIRED)</span>';
+        } else if (!s.discount_months) {
+          expiresStr = 'Ongoing';
+        }
+        h += '<tr>';
+        h += '<td><strong>' + (s.user_email || 'Unknown') + '</strong></td>';
+        h += '<td style="color:#0d9488;font-weight:700">' + s.discount_percent + '%</td>';
+        h += '<td>' + (s.discount_months || 'Ongoing') + '</td>';
+        h += '<td>' + startStr + '</td>';
+        h += '<td>' + expiresStr + '</td>';
+        h += '<td><span style="font-size:10px;color:#64748b">Apply in Stripe</span></td>';
+        h += '</tr>';
+      });
+      h += '</tbody></table>';
+    } else {
+      h += '<p style="color:#94a3b8;font-size:13px;text-align:center">No active discounts</p>';
+    }
+
+    // Referrals section
+    try {
+      var refs = await supabaseClient.from('referrals').select('*').order('created_at', { ascending: false });
+      var refData = refs.data || [];
+      if (refData.length > 0) {
+        h += '<h3 style="margin-top:20px">Referrals <span style="font-size:12px;font-weight:400;color:#64748b">(' + refData.length + ' total)</span></h3>';
+        h += '<table class="ac-table"><thead><tr><th>Referrer</th><th>Referred</th><th>Status</th><th>Date</th></tr></thead><tbody>';
+        refData.forEach(function(ref) {
+          var status = ref.status === 'converted' ? '<span style="color:#059669;font-weight:700">Subscribed</span>' : '<span style="color:#d97706">Pending</span>';
+          h += '<tr><td>' + ref.referrer_email + '</td><td>' + ref.referred_email + '</td><td>' + status + '</td><td>' + new Date(ref.created_at).toLocaleDateString() + '</td></tr>';
+        });
+        h += '</tbody></table>';
+      }
+    } catch(e) {}
+
+    h += '</div>';
+
     container.innerHTML = h;
   } catch(e) {
     container.innerHTML = '<p style="color:#ef4444">Error: ' + e.message + '</p>';
