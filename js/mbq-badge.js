@@ -16,7 +16,7 @@ function addBadge() {
   var badge = document.createElement('img');
   badge.src = 'mbq-badge.png';
   badge.alt = 'Master Builders Queensland - Proud Member';
-  badge.style.cssText = 'height:45px;width:auto;margin-left:16px;flex-shrink:0;pointer-events:none;';
+  badge.style.cssText = 'height:100px;width:auto;margin-left:16px;flex-shrink:0;pointer-events:none;';
 
   navLogo.appendChild(badge);
 }
