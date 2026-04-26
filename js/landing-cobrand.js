@@ -6,7 +6,7 @@ try {
 
 var s = document.createElement('style');
 s.textContent = [
-'#landing{background:#0a0a0a !important;color:#fff !important}',
+'#landing{background:#0a0a0a !important;color:#fff !important;width:100% !important;max-width:100% !important;margin:0 !important;padding:0 !important;overflow-x:hidden !important}',
 '.lp2-nav{background:rgba(10,10,10,0.9) !important}',
 '.lp2-nav.scrolled{background:rgba(10,10,10,0.95) !important;box-shadow:0 1px 3px rgba(0,0,0,0.3) !important}',
 '.lp2-nav-logo{color:#fff !important}',
@@ -112,6 +112,12 @@ function run() {
 
   landing.dataset.tnDone = 'true';
 
+  // Set body background to match when landing is visible
+  if (landing.offsetHeight > 0) {
+    document.body.style.background = '#0a0a0a';
+    document.documentElement.style.background = '#0a0a0a';
+  }
+
   // Replace nav logo
   nav.innerHTML = '<img class="lp-tn-nav-logo" src="tradies-network-logo.png" alt="Tradies Network"><div class="lp-tn-nav-text"><img class="lp-tn-nav-txt" src="tradies-network-text.png" alt="Tradies Network"><div class="lp-tn-nav-sub">Powered by <b>M4 STREAMLINE</b></div></div>';
 
@@ -142,7 +148,15 @@ function run() {
 var t = null;
 new MutationObserver(function() {
   if (t) clearTimeout(t);
-  t = setTimeout(run, 200);
+  t = setTimeout(function() {
+    run();
+    // Reset body bg when landing is hidden (user logged in)
+    var landing = document.getElementById('landing');
+    if (landing && landing.offsetHeight === 0) {
+      document.body.style.background = '';
+      document.documentElement.style.background = '';
+    }
+  }, 200);
 }).observe(document.body, { childList: true, subtree: true });
 
 } catch(e) { console.error('Landing TN error:', e); }
