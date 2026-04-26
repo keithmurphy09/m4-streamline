@@ -1,5 +1,5 @@
 // M4 MBQ Badge on Landing Page
-// Places badge top right corner below nav
+// Places badge next to Tradies Network logo in nav header
 // Additive only
 (function(){
 try {
@@ -7,32 +7,18 @@ try {
 function addBadge() {
   var landing = document.getElementById('landing');
   if (!landing) return;
-  if (document.getElementById('mbq-badge-wrap')) return;
 
-  var container = document.createElement('div');
-  container.id = 'mbq-badge-wrap';
-  container.style.cssText = 'position:fixed;top:70px;right:20px;z-index:99;pointer-events:none;';
+  var navLogo = landing.querySelector('.lp2-nav-logo');
+  if (!navLogo) return;
+  if (navLogo.dataset.mbqDone) return;
+  navLogo.dataset.mbqDone = '1';
 
   var badge = document.createElement('img');
   badge.src = 'mbq-badge.png';
   badge.alt = 'Master Builders Queensland - Proud Member';
-  badge.style.cssText = 'height:100px;width:auto;';
+  badge.style.cssText = 'height:45px;width:auto;margin-left:16px;flex-shrink:0;pointer-events:none;';
 
-  container.appendChild(badge);
-  document.body.appendChild(container);
-
-  // Remove badge when leaving landing page
-  var obs = new MutationObserver(function() {
-    var l = document.getElementById('landing');
-    if (!l || getComputedStyle(l).display === 'none') {
-      var b = document.getElementById('mbq-badge-wrap');
-      if (b) b.style.display = 'none';
-    } else {
-      var b2 = document.getElementById('mbq-badge-wrap');
-      if (b2) b2.style.display = 'block';
-    }
-  });
-  obs.observe(document.body, { childList: true, subtree: true, attributes: true });
+  navLogo.appendChild(badge);
 }
 
 var _t = null;
@@ -42,6 +28,17 @@ new MutationObserver(function() {
 }).observe(document.body, { childList: true, subtree: true });
 
 setTimeout(addBadge, 1000);
+
+// Hide badge when not on landing page
+function checkLanding() {
+  var badge = document.querySelector('[src="mbq-badge.png"]');
+  var landing = document.getElementById('landing');
+  if (badge && landing) {
+    badge.style.display = getComputedStyle(landing).display === 'none' ? 'none' : '';
+  }
+}
+
+new MutationObserver(checkLanding).observe(document.body, { childList: true, subtree: true });
 
 console.log('MBQ badge loaded');
 
