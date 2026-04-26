@@ -1,28 +1,30 @@
 // M4 MBQ Badge on Landing Page
-// Adds Master Builders Queensland badge to landing nav
+// Places badge below Start Free Trial in hero section
 // Additive only
 (function(){
 try {
 
 function addBadge() {
-  var nav = document.querySelector('.lp2-nav');
-  if (!nav) return;
-  if (nav.dataset.mbqDone) return;
-  nav.dataset.mbqDone = '1';
+  var landing = document.getElementById('landing');
+  if (!landing) return;
+  if (landing.dataset.mbqDone) return;
+
+  // Find the hero buttons area
+  var heroBtns = landing.querySelector('.lp2-hero-btns');
+  if (!heroBtns) return;
+
+  landing.dataset.mbqDone = '1';
+
+  var container = document.createElement('div');
+  container.style.cssText = 'display:flex;justify-content:center;margin-top:24px;';
 
   var badge = document.createElement('img');
   badge.src = 'mbq-badge.png';
   badge.alt = 'Master Builders Queensland - Proud Member';
-  badge.style.cssText = 'height:40px;width:auto;margin-left:12px;flex-shrink:0;cursor:pointer;';
-  badge.title = 'Master Builders Queensland - Proud Member';
+  badge.style.cssText = 'height:80px;width:auto;pointer-events:none;';
 
-  // Add it after the sign in / start free trial buttons (right side of nav)
-  var navRight = nav.querySelector('.lp2-nav-right') || nav.querySelector('.lp2-nav-links');
-  if (navRight) {
-    navRight.appendChild(badge);
-  } else {
-    nav.appendChild(badge);
-  }
+  container.appendChild(badge);
+  heroBtns.parentNode.insertBefore(container, heroBtns.nextSibling);
 }
 
 var _t = null;
