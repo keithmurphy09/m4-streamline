@@ -53,6 +53,8 @@ s.textContent = [
 '.lp2-price-card span{color:#fff !important}',
 '.lp2-price-card p{color:#cbd5e1 !important}',
 '.lp2-price-card div{color:#fff !important}',
+'.lp2-price-card button{background:#0d9488 !important;color:#fff !important;border-color:#0d9488 !important}',
+'.lp2-price-card button:hover{background:#0f766e !important}',
 '.lp2-price-popular{background:#0d9488 !important}',
 '',
 '.lp2-cta{background:#0d9488 !important}',
