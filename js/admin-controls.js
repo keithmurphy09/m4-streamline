@@ -48,10 +48,22 @@ window.renderAdminControls = async function(container) {
     h += '<h3>Account Management</h3>';
     h += '<input class="ac-search" id="ac-search" type="text" placeholder="Search by email..." oninput="filterAdminTable()">';
 
-    h += '<table class="ac-table" id="ac-table"><thead><tr><th>Email</th><th>Type</th><th>Status</th><th>Admin</th><th>Actions</th></tr></thead><tbody>';
+    // Get network listings to show advertising status
+    var adListings = {};
+    try {
+      var nl = await supabaseClient.from('network_listings').select('user_id,business_name,status');
+      if (nl.data) {
+        nl.data.forEach(function(l) { adListings[l.user_id] = l; });
+      }
+    } catch(e) {}
+
+    h += '<table class="ac-table" id="ac-table"><thead><tr><th>Email</th><th>Type</th><th>Status</th><th>Advertising</th><th>Admin</th><th>Actions</th></tr></thead><tbody>';
 
     subs.forEach(function(s) {
       var isAdm = admins[s.user_id] || false;
+      var adListing = adListings[s.user_id];
+      var adStatus = adListing ? '<span style="color:#0d9488;font-weight:600">' + adListing.business_name + '</span>' : '-';
+
       var typeBtn = s.account_type === 'business'
         ? '<button class="ac-btn ac-btn-type" onclick="acChangeType(\'' + s.user_id + '\',\'' + s.user_email + '\',\'sole_trader\')">Switch to Sole Trader</button>'
         : '<button class="ac-btn ac-btn-type" onclick="acChangeType(\'' + s.user_id + '\',\'' + s.user_email + '\',\'business\')">Switch to Business</button>';
@@ -66,6 +78,7 @@ window.renderAdminControls = async function(container) {
       h += '<td><strong>' + (s.user_email || 'Unknown') + '</strong></td>';
       h += '<td>' + (s.account_type || 'sole_trader') + '</td>';
       h += '<td>' + (s.subscription_status || 'trial') + '</td>';
+      h += '<td>' + adStatus + '</td>';
       h += '<td>' + (isAdm ? '<span style="color:#d97706;font-weight:700">ADMIN</span>' : '-') + '</td>';
       h += '<td>' + typeBtn + adminBtn + delBtn + '</td>';
       h += '</tr>';
@@ -190,7 +203,8 @@ window.acDeleteAccount = async function(userId, email) {
     // Delete from all user tables
     var tables = ['subscriptions', 'quotes', 'invoices', 'expenses', 'clients', 'jobs',
       'time_entries', 'company_settings', 'email_settings', 'sms_settings',
-      'team_members', 'warranty_items', 'quote_templates', 'promo_redemptions'];
+      'team_members', 'warranty_items', 'quote_templates', 'promo_redemptions',
+      'network_listings', 'referrals'];
 
     for (var i = 0; i < tables.length; i++) {
       try {
