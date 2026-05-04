@@ -70,17 +70,20 @@ window.renderPromoAdmin = async function(container) {
     h += '<input id="pc-new-discount" type="number" min="1" max="100" value="10" style="width:60px" placeholder="%">';
     h += '<span style="font-size:11px;color:#64748b">% off for</span>';
     h += '<input id="pc-new-months" type="number" min="1" max="36" value="6" style="width:50px">';
-    h += '<span style="font-size:11px;color:#64748b">months from signup</span>';
+    h += '<span style="font-size:11px;color:#64748b">months</span>';
+    h += '<select id="pc-new-applies" style="padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px"><option value="subscription">Subscription</option><option value="advertising">Advertising</option><option value="both">Both</option></select>';
     h += '<button class="pc-btn" onclick="createPromoCode()">Add Code</button>';
     h += '</div>';
 
     // Table
-    h += '<table class="pc-table"><thead><tr><th>Code</th><th>Discount</th><th>Term</th><th>Used</th><th>Status</th><th></th></tr></thead><tbody>';
+    h += '<table class="pc-table"><thead><tr><th>Code</th><th>Discount</th><th>Term</th><th>Applies To</th><th>Used</th><th>Status</th><th></th></tr></thead><tbody>';
     promos.forEach(function(p) {
       var term = p.term_months ? p.term_months + ' months' : 'Ongoing';
+      var applies = p.applies_to || 'subscription';
+      var appliesLabel = applies === 'both' ? '<span style="color:#0d9488">Sub + Ad</span>' : applies === 'advertising' ? '<span style="color:#d97706">Advertising</span>' : '<span style="color:#0284c7">Subscription</span>';
       var status = p.active ? '<span class="pc-active">Active</span>' : '<span class="pc-inactive">Inactive</span>';
-      h += '<tr><td><strong>' + p.code + '</strong></td><td>' + p.discount_percent + '%</td><td>' + term + '</td><td>' + (p.times_used || 0) + '</td><td>' + status + '</td>';
-      h += '<td><button class="pc-del" onclick="togglePromoCode(\'' + p.id + '\',' + !p.active + ')" title="' + (p.active ? 'Deactivate' : 'Activate') + '">' + (p.active ? 'x' : '✓') + '</button></td></tr>';
+      h += '<tr><td><strong>' + p.code + '</strong></td><td>' + p.discount_percent + '%</td><td>' + term + '</td><td>' + appliesLabel + '</td><td>' + (p.times_used || 0) + '</td><td>' + status + '</td>';
+      h += '<td><button class="pc-del" onclick="togglePromoCode(\'' + p.id + '\',' + !p.active + ')" title="' + (p.active ? 'Deactivate' : 'Activate') + '">' + (p.active ? 'x' : 'on') + '</button></td></tr>';
     });
     h += '</tbody></table>';
     if (promos.length === 0) h += '<p style="color:#94a3b8;font-size:13px;text-align:center;margin-top:12px">No promo codes yet</p>';
@@ -96,6 +99,7 @@ window.createPromoCode = async function() {
   var code = (document.getElementById('pc-new-code').value || '').trim().toUpperCase();
   var discount = parseInt(document.getElementById('pc-new-discount').value) || 10;
   var months = parseInt(document.getElementById('pc-new-months').value) || 0;
+  var applies = document.getElementById('pc-new-applies').value || 'subscription';
 
   if (!code) { showNotification('Enter a promo code', 'error'); return; }
   if (discount < 1 || discount > 100) { showNotification('Discount must be 1-100%', 'error'); return; }
@@ -105,6 +109,7 @@ window.createPromoCode = async function() {
       code: code,
       discount_percent: discount,
       term_months: months || null,
+      applies_to: applies,
       active: true
     }]);
     if (r.error) { showNotification('Error: ' + r.error.message, 'error'); return; }
