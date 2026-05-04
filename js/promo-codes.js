@@ -71,7 +71,7 @@ window.renderPromoAdmin = async function(container) {
     h += '<span style="font-size:11px;color:#64748b">% off for</span>';
     h += '<input id="pc-new-months" type="number" min="1" max="36" value="6" style="width:50px">';
     h += '<span style="font-size:11px;color:#64748b">months</span>';
-    h += '<select id="pc-new-applies" style="padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px"><option value="subscription">Subscription</option><option value="advertising">Advertising</option><option value="both">Both</option></select>';
+    h += '<select id="pc-new-applies" style="padding:6px 28px 6px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;appearance:auto;margin-right:8px"><option value="subscription">Subscription</option><option value="advertising">Advertising</option><option value="both">Both</option></select>';
     h += '<button class="pc-btn" onclick="createPromoCode()">Add Code</button>';
     h += '</div>';
 
