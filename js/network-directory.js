@@ -66,26 +66,8 @@ function isNetworkPage() {
   return active;
 }
 
-async function renderDirectory() {
-  // Find the content area - look for the placeholder
-  var container = null;
-  document.querySelectorAll('div').forEach(function(d) {
-    if (d.textContent.indexOf('get notified') !== -1 && d.textContent.indexOf('launches') !== -1 && d.offsetHeight > 100) {
-      container = d;
-    }
-  });
-
-  // Also try finding by Networking heading
-  if (!container) {
-    document.querySelectorAll('h2, h3, div').forEach(function(el) {
-      if (el.textContent.trim().indexOf('Networking') !== -1 && el.textContent.trim().indexOf('Directory') !== -1 && !container) {
-        container = el.closest('[class*="p-"]') || el.parentElement;
-      }
-    });
-  }
-
+async function renderDirectory(container) {
   if (!container) return;
-  if (container.dataset.ndDone) return;
   container.dataset.ndDone = '1';
 
   // Load listings
@@ -285,9 +267,12 @@ window.saveListing = async function(existingId) {
     }
 
     document.getElementById('nd-modal').remove();
-    // Reset so page re-renders
-    document.querySelectorAll('[data-nd-done]').forEach(function(el) { delete el.dataset.ndDone; });
-    _ndDone = false;
+    // Re-render directory
+    var placeholder = document.querySelector('.nd-wrap') || document.querySelector('.res-coming-soon');
+    if (placeholder) {
+      delete placeholder.dataset.ndDone;
+      renderDirectory(placeholder);
+    }
 
   } catch(e) {
     showNotification('Error: ' + e.message, 'error');
@@ -300,13 +285,9 @@ new MutationObserver(function() {
   if (_t) clearTimeout(_t);
   _t = setTimeout(function() {
     if (!currentUser) return;
-    // Check if we're on the networking page
-    var placeholder = null;
-    document.querySelectorAll('div').forEach(function(d) {
-      if (d.textContent.indexOf('get notified') !== -1 && d.textContent.indexOf('launches') !== -1 && d.offsetHeight > 50) placeholder = d;
-    });
+    var placeholder = document.querySelector('.res-coming-soon');
     if (placeholder && !placeholder.dataset.ndDone) {
-      renderDirectory();
+      renderDirectory(placeholder);
     }
   }, 500);
 }).observe(document.body, { childList: true, subtree: true });
