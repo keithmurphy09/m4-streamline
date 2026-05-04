@@ -192,7 +192,12 @@ window.openListingForm = async function(isEdit) {
   h += '<div class="nd-field"><label>Phone</label><input id="nd-phone" value="' + (existing ? existing.phone || '' : '') + '" placeholder="04XX XXX XXX"></div>';
   h += '<div class="nd-field"><label>Email</label><input id="nd-email" type="email" value="' + (existing ? existing.email || '' : (currentUser ? currentUser.email : '')) + '" placeholder="you@business.com"></div>';
   h += '<div class="nd-field"><label>Website</label><input id="nd-web" value="' + (existing ? existing.website || '' : '') + '" placeholder="www.yourbusiness.com.au"></div>';
-  h += '<div class="nd-field"><label>Logo URL</label><input id="nd-logo" value="' + (existing ? existing.logo_url || '' : '') + '" placeholder="https://... (paste a link to your logo)"></div>';
+  h += '<div class="nd-field"><label>Logo</label>';
+  if (existing && existing.logo_url) {
+    h += '<div style="margin-bottom:8px"><img src="' + existing.logo_url + '" style="height:50px;width:auto;border-radius:6px;border:1px solid #e2e8f0"></div>';
+  }
+  h += '<input id="nd-logo-file" type="file" accept="image/*" style="font-size:12px"></div>';
+  h += '<input id="nd-logo-existing" type="hidden" value="' + (existing ? existing.logo_url || '' : '') + '">';
   h += '<div class="nd-field"><label>Area Served</label><input id="nd-area" value="' + (existing ? existing.area_served || '' : '') + '" placeholder="e.g. Brisbane, Gold Coast, SE QLD"></div>';
 
   h += '<button class="nd-submit" onclick="saveListing(' + (existing ? '\'' + existing.id + '\'' : 'null') + ')">' + (isEdit ? 'Update Listing' : 'Submit & Subscribe - $49/mo') + '</button>';
@@ -211,11 +216,31 @@ window.saveListing = async function(existingId) {
   var phone = document.getElementById('nd-phone').value.trim();
   var email = document.getElementById('nd-email').value.trim();
   var web = document.getElementById('nd-web').value.trim();
-  var logo = document.getElementById('nd-logo').value.trim();
   var area = document.getElementById('nd-area').value.trim();
 
   if (!name) { showNotification('Business name is required', 'error'); return; }
   if (!cat) { showNotification('Select a trade category', 'error'); return; }
+
+  // Handle logo upload
+  var logoUrl = document.getElementById('nd-logo-existing').value || '';
+  var fileInput = document.getElementById('nd-logo-file');
+  if (fileInput && fileInput.files && fileInput.files.length > 0) {
+    try {
+      var file = fileInput.files[0];
+      var ext = file.name.split('.').pop().toLowerCase();
+      var fileName = currentUser.id + '_' + Date.now() + '.' + ext;
+      var upload = await supabaseClient.storage.from('logos').upload(fileName, file, { upsert: true });
+      if (upload.error) {
+        showNotification('Logo upload failed: ' + upload.error.message, 'error');
+        return;
+      }
+      var pubUrl = supabaseClient.storage.from('logos').getPublicUrl(fileName);
+      logoUrl = pubUrl.data.publicUrl;
+    } catch(e) {
+      showNotification('Logo upload error: ' + e.message, 'error');
+      return;
+    }
+  }
 
   var data = {
     business_name: name,
@@ -224,7 +249,7 @@ window.saveListing = async function(existingId) {
     phone: phone,
     email: email,
     website: web,
-    logo_url: logo,
+    logo_url: logoUrl,
     area_served: area,
     updated_at: new Date().toISOString()
   };
